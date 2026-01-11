@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { EngineerBackendArtifact } from "../artifacts/engineer/types";
 import { engineerSchema } from "../artifacts/engineer/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -10,10 +10,14 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * Generates implementation plan, file structure, and code
  * Uses EXACT Forge backend JSON schema structure (engineer.schema.json)
  */
-export async function engineerAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function engineerAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request, previous_artifacts, options } = context;
   const archDesign = previous_artifacts.arch_design;
   const pmSpec = previous_artifacts.pm_spec;
+  const uiDesign = previous_artifacts.ui_design;
 
   logger.info("Engineer agent starting", { user_request: user_request.substring(0, 100) });
 
@@ -41,7 +45,7 @@ CRITICAL GOALS:
 1. **Clean Code Rigor**: Enforce **SOLID** principles and select appropriate **Design Patterns** (e.g., Repository, Service, Factory).
 2. **State Hierarchy**: Define a specific state management architecture (e.g., Zustand vs React Query vs Redux) based on requirements.
 3. **Execution Confidence**: Breakdown the implementation into granular, non-redundant technical phases with specific tasks.
-4. **File Blueprint**: Create an elite-level file structure including types, test mocks, and infrastructure code.
+4. **File Blueprint**: Create an elite-level file structure including types, test mocks, and infrastructure code. Match filenames to the defined UI component hierarchy where appropriate.
 5. **Quality Hardening**: Ensure full TypeScript safety and dependency injection for testability.
 
 Your implementation must be professional, scalable, and follow industry best practices.`
@@ -54,6 +58,9 @@ ${JSON.stringify(pmSpec.content, null, 2)}` : ""}
 
 ${archDesign?.content ? `Architecture Design:
 ${JSON.stringify(archDesign.content, null, 2)}` : ""}
+
+${uiDesign?.content ? `UI Design Specification:
+${JSON.stringify(uiDesign.content, null, 2)}` : ""}
 
 CRITICAL GOALS:
 1. **SOLID Architecture**: Justify and apply SOLID principles. Specify technical patterns to be used across the codebase.
@@ -71,10 +78,20 @@ Your plan must be the authoritative technical guide for the development cycle, e
     let llmEngineerImpl: EngineerBackendArtifact | null = null;
 
     try {
-      llmEngineerImpl = await generateStructuredWithLLM<EngineerBackendArtifact>(
+      llmEngineerImpl = await generateStreamingStructuredWithLLM<EngineerBackendArtifact>(
         engineerPrompt,
         engineerSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "Engineer" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "Engineer"
+        }
       );
     } catch (error: any) {
       logger.error("Engineer agent LLM call failed", { error: error.message });

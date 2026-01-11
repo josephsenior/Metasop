@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { UIDesignerBackendArtifact } from "../artifacts/ui-designer/types";
 import { uiDesignerSchema as uiSchema } from "../artifacts/ui-designer/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -9,7 +9,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * UI Designer Agent
  * Generates UI component hierarchy and design tokens
  */
-export async function uiDesignerAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function uiDesignerAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request } = context;
 
   logger.info("UI Designer agent starting", { user_request: user_request.substring(0, 100) });
@@ -57,10 +60,20 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
     let llmUIDesign: any = null;
 
     try {
-      llmUIDesign = await generateStructuredWithLLM<any>(
+      llmUIDesign = await generateStreamingStructuredWithLLM<any>(
         uiPrompt,
         uiSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "UI Designer" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "UI Designer"
+        }
       );
     } catch (error: any) {
       logger.error("UI Designer agent LLM call failed", { error: error.message });

@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { ArchitectBackendArtifact } from "../artifacts/architect/types";
 import { architectSchema } from "../artifacts/architect/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -9,7 +9,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * Architect Agent
  * Generates architecture design documents using LLM structured output
  */
-export async function architectAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function architectAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request, previous_artifacts } = context;
   const pmSpec = previous_artifacts.pm_spec;
 
@@ -58,10 +61,20 @@ Ensure the design is professional, scalable, and optimized for high-throughput p
     let llmArchitecture: ArchitectBackendArtifact | null = null;
 
     try {
-      llmArchitecture = await generateStructuredWithLLM<ArchitectBackendArtifact>(
+      llmArchitecture = await generateStreamingStructuredWithLLM<ArchitectBackendArtifact>(
         architectPrompt,
         architectSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "Architect" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "Architect"
+        }
       );
     } catch (error: any) {
       logger.error("Architect agent LLM call failed", { error: error.message });
@@ -79,7 +92,7 @@ Ensure the design is professional, scalable, and optimized for high-throughput p
       apis: llmArchitecture.apis,
       summary: llmArchitecture.summary,
       description: llmArchitecture.description,
-      decisions: llmArchitecture.decisions?.map(d => ({
+      decisions: llmArchitecture.decisions?.map((d: any) => ({
         decision: d.decision,
         status: d.status,
         reason: d.reason,

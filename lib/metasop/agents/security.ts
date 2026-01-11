@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { SecurityBackendArtifact } from "../artifacts/security/types";
 import { securitySchema } from "../artifacts/security/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -9,7 +9,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * Security Agent
  * Generates security architecture, threat modeling, encryption strategy, and compliance specifications
  */
-export async function securityAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function securityAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request, previous_artifacts } = context;
   const archDesign = previous_artifacts.arch_design;
   const pmSpec = previous_artifacts.pm_spec;
@@ -69,10 +72,20 @@ Your architecture must be professional, battle-hardened, and perfectly aligned w
     let llmSecurity: SecurityBackendArtifact | null = null;
 
     try {
-      llmSecurity = await generateStructuredWithLLM<SecurityBackendArtifact>(
+      llmSecurity = await generateStreamingStructuredWithLLM<SecurityBackendArtifact>(
         securityPrompt,
         securitySchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "Security" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "Security"
+        }
       );
     } catch (error: any) {
       logger.error("Security agent LLM call failed", { error: error.message });
@@ -94,7 +107,7 @@ Your architecture must be professional, battle-hardened, and perfectly aligned w
         },
         authorization: {
           ...llmSecurity.security_architecture?.authorization,
-          roles: llmSecurity.security_architecture?.authorization?.roles || Array.from(new Set(llmSecurity.security_architecture?.authorization?.policies?.flatMap(p => p.roles || []) || []))
+          roles: llmSecurity.security_architecture?.authorization?.roles || Array.from(new Set(llmSecurity.security_architecture?.authorization?.policies?.flatMap((p: any) => p.roles || []) || []))
         }
       },
       threat_model: llmSecurity.threat_model,

@@ -49,10 +49,12 @@ export interface MetaSOPStep {
 }
 
 export interface MetaSOPEvent {
-  type: "step_start" | "step_complete" | "step_failed" | "orchestration_complete" | "orchestration_failed";
+  type: "step_start" | "step_thought" | "step_partial_artifact" | "step_complete" | "step_failed" | "orchestration_complete" | "orchestration_failed";
   step_id?: string;
   role?: string;
   artifact?: MetaSOPArtifact;
+  thought?: string;
+  partial_content?: any;
   error?: string;
   timestamp: string;
 }
@@ -117,4 +119,7 @@ export interface KnowledgeGraph {
   edges: ArtifactDependency[];
 }
 
-export type AgentFunction = (context: AgentContext) => Promise<MetaSOPArtifact>;
+export type AgentFunction = (
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+) => Promise<MetaSOPArtifact>;

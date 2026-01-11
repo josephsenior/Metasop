@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { ProductManagerBackendArtifact } from "../artifacts/product-manager/types";
 import { pmSchema } from "../artifacts/product-manager/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -10,7 +10,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * Generates product specifications, user stories, and requirements
  * Uses EXACT Forge backend JSON schema structure (pm_spec.schema.json)
  */
-export async function productManagerAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function productManagerAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request } = context;
 
   logger.info("Product Manager agent starting", { user_request: user_request.substring(0, 100) });
@@ -63,11 +66,21 @@ Your specifications must provide the definitive \"Source of Truth\" for the arch
     let llmPMSpec: ProductManagerBackendArtifact | null = null;
 
     try {
-      // Use LLM to generate product specifications with structured output
-      llmPMSpec = await generateStructuredWithLLM<ProductManagerBackendArtifact>(
+      // Use LLM to generate product specifications with structured output and real-time streaming
+      llmPMSpec = await generateStreamingStructuredWithLLM<ProductManagerBackendArtifact>(
         pmPrompt,
         pmSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "Product Manager" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "Product Manager"
+        }
       );
 
       logger.info("Product Manager agent received structured LLM response", {
@@ -80,15 +93,6 @@ Your specifications must provide the definitive \"Source of Truth\" for the arch
         errorStack: error.stack,
         errorType: error.constructor.name,
       });
-      console.error("\n" + "=".repeat(80));
-      console.error("❌ PRODUCT MANAGER AGENT LLM CALL FAILED");
-      console.error("=".repeat(80));
-      console.error("Error:", error.message);
-      console.error("Error Type:", error.constructor.name);
-      if (error.stack) {
-        console.error("Stack:", error.stack);
-      }
-      console.error("=".repeat(80) + "\n");
     }
 
     // Use LLM-generated PM spec if available
@@ -104,7 +108,7 @@ Your specifications must provide the definitive \"Source of Truth\" for the arch
       content = {
         summary: llmPMSpec.summary,
         description: llmPMSpec.description,
-        user_stories: llmPMSpec.user_stories?.map((story) => {
+        user_stories: llmPMSpec.user_stories?.map((story: any) => {
           if (typeof story !== "object" || story === null) return story;
           if (typeof story.description === "string" || typeof story.story === "string") return story;
           const title = typeof story.title === "string" ? story.title : "User Story";

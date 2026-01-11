@@ -86,10 +86,22 @@ export default function CreateDiagramPage() {
     status: "pending" | "running" | "success" | "failed"
   }>>([])
 
+  // Agent thoughts and partial artifacts state
+  const [agentThoughts, setAgentThoughts] = useState<Record<string, string>>({})
+  const [activeStepId, setActiveStepId] = useState<string | null>(null)
+
   // Track step start times to ensure minimum display duration for running animation
   const stepStartTimesRef = useRef<Map<string, number>>(new Map())
   // Track pending timeouts to clean them up if component unmounts or generation is cancelled
   const pendingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const thoughtScrollRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll thoughts to bottom
+  useEffect(() => {
+    if (thoughtScrollRef.current) {
+      thoughtScrollRef.current.scrollTop = thoughtScrollRef.current.scrollHeight
+    }
+  }, [agentThoughts])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -205,6 +217,7 @@ export default function CreateDiagramPage() {
             if (event.type === "step_start") {
               console.log("[Frontend] Step starting:", event.step_id, event.role)
               stepStartTimesRef.current.set(event.step_id, Date.now())
+              setActiveStepId(event.step_id)
               setGenerationSteps(prev => {
                 const updated = prev.map(s =>
                   s.step_id === event.step_id ? { ...s, status: "running" as const } : s
@@ -212,6 +225,11 @@ export default function CreateDiagramPage() {
                 console.log("[Frontend] Updated steps after step_start:", updated.map(s => `${s.step_id}:${s.status}`))
                 return updated
               })
+            } else if (event.type === "step_thought") {
+              setAgentThoughts(prev => ({
+                ...prev,
+                [event.step_id]: (prev[event.step_id] || "") + (event.thought || "")
+              }))
             } else if (event.type === "step_complete") {
               // CRITICAL: Only process step_complete if step was actually started (running)
               // If step is still pending, it means step_start never fired - mark as running first
@@ -720,16 +738,63 @@ export default function CreateDiagramPage() {
                   <GenerationProgress steps={generationSteps} />
                 </div>
                 {/* Helpful tips while generating */}
-                <div className="px-4 pb-3 border-t border-border/50 pt-3">
+                <div className="px-4 pb-3 border-t border-border/50 pt-3 flex items-center justify-between">
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <Sparkles className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
                     <p>
-                      <span className="font-medium text-foreground">Tip:</span> Our AI agents are working together to create your architecture diagram. This usually takes 4-10 minutes.
+                      <span className="font-medium text-foreground">Tip:</span> Our AI agents are working together. You can see their reasoning below.
                     </p>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* Live Thought Stream - Discrete Overlay */}
+            <AnimatePresence>
+              {isGenerating && activeStepId && agentThoughts[activeStepId] && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                  className="absolute bottom-32 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4"
+                >
+                  <div className="bg-card/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5">
+                    <div className="bg-blue-600/5 px-4 py-2 border-b border-blue-500/10 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70">
+                          {generationSteps.find(s => s.step_id === activeStepId)?.role || "Agent"} Reasoning
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="text-[9px] h-4 bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300 animate-pulse">
+                        Live Stream
+                      </Badge>
+                    </div>
+                    <div
+                      ref={thoughtScrollRef}
+                      className="p-5 max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed text-muted-foreground/90 scrollbar-thin scrollbar-thumb-blue-500/20"
+                    >
+                      {agentThoughts[activeStepId].split('\n').map((line, i) => (
+                        <div key={i} className="mb-1.5 flex gap-3">
+                          <span className="text-blue-500/30 shrink-0">{(i + 1).toString().padStart(2, '0')}</span>
+                          <span className="italic opacity-80">{line}</span>
+                        </div>
+                      ))}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ repeat: Infinity, duration: 0.8 }}
+                        className="inline-block w-1.5 h-3 bg-blue-500/40 ml-10"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Main Content Area - with padding bottom for chat input */}
             <div className="flex-1 overflow-hidden" style={{ paddingBottom: '100px' }}>
@@ -738,6 +803,7 @@ export default function CreateDiagramPage() {
                   <ArtifactsPanel
                     diagramId={currentDiagram.id || ""}
                     artifacts={currentDiagram.metadata.metasop_artifacts}
+                    steps={currentDiagram.metadata.metasop_steps}
                     className="h-full"
                   />
                 </div>

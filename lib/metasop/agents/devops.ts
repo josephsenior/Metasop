@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { DevOpsBackendArtifact } from "../artifacts/devops/types";
 import { devopsSchema } from "../artifacts/devops/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -9,7 +9,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * DevOps Agent
  * Generates infrastructure specifications, CI/CD pipelines, and deployment strategies
  */
-export async function devopsAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function devopsAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request, previous_artifacts } = context;
   const archDesign = previous_artifacts.arch_design;
   const pmSpec = previous_artifacts.pm_spec;
@@ -64,10 +67,20 @@ Ensure the specifications are professional, scalable, and perfectly aligned with
     let llmDevOps: DevOpsBackendArtifact | null = null;
 
     try {
-      llmDevOps = await generateStructuredWithLLM<DevOpsBackendArtifact>(
+      llmDevOps = await generateStreamingStructuredWithLLM<DevOpsBackendArtifact>(
         devopsPrompt,
         devopsSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "DevOps" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "DevOps"
+        }
       );
     } catch (error: any) {
       logger.error("DevOps agent LLM call failed", { error: error.message });

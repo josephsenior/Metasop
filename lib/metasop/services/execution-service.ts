@@ -5,7 +5,7 @@
 
 import { logger } from "../utils/logger";
 import { RetryService, RetryPolicy } from "./retry-service";
-import type { MetaSOPArtifact, AgentContext } from "../types";
+import type { MetaSOPArtifact, AgentContext, MetaSOPEvent } from "../types";
 
 export interface ExecutionOptions {
   timeout: number; // in milliseconds
@@ -33,9 +33,10 @@ export class ExecutionService {
    * Execute an agent function with timeout and retry logic
    */
   async executeStep(
-    agentFn: (context: AgentContext) => Promise<MetaSOPArtifact>,
+    agentFn: (context: AgentContext, onProgress?: (event: Partial<MetaSOPEvent>) => void) => Promise<MetaSOPArtifact>,
     context: AgentContext,
-    options: ExecutionOptions
+    options: ExecutionOptions,
+    onProgress?: (event: MetaSOPEvent) => void
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const { timeout, retryPolicy, stepId, role } = options;
@@ -59,9 +60,20 @@ export class ExecutionService {
         });
 
         try {
+          // Pass the onProgress callback to the agent function
+          // We wrap it to ensure it includes the stepId and role
+          const wrappedOnProgress = onProgress ? (event: Partial<MetaSOPEvent>) => {
+            onProgress({
+              ...event,
+              step_id: stepId,
+              role: role,
+              timestamp: event.timestamp || new Date().toISOString()
+            } as MetaSOPEvent);
+          } : undefined;
+
           // Wrap agent function with timeout
           const result = await Promise.race([
-            agentFn(context),
+            agentFn(context, wrappedOnProgress),
             attemptTimeoutPromise,
           ]);
 
@@ -137,15 +149,16 @@ export class ExecutionService {
    */
   async executeParallel(
     steps: Array<{
-      agentFn: (context: AgentContext) => Promise<MetaSOPArtifact>;
+      agentFn: (context: AgentContext, onProgress?: (event: Partial<MetaSOPEvent>) => void) => Promise<MetaSOPArtifact>;
       context: AgentContext;
       options: ExecutionOptions;
+      onProgress?: (event: MetaSOPEvent) => void;
     }>
   ): Promise<ExecutionResult[]> {
     logger.info(`Executing ${steps.length} steps in parallel`);
 
     const promises = steps.map((step) =>
-      this.executeStep(step.agentFn, step.context, step.options)
+      this.executeStep(step.agentFn, step.context, step.options, step.onProgress)
     );
 
     const results = await Promise.allSettled(promises);
@@ -169,4 +182,3 @@ export class ExecutionService {
     });
   }
 }
-

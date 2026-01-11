@@ -6,6 +6,7 @@
 
 import type { LLMProvider, LLMOptions } from "./llm-adapter";
 import { logger } from "../utils/logger";
+import { MetaSOPEvent } from "../types";
 
 export class GeminiLLMProvider implements LLMProvider {
   private apiKey: string;
@@ -382,6 +383,25 @@ ${prompt}`
       logger.error("Gemini structured generation failed", { error: error.message, model });
       throw error;
     }
+  }
+
+  /**
+   * Streaming version of structured generation.
+   * Currently provides compatibility wrapper as true element-streaming requires specific API support.
+   */
+  async generateStreamingStructured<T>(
+    prompt: string,
+    schema: any,
+    onProgress: (event: Partial<MetaSOPEvent>) => void,
+    options?: LLMOptions
+  ): Promise<T> {
+    // Call standard structured generation
+    const result = await this.generateStructured<T>(prompt, schema, options);
+
+    // For now, true real-time streaming of Gemini thoughts via raw fetch is complex.
+    // The VercelAILlmProvider is the primary choice for Immersive Streaming.
+
+    return result;
   }
 
   /**

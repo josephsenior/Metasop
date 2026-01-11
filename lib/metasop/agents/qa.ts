@@ -1,7 +1,7 @@
-import type { AgentContext, MetaSOPArtifact } from "../types";
+import type { AgentContext, MetaSOPArtifact, MetaSOPEvent } from "../types";
 import type { QABackendArtifact } from "../artifacts/qa/types";
 import { qaSchema } from "../artifacts/qa/schema";
-import { generateStructuredWithLLM } from "../utils/llm-helper";
+import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
 
@@ -9,7 +9,10 @@ import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-
  * QA Agent
  * Generates test plans and verification criteria
  */
-export async function qaAgent(context: AgentContext): Promise<MetaSOPArtifact> {
+export async function qaAgent(
+  context: AgentContext,
+  onProgress?: (event: Partial<MetaSOPEvent>) => void
+): Promise<MetaSOPArtifact> {
   const { user_request } = context;
 
   logger.info("QA agent starting", { user_request: user_request.substring(0, 100) });
@@ -56,10 +59,20 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
     let llmQA: QABackendArtifact | null = null;
 
     try {
-      llmQA = await generateStructuredWithLLM<QABackendArtifact>(
+      llmQA = await generateStreamingStructuredWithLLM<QABackendArtifact>(
         qaPrompt,
         qaSchema,
-        { reasoning: true, temperature: 0.7, cacheId: context.cacheId, role: "QA" }
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
+          }
+        },
+        {
+          reasoning: true,
+          temperature: 0.7,
+          cacheId: context.cacheId,
+          role: "QA"
+        }
       );
     } catch (error: any) {
       logger.error("QA agent LLM call failed", { error: error.message });

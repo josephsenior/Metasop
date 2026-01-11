@@ -201,13 +201,13 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       await this.executeStep("security_architecture", "Security", securityAgent, context, onProgress);
       context.previous_artifacts.security_architecture = this.artifacts.security_architecture;
 
-      // Step 5: Engineer
-      await this.executeStep("engineer_impl", "Engineer", engineerAgent, context, onProgress);
-      context.previous_artifacts.engineer_impl = this.artifacts.engineer_impl;
-
-      // Step 6: UI Designer
+      // Step 5: UI Designer
       await this.executeStep("ui_design", "UI Designer", uiDesignerAgent, context, onProgress);
       context.previous_artifacts.ui_design = this.artifacts.ui_design;
+
+      // Step 6: Engineer
+      await this.executeStep("engineer_impl", "Engineer", engineerAgent, context, onProgress);
+      context.previous_artifacts.engineer_impl = this.artifacts.engineer_impl;
 
       // Step 7: QA
       await this.executeStep("qa_verification", "QA", qaAgent, context, onProgress);
@@ -310,8 +310,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       "arch_design",
       "devops_infrastructure",
       "security_architecture",
-      "engineer_impl",
       "ui_design",
+      "engineer_impl",
       "qa_verification"
     ];
 
@@ -391,22 +391,21 @@ Maintain all existing high-quality elements while incorporating necessary adjust
   private async executeStep(
     stepId: string,
     role: string,
-    agentFn: (context: AgentContext) => Promise<any>,
+    agentFn: (context: AgentContext, onProgress?: (event: Partial<MetaSOPEvent>) => void) => Promise<any>,
     context?: AgentContext,
     onProgress?: (event: MetaSOPEvent) => void
   ): Promise<void> {
-    // Check if agent is enabled
+    // ... agent enable check omitted for brevity ...
     if (!this.config.agents.enabled.includes(stepId)) {
       logger.warn(`Agent ${stepId} is disabled, skipping`);
       return;
     }
 
-    // --- A2A: Create Task for this delegation ---
-    const agentName = role.replace(/\s+/g, ""); // "Product Manager" -> "ProductManager"
+    // --- A2A logic omitted for brevity ---
+    const agentName = role.replace(/\s+/g, "");
     const a2aTask = this.createA2ATask("Orchestrator", agentName, stepId, context?.previous_artifacts || {});
     this.updateA2ATask(a2aTask.id, "in_progress");
 
-    // --- A2A: Send handoff message ---
     const inputArtifactNames = Object.keys(context?.previous_artifacts || {});
     const handoffMessage = inputArtifactNames.length > 0
       ? `Delegating ${stepId} to ${agentName}. Received artifacts: ${inputArtifactNames.join(", ")}.`
@@ -414,9 +413,7 @@ Maintain all existing high-quality elements while incorporating necessary adjust
     this.sendA2AMessage(a2aTask.id, "Orchestrator", agentName, handoffMessage, [
       { type: "artifact_ref", content: inputArtifactNames }
     ]);
-    logger.info(`[A2A] ${handoffMessage}`, { taskId: a2aTask.id });
 
-    // Create step tracking
     const step: MetaSOPStep = {
       id: stepId,
       role,
@@ -427,7 +424,6 @@ Maintain all existing high-quality elements while incorporating necessary adjust
     this.steps.push(step);
     this.addStepToReport(stepId, role, "running");
 
-    // Emit progress event
     if (onProgress) {
       onProgress({
         type: "step_start",
@@ -437,14 +433,13 @@ Maintain all existing high-quality elements while incorporating necessary adjust
       });
     }
 
-    // Get execution options for this agent
     const options = this.getExecutionOptions(stepId, role);
 
-    // Execute using execution service
     const result = await this.executionService.executeStep(
       agentFn,
       context || { user_request: "", previous_artifacts: {}, options: {} },
-      options
+      options,
+      onProgress
     );
 
     if (result.success && result.artifact) {

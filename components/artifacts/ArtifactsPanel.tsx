@@ -40,6 +40,7 @@ interface ArtifactsPanelProps {
         ui_design?: any
         qa_verification?: any
     }
+    steps?: any[]
     className?: string
 }
 
@@ -49,12 +50,12 @@ const agentTabs = [
     { id: "arch_design", label: "Architect", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
     { id: "devops_infrastructure", label: "DevOps", icon: Server, color: "text-green-600", bgColor: "bg-green-500/10" },
     { id: "security_architecture", label: "Security", icon: Shield, color: "text-red-600", bgColor: "bg-red-500/10" },
-    { id: "engineer_impl", label: "Engineer", icon: Code, color: "text-orange-600", bgColor: "bg-orange-500/10" },
     { id: "ui_design", label: "UI Designer", icon: Palette, color: "text-pink-600", bgColor: "bg-pink-500/10" },
+    { id: "engineer_impl", label: "Engineer", icon: Code, color: "text-orange-600", bgColor: "bg-orange-500/10" },
     { id: "qa_verification", label: "QA", icon: CheckCircle, color: "text-teal-600", bgColor: "bg-teal-500/10" },
 ]
 
-export function ArtifactsPanel({ diagramId, artifacts, className = "" }: ArtifactsPanelProps) {
+export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: ArtifactsPanelProps) {
     const { toast } = useToast()
     const [activeTab, setActiveTab] = useState("summary")
     const [instruction, setInstruction] = useState("")
@@ -122,7 +123,7 @@ export function ArtifactsPanel({ diagramId, artifacts, className = "" }: Artifac
 
     const handleExportMarkdown = () => {
         let md = `# Project Specification: ${diagramId}\n\n`
-        
+
         agentTabs.forEach(tab => {
             const data = artifacts[tab.id as keyof typeof artifacts]
             if (data) {
@@ -264,6 +265,40 @@ export function ArtifactsPanel({ diagramId, artifacts, className = "" }: Artifac
                                     })()}
                                 </motion.div>
                             </AnimatePresence>
+
+                            {/* Thought Stream for the current artifact */}
+                            {(() => {
+                                const step = (steps || []).find(s => s.step_id === activeTab)
+                                if (!step?.thought) return null
+
+                                return (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-8 border-t border-blue-500/10 pt-4"
+                                    >
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-1 h-4 bg-blue-500/30 rounded-full" />
+                                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70">
+                                                Agent Reasoning Process
+                                            </h4>
+                                        </div>
+                                        <div className="bg-blue-500/5 rounded-xl p-4 border border-blue-500/10">
+                                            <div className="font-mono text-[11px] leading-relaxed text-muted-foreground/80 italic space-y-2">
+                                                {typeof step.thought === 'string'
+                                                    ? step.thought.split('\n').filter(Boolean).map((t: string, i: number) => (
+                                                        <p key={i} className="flex gap-2">
+                                                            <span className="text-blue-500/20 shrink-0 select-none">›</span>
+                                                            <span>{t}</span>
+                                                        </p>
+                                                    ))
+                                                    : <p>{JSON.stringify(step.thought)}</p>
+                                                }
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )
+                            })()}
                         </div>
                     </ScrollArea>
                 </div>
@@ -277,7 +312,7 @@ export function ArtifactsPanel({ diagramId, artifacts, className = "" }: Artifac
                             <SparklesIcon className="h-3.5 w-3.5 text-blue-500" />
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Agentic Refinement</span>
                         </div>
-                        
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] font-medium gap-1 text-muted-foreground hover:text-foreground">
@@ -290,8 +325,8 @@ export function ArtifactsPanel({ diagramId, artifacts, className = "" }: Artifac
                                     All Agents (Global)
                                 </DropdownMenuItem>
                                 {agentTabs.map(tab => (
-                                    <DropdownMenuItem 
-                                        key={tab.id} 
+                                    <DropdownMenuItem
+                                        key={tab.id}
                                         onClick={() => setRefineTarget(tab.id)}
                                         disabled={!artifacts[tab.id as keyof typeof artifacts]}
                                         className="text-[10px] cursor-pointer"

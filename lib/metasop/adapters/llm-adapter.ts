@@ -6,6 +6,12 @@
 export interface LLMProvider {
   generate(prompt: string, options?: LLMOptions): Promise<string>;
   generateStructured<T>(prompt: string, schema: any, options?: LLMOptions): Promise<T>;
+  generateStreamingStructured?<T>(
+    prompt: string,
+    schema: any,
+    onProgress: (event: any) => void,
+    options?: LLMOptions
+  ): Promise<T>;
   createCache?(content: string, systemInstruction?: string, ttlSeconds?: number): Promise<string>;
 }
 
@@ -40,6 +46,32 @@ export class MockLLMProvider implements LLMProvider {
   async generateStructured<T>(_prompt: string, schema: any): Promise<T> {
     await new Promise(resolve => setTimeout(resolve, 500));
     return generateMockFromSchema(schema) as T;
+  }
+
+  async generateStreamingStructured<T>(
+    prompt: string,
+    schema: any,
+    onProgress: (event: any) => void
+  ): Promise<T> {
+    // Simulate thinking tokens for development/testing
+    const mockThoughts = [
+      "Initializing agent cognitive engine...",
+      "Analyzing user request intent...",
+      "Synthesizing architectural patterns...",
+      "Validating schema constraints...",
+      "Optimizing response tokens..."
+    ];
+
+    for (const thought of mockThoughts) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      onProgress({
+        type: "step_thought",
+        thought: thought + "\n",
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return this.generateStructured<T>(prompt, schema);
   }
 }
 
@@ -137,7 +169,7 @@ function mockStringValue(schema: any, path: string[]): string {
 /**
  * LLM Provider Factory
  */
-export function createLLMProvider(provider?: "gemini" | "openai" | "mock" | string): LLMProvider {
+export function createLLMProvider(provider?: "gemini" | "openai" | "mock" | "vercel-ai" | string): LLMProvider {
   const providerType = provider || process.env.METASOP_LLM_PROVIDER || "mock";
 
   switch (providerType) {
@@ -148,6 +180,13 @@ export function createLLMProvider(provider?: "gemini" | "openai" | "mock" | stri
       const model = config.llm.model || "gemini-3-pro-preview";
       const { GeminiLLMProvider } = require("./gemini-adapter");
       return new GeminiLLMProvider(apiKey, model);
+    }
+    case "vercel-ai": {
+      const { getConfig } = require("../config");
+      const config = getConfig();
+      const model = config.llm.model || "gemini-1.5-flash";
+      const { VercelAILlmProvider } = require("./vercel-ai-adapter");
+      return new VercelAILlmProvider(undefined, model);
     }
     case "openai": {
       // Stub for OpenAI - can be implemented fully if needed
