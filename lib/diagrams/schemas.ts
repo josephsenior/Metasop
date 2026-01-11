@@ -1,0 +1,38 @@
+import { z } from "zod";
+import { CreateDiagramRequest, UpdateDiagramRequest } from "@/types/diagram";
+
+export const CreateDiagramSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required"),
+    options: z.object({
+        includeStateManagement: z.boolean().optional(),
+        includeAPIs: z.boolean().optional(),
+        includeDatabase: z.boolean().optional(),
+        model: z.string().optional(),
+    }).optional(),
+});
+
+export const UpdateDiagramSchema = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    nodes: z.array(z.any()).optional(),
+    edges: z.array(z.any()).optional(),
+    metadata: z.any().optional(),
+});
+
+export function validateCreateDiagramRequest(data: any): CreateDiagramRequest {
+    return CreateDiagramSchema.parse(data) as CreateDiagramRequest;
+}
+
+export function validateUpdateDiagramRequest(data: any): UpdateDiagramRequest {
+    return UpdateDiagramSchema.parse(data) as UpdateDiagramRequest;
+}
+export const RefineDiagramSchema = z.object({
+    diagramId: z.string(),
+    stepId: z.string(),
+    instruction: z.string().min(1, "Instruction is required"),
+    previousArtifacts: z.record(z.any()),
+});
+
+export function validateRefineDiagramRequest(data: any) {
+    return RefineDiagramSchema.parse(data);
+}
