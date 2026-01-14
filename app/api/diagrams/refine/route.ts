@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
         const result = await refineMetaSOPArtifact(
             body.stepId,
             body.instruction,
-            body.previousArtifacts
+            body.previousArtifacts,
+            undefined, // onProgress
+            body.cascade // Pass cascade flag
         );
 
         return createSuccessResponse(

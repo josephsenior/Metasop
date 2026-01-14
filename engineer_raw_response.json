@@ -1,7 +1,7 @@
 {
-  "artifact_path": "edustream-platform",
+  "artifact_path": "platform-root",
   "file_structure": {
-    "name": "edustream-platform",
+    "name": "platform-root",
     "type": "directory",
     "children": [
       {
@@ -9,138 +9,132 @@
         "type": "directory"
         },
         {
-        "name": "web-client",
-        "type": "directory"
+          "name": "web-client",
+          "type": "directory"
         },
         {
-        "name": "api-gateway",
-        "type": "directory"
+          "name": "auth-service",
+          "type": "directory"
         },
         {
-        "name": "course-service",
-        "type": "directory"
+          "name": "course-service",
+          "type": "directory"
         },
         {
-        "name": "video-service",
-        "type": "directory"
+          "name": "video-service",
+          "type": "directory"
         },
         {
-        "name": "ai-recommendation-service",
-        "type": "directory"
+          "name": "payment-service",
+          "type": "directory"
         },
         {
-        "name": "libs",
-        "type": "directory"
+          "name": "libs",
+          "type": "directory"
         },
         {
-        "name": "shared-types",
-        "type": "directory"
+          "name": "shared-types",
+          "type": "directory"
         },
         {
-        "name": "ui-components",
-        "type": "directory"
+          "name": "common-utils",
+          "type": "directory"
         },
         {
-        "name": "infra",
-        "type": "directory"
+          "name": "database-schema",
+          "type": "directory"
         },
         {
-        "name": "terraform",
-        "type": "directory"
+          "name": "infrastructure",
+          "type": "directory"
         },
         {
-        "name": "k8s",
-        "type": "directory"
+          "name": "terraform",
+          "type": "directory"
+        },
+        {
+          "name": "kubernetes",
+          "type": "directory"
         }
     ]
   },
-  "implementation_plan": "# EduStream Technical Implementation Roadmap\n\n## Phase 1: Foundation & Identity (Weeks 1-3)\n- **Monorepo Orchestration**: Initialize Turborepo with Next.js (Frontend) and NestJS (Backend) workspaces.\n- **Identity Management**: Configure Auth0 tenants for Dev/Prod. Implement OIDC flow with custom claims for 'Instructor' and 'Learner' roles.\n- **Shared UI Library**: Build a Tailwind-based design system using Radix UI primitives, focusing on the 'Cinematic' dark theme.\n\n## Phase 2: Content Ingestion & Video Pipeline (Weeks 4-7)\n- **S3 Ingestion**: Setup secure multipart uploads with Pre-signed URLs for raw video assets.\n- **Transcoding Engine**: Implement AWS Elemental MediaConvert templates to generate HLS (m3u8) manifests with multiple bitrates (1080p, 720p, 480p).\n- **CDN Distribution**: Configure CloudFront with Signed Cookies to restrict video access to enrolled students only.\n\n## Phase 3: Core Learning Features (Weeks 8-11)\n- **Course Management**: Develop the NestJS Course Service using TypeORM and PostgreSQL. Implement JSONB for flexible quiz schemas.\n- **Progress Tracking**: Build a high-frequency heartbeat API to sync video playback position every 30s to Redis, with periodic persistence to Postgres.\n- **Search & Discovery**: Deploy Elasticsearch. Implement Change Data Capture (CDC) using Debezium to sync course metadata from Postgres to ES.\n\n## Phase 4: Commerce & Engagement (Weeks 12-14)\n- **Payment Integration**: Implement Stripe Checkout and Webhook handlers for automated enrollment and invoice generation.\n- **Social Learning**: Build a threaded discussion service using WebSockets for real-time interaction.\n- **Certificate Generation**: Create a serverless AWS Lambda function using Puppeteer to generate PDF certificates upon course completion.\n\n## Phase 5: AI Personalization & Optimization (Weeks 15-18)\n- **Recommendation Engine**: Develop a FastAPI service using Scikit-learn for collaborative filtering based on user watch history.\n- **Analytics Pipeline**: Stream user events to AWS Kinesis for real-time dashboard updates.\n- **Performance Tuning**: Implement ISR (Incremental Static Regeneration) for course landing pages to ensure <2s load times.",
+  "implementation_plan": "# Technical Implementation Roadmap\n\n## Phase 1: Foundation & Monorepo Setup\n- Initialize Turborepo with NestJS and Next.js.\n- Configure Shared ESLint, Prettier, and TypeScript configurations.\n- Setup Docker Compose for local development (Postgres, Redis, RabbitMQ, Elasticsearch).\n\n## Phase 2: Identity & Access Management (IAM)\n- Implement Auth0 integration in the `auth-service`.\n- Develop JWT validation middleware and RBAC (Role-Based Access Control) decorators.\n- Create user profile management and email verification flows using SendGrid.\n\n## Phase 3: Course Catalog & Search Engine\n- Build the `course-service` using NestJS and TypeORM.\n- Implement CQRS pattern for course creation (Command) and discovery (Query).\n- Setup Elasticsearch synchronization using RabbitMQ events for real-time search updates.\n\n## Phase 4: Video Processing & Secure Streaming\n- Develop the `video-service` in Go for high-concurrency upload handling.\n- Integrate AWS S3 for raw storage and AWS Elemental MediaConvert for HLS transcoding.\n- Implement CloudFront Signed URLs for secure, time-limited content access.\n\n## Phase 5: Enrollment & Payment Gateway\n- Integrate Stripe API for checkout sessions and webhook handling.\n- Implement idempotent transaction processing in the `payment-service`.\n- Develop the enrollment logic to grant course access upon successful payment events.\n\n## Phase 6: Learning Engine & Progress Tracking\n- Build the Quiz Engine with instant grading logic.\n- Implement low-latency progress tracking using Redis for active session heartbeats.\n- Develop the Certificate Generation worker using PDFKit or Puppeteer.\n\n## Phase 7: Observability & Scaling\n- Integrate OpenTelemetry for distributed tracing across microservices.\n- Setup Prometheus and Grafana dashboards for system health monitoring.\n- Configure Kubernetes HPA (Horizontal Pod Autoscaler) based on custom metrics.",
   "dependencies": [
-    "next@14.2.0",
-    "@nestjs/core@10.3.0",
-    "fastapi@0.110.0",
-    "zustand@4.5.0",
-    "@tanstack/react-query@5.28.0",
-    "stripe@14.20.0",
-    "typeorm@0.3.20",
-    "pg@8.11.0",
-    "elasticsearch@8.13.0",
-    "auth0-js@9.24.0",
-    "video.js@8.10.0",
-    "tailwindcss@3.4.0",
-    "framer-motion@11.0.0"
+    "@nestjs/core@^10.0.0",
+    "@nestjs/typeorm@^10.0.0",
+    "@nestjs/cqrs@^10.0.0",
+    "next@^14.0.0",
+    "zustand@^4.4.0",
+    "@tanstack/react-query@^5.0.0",
+    "stripe@^14.0.0",
+    "elasticsearch@^8.0.0",
+    "amqplib@^0.10.0",
+    "aws-sdk@^2.1400.0",
+    "typeorm@^0.3.0",
+    "pg@^8.11.0",
+    "redis@^4.6.0",
+    "zod@^3.22.0"
   ],
   "run_results": {
     "setup_commands": [
       "npm install",
-      "npx turbo prune --scope=web-client",
-      "docker-compose up -d postgres redis elasticsearch"
+      "docker-compose up -d",
+      "npx turbo run build"
     ],
     "test_commands": [
-      "npm run test",
-      "npm run test:e2e"
+      "npx turbo run test",
+      "npx turbo run test:e2e"
     ],
     "dev_commands": [
-      "npm run dev",
       "npx turbo run dev"
     ]
   },
-  "summary": "A high-performance, microservices-driven e-learning platform featuring adaptive video streaming, AI-powered recommendations, and a cinematic user interface.",
-  "description": "EduStream is engineered for scale and engagement. It utilizes a decoupled architecture where video processing is handled asynchronously via AWS MediaConvert, and course discovery is optimized through Elasticsearch. The frontend, built with Next.js, provides a 'Netflix-style' experience with deep-focus design tokens, while the backend services (NestJS and FastAPI) ensure robust business logic and intelligent content delivery.",
+  "summary": "A high-performance, microservices-based e-learning platform utilizing NestJS, Go, and Next.js to deliver secure, scalable educational content.",
+  "description": "This project implements a robust e-learning ecosystem. It features a decoupled architecture where the core business logic resides in NestJS microservices, while high-throughput video processing is handled by Go. The frontend is a Next.js application optimized for SEO and performance, using React Query for server-state management and Zustand for client-side state. The infrastructure is designed for AWS deployment using Kubernetes and Terraform, ensuring the platform can scale to 10,000+ concurrent users while maintaining sub-2s page loads.",
   "technical_decisions": [
     {
-      "decision": "HLS (HTTP Live Streaming) with CloudFront",
-      "rationale": "Ensures smooth playback across varying network conditions by providing adaptive bitrate streaming.",
-      "alternatives": "Direct MP4 streaming (poor performance on slow connections)."
+      "decision": "Turborepo Monorepo",
+      "rationale": "Facilitates code sharing between microservices (shared types, DTOs) and simplifies dependency management across the stack.",
+      "alternatives": "Polyrepo approach"
     },
     {
-      "decision": "Zustand + TanStack Query",
-      "rationale": "Zustand handles lightweight client-side UI state, while TanStack Query manages complex server-state synchronization and caching.",
-      "alternatives": "Redux Toolkit (too boilerplate-heavy for this scope)."
+      "decision": "Go for Video Service",
+      "rationale": "Go's lightweight goroutines are superior for handling concurrent file uploads and interfacing with cloud transcoding APIs compared to Node.js.",
+      "alternatives": "Node.js with Worker Threads"
     },
     {
-      "decision": "PostgreSQL JSONB for Quizzes",
-      "rationale": "Allows instructors to define diverse question types (MCQ, matching, code-input) without requiring frequent schema migrations.",
-      "alternatives": "Strict relational tables (requires complex joins and migrations)."
-    },
-    {
-      "decision": "Event-Driven Transcoding",
-      "rationale": "Decouples the upload process from the UI, allowing the system to handle large video files without blocking the main API.",
-      "alternatives": "Synchronous processing (leads to timeouts and poor UX)."
+      "decision": "CQRS with Elasticsearch",
+      "rationale": "Separates complex search queries from transactional writes, ensuring the course discovery remains fast even under heavy load.",
+      "alternatives": "PostgreSQL Full-Text Search"
     }
   ],
   "environment_variables": [
     {
       "name": "DATABASE_URL",
       "description": "PostgreSQL connection string",
-      "example": "postgresql://user:pass@localhost:5432/edustream"
-    },
-    {
-      "name": "AUTH0_DOMAIN",
-      "description": "Auth0 tenant domain for OIDC",
-      "example": "edustream-prod.auth0.com"
+      "example": "postgres://user:pass@localhost:5432/db"
     },
     {
       "name": "STRIPE_SECRET_KEY",
-      "description": "Secret key for payment processing",
-      "example": "sk_test_51..."
+      "description": "Secret key for Stripe API integration",
+      "example": "sk_test_..."
     },
     {
-      "name": "AWS_MEDIA_CONVERT_ENDPOINT",
-      "description": "Regional endpoint for AWS MediaConvert",
-      "example": "https://abc123xyz.mediaconvert.us-east-1.amazonaws.com"
+      "name": "AWS_S3_BUCKET",
+      "description": "Bucket name for video storage",
+      "example": "learning-platform-videos"
     }
   ],
   "technical_patterns": [
+    "Microservices Architecture",
     "CQRS (Command Query Responsibility Segregation)",
-    "BFF (Backend for Frontend)",
+    "Event-Driven Architecture (RabbitMQ)",
     "Repository Pattern",
-    "Event Sourcing for Progress Tracking",
-    "Micro-Frontends (via Module Federation)",
-    "Clean Architecture"
+    "Dependency Injection",
+    "BFF (Backend for Frontend)"
   ],
   "state_management": {
     "tool": "Zustand & React Query",
-    "strategy": "Slice-based client state for UI (modals, sidebar) and cached server-state for course data, progress, and user profiles with optimistic updates."
+    "strategy": "React Query handles all server-side data fetching, caching, and synchronization. Zustand manages global UI state, such as the video player settings, sidebar toggle, and user session metadata."
   }
 }

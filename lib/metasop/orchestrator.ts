@@ -688,7 +688,8 @@ export async function refineMetaSOPArtifact(
   stepId: string,
   instruction: string,
   previousArtifacts: Record<string, any>,
-  onProgress?: (event: MetaSOPEvent) => void
+  onProgress?: (event: MetaSOPEvent) => void,
+  cascade: boolean = false
 ): Promise<MetaSOPResult> {
   const orchestrator = new MetaSOPOrchestrator();
   // Hydrate orchestrator with previous state
@@ -701,6 +702,10 @@ export async function refineMetaSOPArtifact(
     role: id.replace(/_impl|_spec|_design/g, "")
   }));
 
-  return orchestrator.refineArtifact(stepId, instruction, onProgress);
+  if (cascade) {
+    return orchestrator.cascadeRefinement(stepId, instruction, onProgress);
+  } else {
+    return orchestrator.refineArtifact(stepId, instruction, onProgress);
+  }
 }
 

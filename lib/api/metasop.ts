@@ -97,6 +97,7 @@ export const metasopApi = {
     stepId: string;
     instruction: string;
     previousArtifacts: Record<string, any>;
+    cascade?: boolean;
   }): Promise<any> {
     const response = await apiClient.post<{
       status: string;

@@ -31,6 +31,7 @@ export const RefineDiagramSchema = z.object({
     stepId: z.string(),
     instruction: z.string().min(1, "Instruction is required"),
     previousArtifacts: z.record(z.any()),
+    cascade: z.boolean().optional(),
 });
 
 export function validateRefineDiagramRequest(data: any) {

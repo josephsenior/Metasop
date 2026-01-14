@@ -11,6 +11,8 @@ import { Send, Loader2, Sparkles as SparklesIcon } from "lucide-react"
 import { metasopApi } from "@/lib/api/metasop"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { downloadFile } from "@/lib/utils"
 import {
     DropdownMenu,
@@ -61,6 +63,7 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
     const [instruction, setInstruction] = useState("")
     const [isRefining, setIsRefining] = useState(false)
     const [refineTarget, setRefineTarget] = useState<string>("all")
+    const [cascade, setCascade] = useState(true)
 
     const handleRefine = async () => {
         if (!instruction.trim() || !diagramId) return
@@ -76,7 +79,8 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                 diagramId,
                 stepId: refineTarget === "all" ? activeTab : refineTarget,
                 instruction,
-                previousArtifacts: artifacts
+                previousArtifacts: artifacts,
+                cascade
             })
 
             toast({
@@ -332,6 +336,10 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                             className="h-9 text-xs bg-background/50 border-border/50 focus-visible:ring-blue-500/30"
                             disabled={isRefining}
                         />
+                        <div className="flex items-center space-x-2 bg-background/50 border border-border/50 rounded-md px-2 h-9">
+                            <Switch id="cascade-mode" checked={cascade} onCheckedChange={setCascade} className="scale-75" />
+                            <Label htmlFor="cascade-mode" className="text-[10px] text-muted-foreground font-medium whitespace-nowrap cursor-pointer">Cascade</Label>
+                        </div>
                         <Button
                             onClick={handleRefine}
                             disabled={isRefining || !instruction.trim()}
