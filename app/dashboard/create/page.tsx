@@ -902,9 +902,9 @@ export default function CreateDiagramPage() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
+      </div>
     </AuthGuard>
   )
 }
