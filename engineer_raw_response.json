@@ -1,0 +1,118 @@
+{
+  "artifact_path": "edustream-monorepo",
+  "file_structure": {
+    "name": "edustream-monorepo",
+    "type": "directory",
+    "children": [
+      {
+        "name": "apps",
+        "type": "directory"
+        },
+        {
+        "name": "packages",
+        "type": "directory"
+        },
+        {
+        "name": "services",
+        "type": "directory"
+        }
+    ]
+  },
+  "implementation_plan": "# EduStream Technical Implementation Roadmap\n\n## Phase 1: Infrastructure & Identity Foundation\n- **Cloud Infrastructure**: Provision AWS EKS clusters, RDS PostgreSQL instances, and ElastiCache Redis using Terraform. Setup VPC with public/private subnets.\n- **Identity Management**: Configure Auth0 tenants. Implement OIDC flows in the `identity-service`. Define RBAC roles: `STUDENT`, `INSTRUCTOR`, `ADMIN`.\n- **API Gateway**: Deploy an Apollo GraphQL Gateway as a BFF (Backend for Frontend) to aggregate microservices.\n\n## Phase 2: Content Ingestion & Video Pipeline\n- **Storage**: Setup S3 buckets with CORS for direct-to-s3 multipart uploads.\n- **Transcoding Engine**: Implement a Go-based `video-processor` that listens to S3 `ObjectCreated` events via SQS. Trigger AWS Elemental MediaConvert for HLS/DASH output.\n- **Course Builder**: Develop the React-based drag-and-drop curriculum editor using `dnd-kit` and persist structures to PostgreSQL via JSONB.\n\n## Phase 3: Core Learning Experience\n- **Video Player**: Integrate `video.js` with custom middleware for HLS playback, quality switching, and progress heartbeats.\n- **Progress Tracking**: Implement a high-frequency write-back strategy using Redis to buffer playback timestamps before flushing to PostgreSQL every 30 seconds.\n- **Interactive Quizzes**: Build the quiz engine supporting multiple-choice and true/false with instant server-side validation.\n\n## Phase 4: Commerce & Certification\n- **Payment Integration**: Implement Stripe Elements for secure checkout. Setup Webhook handlers to process `payment_intent.succeeded` events.\n- **Event Bus**: Deploy Apache Kafka. Emit `EnrollmentCreated` events upon successful payment.\n- **Certification**: Create a worker service using `Puppeteer` or `PDFKit` to generate verifiable certificates based on completion events.\n\n## Phase 5: Search, Analytics & Optimization\n- **Search Engine**: Sync course metadata to Elasticsearch using a Change Data Capture (CDC) pattern from PostgreSQL.\n- **Instructor Dashboard**: Build data visualization components using `Recharts` for revenue and engagement metrics.\n- **Global Delivery**: Configure CloudFront distributions with Signed URLs for secure, low-latency video delivery.",
+  "dependencies": [
+    "next@14.1.0",
+    "react@18.2.0",
+    "typescript@5.3.3",
+    "@apollo/server@4.10.0",
+    "graphql@16.8.1",
+    "prisma@5.9.1",
+    "ioredis@5.3.2",
+    "kafkajs@2.2.4",
+    "stripe@14.16.0",
+    "video.js@8.10.0",
+    "auth0-js@9.23.3",
+    "zod@3.22.4",
+    "zustand@4.5.0",
+    "@tanstack/react-query@5.18.1",
+    "tailwindcss@3.4.1"
+  ],
+  "run_results": {
+    "setup_commands": [
+      "npm install",
+      "npx prisma generate",
+      "docker-compose up -d redis postgres kafka"
+    ],
+    "test_commands": [
+      "npm run test",
+      "npm run test:e2e"
+    ],
+    "dev_commands": [
+      "npm run dev",
+      "npm run services:start"
+    ]
+  },
+  "summary": "EduStream is a high-performance, event-driven e-learning ecosystem designed for global scalability and interactive learning.",
+  "description": "This platform utilizes a microservices architecture to decouple content management, video processing, and financial transactions. By leveraging AWS Elemental for video transcoding and a global CDN, EduStream ensures high-quality playback for 10,000+ concurrent users. The system features a robust curriculum builder for instructors and a focus-oriented player for students, supported by automated certification and real-time progress tracking.",
+  "technical_decisions": [
+    {
+      "decision": "GraphQL Federation for API Gateway",
+      "rationale": "Allows the frontend to query data from multiple microservices (Catalog, Learning, Identity) in a single request, reducing latency and over-fetching.",
+      "alternatives": "REST API Gateway, Ocelot"
+    },
+    {
+      "decision": "HLS (HTTP Live Streaming) with Multi-bitrate",
+      "rationale": "Ensures smooth playback across varying network conditions by allowing the player to switch between 360p, 720p, and 1080p dynamically.",
+      "alternatives": "MP4 Progressive Download, DASH"
+    },
+    {
+      "decision": "Redis-based Progress Buffering",
+      "rationale": "Prevents database bottlenecks by caching high-frequency video 'heartbeats' in memory before batch-persisting to the relational database.",
+      "alternatives": "Direct PostgreSQL writes, DynamoDB"
+    },
+    {
+      "decision": "Event-Sourcing for Certification",
+      "rationale": "Decouples the certification logic from the learning service; certificates are generated asynchronously when a 'CourseCompleted' event is detected on the bus.",
+      "alternatives": "Synchronous API calls"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "AUTH0_DOMAIN",
+      "description": "Auth0 tenant domain for OIDC",
+      "example": "edustream.auth0.com"
+    },
+    {
+      "name": "DATABASE_URL",
+      "description": "PostgreSQL connection string",
+      "example": "postgresql://user:pass@localhost:5432/edustream"
+    },
+    {
+      "name": "STRIPE_SECRET_KEY",
+      "description": "Secret key for payment processing",
+      "example": "sk_test_..."
+    },
+    {
+      "name": "KAFKA_BROKERS",
+      "description": "Comma-separated list of Kafka brokers",
+      "example": "localhost:9092"
+    },
+    {
+      "name": "AWS_MEDIA_CONVERT_ENDPOINT",
+      "description": "Regional endpoint for AWS Elemental MediaConvert",
+      "example": "https://abc123xyz.mediaconvert.us-east-1.amazonaws.com"
+    }
+  ],
+  "technical_patterns": [
+    "Microservices",
+    "Event-Driven Architecture",
+    "CQRS",
+    "BFF (Backend for Frontend)",
+    "Repository Pattern",
+    "Unit of Work",
+    "Sidecar Pattern (for logging/monitoring)"
+  ],
+  "state_management": {
+    "tool": "Zustand & React Query",
+    "strategy": "Zustand manages transient UI state (video player controls, sidebar toggles, local form drafts). React Query handles server-state synchronization, caching, and optimistic updates for course enrollments and progress tracking."
+  }
+}

@@ -31,6 +31,14 @@ import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
 import { exampleDiagram } from "@/lib/data/example-diagram"
 import type { DiagramNode, DiagramEdge } from "@/types/diagram"
 import { motion, AnimatePresence } from "framer-motion"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Brain, Cpu, Zap } from "lucide-react"
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +72,7 @@ export default function CreateDiagramPage() {
   const [includeStateManagement] = useState(true)
   const [includeAPIs] = useState(true)
   const [includeDatabase] = useState(true)
+  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash")
 
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
@@ -176,6 +185,7 @@ export default function CreateDiagramPage() {
             includeStateManagement,
             includeAPIs,
             includeDatabase,
+            model: selectedModel,
           },
         }),
       })
@@ -827,7 +837,7 @@ export default function CreateDiagramPage() {
                     placeholder="Describe your application..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="min-h-[50px] max-h-[150px] resize-none text-sm pr-24"
+                    className="min-h-[50px] max-h-[150px] resize-none text-sm pr-40 sm:pr-48"
                     disabled={isGenerating}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -838,40 +848,63 @@ export default function CreateDiagramPage() {
                       }
                     }}
                   />
-                  <div className="absolute bottom-2 right-2 flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-muted/30 text-[10px] text-muted-foreground transition-opacity group-focus-within:opacity-100 opacity-60">
-                      <Kbd className="bg-transparent border-0 p-0 text-[10px]">Enter</Kbd>
-                      <span className="font-medium">to generate</span>
+                  <div className="absolute bottom-2 right-2 flex items-center gap-4">
+                    {/* Model Selector */}
+                    <Select value={selectedModel} onValueChange={setSelectedModel}>
+                      <SelectTrigger className="h-8 w-[130px] bg-background/50 backdrop-blur-md border border-white/10 hover:bg-white/5 transition-all duration-300 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 shadow-sm rounded-lg">
+                        <Brain className="h-3 w-3 text-blue-500" />
+                        <SelectValue placeholder="Model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
+                        <SelectItem value="gemini-1.5-flash" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-3 w-3 text-amber-500" />
+                            <span>Flash 1.5</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="gemini-1.5-pro" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                          <div className="flex items-center gap-2">
+                            <Cpu className="h-3 w-3 text-purple-500" />
+                            <span>Pro 1.5</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center gap-3">
+                      <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-muted/30 text-[10px] text-muted-foreground transition-opacity group-focus-within:opacity-100 opacity-60">
+                        <Kbd className="bg-transparent border-0 p-0 text-[10px]">Enter</Kbd>
+                        <span className="font-medium">to generate</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground mr-1">
+                        {prompt.length}/20
+                      </span>
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
+                        size="sm"
+                        className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-xs">Generating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4" />
+                            <span className="text-xs">Generate</span>
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <span className="text-xs text-muted-foreground mr-1">
-                      {prompt.length}/20
-                    </span>
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
-                      size="sm"
-                      className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-xs">Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4" />
-                          <span className="text-xs">Generate</span>
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
-      </div>
     </AuthGuard>
   )
 }
