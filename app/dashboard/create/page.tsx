@@ -505,6 +505,13 @@ export default function CreateDiagramPage() {
         // Navigate to view page
         router.push(`/dashboard/diagrams/${savedDiagram.id}`)
       }
+    } catch (error: any) {
+      console.error("[Create Page] Error saving diagram:", error)
+      toast({
+        title: "Error saving diagram",
+        description: error.response?.data?.message || error.message || "Failed to save diagram. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
