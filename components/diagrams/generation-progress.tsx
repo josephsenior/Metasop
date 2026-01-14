@@ -18,8 +18,8 @@ const agentOrder = [
   "arch_design",
   "devops_infrastructure",
   "security_architecture",
-  "engineer_impl",
   "ui_design",
+  "engineer_impl",
   "qa_verification"
 ]
 const agentLabels: Record<string, string> = {

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+// Label removed - unused
 import { Badge } from "@/components/ui/badge"
 import { AuthGuard } from "@/components/auth/auth-guard"
 // DashboardHeader removed for full-screen design
@@ -20,8 +20,7 @@ import {
   Settings,
   X,
   Play,
-  Save,
-  Download
+  Save
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -86,8 +85,8 @@ export default function CreateDiagramPage() {
   }>>([])
 
   // Agent thoughts and partial artifacts state
+  const activeStepIdRef = useRef<string | null>(null)
   const [agentThoughts, setAgentThoughts] = useState<Record<string, string>>({})
-  const [activeStepId, setActiveStepId] = useState<string | null>(null)
 
   // Track step start times to ensure minimum display duration for running animation
   const stepStartTimesRef = useRef<Map<string, number>>(new Map())
@@ -112,11 +111,7 @@ export default function CreateDiagramPage() {
   }, [])
 
   // Export functions
-  const [exportFunctions] = useState<{
-    exportPNG: () => Promise<void>
-    exportSVG: () => Promise<void>
-    exportJSON: () => void
-  } | null>(null)
+  // Export functions removed - unused
 
   // Load example diagram for prototyping (dev mode)
   const loadExampleDiagram = () => {
@@ -216,7 +211,7 @@ export default function CreateDiagramPage() {
             if (event.type === "step_start") {
               console.log("[Frontend] Step starting:", event.step_id, event.role)
               stepStartTimesRef.current.set(event.step_id, Date.now())
-              setActiveStepId(event.step_id)
+              activeStepIdRef.current = event.step_id
               setGenerationSteps(prev => {
                 const updated = prev.map(s =>
                   s.step_id === event.step_id ? { ...s, status: "running" as const } : s
@@ -225,13 +220,14 @@ export default function CreateDiagramPage() {
                 return updated
               })
             } else if (event.type === "step_thought") {
-              console.log("[Frontend] Received step_thought:", event.step_id, event.thought?.substring(0, 50))
+              const thought = typeof event.thought === 'string' ? event.thought : "";
+              console.log("[Frontend] Received step_thought:", event.step_id, thought.substring(0, 50))
               setAgentThoughts(prev => {
-                const updated = {
+                const updated: Record<string, string> = {
                   ...prev,
-                  [event.step_id]: (prev[event.step_id] || "") + (event.thought || "")
+                  [event.step_id]: (prev[event.step_id as string] || "") + thought
                 }
-                console.log("[Frontend] Updated agentThoughts, activeStepId:", activeStepId, "has thoughts:", !!updated[activeStepId])
+                console.log("[Frontend] Updated agentThoughts, activeStepId:", activeStepIdRef.current, "has thoughts:", !!updated[activeStepIdRef.current || ''])
                 return updated
               })
             } else if (event.type === "step_complete") {
@@ -736,53 +732,6 @@ export default function CreateDiagramPage() {
                 </div>
               </div>
             )}
-
-            {/* Live Thought Stream - Discrete Overlay */}
-            <AnimatePresence>
-              {isGenerating && activeStepId && agentThoughts[activeStepId] && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                  className="absolute bottom-32 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4"
-                >
-                  <div className="bg-card/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5">
-                    <div className="bg-blue-600/5 px-4 py-2 border-b border-blue-500/10 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
-                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70">
-                          {generationSteps.find(s => s.step_id === activeStepId)?.role || "Agent"} Reasoning
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-[9px] h-4 bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300 animate-pulse">
-                        Live Stream
-                      </Badge>
-                    </div>
-                    <div
-                      ref={thoughtScrollRef}
-                      className="p-5 max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed text-muted-foreground/90 scrollbar-thin scrollbar-thumb-blue-500/20"
-                    >
-                      {agentThoughts[activeStepId].split('\n').map((line, i) => (
-                        <div key={i} className="mb-1.5 flex gap-3">
-                          <span className="text-blue-500/30 shrink-0">{(i + 1).toString().padStart(2, '0')}</span>
-                          <span className="italic opacity-80">{line}</span>
-                        </div>
-                      ))}
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ repeat: Infinity, duration: 0.8 }}
-                        className="inline-block w-1.5 h-3 bg-blue-500/40 ml-10"
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Main Content Area - with padding bottom for chat input */}
             <div className="flex-1 overflow-hidden" style={{ paddingBottom: '100px' }}>

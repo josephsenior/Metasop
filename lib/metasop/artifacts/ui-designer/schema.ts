@@ -1,7 +1,7 @@
 
 export const uiDesignerSchema = {
     type: "object",
-    required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure"],
+    required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
         summary: { type: "string" },
         description: { type: "string" },
@@ -188,6 +188,30 @@ export const uiDesignerSchema = {
                 molecules: { type: "array", items: { type: "string" } },
                 organisms: { type: "array", items: { type: "string" } },
             }
+        },
+        website_layout: {
+            type: "object",
+            required: ["pages"],
+            properties: {
+                pages: {
+                    type: "array",
+                    minItems: 1,
+                    items: {
+                        type: "object",
+                        required: ["name", "route", "sections"],
+                        properties: {
+                            name: { type: "string", description: "Page display name" },
+                            route: { type: "string", description: "URL route path (e.g. '/dashboard')" },
+                            sections: {
+                                type: "array",
+                                items: { type: "string" },
+                                description: "Key page sections (e.g. Hero, Stats, Grid)"
+                            },
+                        }
+                    }
+                }
+            },
+            description: "Information architecture/Sitemap for the application."
         }
     },
 };

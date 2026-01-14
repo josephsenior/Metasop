@@ -49,7 +49,7 @@ CRITICAL GOALS:
 5. **Strategic SWOT**: Conduct a thorough SWOT analysis (Strengths, Weaknesses, Opportunities, Threats).
 6. **Stakeholder Mapping**: Identify key roles, their specific interests, and their influence levels.
 7. **Constraints & Boundary**: Define explicit Assumptions and Out-of-Scope items to prevent scope creep.
-8. **UI Architecture**: Specify if the UI requires multiple sections and provide a projected section count.
+8. **Navigation Strategy**: Specify if the UI requires a multi-section navigation structure.
 
 Ensure the specification is battle-hardened and ready for a complex engineering cycle. Respond with ONLY the JSON object.`
         : `As a Principal Product Manager, create a comprehensive product specification.
@@ -64,7 +64,7 @@ CRITICAL GOALS:
 5. **Strategic SWOT**: Evaluate the product's Strengths, Weaknesses, Opportunities, and Threats for strategic alignment.
 6. **Stakeholder Mapping**: Identify key roles, their interest in the project, and their level of influence.
 7. **Assumptions & Boundaries**: Explicitly list all project Assumptions and Out-of-Scope items.
-8. **UI Architecture**: Estimate the number of UI sections (1-20) and whether the app requires a multi-section navigation structure.
+8. **Navigation Strategy**: Determine if the app requires a multi-section navigation structure.
 
 Your specifications must provide the definitive "Source of Truth" for the architecture and engineering teams. Respond with ONLY the JSON object.`;
     }
@@ -117,7 +117,6 @@ Your specifications must provide the definitive "Source of Truth" for the archit
         user_stories: llmPMSpec.user_stories,
         acceptance_criteria: llmPMSpec.acceptance_criteria,
         ui_multi_section: llmPMSpec.ui_multi_section ?? false,
-        ui_sections: llmPMSpec.ui_sections ?? 1,
         assumptions: llmPMSpec.assumptions,
         out_of_scope: llmPMSpec.out_of_scope,
         swot: llmPMSpec.swot,

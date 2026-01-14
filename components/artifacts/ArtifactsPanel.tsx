@@ -272,11 +272,7 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                                 if (!step?.thought) return null
 
                                 return (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mt-8 border-t border-blue-500/10 pt-4"
-                                    >
+                                    <div className="mt-8 border-t border-blue-500/10 pt-4">
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="w-1 h-4 bg-blue-500/30 rounded-full" />
                                             <h4 className="text-[10px] font-bold uppercase tracking-widest text-blue-600/70 dark:text-blue-400/70">
@@ -296,7 +292,7 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                                                 }
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 )
                             })()}
                         </div>

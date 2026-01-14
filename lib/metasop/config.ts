@@ -27,7 +27,7 @@ export interface MetaSOPConfig {
 
   // LLM settings (single provider for now)
   llm: {
-    provider?: "openai" | "gemini" | "mock";
+    provider?: "gemini" | "mock";
     apiKey?: string;
     model?: string;
     temperature?: number;
@@ -56,37 +56,37 @@ export const defaultConfig: MetaSOPConfig = {
       // Increased timeouts for LLM calls which can take longer
       pm_spec: {
         stepId: "pm_spec",
-        timeout: 300000, // 300 seconds (5 minutes) - Free models can be very slow with structured output
-        retries: 3, // Increased for rate limit handling
+        timeout: 180000, // 300 seconds (5 minutes) - Free models can be very slow with structured output
+        retries: 2, // Increased for rate limit handling
       },
       arch_design: {
         stepId: "arch_design",
-        timeout: 600000,
-        retries: 3,
+        timeout: 180000,
+        retries: 2,
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 300000,
+        timeout: 180000,
         retries: 2,
       },
       security_architecture: {
         stepId: "security_architecture",
-        timeout: 300000,
+        timeout: 180000,
         retries: 2,
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 900000, // 900 seconds (15 minutes) - increased for large artifact generation
-        retries: 5, // Increased retries for rate limit scenarios
+        timeout: 180000, // 900 seconds (15 minutes) - increased for large artifact generation
+        retries: 2, // Increased retries for rate limit scenarios
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 300 seconds (5 minutes)
         retries: 2,
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 300 seconds (5 minutes)
         retries: 2,
       },
     },
@@ -114,7 +114,10 @@ export function getConfig(): MetaSOPConfig {
 
   // Override with environment variables if present
   if (process.env.METASOP_LLM_PROVIDER) {
-    config.llm.provider = process.env.METASOP_LLM_PROVIDER as any;
+    const provider = process.env.METASOP_LLM_PROVIDER;
+    if (provider === "gemini" || provider === "mock") {
+      config.llm.provider = provider;
+    }
   }
 
   if (process.env.METASOP_LLM_MODEL) {
@@ -134,8 +137,6 @@ export function getConfig(): MetaSOPConfig {
     config.llm.apiKey = process.env.METASOP_LLM_API_KEY;
   } else if (config.llm.provider === "gemini" && (process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY)) {
     config.llm.apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-  } else if (config.llm.provider === "openai" && process.env.OPENAI_API_KEY) {
-    config.llm.apiKey = process.env.OPENAI_API_KEY;
   }
 
   return config;

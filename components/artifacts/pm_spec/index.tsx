@@ -268,13 +268,6 @@ export default function PMSpecPanel({
             color="text-emerald-600 dark:text-emerald-400"
             bg="bg-emerald-500/10"
           />
-          <StatsCard
-            icon={Layout}
-            label="UI Sections"
-            value={data.ui_sections || 1}
-            color="text-indigo-600 dark:text-indigo-400"
-            bg="bg-indigo-500/10"
-          />
         </div>
       </div>
 
@@ -335,16 +328,6 @@ export default function PMSpecPanel({
                             )}>
                               {data.ui_multi_section ? "COMPLEX" : "LITE"}
                             </Badge>
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/40">
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Interface Real Estate</div>
-                              <div className="text-sm font-bold text-foreground">{data.ui_sections || 1} Primary Modules/Sections</div>
-                            </div>
-                            <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                              <Layout className="h-4 w-4 text-indigo-500" />
-                            </div>
                           </div>
 
                           <p className="text-[11px] text-muted-foreground italic leading-relaxed">
@@ -586,7 +569,7 @@ export default function PMSpecPanel({
             </ScrollArea>
           </div>
         </Tabs>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

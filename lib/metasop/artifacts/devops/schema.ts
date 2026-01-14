@@ -254,7 +254,7 @@ export const devopsSchema = {
         },
         monitoring: {
             type: "object",
-            required: ["tools", "metrics"],
+            required: ["tools", "metrics", "alerts",],
             properties: {
                 tools: {
                     type: "array",

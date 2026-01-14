@@ -39,7 +39,7 @@ export async function engineerAgent(
       const uiArtifact = uiDesign?.content as any;
       const projectTitle = pmArtifact?.title || "Project";
 
-      engineerPrompt = `As an expert Software Engineer, your task is to design the technical implementation plan for '${projectTitle}'.
+      engineerPrompt = `As an expert Software Engineer, your task is to design a high-fidelity and comprehensive technical implementation blueprint for '${projectTitle}'.
 
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
 ${archArtifact ? `Architecture Target: ${archArtifact.summary}
@@ -50,14 +50,15 @@ Design Tokens: primary=${uiArtifact.design_tokens?.colors?.primary}, background=
 Please provide a comprehensive and detailed technical roadmap:
 1. **Implementation Plan**: A detailed step-by-step technical implementation guide (Markdown). This should be a robust roadmap that a senior developer could follow.
 2. **State Management**: Your specific strategy for managing application state, including tool choices and data flow.
-3. **File Structure**: An organized directory tree. Note: Only include metadata (names), DO NOT include any file source code or content.
+3. **File Structure**: A deep, organized directory tree that mirrors a professional senior architecture. Go beyond the top-level folders; show the nested structures of modules, components, services, and utilities. Note: Only include metadata (names), DO NOT include any file source code or content.
 4. **Technical Decisions**: Critical architectural choices, rationales, and considered alternatives.
 5. **Dependencies**: Essential libraries and tools required for the build, including versions.
 6. **Phases**: Essential implementation phases with granular technical tasks and milestones.
 
 Important Guidelines:
-- Focus on high architectural clarity and technical depth.
-- Avoid being overly brief; ensure every section provides actionable technical value.
+- Focus on high architectural clarity, technical depth, and exhaustive detail.
+- Propose a deep folder hierarchy that represents a real production-ready monorepo or modular monolith where applicable.
+- Avoid being brief; ensure every section provides granular, actionable technical value.
 - Keep descriptions professional and avoid repetitive phrasing.
 - Ensure all fields in the schema are populated with meaningful, detailed data.
 

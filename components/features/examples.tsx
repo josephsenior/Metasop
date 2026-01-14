@@ -51,8 +51,8 @@ export function Examples() {
   return (
     <section className="py-20 md:py-32 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none" />
-      
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none" />
+
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto">
           <Badge variant="outline" className="mb-4">
@@ -73,8 +73,8 @@ export function Examples() {
               className="group relative overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 dark:hover:shadow-blue-500/20"
             >
               {/* Gradient overlay on hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${example.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
-              
+              <div className={`absolute inset-0 bg-linear-to-br ${example.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
+
               <CardHeader className="pb-4">
                 {/* Diagram preview */}
                 <div className="h-40 w-full rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center mb-4 relative overflow-hidden group-hover:border-border transition-colors">
@@ -82,11 +82,10 @@ export function Examples() {
                     {example.preview.nodes.map((node, nodeIndex) => (
                       <div
                         key={nodeIndex}
-                        className={`rounded-md border flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
-                          node.color === "primary"
+                        className={`rounded-md border flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${node.color === "primary"
                             ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
                             : "bg-cyan-500/10 border-cyan-500/30 text-cyan-600 dark:text-cyan-400"
-                        }`}
+                          }`}
                       >
                         <span className="text-xs font-medium">{node.label}</span>
                       </div>
@@ -124,10 +123,10 @@ export function Examples() {
                 <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                   {example.description}
                 </p>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full border-border hover:bg-accent hover:text-accent-foreground group-hover:border-primary group-hover:text-primary transition-colors"
                 >
                   View Full Diagram

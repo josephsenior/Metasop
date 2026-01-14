@@ -349,7 +349,7 @@ export default function ArchDesignPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <StatsCard
             icon={Network}
             label="Endpoints"
@@ -365,15 +365,36 @@ export default function ArchDesignPanel({
             bg="bg-purple-500/10"
           />
           <StatsCard
-            icon={ShieldCheck}
+            icon={ScrollText}
             label="Decisions"
             value={decisions.length}
             color="text-green-600 dark:text-green-400"
             bg="bg-green-500/10"
           />
           <StatsCard
+            icon={Cpu}
+            label="Integrations"
+            value={integrationPoints.length}
+            color="text-indigo-600 dark:text-indigo-400"
+            bg="bg-indigo-500/10"
+          />
+          <StatsCard
+            icon={ShieldCheck}
+            label="Security"
+            value={securityConsiderations.length}
+            color="text-rose-600 dark:text-rose-400"
+            bg="bg-rose-500/10"
+          />
+          <StatsCard
+            icon={Layers}
+            label="Stack"
+            value={technologyStack ? Object.keys(technologyStack).length : 0}
+            color="text-amber-600 dark:text-amber-400"
+            bg="bg-amber-500/10"
+          />
+          <StatsCard
             icon={ListTodo}
-            label="Next Tasks"
+            label="Tasks"
             value={nextTasks.length}
             color="text-orange-600 dark:text-orange-400"
             bg="bg-orange-500/10"

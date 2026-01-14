@@ -58,6 +58,7 @@ MISSION OBJECTIVES:
 6. **Responsive Strategy**: Define layout breakpoints (sm, md, lg, xl) and how the system adapts across devices.
 7. **UI Patterns**: List the fundamental patterns used (e.g., Infinite Scroll, Skeleton Loading, Multi-step Form).
 8. **Executive Summary**: Provide a high-level summary and detailed description of the visual strategy.
+9. **Information Architecture**: Define the website layout pages structure. For each page, specify a name, URL route, and key layout sections (e.g., Navbar, Hero, Features, Footer).
 
 Important Guidelines:
 - Focus on architectural clarity and visual consistency.
@@ -106,7 +107,8 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
       component_specs: llmUIDesign.component_specs,
       layout_breakpoints: llmUIDesign.layout_breakpoints,
       accessibility: llmUIDesign.accessibility,
-      atomic_structure: llmUIDesign.atomic_structure
+      atomic_structure: llmUIDesign.atomic_structure,
+      website_layout: llmUIDesign.website_layout
     };
 
 

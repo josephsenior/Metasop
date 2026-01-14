@@ -1,7 +1,7 @@
 
 export const engineerSchema = {
     type: "object",
-    required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "phases", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
+    required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
         summary: { type: "string" },
         description: { type: "string" },
@@ -11,6 +11,7 @@ export const engineerSchema = {
         },
         run_results: {
             type: "object",
+            required: ["setup_commands", "test_commands", "dev_commands"],
             description: "Standard commands for the project.",
             properties: {
                 setup_commands: { type: "array", items: { type: "string" }, description: "Commands to set up the environment" },
@@ -27,7 +28,7 @@ export const engineerSchema = {
                 type: { type: "string", enum: ["file", "directory"], description: "Node type" },
                 children: {
                     type: "array",
-                    maxItems: 12,
+                    minItems: 0,
                     description: "Contents of the directory. Limit to essential files. DO NOT include file content.",
                     items: {
                         type: "object",
@@ -36,14 +37,48 @@ export const engineerSchema = {
                             type: { type: "string", enum: ["file", "directory"] },
                             children: {
                                 type: "array",
-                                maxItems: 8,
+                                minItems: 0,
                                 items: {
                                     type: "object",
                                     properties: {
                                         name: { type: "string" },
                                         type: { type: "string", enum: ["file", "directory"] },
+                                        children: {
+                                            type: "array",
+                                            minItems: 0,
+                                            items: {
+                                                type: "object",
+                                                properties: {
+                                                    name: { type: "string" },
+                                                    type: { type: "string", enum: ["file", "directory"] },
+                                                    children: {
+                                                        type: "array",
+                                                        minItems: 0,
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                name: { type: "string" },
+                                                                type: { type: "string", enum: ["file", "directory"] },
+                                                                children: {
+                                                                    type: "array",
+                                                                    minItems: 0,
+                                                                    items: {
+                                                                        type: "object",
+                                                                        properties: {
+                                                                            name: { type: "string" },
+                                                                            type: { type: "string", enum: ["file", "directory"] },
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 },
+                                description: "Nested files and folders. Provide a deep, production-ready structure."
                             },
                         },
                     },
@@ -54,27 +89,10 @@ export const engineerSchema = {
             type: "string",
             description: "Detailed step-by-step technical implementation guide in Markdown.",
         },
-        phases: {
-            type: "array",
-            description: "Essential implementation phases.",
-            items: {
-                type: "object",
-                required: ["name", "description", "tasks"],
-                properties: {
-                    name: { type: "string", description: "Phase name" },
-                    description: { type: "string", description: "Brief summary" },
-                    tasks: {
-                        type: "array",
-                        items: { type: "string" },
-                        description: "Key technical tasks"
-                    }
-                }
-            }
-        },
         dependencies: {
             type: "array",
-            items: { type: "string", pattern: "^[^@]+@[^@]+$", description: "package@version" },
-            description: "Generate essential dependencies for a modern TypeScript/Next.js stack.",
+            items: { type: "string", description: "Dependency name and version (e.g., 'package@version', 'package==version', or 'package v1.0')" },
+            description: "Generate all essential dependencies required for the project based on the chosen technology stack.",
         },
         technical_decisions: {
             type: "array",
@@ -110,8 +128,8 @@ export const engineerSchema = {
             type: "object",
             required: ["tool", "strategy"],
             properties: {
-                tool: { type: "string", enum: ["Zustand", "Redux", "React Query", "Context API", "none"] },
-                strategy: { type: "string", description: "Implementation strategy (e.g., 'Slice pattern', 'Hydration')" },
+                tool: { type: "string", description: "The state management tool or pattern (e.g., 'Zustand', 'Context API', 'Vuex', 'Redux', 'Signals', or server-side session management)" },
+                strategy: { type: "string", description: "Implementation strategy (e.g., 'Slice pattern', 'Hydration', 'Server-side state')" },
             },
         },
     },

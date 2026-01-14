@@ -2,11 +2,12 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn, downloadFile } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
 import {
   Code,
   Terminal,
@@ -23,8 +24,10 @@ import {
   CheckCircle2,
   Database,
   ListTodo,
-  Puzzle
+  Puzzle,
+  Download
 } from "lucide-react"
+import JSZip from "jszip"
 
 import { EngineerBackendArtifact } from "@/lib/metasop/artifacts/engineer/types"
 import { artifactStyles as styles } from "../shared-styles"
@@ -103,6 +106,36 @@ function FileSystemNode({ node, depth = 0 }: { node: any, depth?: number }) {
   )
 }
 
+const generateProjectZip = (node: any, zip: JSZip, path: string = "") => {
+  if (!node) return;
+
+  if (typeof node === 'string') {
+    const name = node.replace(/\/$/, '');
+    if (node.endsWith('/')) {
+      zip.folder(path + name);
+    } else {
+      zip.file(path + name, "");
+    }
+    return;
+  }
+
+  const name = node.name || "unnamed";
+  const currentPath = path + name;
+  const isDir = node.type === 'directory' || node.type === 'folder' || (node.children && Array.isArray(node.children));
+
+  if (isDir) {
+    if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+      node.children.forEach((child: any) => {
+        generateProjectZip(child, zip, currentPath + "/");
+      });
+    } else {
+      zip.folder(currentPath);
+    }
+  } else {
+    zip.file(currentPath, "");
+  }
+};
+
 export default function EngineerImplPanel({
   artifact
 }: {
@@ -148,10 +181,10 @@ export default function EngineerImplPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatsCard
             icon={Package}
-            label="Dependencies"
+            label="Registry"
             value={dependencies.length}
             color="text-emerald-600 dark:text-emerald-400"
             bg="bg-emerald-500/10"
@@ -162,6 +195,20 @@ export default function EngineerImplPanel({
             value={(runResults.setup_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.dev_commands?.length || 0)}
             color="text-blue-600 dark:text-blue-400"
             bg="bg-blue-500/10"
+          />
+          <StatsCard
+            icon={Braces}
+            label="Env Vars"
+            value={envVars.length}
+            color="text-amber-600 dark:text-amber-400"
+            bg="bg-amber-500/10"
+          />
+          <StatsCard
+            icon={Puzzle}
+            label="Patterns"
+            value={technicalPatterns.length}
+            color="text-indigo-600 dark:text-indigo-400"
+            bg="bg-indigo-500/10"
           />
           <StatsCard
             icon={Settings}
@@ -226,7 +273,9 @@ export default function EngineerImplPanel({
                     ) : (data.implementation_plan ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-emerald bg-card border border-border/50 p-6 rounded-xl">
                         <div className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{
-                          __html: data.implementation_plan.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
+                          __html: data.implementation_plan
+                            .replace(/\\n/g, '\n')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
                         }} />
                       </div>
                     ) : (
@@ -311,10 +360,28 @@ export default function EngineerImplPanel({
                       <Card className="h-full border-border/50 shadow-sm overflow-hidden">
                         <div className="p-3 bg-muted/30 border-b border-border/50 flex items-center justify-between">
                           <span className="text-xs font-mono font-semibold text-muted-foreground uppercase tracking-wider">File System Tree</span>
-                          <div className="flex gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-border" />
-                            <div className="h-2 w-2 rounded-full bg-border" />
-                            <div className="h-2 w-2 rounded-full bg-border" />
+                          <div className="flex items-center gap-3">
+                            {fileStructure && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                                onClick={async () => {
+                                  const zip = new JSZip();
+                                  generateProjectZip(fileStructure, zip);
+                                  const content = await zip.generateAsync({ type: "blob" });
+                                  downloadFile(content as any, `project-structure.zip`, "application/zip");
+                                }}
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                Export Project ZIP
+                              </Button>
+                            )}
+                            <div className="flex gap-1.5">
+                              <div className="h-2 w-2 rounded-full bg-border" />
+                              <div className="h-2 w-2 rounded-full bg-border" />
+                              <div className="h-2 w-2 rounded-full bg-border" />
+                            </div>
                           </div>
                         </div>
                         <CardContent className="p-0">

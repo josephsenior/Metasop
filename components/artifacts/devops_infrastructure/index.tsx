@@ -22,7 +22,8 @@ import {
   Download,
   Clock,
   HardDrive,
-  ShieldAlert
+  ShieldAlert,
+  Bell
 } from "lucide-react"
 
 import { DevOpsBackendArtifact } from "@/lib/metasop/artifacts/devops/types"
@@ -137,10 +138,13 @@ export default function DevOpsInfrastructurePanel({
             {summary || "Infrastructure design and deployment strategy."}
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
             <StatsCard icon={Box} label="Services" value={services.length} color="text-sky-500" bg="bg-sky-500/10" />
-            <StatsCard icon={Globe} label="Environments" value={environments.length} color="text-emerald-500" bg="bg-emerald-500/10" />
-            <StatsCard icon={GitBranch} label="Pipeline Stages" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
+            <StatsCard icon={GitBranch} label="Pipelines" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
+            <StatsCard icon={Globe} label="Envs" value={environments.length} color="text-emerald-500" bg="bg-emerald-500/10" />
+            <StatsCard icon={Bell} label="Alerts" value={monitoring?.alerts?.length || 0} color="text-rose-500" bg="bg-rose-500/10" />
+            <StatsCard icon={Activity} label="Scaling" value={scaling?.auto_scaling?.max_replicas || 1} color="text-amber-500" bg="bg-amber-500/10" />
+            <StatsCard icon={ShieldAlert} label="Recovery" value={disaster_recovery?.rto ? 1 : 0} color="text-indigo-500" bg="bg-indigo-500/10" />
             <StatsCard icon={ShieldCheck} label="Strategy" value={deployment?.strategy} isText color="text-purple-500" bg="bg-purple-500/10" />
           </div>
         </div>
@@ -371,8 +375,8 @@ export default function DevOpsInfrastructurePanel({
                                   </Button>
                                 </div>
                                 <ScrollArea className="h-[400px] w-full">
-                                  <pre className="p-4 font-mono text-xs text-blue-300 leading-relaxed">
-                                    {containerization.dockerfile}
+                                  <pre className="p-4 font-mono text-xs text-blue-300 leading-relaxed whitespace-pre-wrap">
+                                    {containerization.dockerfile.replace(/\\n/g, '\n')}
                                   </pre>
                                 </ScrollArea>
                               </>

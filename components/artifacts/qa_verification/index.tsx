@@ -1,92 +1,49 @@
 'use client'
 
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  CheckCircle2,
-  XCircle,
   AlertTriangle,
   ListTodo,
   TestTube,
   Zap,
-  Clock,
-  Bug,
   ShieldAlert,
   Gauge,
-  ClipboardCheck,
   Activity,
-  Search,
-  Target
+  Target,
+  FileText,
+  Code2,
+  GitBranch,
+  FunctionSquare,
+  Shield,
+  UserCheck,
+  ScanSearch,
+  CheckCircle2,
+  MousePointerClick,
+  Info,
+  Map,
+  Layers,
+  ChevronRight
 } from "lucide-react"
 
 import { QABackendArtifact } from "@/lib/metasop/artifacts/qa/types"
 import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "../shared-styles"
-import { 
-  StatsCard, 
-  TabTrigger, 
-  containerVariants as container, 
-  itemVariants as item 
+import {
+  StatsCard,
+  TabTrigger,
+  containerVariants as container,
+  itemVariants as item
 } from "../shared-components"
 
-function getTestStatusIcon(status: string) {
-  switch (status?.toLowerCase()) {
-    case 'pass':
-    case 'passed':
-      return <div className="h-6 w-6 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20"><CheckCircle2 className="h-3.5 w-3.5 text-green-500" /></div>
-    case 'fail':
-    case 'failed':
-      return <div className="h-6 w-6 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20"><XCircle className="h-3.5 w-3.5 text-red-500" /></div>
-    case 'skipped':
-      return <div className="h-6 w-6 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20"><Clock className="h-3.5 w-3.5 text-amber-500" /></div>
-    default:
-      return <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center border border-border"><AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" /></div>
-  }
-}
-
-function AuditLogEntry({ item: logItem, index }: { item: any, index: number }) {
-  return (
-    <motion.div variants={item} className="p-4 hover:bg-muted/30 transition-colors flex items-start gap-4 border-b border-border/20 last:border-0">
-      {getTestStatusIcon(logItem.status)}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <h4 className="text-xs font-bold text-foreground truncate">{logItem.title || logItem.category || `Entry ${index + 1}`}</h4>
-          {logItem.status && (
-            <Badge
-              variant={logItem.status === 'pass' || logItem.status === 'passed' ? 'default' : logItem.status === 'fail' || logItem.status === 'failed' ? 'destructive' : 'secondary'}
-              className="text-[8px] h-4 px-1.5 uppercase"
-            >
-              {logItem.status}
-            </Badge>
-          )}
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">{logItem.details}</p>
-        
-        {logItem.recommendations && logItem.recommendations.length > 0 && (
-          <div className="mt-2 space-y-1.5 bg-amber-500/5 border border-amber-500/10 rounded-lg p-2">
-            <div className="text-[9px] font-bold text-amber-600 uppercase flex items-center gap-1 mb-1">
-              <Zap className="h-3 w-3" /> Recommendations
-            </div>
-            {logItem.recommendations.map((rec: string, idx: number) => (
-              <div key={idx} className="flex items-start gap-2 text-[10px] text-amber-700 dark:text-amber-500">
-                <div className="h-1 w-1 rounded-full bg-amber-500 shrink-0 mt-1.5" />
-                <span>{rec}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  )
-}
 
 function TestPlanCard({ tc }: { tc: any }) {
   return (
-    <motion.div 
+    <motion.div
       variants={item}
       className={cn("group border overflow-hidden shadow-sm hover:border-blue-500/30 transition-all relative rounded-xl", styles.colors.bgCard, styles.colors.borderMuted)}
     >
@@ -97,13 +54,23 @@ function TestPlanCard({ tc }: { tc: any }) {
           <Badge variant="outline" className={cn(
             "text-[8px] px-1.5 h-4 uppercase",
             tc.priority === 'critical' ? 'border-red-500 text-red-500 bg-red-500/5' :
-            tc.priority === 'high' ? 'border-orange-500 text-orange-500 bg-orange-500/5' :
-            'border-blue-500 text-blue-500 bg-blue-500/5'
+              tc.priority === 'high' ? 'border-orange-500 text-orange-500 bg-orange-500/5' :
+                'border-blue-500 text-blue-500 bg-blue-500/5'
           )}>
             {tc.priority}
           </Badge>
         </div>
         <p className="text-[11px] text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{tc.description}</p>
+
+        {tc.gherkin && (
+          <div className="mb-4 bg-muted/30 rounded-lg p-2.5 border border-border/40">
+            <div className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-tight mb-1">BDD Scenario</div>
+            <pre className="text-[10px] font-mono text-foreground leading-relaxed whitespace-pre-wrap">
+              {tc.gherkin}
+            </pre>
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-3 border-t border-border/10">
           <Badge variant="secondary" className="text-[8px] h-4 px-1.5 uppercase font-mono">{tc.type}</Badge>
           {tc.expected_result && (
@@ -119,7 +86,7 @@ function TestPlanCard({ tc }: { tc: any }) {
 
 function RiskCard({ risk }: { risk: any }) {
   return (
-    <motion.div 
+    <motion.div
       variants={item}
       className="p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors"
     >
@@ -146,12 +113,12 @@ export default function QAVerificationPanel({
 }) {
   const data = (artifact?.content || artifact || {}) as QABackendArtifact
   const testCases = data.test_cases || []
-  const report = data.report || []
   const coverage = data.coverage || {}
-  const securityFindings = data.security_findings || []
   const performanceMetrics = data.performance_metrics || {}
   const testStrategy = data.test_strategy || {}
   const riskAnalysis = data.risk_analysis || []
+  const securityPlan = data.security_plan
+  const manualVerification = data.manual_verification_steps || []
   const coveragePercent =
     (coverage as any).total ??
     (coverage as any).overall ??
@@ -160,6 +127,7 @@ export default function QAVerificationPanel({
     (coverage as any).statements ??
     (coverage as any).functions ??
     (coverage as any).branches
+  const coverageThreshold = coverage?.threshold
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
@@ -174,7 +142,7 @@ export default function QAVerificationPanel({
               </Badge>
               {Object.keys(coverage).length > 0 && (
                 <Badge variant="outline" className="text-[10px] font-mono text-green-600 border-green-500/30 uppercase px-1.5 h-5">
-                  Coverage: {coveragePercent ?? 'N/A'}%
+                  Coverage: {coveragePercent ?? 'N/A'}% {coverageThreshold && `(Goal: ${coverageThreshold}%)`}
                 </Badge>
               )}
             </div>
@@ -184,34 +152,28 @@ export default function QAVerificationPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatsCard 
-            icon={TestTube} 
-            label="Test Cases" 
-            value={testCases.length} 
-            color="text-blue-600 dark:text-blue-400" 
-            bg="bg-blue-500/10" 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <StatsCard
+            icon={TestTube}
+            label="Test Cases"
+            value={testCases.length}
+            color="text-blue-600 dark:text-blue-400"
+            bg="bg-blue-500/10"
           />
-          <StatsCard 
-            icon={ShieldAlert} 
-            label="Risks" 
-            value={riskAnalysis.length} 
-            color="text-amber-600 dark:text-amber-400" 
-            bg="bg-amber-500/10" 
+          <StatsCard
+            icon={ShieldAlert}
+            label="Risks"
+            value={riskAnalysis.length}
+            color="text-amber-600 dark:text-amber-400"
+            bg="bg-amber-500/10"
           />
-          <StatsCard 
-            icon={Bug} 
-            label="Issues" 
-            value={securityFindings.length} 
-            color="text-red-600 dark:text-red-400" 
-            bg="bg-red-500/10" 
-          />
-          <StatsCard 
-            icon={Activity} 
-            label="Coverage" 
-            value={coveragePercent !== undefined ? `${coveragePercent}%` : "N/A"} 
-            color="text-emerald-600 dark:text-emerald-400" 
-            bg="bg-emerald-500/10" 
+          <StatsCard
+            icon={Activity}
+            label="Coverage"
+            value={coveragePercent !== undefined ? `${coveragePercent}%` : "N/A"}
+            subValue={coverageThreshold ? `Target: ${coverageThreshold}%` : undefined}
+            color="text-emerald-600 dark:text-emerald-400"
+            bg="bg-emerald-500/10"
             isText={true}
           />
         </div>
@@ -219,153 +181,368 @@ export default function QAVerificationPanel({
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="strategy" className="h-full flex flex-col">
+        <Tabs defaultValue="overview" className="h-full flex flex-col">
           <div className="px-4 pt-4">
             <ScrollArea className="w-full whitespace-nowrap pb-2">
               <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
+                <TabTrigger value="overview" icon={Info} label="Overview" />
                 <TabTrigger value="strategy" icon={Target} label="Strategy" />
                 <TabTrigger value="cases" icon={ListTodo} label="Test Cases" count={testCases.length} />
                 <TabTrigger value="risks" icon={AlertTriangle} label="Risk Analysis" count={riskAnalysis.length} />
-                <TabTrigger value="report" icon={ClipboardCheck} label="Audit Report" count={report.length} />
+                {securityPlan && <TabTrigger value="security" icon={Shield} label="Security Plan" />}
+                {manualVerification.length > 0 && <TabTrigger value="manual" icon={UserCheck} label="Manual Audit" count={manualVerification.length} />}
               </TabsList>
             </ScrollArea>
           </div>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
-              <div className="p-4 max-w-5xl mx-auto">
-                <AnimatePresence mode="wait">
-                  <TabsContent key="strategy" value="strategy" className="m-0 outline-none">
-                    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                              <Target className="h-4 w-4 text-purple-500" />
-                              Testing Strategy
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {(testStrategy as any).approach || "No strategy defined."}
-                            </p>
-                            {Array.isArray((testStrategy as any).types) && (
-                              <div className="flex flex-wrap gap-2 mt-4">
-                                {(testStrategy as any).types.map((type: string, i: number) => (
-                                  <Badge key={i} variant="outline" className="text-[10px] bg-purple-500/5 text-purple-600 border-purple-500/20">
-                                    {type}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
+              <div className="p-4">
+                <TabsContent key="overview" value="overview" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+                    <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <Map className="h-4 w-4 text-purple-500" />
+                          QA Philosophy & Approach
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className={cn("leading-relaxed", styles.typography.body)}>
+                          {data.description || "Comprehensive quality assurance strategy designed to ensure maximum system reliability and performance."}
+                        </p>
+                      </CardContent>
+                    </Card>
 
-                        <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                              <Gauge className="h-4 w-4 text-emerald-500" />
-                              Performance Goals
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            {Object.entries(performanceMetrics).map(([key, value]: [string, any], i) => (
-                              <div key={i} className="space-y-1.5">
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                  <span className="font-mono font-medium">{value}</span>
-                                </div>
-                                <Progress value={75} className="h-1.5 bg-muted" />
-                              </div>
-                            ))}
-                            {Object.keys(performanceMetrics).length === 0 && (
-                              <div className="text-center py-8 text-muted-foreground text-xs italic">
-                                No performance metrics defined.
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {Array.isArray((testStrategy as any).tools) && (testStrategy as any).tools.length > 0 && (
-                        <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                              <Zap className="h-4 w-4 text-amber-500" />
-                              Toolchain
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              {(testStrategy as any).tools.map((tool: string, i: number) => (
-                                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
-                                  <div className="h-2 w-2 rounded-full bg-amber-500" />
-                                  <span className="text-xs font-medium">{tool}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </motion.div>
-                  </TabsContent>
-
-                  <TabsContent key="cases" value="cases" className="m-0 outline-none">
-                    <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {testCases.map((tc: any, i: number) => (
-                            <TestPlanCard key={i} tc={tc} />
-                          ))}
-                      {testCases.length === 0 && (
-                        <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
-                          <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                          <p className="text-sm">No test cases defined.</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  </TabsContent>
-
-                  <TabsContent key="risks" value="risks" className="m-0 outline-none">
-                    <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {riskAnalysis.map((risk: any, i: number) => (
-                            <RiskCard key={i} risk={risk} />
-                          ))}
-                      </div>
-                      {riskAnalysis.length === 0 && (
-                        <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
-                          <ShieldAlert className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                          <p className="text-sm">No risk analysis provided.</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  </TabsContent>
-
-                  <TabsContent key="report" value="report" className="m-0 outline-none">
-                    <motion.div variants={container} initial="hidden" animate="show">
-                      <Card className={cn("border-none shadow-sm overflow-hidden", styles.colors.bgCard)}>
-                        <CardHeader className="border-b border-border/10 bg-muted/30 pb-4">
-                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                            <ClipboardCheck className="h-4 w-4 text-blue-500" />
-                            Audit Log
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                        <CardHeader>
+                          <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-blue-500" />
+                            Testing Methodology
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                          <div className="divide-y divide-border/10">
-                            {report.map((item: any, i: number) => (
-                              <AuditLogEntry key={i} item={item} index={i} />
+                        <CardContent className="space-y-4">
+                          <div className="p-4 rounded-xl bg-muted/20 border border-border/40 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <ChevronRight className="h-4 w-4 text-blue-500" />
+                              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Core Approach</span>
+                            </div>
+                            <p className="text-sm font-medium leading-relaxed">
+                              {testStrategy.approach || "Layered verification strategy covering unit, integration, and E2E flows."}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {[
+                              { label: 'Unit', val: testStrategy.unit },
+                              { label: 'Integration', val: testStrategy.integration },
+                              { label: 'E2E', val: testStrategy.e2e }
+                            ].map((item) => (
+                              <div key={item.label} className="bg-muted/30 p-3 rounded-lg border border-border/40 flex flex-col gap-2">
+                                <div className="text-[9px] uppercase font-bold text-muted-foreground">{item.label}</div>
+                                <p className="text-[10px] leading-snug text-foreground/90 font-medium">
+                                  {item.val || "Standard Compliance"}
+                                </p>
+                              </div>
                             ))}
                           </div>
-                          {report.length === 0 && (
-                            <div className="py-12 text-center text-muted-foreground">
-                              <Search className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                              <p className="text-sm">No audit report available.</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                        <CardHeader>
+                          <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-amber-500" />
+                            Tooling Ecosystem
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            The following tools have been selected to provide maximum coverage and precise feedback loops during the development lifecycle.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {testStrategy.tools?.map((tool: string, i: number) => (
+                              <Badge key={i} variant="outline" className="bg-amber-500/5 text-amber-700 border-amber-500/20 px-2 py-1">
+                                {tool}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="strategy" value="strategy" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <Target className="h-4 w-4 text-purple-500" />
+                            Testing Strategy
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {(testStrategy as any).approach || "No strategy defined."}
+                          </p>
+                          {Array.isArray((testStrategy as any).types) && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {(testStrategy as any).types.map((type: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-[10px] bg-purple-500/5 text-purple-600 border-purple-500/20">
+                                  {type}
+                                </Badge>
+                              ))}
                             </div>
                           )}
                         </CardContent>
                       </Card>
-                    </motion.div>
-                  </TabsContent>
-                </AnimatePresence>
+
+                      <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <Gauge className="h-4 w-4 text-emerald-500" />
+                            Performance Goals
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {Object.entries(performanceMetrics).map(([key, value]: [string, any], i) => {
+                            if (key === 'recommendations' && Array.isArray(value)) {
+                              return (
+                                <div key={i} className="pt-2 border-t border-border/40 mt-2">
+                                  <div className="text-[10px] uppercase text-muted-foreground font-bold mb-2">Recommendations</div>
+                                  <div className="space-y-1.5">
+                                    {value.map((rec, idx) => (
+                                      <div key={idx} className="text-xs bg-amber-500/5 text-amber-700 dark:text-amber-400 p-2 rounded border border-amber-500/10 flex gap-2">
+                                        <Zap className="h-3 w-3 mt-0.5 shrink-0" />
+                                        <span>{rec}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )
+                            }
+
+                            return (
+                              <div key={i} className="space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                                  <span className="font-mono font-medium">{String(value)}</span>
+                                </div>
+                                <Progress value={75} className="h-1.5 bg-muted" />
+                              </div>
+                            )
+                          })}
+                          {Object.keys(performanceMetrics).length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground text-xs italic">
+                              No performance metrics defined.
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {coverage && (Object.keys(coverage).length > 1 || coverage.percentage !== undefined) && (
+                      <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-emerald-500" />
+                            Code Coverage Breakdown
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 py-2">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <FileText className="h-3.5 w-3.5" />
+                                  <span>Lines</span>
+                                </div>
+                                <span className="font-mono font-bold">{coverage.lines ?? coverage.percentage ?? 0}%</span>
+                              </div>
+                              <Progress value={coverage.lines ?? coverage.percentage ?? 0} className="h-1.5 bg-muted" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <FunctionSquare className="h-3.5 w-3.5" />
+                                  <span>Functions</span>
+                                </div>
+                                <span className="font-mono font-bold">{coverage.functions ?? 0}%</span>
+                              </div>
+                              <Progress value={coverage.functions ?? 0} className="h-1.5 bg-muted" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Code2 className="h-3.5 w-3.5" />
+                                  <span>Statements</span>
+                                </div>
+                                <span className="font-mono font-bold">{coverage.statements ?? 0}%</span>
+                              </div>
+                              <Progress value={coverage.statements ?? 0} className="h-1.5 bg-muted" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <GitBranch className="h-3.5 w-3.5" />
+                                  <span>Branches</span>
+                                </div>
+                                <span className="font-mono font-bold">{coverage.branches ?? 0}%</span>
+                              </div>
+                              <Progress value={coverage.branches ?? 0} className="h-1.5 bg-muted" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {Array.isArray((testStrategy as any).tools) && (testStrategy as any).tools.length > 0 && (
+                      <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-amber-500" />
+                            Toolchain
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {(testStrategy as any).tools.map((tool: string, i: number) => (
+                              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
+                                <div className="h-2 w-2 rounded-full bg-amber-500" />
+                                <span className="text-xs font-medium">{tool}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="cases" value="cases" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {testCases.map((tc: any, i: number) => (
+                      <TestPlanCard key={i} tc={tc} />
+                    ))}
+                    {testCases.length === 0 && (
+                      <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
+                        <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm">No test cases defined.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="risks" value="risks" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {riskAnalysis.map((risk: any, i: number) => (
+                        <RiskCard key={i} risk={risk} />
+                      ))}
+                    </div>
+                    {riskAnalysis.length === 0 && (
+                      <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
+                        <ShieldAlert className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm">No risk analysis provided.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="security" value="security" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+                    {securityPlan ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className={cn("border-purple-500/20 shadow-sm", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-border/40 px-4 pt-4">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-purple-500" />
+                                Auth Verification
+                              </CardTitle>
+                              <Badge variant="secondary" className="text-[9px] bg-purple-500/10 text-purple-600 border-purple-200">
+                                {securityPlan.auth_verification_steps?.length || 0} STEPS
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-2">
+                            {securityPlan.auth_verification_steps && securityPlan.auth_verification_steps.length > 0 ? (
+                              <ul className="space-y-2 mt-2">
+                                {securityPlan.auth_verification_steps.map((step: string, i: number) => (
+                                  <motion.li variants={item} key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg border border-border/30">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                                    <span>{step}</span>
+                                  </motion.li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic py-4 text-center">No authentication verification steps defined.</p>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        <Card className={cn("border-red-500/20 shadow-sm", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-border/40 px-4 pt-4">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <ScanSearch className="h-4 w-4 text-red-500" />
+                              Vulnerability Strategy
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4">
+                              <p className="text-xs text-foreground/80 leading-relaxed font-mono">
+                                {securityPlan.vulnerability_scan_strategy || "No strategy defined."}
+                              </p>
+                            </div>
+                            <div className="mt-4 flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                              <ShieldAlert className="h-3 w-3" />
+                              Security Audit Protocol
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
+                        <Shield className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                        <p className="text-sm">No security plan defined.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="manual" value="manual" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show">
+                    <Card className={cn("border-border/50 shadow-sm", styles.colors.bgCard)}>
+                      <CardHeader className="pb-2 border-b border-border/40 px-4 pt-4">
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                          <MousePointerClick className="h-4 w-4 text-blue-500" />
+                          Manual Verification Checklist
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="grid gap-2">
+                          {manualVerification.map((step: string, i: number) => (
+                            <motion.div
+                              variants={item}
+                              key={i}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-card hover:bg-muted/40 transition-colors group"
+                            >
+                              <div className="flex-none h-5 w-5 rounded-full border-2 border-muted-foreground/30 group-hover:border-blue-500 group-hover:bg-blue-500/10 transition-all" />
+                              <span className="text-xs text-foreground/90 font-medium">{step}</span>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </TabsContent>
+
               </div>
             </ScrollArea>
           </div>

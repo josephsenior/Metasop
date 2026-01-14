@@ -73,6 +73,7 @@ export default function UIDesignPanel({
   const atomicStructure = data.atomic_structure
   const layoutBreakpoints = data.layout_breakpoints
   const uiPatterns = data.ui_patterns || []
+  const websiteLayout = data.website_layout
 
   const hierarchyNodes: any[] = Array.isArray(componentHierarchy)
     ? componentHierarchy
@@ -137,20 +138,20 @@ export default function UIDesignPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
           <StatsCard
             icon={Palette}
             label="Tokens"
-            value={designTokens.colors ? Object.keys(designTokens.colors).length + Object.keys(designTokens.spacing || {}).length : 0}
+            value={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)}
             color="text-indigo-600 dark:text-indigo-400"
             bg="bg-indigo-500/10"
           />
           <StatsCard
             icon={Layers}
-            label="Specs"
-            value={componentSpecs.length}
-            color="text-purple-600 dark:text-purple-400"
-            bg="bg-purple-500/10"
+            label="Registry"
+            value={hierarchyNodes.length}
+            color="text-blue-600 dark:text-blue-400"
+            bg="bg-blue-500/10"
           />
           <StatsCard
             icon={Box}
@@ -158,6 +159,34 @@ export default function UIDesignPanel({
             value={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0}
             color="text-amber-600 dark:text-amber-400"
             bg="bg-amber-500/10"
+          />
+          <StatsCard
+            icon={Layout}
+            label="Specs"
+            value={componentSpecs.length}
+            color="text-purple-600 dark:text-purple-400"
+            bg="bg-purple-500/10"
+          />
+          <StatsCard
+            icon={Grid}
+            label="Patterns"
+            value={uiPatterns.length}
+            color="text-emerald-600 dark:text-emerald-400"
+            bg="bg-emerald-500/10"
+          />
+          <StatsCard
+            icon={Smartphone}
+            label="Breakpoints"
+            value={layoutBreakpoints ? Object.keys(layoutBreakpoints).length : 0}
+            color="text-rose-600 dark:text-rose-400"
+            bg="bg-rose-500/10"
+          />
+          <StatsCard
+            icon={Monitor}
+            label="Pages"
+            value={websiteLayout?.pages?.length || 0}
+            color="text-cyan-600 dark:text-cyan-400"
+            bg="bg-cyan-500/10"
           />
         </div>
       </div>
@@ -169,6 +198,7 @@ export default function UIDesignPanel({
             <ScrollArea className="w-full whitespace-nowrap pb-2">
               <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
                 <TabTrigger value="tokens" icon={Palette} label="Tokens" count={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)} />
+                <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
                 <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
                 <TabTrigger value="arch" icon={Layout} label="Blueprint" count={componentSpecs.length} />
                 <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
@@ -180,6 +210,37 @@ export default function UIDesignPanel({
             <ScrollArea className="h-full">
               <div className="p-4">
 
+
+                <TabsContent key="sitemap" value="sitemap" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {websiteLayout?.pages?.map((page: any, idx: number) => (
+                        <Card key={idx} className={cn("border-border/50 overflow-hidden", styles.colors.bgCard)}>
+                          <div className="h-1 bg-primary/20 w-full" />
+                          <CardHeader className="pb-2 px-4 pt-3 flex flex-row items-center justify-between">
+                            <div>
+                              <CardTitle className="text-sm font-bold text-foreground">{page.name}</CardTitle>
+                              <div className="text-[10px] font-mono text-muted-foreground mt-0.5">{page.route}</div>
+                            </div>
+                            <Badge variant="outline" className="text-[8px] uppercase h-5">Page</Badge>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-4 pt-2">
+                            <div className="space-y-3">
+                              <div className="flex flex-wrap gap-1.5">
+                                {page.sections?.map((section: string, sIdx: number) => (
+                                  <div key={sIdx} className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border border-border/40 group hover:border-primary/30 transition-colors">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary" />
+                                    <span className="text-[10px] font-medium text-foreground/80">{section}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </motion.div>
+                </TabsContent>
 
                 <TabsContent key="tokens" value="tokens" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">

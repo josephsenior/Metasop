@@ -357,15 +357,18 @@ ${prompt}`
         throw new Error("No JSON response from Gemini API");
       }
 
-      // DUMP TO FILE FOR USER INSPECTION (Specific to Engineer agent)
-      if (options?.role === "Engineer") {
-        try {
-          const debugFilePath = path.join(process.cwd(), "engineer_raw_response.json");
-          fs.writeFileSync(debugFilePath, jsonText);
-          console.error(`\n[DIAGNOSTIC] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
-          console.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters\n`);
-        } catch (dumpErr) {
-          logger.error("Failed to dump engineer debug response", { error: (dumpErr as Error).message });
+      // DUMP TO FILE FOR USER INSPECTION (Generic for all agents on error or request)
+      if (options?.role) {
+        // We dump here for Engineer specifically as requested, but also if we encounter errors later
+        if (options.role === "Engineer") {
+          try {
+            const debugFilePath = path.join(process.cwd(), "engineer_raw_response.json");
+            fs.writeFileSync(debugFilePath, jsonText);
+            console.error(`\n[DIAGNOSTIC] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
+            console.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters\n`);
+          } catch (dumpErr) {
+            logger.error("Failed to dump engineer debug response", { error: (dumpErr as Error).message });
+          }
         }
       }
 
@@ -436,7 +439,20 @@ ${prompt}`
           result = JSON.parse(cleaned);
         } catch (repairError: any) {
           logger.error("Reliability repair failed", { error: repairError.message, text: cleaned.substring(0, 100) });
-          // Final fallback: try to extract anything that looks like JSON
+
+          // DUMP MALFORMED RESPONSE FOR DEBUGGING
+          if (options?.role) {
+            try {
+              const debugFileName = `${options.role.toLowerCase().replace(/\s+/g, '_')}_error_response_${Date.now()}.json`;
+              const debugFilePath = path.join(process.cwd(), debugFileName);
+              fs.writeFileSync(debugFilePath, jsonText);
+              logger.error(`\n[DIAGNOSTIC] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
+              logger.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters`);
+            } catch (dumpErr) {
+              logger.error("Failed to dump error response", { error: (dumpErr as Error).message });
+            }
+          }
+
           throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
         }
       }

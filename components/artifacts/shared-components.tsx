@@ -26,7 +26,7 @@ export const itemVariantsX = {
   show: { opacity: 1, x: 0 }
 }
 
-export function StatsCard({ icon: Icon, label, value, color, bg, isText = false }: any) {
+export function StatsCard({ icon: Icon, label, value, subValue, color, bg, isText = false }: any) {
   return (
     <div className={cn("border rounded-lg p-3 flex flex-col items-center justify-center text-center shadow-sm", styles.colors.bgCard, styles.colors.borderMuted)}>
       <div className={cn("p-2 rounded-full mb-1.5", bg, color)}>
@@ -35,7 +35,10 @@ export function StatsCard({ icon: Icon, label, value, color, bg, isText = false 
       <div className={cn("font-bold", isText ? "text-xs uppercase" : "text-xl", isText ? "text-muted-foreground" : styles.colors.text)}>
         {value || 0}
       </div>
-      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
+      {subValue && (
+        <div className="text-[9px] text-muted-foreground/60 font-mono mt-0.5">{subValue}</div>
+      )}
+      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-1">{label}</div>
     </div>
   )
 }
@@ -64,8 +67,8 @@ export function CopyButton({ text, className }: { text: string, className?: stri
 
 export function TabTrigger({ value, icon: Icon, label, count, className, ...props }: any) {
   return (
-    <TabsTriggerPrimitive 
-      value={value} 
+    <TabsTriggerPrimitive
+      value={value}
       className={cn(
         "data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-lg text-xs py-2 px-3 gap-2 transition-all flex items-center",
         className

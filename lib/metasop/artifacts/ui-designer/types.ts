@@ -78,4 +78,11 @@ export interface UIDesignerBackendArtifact {
         wcag_level?: "A" | "AA" | "AAA";
         focus_indicators?: boolean;
     };
+    website_layout?: {
+        pages: Array<{
+            name: string;
+            route: string;
+            sections: string[];
+        }>;
+    };
 }

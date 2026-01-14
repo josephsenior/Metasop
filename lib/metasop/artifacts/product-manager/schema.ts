@@ -106,13 +106,6 @@ export const pmSchema = {
             description: "Whether the UI has multiple sections",
             default: false,
         },
-        ui_sections: {
-            type: "integer",
-            minimum: 1,
-            maximum: 20,
-            description: "Number of UI sections (1-20)",
-            default: 1,
-        },
         assumptions: {
             type: "array",
             items: {

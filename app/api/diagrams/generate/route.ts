@@ -132,7 +132,6 @@ export async function POST(request: NextRequest) {
             try {
               // Transform MetaSOP artifacts to our diagram format
               const transformedDiagram = transformMetaSOPToDiagram(metasopResult);
-              console.log("[Backend] Transformed diagram - nodes:", transformedDiagram.nodes.length, "edges:", transformedDiagram.edges.length);
 
               // Validate and normalize transformed diagram data for consistency
               transformedDiagram.nodes = ensureUniqueNodeIds(transformedDiagram.nodes);
