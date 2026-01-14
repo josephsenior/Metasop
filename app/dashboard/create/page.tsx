@@ -72,7 +72,7 @@ export default function CreateDiagramPage() {
   const [includeStateManagement] = useState(true)
   const [includeAPIs] = useState(true)
   const [includeDatabase] = useState(true)
-  const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash")
+  const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview")
 
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
@@ -851,21 +851,21 @@ export default function CreateDiagramPage() {
                   <div className="absolute bottom-2 right-2 flex items-center gap-4">
                     {/* Model Selector */}
                     <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger className="h-8 w-[130px] bg-background/50 backdrop-blur-md border border-white/10 hover:bg-white/5 transition-all duration-300 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 shadow-sm rounded-lg">
+                      <SelectTrigger className="h-8 w-[130px] sm:w-[150px] bg-background/50 backdrop-blur-md border border-white/10 hover:bg-white/5 transition-all duration-300 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 shadow-sm rounded-lg">
                         <Brain className="h-3 w-3 text-blue-500" />
                         <SelectValue placeholder="Model" />
                       </SelectTrigger>
                       <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
-                        <SelectItem value="gemini-1.5-flash" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                        <SelectItem value="gemini-3-flash-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
                           <div className="flex items-center gap-2">
                             <Zap className="h-3 w-3 text-amber-500" />
-                            <span>Flash 1.5</span>
+                            <span>Gemini 3 Flash</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="gemini-1.5-pro" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                        <SelectItem value="gemini-3-pro" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
                           <div className="flex items-center gap-2">
                             <Cpu className="h-3 w-3 text-purple-500" />
-                            <span>Pro 1.5</span>
+                            <span>Gemini 3 Pro</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
