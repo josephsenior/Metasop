@@ -20,7 +20,8 @@ import {
   Settings,
   X,
   Play,
-  Save
+  Save,
+  Download
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -504,11 +505,33 @@ export default function CreateDiagramPage() {
         // Navigate to view page
         router.push(`/dashboard/diagrams/${savedDiagram.id}`)
       }
-    } catch (error: any) {
-      console.error("[Create Page] Error saving diagram:", error)
+    }
+  }
+
+  const handleDownloadSpecs = () => {
+    if (!currentDiagram) return
+
+    try {
+      const dataStr = JSON.stringify(currentDiagram, null, 2)
+      const blob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `diagram-specs-${new Date().getTime()}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
       toast({
-        title: "Error saving diagram",
-        description: error.response?.data?.message || error.message || "Failed to save diagram. Please try again.",
+        title: "Specs downloaded",
+        description: "The diagram specifications have been exported successfully.",
+      })
+    } catch (err: any) {
+      toast({
+        title: "Download failed",
+        description: err.message || "Failed to export diagram specs.",
         variant: "destructive",
       })
     }
@@ -581,6 +604,27 @@ export default function CreateDiagramPage() {
                   </TooltipProvider>
                 )}
               </>
+            )}
+
+            {currentDiagram && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadSpecs}
+                      className="gap-1 sm:gap-2 border-dashed"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Download Specs</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Download diagram JSON specs <Kbd>D</Kbd>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>
