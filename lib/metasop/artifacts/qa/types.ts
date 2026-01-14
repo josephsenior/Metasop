@@ -40,15 +40,9 @@ export interface QABackendArtifact {
     }>;
     summary?: string;
     description?: string;
-    report?: Array<{
-        category?: "authentication" | "api" | "ui" | "security" | "performance" | "database" | "integration";
-        title?: string;
-        status?: "pass" | "fail" | "warning";
-        details?: string;
-        recommendations?: string[];
-    }>;
     coverage?: {
         percentage?: number;
+        threshold?: number;
         lines?: number;
         statements?: number;
         functions?: number;

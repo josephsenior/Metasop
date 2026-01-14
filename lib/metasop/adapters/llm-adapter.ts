@@ -22,6 +22,7 @@ export interface LLMOptions {
   reasoning?: boolean; // Enable thinking/reasoning mode
   cacheId?: string; // Optional Gemini Context Cache ID
   role?: string; // Optional role for agents
+  onProgress?: (event: any) => void; // Optional callback for streaming events
 }
 
 export interface ReasoningDetails {

@@ -18,8 +18,8 @@ const agentOrder = [
   "arch_design",
   "devops_infrastructure",
   "security_architecture",
-  "engineer_impl",
   "ui_design",
+  "engineer_impl",
   "qa_verification"
 ]
 const agentLabels: Record<string, string> = {
@@ -121,17 +121,17 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   >
-                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                   </motion.div>
                 ) : isActive ? (
-                  <Loader2 
+                  <Loader2
                     key={`loader-${step.stepId}-${step.status}`}
-                    className="h-4 w-4 text-blue-500 animate-spin flex-shrink-0" 
+                    className="h-4 w-4 text-blue-500 animate-spin shrink-0"
                   />
                 ) : isFailed ? (
-                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
                 ) : (
-                  <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
                 <span
                   className={cn(

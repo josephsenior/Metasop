@@ -1,6 +1,6 @@
 export const qaSchema = {
     type: "object",
-    required: ["ok", "test_strategy", "test_cases"],
+    required: ["ok", "test_strategy", "test_cases", "security_plan", "manual_verification_steps", "risk_analysis", "summary", "description", "coverage", "performance_metrics"],
     properties: {
         ok: {
             type: "boolean",
@@ -78,6 +78,7 @@ export const qaSchema = {
             type: "object",
             properties: {
                 percentage: { type: "number" },
+                threshold: { type: "number", description: "Target code coverage percentage (e.g. 80)" },
                 lines: { type: "number" },
                 statements: { type: "number" },
                 functions: { type: "number" },

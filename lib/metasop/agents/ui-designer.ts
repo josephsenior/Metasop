@@ -22,37 +22,47 @@ export async function uiDesignerAgent(
 
     if (shouldUseRefinement(context)) {
       logger.info("UI Designer agent in REFINEMENT mode");
+      const previousUIContent = context.previous_artifacts?.ui_design?.content as UIDesignerBackendArtifact | undefined;
       const guidelines = `
 1. **Component Specs**: Add new components or enhance existing ones
-2. **Design Tokens**: Update colors, typography, or spacing
-3. **Accessibility**: Enhance WCAG compliance or screen reader support
-4. **Responsive Design**: Update breakpoints or layout strategies`;
+2. **Design Tokens**: Update colors (surface, primary, accent), typography (headingFont), or spacing
+3. **Accessibility**: Enhance WCAG compliance (${previousUIContent?.accessibility?.wcag_level || 'AA'}) or screen reader support
+4. **Atomic Design**: Elaborate on Atoms, Molecules, and Organisms
+5. **Blueprint**: Provide detailed component specs with variants and states`;
       uiPrompt = buildRefinementPrompt(context, "UI Designer", guidelines);
     } else {
-      const hasCache = !!context.cacheId;
+      const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
+      const archArtifact = context.previous_artifacts?.arch_design?.content as any;
 
-      uiPrompt = hasCache
-        ? `As a Principal UI/UX Designer, refine the design system and component hierarchy. Focus on the core 'Patient Portal' and 'Vitals Monitoring' modules.
+      const projectContext = pmArtifact
+        ? `Project Goals: ${pmArtifact.summary}
+Core User Stories: ${pmArtifact.user_stories?.slice(0, 3).map((s: any) => s.title).join(", ")}`
+        : `User Request: ${user_request}`;
 
-CRITICAL GOALS:
-1. **Essential Atomic Design**: Define core Atoms (Buttons, Info Cards) and Organisms (Consultation View, Vital Dashboard).
-2. **Design Token Mastery**: Develop an elite design system (Primary #2A66FF, Surface-Dark #0F172A, Typography: Outfit/Inter).
-3. **WCAG Accessibility**: Target **WCAG 2.1 AA**.
-4. **Focused A2UI Manifest**: Provide a high-fidelity visual manifest for the **Vital Signs Dashboard** ONLY.
+      const techContext = archArtifact
+        ? `Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 5).join(", ")}
+Key APIs: ${archArtifact.apis?.slice(0, 3).map((a: any) => a.path).join(", ")}`
+        : "";
 
-Keep the response concise and focused on high-impact components to ensure systemic clarity.`
-        : `As a Principal UI/UX Designer, create a premium design system and UI architecture for 'HealthTrack'.
+      uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture.
 
-User Request: ${user_request}
+${projectContext}
+${techContext}
 
-CRITICAL GOALS:
-1. **Design System Baseline**: Establish Colors, Typography, Spacing, and Shadows.
-2. **Core Atomic Hierarchy**: Map essential components to Atoms, Molecules, and Organisms.
-3. **Primary Screen Manifest**: Generate an **A2UI Manifest** for the **Real-Time Patient Consultation Portal**.
-4. **Accessibility Strategy**: Define standards, guidelines, and a verification checklist (WCAG 2.1 AA).
-5. **Executive Summary**: Provide a high-level summary and detailed description of the design language and UX strategy.
+MISSION OBJECTIVES:
+1. **Definitve Design Language**: Establish elite Design Tokens. Include Colors, Spacing, Typography, and Border Radii.
+2. **Atomic Structure**: Map the core screen real estate into atoms, molecules, and organisms (names only).
+3. **Primary Feature Manifest**: Generate a high-fidelity **A2UI Manifest** (v0.8) for the most critical user workflow.
+4. **WCAG AA+ Accessibility**: Design for inclusivity. Map out ARIA strategies, keyboard navigation, and focus indicators.
+5. **Component Blueprint**: Detail at least 5 key components with their required Props, Variants, and States. Focus on technical specs over long descriptions.
+6. **Responsive Strategy**: Define layout breakpoints (sm, md, lg, xl) and how the system adapts across devices.
+7. **UI Patterns**: List the fundamental patterns used (e.g., Infinite Scroll, Skeleton Loading, Multi-step Form).
+8. **Executive Summary**: Provide a high-level summary and detailed description of the visual strategy.
 
-Focus on creating a definitive design language. Quality and precision are prioritized over exhaustive component counts.
+Important Guidelines:
+- Focus on architectural clarity and visual consistency.
+- Keep all textual fields professional and extremely concise (max 100 characters).
+- Avoid repetitive phrasing and ensure every field provides unique value.
 
 RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
     }
@@ -70,9 +80,10 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
         },
         {
           reasoning: true,
-          temperature: 0.7,
+          temperature: 0.3,
           cacheId: context.cacheId,
-          role: "UI Designer"
+          role: "UI Designer",
+          maxTokens: 32000
         }
       );
     } catch (error: any) {
@@ -98,16 +109,6 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
       atomic_structure: llmUIDesign.atomic_structure
     };
 
-    if (content.component_hierarchy) {
-      if (typeof content.component_hierarchy.root !== "string") {
-        content.component_hierarchy.root = "App";
-      } else if (content.component_hierarchy.root.length === 0) {
-        content.component_hierarchy.root = "App";
-      }
-      if (!Array.isArray((content.component_hierarchy as any).children)) {
-        (content.component_hierarchy as any).children = [];
-      }
-    }
 
     // Validation check
     if (!content.component_hierarchy || !content.design_tokens) {

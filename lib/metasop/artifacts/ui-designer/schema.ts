@@ -1,54 +1,10 @@
 
 export const uiDesignerSchema = {
     type: "object",
-    required: ["schema_version", "a2ui_manifest", "component_hierarchy", "design_tokens"],
+    required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure"],
     properties: {
         summary: { type: "string" },
         description: { type: "string" },
-        schema_version: { type: "string", enum: ["0.8"], description: "A2UI Protocol version" },
-        a2ui_manifest: {
-            type: "object",
-            required: ["root"],
-            properties: {
-                root: {
-                    type: "object",
-                    required: ["type", "props"],
-                    properties: {
-                        type: {
-                            type: "string",
-                            enum: ["View", "Container", "ScrollView", "Stack", "Grid", "Card", "Button", "TextInput", "Text", "Image", "Icon", "Divider", "List"],
-                            description: "Standard A2UI component type"
-                        },
-                        props: {
-                            type: "object",
-                            properties: {
-                                label: { type: "string" },
-                                value: { type: "string" },
-                                placeholder: { type: "string" },
-                                variant: { type: "string", enum: ["primary", "secondary", "outline", "ghost", "link"] },
-                                size: { type: "string", enum: ["sm", "md", "lg", "xl"] },
-                                spacing: { type: "string" },
-                                alignment: { type: "string", enum: ["start", "center", "end"] },
-                                on_click: { type: "string", description: "Action identifier (e.g., 'submit', 'navigate_to_home')" },
-                            }
-                        },
-                        children: {
-                            type: "array",
-                            maxItems: 8,
-                            items: {
-                                type: "object",
-                                properties: {
-                                    type: { type: "string" },
-                                    props: { type: "object", properties: { label: { type: "string" } } }
-                                }
-                            },
-                            description: "Recursive A2UI children"
-                        }
-                    }
-                }
-            },
-            description: "Declarative UI manifest following A2UI v0.8 protocol"
-        },
         component_hierarchy: {
             type: "object",
             required: ["root"],
@@ -84,15 +40,12 @@ export const uiDesignerSchema = {
                                                 type: "object",
                                                 properties: {
                                                     name: { type: "string" },
-                                                    description: { type: "string" }
                                                 }
                                             },
                                         },
-                                        description: { type: "string" },
                                     },
                                 },
                             },
-                            description: { type: "string", description: "Component description" },
                         },
                     },
                     description: "Child components in the hierarchy",
@@ -116,6 +69,7 @@ export const uiDesignerSchema = {
                         error: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
                         success: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
                         warning: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+                        surface: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Surface/Card background color" },
                     },
                 },
                 spacing: {
@@ -126,33 +80,66 @@ export const uiDesignerSchema = {
                         md: { type: "string" },
                         lg: { type: "string" },
                         xl: { type: "string" },
+                        "2xl": { type: "string" },
                     },
                 },
                 typography: {
                     type: "object",
                     properties: {
                         fontFamily: { type: "string" },
+                        headingFont: { type: "string" },
                         fontSize: {
                             type: "object",
                             properties: {
+                                xs: { type: "string" },
                                 sm: { type: "string" },
                                 base: { type: "string" },
                                 lg: { type: "string" },
                                 xl: { type: "string" },
+                                "2xl": { type: "string" },
                             },
                         },
+                        fontWeight: {
+                            type: "object",
+                            properties: {
+                                light: { type: "string" },
+                                normal: { type: "string" },
+                                medium: { type: "string" },
+                                semibold: { type: "string" },
+                                bold: { type: "string" },
+                            }
+                        }
                     },
                 },
+                borderRadius: {
+                    type: "object",
+                    properties: {
+                        none: { type: "string" },
+                        sm: { type: "string" },
+                        md: { type: "string" },
+                        lg: { type: "string" },
+                        full: { type: "string" },
+                    }
+                },
+                shadows: {
+                    type: "object",
+                    properties: {
+                        sm: { type: "string" },
+                        md: { type: "string" },
+                        lg: { type: "string" },
+                        inner: { type: "string" },
+                    }
+                }
             },
         },
         ui_patterns: {
             type: "array",
-            maxItems: 5,
+            maxItems: 8,
             items: { type: "string" },
         },
         component_specs: {
             type: "array",
-            maxItems: 5,
+            maxItems: 10,
             items: {
                 type: "object",
                 required: ["name", "description"],
@@ -164,6 +151,8 @@ export const uiDesignerSchema = {
                         additionalProperties: { type: "string" },
                         description: "Component props mapping name to type"
                     },
+                    variants: { type: "array", items: { type: "string" } },
+                    states: { type: "array", items: { type: "string" } },
                 },
             },
         },
@@ -187,10 +176,18 @@ export const uiDesignerSchema = {
                 aria_labels: { type: "boolean", description: "Use ARIA labels" },
                 keyboard_navigation: { type: "boolean", description: "Support keyboard navigation" },
                 screen_reader_support: { type: "boolean", description: "Screen reader support" },
-                color_contrast: { type: "string", description: "Color contrast requirements (e.g., 'WCAG AA')" },
+                wcag_level: { type: "string", enum: ["A", "AA", "AAA"] },
                 focus_indicators: { type: "boolean", description: "Visible focus indicators" },
             },
             description: "Accessibility requirements",
         },
+        atomic_structure: {
+            type: "object",
+            properties: {
+                atoms: { type: "array", items: { type: "string" } },
+                molecules: { type: "array", items: { type: "string" } },
+                organisms: { type: "array", items: { type: "string" } },
+            }
+        }
     },
 };

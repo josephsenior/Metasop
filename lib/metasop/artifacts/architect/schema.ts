@@ -1,7 +1,7 @@
 
 export const architectSchema = {
     type: "object",
-    required: ["design_doc", "apis", "decisions", "next_tasks", "technology_stack", "database_schema"],
+    required: ["design_doc", "apis", "decisions", "next_tasks", "technology_stack", "database_schema", "integration_points", "security_considerations", "scalability_approach", "summary", "description"],
     properties: {
         design_doc: {
             type: "string",

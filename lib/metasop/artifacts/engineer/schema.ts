@@ -1,17 +1,13 @@
 
 export const engineerSchema = {
     type: "object",
-    required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "tests_added", "run_results"],
+    required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "phases", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
         summary: { type: "string" },
         description: { type: "string" },
         artifact_path: {
             type: "string",
             description: "Base implementation directory (e.g., 'src', 'app').",
-        },
-        tests_added: {
-            type: "boolean",
-            description: "Whether unit or integration tests were included in the plan.",
         },
         run_results: {
             type: "object",
@@ -24,22 +20,20 @@ export const engineerSchema = {
         },
         file_structure: {
             type: "object",
-            required: ["name", "type"],
-            description: "High-level project file structure. Focus on core directories and key files.",
+            required: ["name", "type", "children"],
+            description: "High-level project file structure. Focus on metadata only. DO NOT include 'content', 'code', or 'source' fields.",
             properties: {
                 name: { type: "string", description: "File or folder name" },
                 type: { type: "string", enum: ["file", "directory"], description: "Node type" },
-                description: { type: "string", description: "Brief purpose" },
                 children: {
                     type: "array",
                     maxItems: 12,
-                    description: "Contents of the directory. Limit to essential files.",
+                    description: "Contents of the directory. Limit to essential files. DO NOT include file content.",
                     items: {
                         type: "object",
                         properties: {
                             name: { type: "string" },
                             type: { type: "string", enum: ["file", "directory"] },
-                            description: { type: "string" },
                             children: {
                                 type: "array",
                                 maxItems: 8,
@@ -48,7 +42,6 @@ export const engineerSchema = {
                                     properties: {
                                         name: { type: "string" },
                                         type: { type: "string", enum: ["file", "directory"] },
-                                        description: { type: "string" }
                                     }
                                 },
                             },
@@ -59,11 +52,10 @@ export const engineerSchema = {
         },
         implementation_plan: {
             type: "string",
-            description: "Concise step-by-step implementation guide in Markdown (~300 chars).",
+            description: "Detailed step-by-step technical implementation guide in Markdown.",
         },
         phases: {
             type: "array",
-            maxItems: 5,
             description: "Essential implementation phases.",
             items: {
                 type: "object",
@@ -73,7 +65,6 @@ export const engineerSchema = {
                     description: { type: "string", description: "Brief summary" },
                     tasks: {
                         type: "array",
-                        maxItems: 5,
                         items: { type: "string" },
                         description: "Key technical tasks"
                     }

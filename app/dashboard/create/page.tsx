@@ -68,7 +68,6 @@ export default function CreateDiagramPage() {
 
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false)
   const [currentDiagram, setCurrentDiagram] = useState<{
     nodes: DiagramNode[]
     edges: DiagramEdge[]
@@ -226,10 +225,15 @@ export default function CreateDiagramPage() {
                 return updated
               })
             } else if (event.type === "step_thought") {
-              setAgentThoughts(prev => ({
-                ...prev,
-                [event.step_id]: (prev[event.step_id] || "") + (event.thought || "")
-              }))
+              console.log("[Frontend] Received step_thought:", event.step_id, event.thought?.substring(0, 50))
+              setAgentThoughts(prev => {
+                const updated = {
+                  ...prev,
+                  [event.step_id]: (prev[event.step_id] || "") + (event.thought || "")
+                }
+                console.log("[Frontend] Updated agentThoughts, activeStepId:", activeStepId, "has thoughts:", !!updated[activeStepId])
+                return updated
+              })
             } else if (event.type === "step_complete") {
               // CRITICAL: Only process step_complete if step was actually started (running)
               // If step is still pending, it means step_start never fired - mark as running first
@@ -371,8 +375,8 @@ export default function CreateDiagramPage() {
                 })
               }
 
-              // Automatically open the artifacts panel
-              setIsRightPanelOpen(true)
+              // Automatically mark first steps as success if they weren't matched in stream
+              // (Keep existing completion logic)
 
               // CRITICAL: Only mark steps as success if they were actually running
               // Never mark pending steps as success - they must go through running state first
@@ -572,22 +576,6 @@ export default function CreateDiagramPage() {
                 )}
               </>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Agent settings and properties
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
 
@@ -933,123 +921,6 @@ export default function CreateDiagramPage() {
             </div>
           </div>
 
-          {/* Right Sidebar - Properties/Settings */}
-          <AnimatePresence>
-            {isRightPanelOpen && (
-              <motion.div
-                initial={{ x: 320, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 320, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="w-full sm:w-[450px] border-l border-border bg-background flex-col shrink-0 z-40 shadow-lg hidden md:flex h-full"
-              >
-                <div className="p-4 border-b border-border flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-                  <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    {currentDiagram?.metadata?.metasop_artifacts ? (
-                      <>
-                        <Sparkles className="h-4 w-4 text-blue-600" />
-                        Agent Artifacts
-                      </>
-                    ) : (
-                      "Diagram Properties"
-                    )}
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsRightPanelOpen(false)}
-                    className="h-6 w-6 p-0 hover:bg-muted"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="flex-1 overflow-hidden h-full flex flex-col">
-                  {currentDiagram?.metadata?.metasop_artifacts ? (
-                    <ArtifactsPanel
-                      diagramId={currentDiagram.id || ""}
-                      artifacts={currentDiagram.metadata.metasop_artifacts}
-                      className="flex-1 min-h-0"
-                    />
-                  ) : (
-                    <div className="p-4 space-y-6 flex-1 overflow-y-auto">
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Diagram Info</Label>
-                          <div className="space-y-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/50">
-                            <div className="flex justify-between">
-                              <span>Nodes:</span>
-                              <span className="text-foreground font-medium">{currentDiagram?.nodes.length || 0}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Edges:</span>
-                              <span className="text-foreground font-medium">{currentDiagram?.edges.length || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Export Options</Label>
-                          <div className="space-y-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full justify-start gap-2 h-9"
-                              onClick={() => exportFunctions?.exportPNG()}
-                              disabled={!exportFunctions}
-                            >
-                              <Download className="h-4 w-4" />
-                              Export as PNG
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full justify-start gap-2 h-9"
-                              onClick={() => exportFunctions?.exportSVG()}
-                              disabled={!exportFunctions}
-                            >
-                              <Download className="h-4 w-4" />
-                              Export as SVG
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full justify-start gap-2 h-9"
-                              onClick={() => exportFunctions?.exportJSON()}
-                              disabled={!exportFunctions}
-                            >
-                              <Download className="h-4 w-4" />
-                              Export as JSON
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Tips</Label>
-                          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                            <ul className="space-y-2 text-xs text-muted-foreground">
-                              <li className="flex items-start gap-2">
-                                <span className="text-blue-700 dark:text-blue-400 mt-0.5">•</span>
-                                <span>Mention specific technologies for better diagrams</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <span className="text-blue-700 dark:text-blue-400 mt-0.5">•</span>
-                                <span>Describe key features and user flows</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <span className="text-blue-700 dark:text-blue-400 mt-0.5">•</span>
-                                <span>Include scalability and security needs</span>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </AuthGuard>

@@ -41,13 +41,15 @@ export interface UIDesignerBackendArtifact {
             error?: string;
             success?: string;
             warning?: string;
+            surface?: string;
         };
         spacing: Record<string, string>;
         typography: {
             fontFamily: string;
+            headingFont?: string;
             fontSize: Record<string, string>;
-            fontWeight: Record<string, string>;
-            lineHeight: Record<string, string>;
+            fontWeight?: Record<string, string>;
+            lineHeight?: Record<string, string>;
         };
         borderRadius?: Record<string, string>;
         shadows?: Record<string, string>;
@@ -73,8 +75,7 @@ export interface UIDesignerBackendArtifact {
         aria_labels?: boolean;
         keyboard_navigation?: boolean;
         screen_reader_support?: boolean;
-        color_contrast?: string;
-        focus_indicators?: boolean;
         wcag_level?: "A" | "AA" | "AAA";
+        focus_indicators?: boolean;
     };
 }

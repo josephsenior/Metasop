@@ -8,7 +8,6 @@ export interface FileNode {
     path?: string;
     file?: string; // Alias for name
     type?: "file" | "folder" | "directory";
-    description?: string; // minLength: 5
     children?: FileNode[];
 }
 

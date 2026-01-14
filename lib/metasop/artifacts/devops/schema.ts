@@ -1,7 +1,7 @@
 
 export const devopsSchema = {
     type: "object",
-    required: ["infrastructure", "cicd", "deployment", "monitoring"],
+    required: ["infrastructure", "cicd", "deployment", "monitoring", "containerization", "scaling", "disaster_recovery", "summary", "description"],
     properties: {
         cloud_provider: { type: "string" },
         infra_components: { type: "number" },
@@ -23,7 +23,6 @@ export const devopsSchema = {
                 },
                 services: {
                     type: "array",
-
                     description:
                         "Array of infrastructure services needed (compute, database, storage, etc.)",
                     items: {

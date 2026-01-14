@@ -6,6 +6,11 @@ export const securitySchema = {
         "threat_model",
         "encryption",
         "security_controls",
+        "summary",
+        "description",
+        "compliance",
+        "vulnerability_management",
+        "security_monitoring"
     ],
     properties: {
         summary: { type: "string", description: "Executive summary of the security architecture" },

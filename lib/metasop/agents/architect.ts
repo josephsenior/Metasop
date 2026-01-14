@@ -31,31 +31,25 @@ export async function architectAgent(
 5. **Executive Summary**: Update architecture summary and description`;
       architectPrompt = buildRefinementPrompt(context, "Architect", guidelines);
     } else {
-      const hasCache = !!context.cacheId;
-      architectPrompt = hasCache
-        ? `As a Principal Software Architect, refine the system design based on the cached context.
+      const projectTitle = (pmSpec?.content as any)?.title || "Project";
+      const userStories = (pmSpec?.content as any)?.user_stories || [];
 
-CRITICAL GOALS:
-1. **Architecture Style**: Explicitly define the system pattern (e.g., Clean Architecture, Hexagonal, or Event-Driven Microservices).
-2. **ADR Rigor**: Document all major decisions as **Architecture Decision Records (ADRs)** including Status, Context (Reasoning), Tradeoffs, and Consequences.
-3. **Database Intelligence**: Refine the database schema with explicit **Indexing Strategies** and **Referential Integrity** (Foreign Keys).
-4. **API Contract**: Ensure 100% type-safe API definitions with validation logic for all endpoints.
+      architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.
 
-Your design must be professional, scalable, and optimized for high-throughput production environments.`
-        : `As a Principal Software Architect, design a high-fidelity system architecture.
+${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}
+Target Audience: ${(pmSpec.content as any).description}` : `User Request: ${user_request}`}
 
-User Request: ${user_request}
+MISSION OBJECTIVES:
+1. **System Pattern Selection**: Define the authoritative architecture pattern (e.g., Event-Driven Microservices, Clean Architecture). Justify your choice based on the core user stories.
+2. **Database Intelligence**: Architect a relational schema with specific indexing, relationship strategies, and migrations approach. Prioritize data integrity and performance.
+3. **High-Impact API Design**: Define a type-safe API contract with CRUD coverage, authentication requirements, and rate limits.
+4. **Technology Stack**: Specify the exact frontend, backend, database, and hosting solutions with technical justifications.
+5. **Integration Points**: Identify critical external services (Auth, Payment, CDN, etc.) and their specific purpose.
+6. **Scalability & Security Philosophy**: Detail how the system will scale horizontally and mitigate architectural risks (OWASP, data encryption).
+7. **Comprehensive Design Doc**: Provide a detailed Blueprint/Manifesto covering the system overview and architectural patterns.
+8. **Actionable Roadmap**: Provide a prioritized list of next tasks with roles and priorities for immediate execution.
 
-${pmSpec?.content ? `Product Manager Specification:
-${JSON.stringify(pmSpec.content, null, 2)}` : ""}
-
-CRITICAL GOALS:
-1. **Executive Summary**: Provide a high-level summary and detailed description of the architecture.
-2. **Architecture Style**: Define the system pattern (Clean Architecture, Hexagonal, or Event-Driven).
-3. **Database Intelligence**: Refine the database schema with explicit indexing and relationships.
-4. **Actionable Tasks**: Provide a list of next tasks with titles and priorities.
-
-Ensure the design is professional, scalable, and optimized for high-throughput production environments.`;
+Your design must be professional, scalable, and optimized for high-throughput production environments. Focus on systemic clarity and technical rigor. Respond with ONLY the JSON object.`;
     }
 
     let llmArchitecture: ArchitectBackendArtifact | null = null;
@@ -71,7 +65,7 @@ Ensure the design is professional, scalable, and optimized for high-throughput p
         },
         {
           reasoning: true,
-          temperature: 0.7,
+          temperature: 0.3,
           cacheId: context.cacheId,
           role: "Architect"
         }
@@ -109,27 +103,6 @@ Ensure the design is professional, scalable, and optimized for high-throughput p
       scalability_approach: llmArchitecture.scalability_approach,
     };
 
-    if (Array.isArray(content.apis)) {
-      const hasHealth = content.apis.some((api: any) => api?.path === "/api/health");
-      if (!hasHealth) {
-        content.apis.unshift({
-          path: "/api/health",
-          method: "GET",
-          description: "Health check endpoint",
-          request_schema: "{}",
-          response_schema: "{\"status\": \"ok\"}",
-          auth_required: false,
-          rate_limit: "300 requests/minute",
-        } as any);
-      }
-    }
-
-    if (context.options?.includeStateManagement && content.technology_stack) {
-      const other = Array.isArray((content.technology_stack as any).other) ? (content.technology_stack as any).other : [];
-      const hasState = other.some((t: any) => typeof t === "string" && t.toLowerCase().includes("state"));
-      if (!hasState) other.push("State management (Zustand/Redux) for client state");
-      (content.technology_stack as any).other = other;
-    }
 
     // Validation check: must have at least a design doc or some components
     if (!content.design_doc && (!content.apis || content.apis.length === 0) && (!content.database_schema)) {

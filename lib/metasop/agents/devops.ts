@@ -24,44 +24,35 @@ export async function devopsAgent(
 
     if (shouldUseRefinement(context)) {
       logger.info("DevOps agent in REFINEMENT mode");
+      const previousDevOpsContent = context.previous_artifacts?.devops_infrastructure?.content as DevOpsBackendArtifact | undefined;
       const guidelines = `
-1. **Infrastructure**: Update cloud services, regions, or orchestration
+1. **Infrastructure**: Update cloud services, regions, or orchestration (${previousDevOpsContent?.cloud_provider || 'provider unknown'})
 2. **CI/CD Pipelines**: Enhance build, test, or deployment stages
 3. **Monitoring & Alerting**: Refine metrics, alerts, or logging strategies
-4. **Disaster Recovery**: Update backup or failover strategies`;
+4. **Disaster Recovery**: Update backup or failover strategies (RPO/RTO)`;
       devopsPrompt = buildRefinementPrompt(context, "DevOps", guidelines);
     } else {
-      const hasCache = !!context.cacheId;
+      const pmArtifact = pmSpec?.content as any;
+      const archArtifact = archDesign?.content as any;
+      const projectTitle = pmArtifact?.title || "Project";
 
-      devopsPrompt = hasCache
-        ? `As a Principal Site Reliability Engineer (SRE), refine the infrastructure and deployment strategy based on the cached context.
+      devopsPrompt = `As a Principal Site Reliability Engineer (SRE), design a modern infrastructure and deployment strategy for '${projectTitle}'.
 
-CRITICAL GOALS:
-1. **Infrastructure as Code (IaC)**: Specify a robust IaC approach (e.g., Terraform or Crossplane) for all cloud resources.
-2. **Environment Tiering**: Define distinct configurations for Dev, Staging, and Production environments.
-3. **Disaster Recovery (DR)**: Establish specific **RPO (Recovery Point Objective)** and **RTO (Recovery Time Objective)** targets and a comprehensive failover plan.
-4. **Resilience**: Design for high availability (multi-region/multi-AZ) and automated self-healing.
+${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
+${archArtifact ? `Architecture Target: ${archArtifact.summary}
+Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 5).join(", ")}` : ""}
 
-Your design must be battle-hardened, cost-optimized, and follow the AWS/GCP Well-Architected Framework.`
-        : `As a Principal Site Reliability Engineer (SRE), design a comprehensive infrastructure and deployment strategy.
+MISSION OBJECTIVES:
+1. **Infrastructure as Code (IaC)**: Architect a robust IaC layer (Terraform/Pulumi). Specify cloud provider, regions, and core infrastructure components (Compute, DB, Storage).
+2. **Standard Environment Tiering**: Define a strict 3-tier strategy (Dev, Staging, Prod). Map specific scaling rules and access controls to each environment.
+3. **CI/CD Pipeline Architecture**: Design a complete pipeline with build, test, and deploy stages. Define triggers, tools, and rollback strategies.
+4. **Containerization & Orchestration**: Provide a high-fidelity Docker/Kubernetes specification. Include Dockerfile strategy and scaling policies.
+5. **Zero-Downtime Deployment**: Select a high-fidelity deployment model (Blue-Green/Canary) that supports the project's availability requirements.
+6. **Golden Signals Observability**: Design a monitoring and logging system focused on Latency, Traffic, Errors, and Saturation. Include alerting rules.
+7. **DR & Resilience**: Define mandatory RPO/RTO targets, backup strategies, and failover procedures.
+8. **Executive Summary**: Provide a high-level summary and detailed description of the infrastructure design.
 
-User Request: ${user_request}
-
-${archDesign?.content ? `Architecture Design:
-${JSON.stringify(archDesign.content, null, 2)}` : ""}
-
-${pmSpec?.content ? `Product Requirements:
-${JSON.stringify(pmSpec.content, null, 2)}` : ""}
-
-CRITICAL GOALS:
-1. **IaC First**: All infrastructure must be managed via Code. Selection and justification of tools (Terraform, Pulumi, etc.) is mandatory.
-2. **Standard Environment Tiering**: Define a 3-tier environment strategy (Dev, Staging, Prod) with locked-down production access.
-3. **Deployment Strategy**: Select a sophisticated deployment model (e.g., Blue-Green or Canary) to ensure zero-downtime releases.
-4. **Observability**: Design a "Golden Signals" monitoring system (Latency, Traffic, Errors, Saturation).
-5. **Disaster Recovery**: Define the RPO/RTO metrics and backup/restore procedures.
-6. **Executive Summary**: Provide a high-level summary and detailed description of the infrastructure strategy.
-
-Ensure the specifications are professional, scalable, and perfectly aligned with the provided Architecture Design.`;
+Focus on creating a professional, cost-optimized, and battle-hardened infrastructure strategy. Strategic reasoning and technical justification are prioritized. Respond with ONLY the JSON object.`;
     }
 
     let llmDevOps: DevOpsBackendArtifact | null = null;
@@ -77,7 +68,7 @@ Ensure the specifications are professional, scalable, and perfectly aligned with
         },
         {
           reasoning: true,
-          temperature: 0.7,
+          temperature: 0.3,
           cacheId: context.cacheId,
           role: "DevOps"
         }

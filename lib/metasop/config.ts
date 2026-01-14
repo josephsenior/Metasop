@@ -76,7 +76,7 @@ export const defaultConfig: MetaSOPConfig = {
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 300000, // 300 seconds (5 minutes) - increased for rate limit handling
+        timeout: 900000, // 900 seconds (15 minutes) - increased for large artifact generation
         retries: 5, // Increased retries for rate limit scenarios
       },
       ui_design: {

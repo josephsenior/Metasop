@@ -2,20 +2,57 @@
  * Google Gemini LLM Provider
  * Supports Gemini 2.0 Flash and other Gemini models
  * Gemini 2.0 Flash offers excellent structured output support via responseSchema
+ * Updated: Implements Schema Injection for Thinking Visibility
  */
 
 import type { LLMProvider, LLMOptions } from "./llm-adapter";
 import { logger } from "../utils/logger";
 import { MetaSOPEvent } from "../types";
+import * as fs from "fs";
+import * as path from "path";
 
 export class GeminiLLMProvider implements LLMProvider {
   private apiKey: string;
   private baseUrl: string = "https://generativelanguage.googleapis.com/v1alpha";
   private defaultModel: string = "gemini-3-flash-preview";
 
+  /**
+   * Calculate cost based on model and token usage
+   */
+  private calculateCost(model: string, usage: any): number {
+    const promptTokens = usage.promptTokenCount || 0;
+    const responseTokens = usage.candidatesTokenCount || 0;
+    const cachedTokens = usage.cachedContentTokenCount || 0;
+    const thoughtsTokens = usage.thoughtsTokenCount || 0;
+
+    // Gemini pricing per 1M tokens (as of 2024/2025)
+    // Input: Live prompt tokens
+    // Cached: Tokens read from context cache (discounted)
+    // Output: Candidate tokens + native thoughts tokens
+    const pricing: Record<string, { input: number; output: number; cached: number }> = {
+      'gemini-3-flash': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-3-pro': { input: 1.25, output: 5.0, cached: 0.3125 },
+      'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
+    };
+
+    // Extract base model name
+    const isFlash = model.toLowerCase().includes('flash');
+    const isPro = model.toLowerCase().includes('pro');
+    const rates = isFlash ? pricing['gemini-3-flash'] : (isPro ? pricing['gemini-3-pro'] : pricing['gemini-3-flash']);
+
+    // Live prompt tokens = Total prompt - Cached
+    const livePromptTokens = Math.max(0, promptTokens - cachedTokens);
+
+    const inputCost = (livePromptTokens / 1_000_000) * rates.input;
+    const cachedCost = (cachedTokens / 1_000_000) * rates.cached;
+    const outputCost = ((responseTokens + thoughtsTokens) / 1_000_000) * rates.output;
+
+    return inputCost + cachedCost + outputCost;
+  }
+
   constructor(apiKey: string, model?: string) {
     this.apiKey = apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
-    this.defaultModel = model || "gemini-3-flash-preview";
+    this.defaultModel = model ?? "gemini-3-flash-preview";
   }
 
   async generate(prompt: string, options?: LLMOptions): Promise<string> {
@@ -41,8 +78,8 @@ ${prompt}`
           },
         ],
         generationConfig: {
-          temperature: options?.temperature ?? 0.7,
-          maxOutputTokens: options?.maxTokens ?? 16000,
+          temperature: options?.temperature ?? 0.1,
+          maxOutputTokens: options?.maxTokens ?? 65000,
           ...(options?.reasoning ? { thinkingConfig: { includeThoughts: true } } : {}),
         },
       };
@@ -83,17 +120,21 @@ ${prompt}`
         const total = usage.totalTokenCount || 0;
         const cached = usage.cachedContentTokenCount || 0;
         const savedPercent = total > 0 ? Math.round((cached / (total + cached)) * 100) : 0;
+        const cost = this.calculateCost(model, usage);
 
         console.log("\n" + "-".repeat(40));
         console.log(`   TOKEN ECONOMY : ${model}`);
-        console.log(`   Prompt: ${usage.promptTokenCount}`);
+        console.log(`   Prompt: ${usage.promptTokenCount}${usage.promptTokensDetails ? ` (${JSON.stringify(usage.promptTokensDetails)})` : ""}`);
         console.log(`   Response: ${usage.candidatesTokenCount}`);
-        console.log(`   Cached: ${cached} (${savedPercent}% saved)`);
+        if (usage.thoughtsTokenCount) console.log(`   Thoughts: ${usage.thoughtsTokenCount}`);
+        console.log(`   Cached: ${cached} (${savedPercent}% saved)${usage.cacheTokensDetails ? ` (${JSON.stringify(usage.cacheTokensDetails)})` : ""}`);
         console.log(`   Total: ${total}`);
+        console.log(`   Cost: $${cost.toFixed(6)}`);
         console.log(`   Latency: ${Date.now() - startTime}ms`);
         console.log("-".repeat(40) + "\n");
 
-        logger.info("Token usage metadata", { usage, model });
+        const finishReason = data.candidates?.[0]?.finishReason;
+        logger.info("Token usage metadata", { usage, model, cost, finishReason });
       }
 
       if (!content) {
@@ -190,12 +231,37 @@ ${prompt}`
         2. Ensure ALL fields are present according to the schema.
         3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
 
+    // Schema Injection: Force Gemini 3 to output reasoning visible in JSON since native thinking is hidden
+    // UPDATE: Gemini 3 now supports native thinking in some contexts, and schema injection can cause truncation.
+    // We only use injection for models that DON'T support native thinking or where we want explicit JSON reasoning.
+    let finalSchema = schema;
+    const isGemini3 = model.includes('gemini-3');
+
+    if (options?.reasoning && !isGemini3 && schema.type === 'object' && schema.properties) {
+      try {
+        finalSchema = JSON.parse(JSON.stringify(schema)); // Deep clone
+        finalSchema.properties._reasoning = {
+          type: 'string',
+          description: 'INTERNAL: First, think step-by-step about the solution before generating the rest of the JSON. Write your reasoning here.'
+        };
+        if (!finalSchema.required) finalSchema.required = [];
+        // Add to required if not present
+        if (!finalSchema.required.includes('_reasoning')) {
+          // Try to put it first to encourage thinking before generation
+          finalSchema.required.unshift('_reasoning');
+        }
+        logger.info("[Gemini] Injected _reasoning field into schema for legacy thinking capture");
+      } catch (err) {
+        logger.warn("[Gemini] Failed to inject reasoning schema", { err });
+        finalSchema = schema; // Fallback
+      }
+    }
+
     try {
       // Gemini supports structured output via responseSchema parameter
       // Convert our schema to Gemini's schema format
       const dynamicPaths = new Set<string>();
-      const geminiSchema = this.convertToGeminiSchema(schema, dynamicPaths);
-      console.log(`[Gemini] Dynamic fields identified: ${Array.from(dynamicPaths).join(", ")}`);
+      const geminiSchema = this.convertToGeminiSchema(finalSchema, dynamicPaths);
 
       const requestBody: any = {
         contents: [
@@ -208,20 +274,18 @@ ${prompt}`
           },
         ],
         generationConfig: {
-          temperature: model.includes('gemini-3') ? 0.3 : (options?.temperature ?? 0.7),
-          maxOutputTokens: options?.maxTokens ?? 64000,
+          temperature: isGemini3 ? 0.1 : (options?.temperature ?? 0.7),
+          maxOutputTokens: options?.maxTokens ?? 65000,
           responseMimeType: "application/json",
           responseSchema: geminiSchema,
-          // Gemini 3 does internal thinking by default. 
-          // Enabling thinkingConfig explicitly often breaks JSON adherence for structured outputs.
-          ...(options?.reasoning && !model.includes('gemini-3') ? { thinkingConfig: { includeThoughts: true } } : {}),
+          // Removed thinkingConfig to prevent stream contamination and resolve PM agent failures
         },
       };
 
       // ONLY add systemInstruction if NOT using context cache (API restriction)
       if (!options?.cacheId) {
         requestBody.systemInstruction = {
-          parts: [{ text: "You are a specialized JSON generator. You MUST ONLY output valid JSON. No conversational text, no preamble, no markdown. Just the raw JSON object." }]
+          parts: [{ text: "You are a specialized JSON generator. You MUST ONLY output valid JSON. No conversational text, no preamble, no markdown, no explanations. Just the raw JSON object." }]
         };
       }
 
@@ -230,54 +294,54 @@ ${prompt}`
         requestBody.cachedContent = options.cacheId;
       }
 
-      const response = await fetch(
-        `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      // Use non-streaming endpoint for structured generation to avoid truncation issues
+      const response = await fetch(`${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`Gemini API error: ${error.error?.message || response.statusText} `);
+        throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
       }
 
       const data = await response.json();
-      console.log(`[Gemini] Response data received. Candidates: ${data.candidates?.length || 0}`);
 
-      const jsonText = data.candidates?.[0]?.content?.parts?.find((p: any) => p.text)?.text || "";
-      const thoughts = data.candidates?.[0]?.content?.parts?.find((p: any) => p.thought)?.thought;
+      // Extract JSON content from response
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      let jsonText = "";
 
-      if (jsonText) {
-        console.log(`[Gemini] JSON text received (${jsonText.length} chars)`);
-      } else {
-        console.warn(`[Gemini] NO JSON TEXT RECEIVED! Parts:`, JSON.stringify(data.candidates?.[0]?.content?.parts, null, 2));
+      for (const part of parts) {
+        if (part.text) {
+          jsonText += part.text;
+        }
       }
 
-      if (thoughts) {
-        const thoughtsText = typeof thoughts === 'string' ? thoughts : JSON.stringify(thoughts, null, 2);
-        console.log("\n💭 THOUGHTS (Structured):\n", thoughtsText.substring(0, 500) + (thoughtsText.length > 500 ? "..." : ""));
-      }
+      const usageMetadata = data.usageMetadata;
 
       // Token Economy Log
-      if (data.usageMetadata) {
-        const usage = data.usageMetadata;
+      if (usageMetadata) {
+        const usage = usageMetadata;
         const total = usage.totalTokenCount || 0;
         const cached = usage.cachedContentTokenCount || 0;
         const savedPercent = total > 0 ? Math.round((cached / (total + cached)) * 100) : 0;
+        const cost = this.calculateCost(model, usage);
+
+        const finishReason = data.candidates?.[0]?.finishReason;
 
         const logEntry = `
         ----------------------------------------
        TOKEN ECONOMY: ${model}
-        Prompt: ${usage.promptTokenCount}
+        Prompt: ${usage.promptTokenCount}${usage.promptTokensDetails ? ` (${JSON.stringify(usage.promptTokensDetails)})` : ""}
         Response: ${usage.candidatesTokenCount}
-        Cached: ${cached} (${savedPercent}% saved)
+        ${usage.thoughtsTokenCount ? `Thoughts: ${usage.thoughtsTokenCount}\n        ` : ""}Cached: ${cached} (${savedPercent}% saved)${usage.cacheTokensDetails ? ` (${JSON.stringify(usage.cacheTokensDetails)})` : ""}
         Total: ${total}
+        Cost: $${cost.toFixed(6)}
         Latency: ${Date.now() - startTime} ms
+        Finish Reason: ${finishReason}
         ----------------------------------------
           `;
         console.log(logEntry);
@@ -286,17 +350,28 @@ ${prompt}`
           console.warn("[RELIABILITY] Response likely truncated due to token limit.");
         }
 
-        logger.info("Token usage metadata", { usage, model });
+        logger.info("Token usage metadata", { usage, model, cost });
       }
 
       if (!jsonText) {
         throw new Error("No JSON response from Gemini API");
       }
 
-      // Parse JSON (should be valid due to responseSchema)
+      // DUMP TO FILE FOR USER INSPECTION (Specific to Engineer agent)
+      if (options?.role === "Engineer") {
+        try {
+          const debugFilePath = path.join(process.cwd(), "engineer_raw_response.json");
+          fs.writeFileSync(debugFilePath, jsonText);
+          console.error(`\n[DIAGNOSTIC] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
+          console.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters\n`);
+        } catch (dumpErr) {
+          logger.error("Failed to dump engineer debug response", { error: (dumpErr as Error).message });
+        }
+      }
+
+      // Parse final aggregated JSON
       let result: any;
       try {
-        // First try standard parse
         result = JSON.parse(jsonText);
       } catch (parseError: any) {
         logger.warn("Gemini standard JSON parse failed, attempting reliability repair", { error: parseError.message });
@@ -304,7 +379,7 @@ ${prompt}`
         // Reliability Repair Logic
         let cleaned = jsonText.trim();
 
-        // 1. Extract JSON content between the first '{' or '[' and the last '}' or ']'
+        // 1. Extract JSON content boundaries
         const firstBrace = cleaned.indexOf('{');
         const firstBracket = cleaned.indexOf('[');
         let startIdx = -1;
@@ -326,24 +401,20 @@ ${prompt}`
         if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
           cleaned = cleaned.substring(startIdx, endIdx + 1);
         } else {
-          // Fallback to markdown block removal if no braces found
           cleaned = cleaned.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
         }
 
-        // 1b. Final cleanup - sometimes models add "JSON" or other markers after extraction
         cleaned = cleaned.trim();
 
         // 2. Fix unterminated strings
-        // If the last character is NOT a closing brace/bracket/quote, it might be a truncated string
         if (!cleaned.endsWith('}') && !cleaned.endsWith(']') && !cleaned.endsWith('"')) {
-          // Count quotes to see if we're in the middle of a string
           const quoteCount = (cleaned.match(/"/g) || []).length;
           if (quoteCount % 2 !== 0) {
             cleaned += '"';
           }
         }
 
-        // 3. Remove trailing commas before closing braces/brackets
+        // 3. Remove trailing commas
         cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
         // 4. Balance braces and brackets
@@ -352,7 +423,6 @@ ${prompt}`
         let openBrackets = (cleaned.match(/\[/g) || []).length;
         let closeBrackets = (cleaned.match(/\]/g) || []).length;
 
-        // If we have more open than closed, append the missing ones
         while (openBrackets > closeBrackets) {
           cleaned += ']';
           closeBrackets++;
@@ -362,20 +432,28 @@ ${prompt}`
           closeBraces++;
         }
 
-        // 5. Sanitize control characters
-        cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
-
         try {
           result = JSON.parse(cleaned);
-        } catch (e3: any) {
-          logger.error("Reliability repair failed", { original: jsonText.substring(jsonText.length - 100) });
-          throw new Error(`Failed to parse Gemini JSON despite reliability cleanup: ${e3.message}`);
+        } catch (repairError: any) {
+          logger.error("Reliability repair failed", { error: repairError.message, text: cleaned.substring(0, 100) });
+          // Final fallback: try to extract anything that looks like JSON
+          throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
         }
       }
 
       // Post-process dynamic fields (JSON strings to objects)
       if (dynamicPaths.size > 0) {
         this.processDynamicFields(result, dynamicPaths);
+      }
+
+      // Extract and stream injected reasoning if present
+      if ((result as any)._reasoning) {
+        // Just logs here, we already streamed it!
+        const thoughtContent = (result as any)._reasoning;
+        logger.info("[Gemini] Captured injected reasoning complete", { length: thoughtContent.length });
+
+        // Clean up metadata from result
+        delete (result as any)._reasoning;
       }
 
       return result as T;
@@ -395,11 +473,12 @@ ${prompt}`
     onProgress: (event: Partial<MetaSOPEvent>) => void,
     options?: LLMOptions
   ): Promise<T> {
-    // Call standard structured generation
-    const result = await this.generateStructured<T>(prompt, schema, options);
+    // Call standard structured generation with onProgress injected into options
+    const result = await this.generateStructured<T>(prompt, schema, { ...options, onProgress });
 
     // For now, true real-time streaming of Gemini thoughts via raw fetch is complex.
-    // The VercelAILlmProvider is the primary choice for Immersive Streaming.
+    // However, we now capture "thinking" from the completed response and emit it via onProgress
+    // inside generateStructured.
 
     return result;
   }

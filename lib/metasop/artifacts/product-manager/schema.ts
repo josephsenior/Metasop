@@ -1,7 +1,7 @@
 
 export const pmSchema = {
     type: "object",
-    required: ["user_stories", "acceptance_criteria"],
+    required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
     properties: {
         user_stories: {
             type: "array",
@@ -9,7 +9,7 @@ export const pmSchema = {
             description: "Array of user stories. Aim for 5-10 detailed stories.",
             items: {
                 type: "object",
-                required: ["title", "story"],
+                required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
                 properties: {
                     id: {
                         type: "string",
