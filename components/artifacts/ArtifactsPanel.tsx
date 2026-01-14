@@ -171,16 +171,6 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                             </h3>
                         </div>
                         <div className="flex items-center gap-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyJson}>
-                                            <Copy className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Copy JSON</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
