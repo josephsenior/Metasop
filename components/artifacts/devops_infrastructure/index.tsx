@@ -474,7 +474,7 @@ export default function DevOpsInfrastructurePanel({
 
                 <TabsContent key="monitor" value="monitor" className="m-0 outline-none space-y-4">
                   <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card>
+                    <Card className="h-full">
                       <div className="p-3 border-b border-border/40 bg-muted/20 flex items-center gap-2">
                         <Activity className="h-4 w-4 text-purple-500" />
                         <h3 className="text-sm font-semibold">Alerting Rules</h3>
@@ -506,8 +506,8 @@ export default function DevOpsInfrastructurePanel({
                       </div>
                     </Card>
 
-                    <div className="space-y-4">
-                      <Card className="p-4 bg-zinc-950 text-zinc-300 border-zinc-800">
+                    <div className="space-y-4 h-full">
+                      <Card className="p-4 bg-zinc-950 text-zinc-300 border-zinc-800 h-full">
                         <div className="flex items-center gap-2 mb-4 text-zinc-100 font-mono text-sm">
                           <Terminal className="h-4 w-4" />
                           <span>Log Aggregation</span>

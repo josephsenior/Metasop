@@ -47,7 +47,7 @@ function ApiEndpointCard({ api }: { api: any }) {
 
   return (
     <motion.div variants={item} className={cn(
-      "group relative flex flex-col p-4 rounded-xl border transition-all hover:shadow-md",
+      "group relative flex flex-col p-4 rounded-xl border transition-all hover:shadow-md h-full",
       styles.colors.bgCard, styles.colors.borderMuted
     )}>
       <CopyButton text={`${api.method} ${api.path}`} />
@@ -134,7 +134,7 @@ function ApiEndpointCard({ api }: { api: any }) {
 function DatabaseTableCard({ table }: { table: any }) {
   return (
     <motion.div variants={item} className={cn(
-      "overflow-hidden rounded-xl border shadow-sm",
+      "overflow-hidden rounded-xl border shadow-sm h-full",
       styles.colors.bgCard, styles.colors.borderMuted
     )}>
       <div className="bg-purple-500/5 px-4 py-3 border-b border-purple-500/10 flex items-center justify-between">
@@ -411,17 +411,22 @@ export default function ArchDesignPanel({
                       {data.design_doc ? (
                         <div className="space-y-4">
                           {(() => {
-                            // Standardize headers and split by major sections
-                            const sections = data.design_doc
-                              .replace(/^# /gm, '## ') // Treat # as ## for card splitting
-                              .split('## ')
+                            // Normalize literal \n or \\n sequences if they exist
+                            const normalizedDoc = data.design_doc
+                              .replace(/\\n/g, '\n')
+                              .trim();
+
+                            // Split by any level of markdown header (#, ##, ###, etc.)
+                            // Regex looks for headers at the start of original or normalized lines
+                            const sections = normalizedDoc
+                              .split(/\n(?=#+ )|^#+ /m)
                               .filter(s => s.trim().length > 0);
 
-                            if (sections.length === 0 || (sections.length === 1 && !data.design_doc.includes('##'))) {
+                            if (sections.length <= 1 && !normalizedDoc.includes('# ')) {
                               return (
                                 <PhilosophySection
                                   title="System Vision"
-                                  content={data.design_doc}
+                                  content={normalizedDoc}
                                   icon={BookOpen}
                                   color="text-blue-600"
                                 />
@@ -430,10 +435,8 @@ export default function ArchDesignPanel({
 
                             return sections.map((section, idx) => {
                               const lines = section.trim().split('\n');
-                              const title = lines[0].trim();
+                              const title = lines[0].replace(/^#+ /, '').trim();
                               const content = lines.slice(1).join('\n').trim();
-
-                              if (!content && idx < sections.length - 1) return null; // Skip title-only sections unless it's the last one
 
                               // Map icons based on title keywords
                               let icon = Layers;
@@ -455,6 +458,9 @@ export default function ArchDesignPanel({
                               } else if (lowerTitle.includes('overview') || lowerTitle.includes('summary')) {
                                 icon = BookOpen;
                                 color = "text-blue-600";
+                              } else if (lowerTitle.includes('scale') || lowerTitle.includes('performance')) {
+                                icon = Zap;
+                                color = "text-amber-500";
                               }
 
                               return (
