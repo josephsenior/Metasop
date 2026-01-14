@@ -39,7 +39,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Brain, Cpu, Zap } from "lucide-react"
+import { Brain, Cpu, Zap, Search, Tag, Filter, Palette } from "lucide-react"
+import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +77,8 @@ export default function CreateDiagramPage() {
   const [includeAPIs] = useState(true)
   const [includeDatabase] = useState(true)
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview")
+  const [activeCategory, setActiveCategory] = useState("All")
+  const [searchQuery, setSearchQuery] = useState("")
 
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
@@ -718,40 +723,98 @@ export default function CreateDiagramPage() {
                     </Alert>
                   )}
 
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <h3 className="text-sm font-semibold">Quick Start</h3>
+                        <Palette className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-sm font-semibold">Templates</h3>
                       </div>
-                      <Badge variant="secondary" className="text-[10px]">
-                        Recommended
+                      <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">
+                        {promptTemplates.length} Available
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start text-left h-auto py-2"
-                        onClick={() => setPrompt("Create a microservices architecture for an e-commerce platform with search, cart, and payment services.")}
-                      >
-                        E-commerce Microservices
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start text-left h-auto py-2"
-                        onClick={() => setPrompt("Design a serverless data pipeline for real-time analytics using AWS Lambda, S3, and Kinesis.")}
-                      >
-                        Serverless Data Pipeline
-                      </Button>
+
+                    {/* Category Filter */}
+                    <ScrollArea className="w-full whitespace-nowrap pb-2">
+                      <div className="flex gap-1.5">
+                        {templateCategories.map((category) => (
+                          <Button
+                            key={category}
+                            variant={activeCategory === category ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setActiveCategory(category)}
+                            className={`h-7 px-3 text-[10px] rounded-full transition-all duration-300 ${activeCategory === category
+                                ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                                : "hover:bg-blue-50 hover:text-blue-600 border-border/50"
+                              }`}
+                          >
+                            {category}
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+
+                    {/* Search Templates */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                      <Input
+                        placeholder="Search templates..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-8 pl-8 text-[11px] bg-background/50 border-border/50 focus-visible:ring-blue-500/30"
+                      />
                     </div>
-                    <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
-                      <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">
-                        💡 Pro Tip
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Be specific about your tech stack and requirements for better results.
+
+                    {/* Template List */}
+                    <div className="grid grid-cols-1 gap-2.5 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                      {promptTemplates
+                        .filter(t => (activeCategory === "All" || t.category === activeCategory) &&
+                          (t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.description.toLowerCase().includes(searchQuery.toLowerCase())))
+                        .map((template) => (
+                          <motion.button
+                            key={template.id}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setPrompt(template.prompt)}
+                            className="group text-left p-3 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 hover:bg-linear-to-br hover:from-blue-500/[0.02] hover:to-purple-500/[0.02] transition-all duration-300 shadow-sm hover:shadow-md"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <h4 className="text-[11px] font-bold text-foreground group-hover:text-blue-600 transition-colors">
+                                {template.title}
+                              </h4>
+                              <div className="p-1 rounded-md bg-muted/50 group-hover:bg-blue-500/10 group-hover:text-blue-600 transition-colors">
+                                <Tag className="h-3 w-3" />
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 mb-2 group-hover:text-muted-foreground/80 transition-colors">
+                              {template.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {template.tags.slice(0, 3).map(tag => (
+                                <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground group-hover:bg-blue-500/5 group-hover:text-blue-600/70 transition-colors">
+                                  {tag}
+                                </span>
+                              ))}
+                              {template.tags.length > 3 && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground/50">
+                                  +{template.tags.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          </motion.button>
+                        ))}
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 to-purple-500/5">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Brain className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                        <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold">
+                          Pro Tip
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Templates provide a solid foundation. You can always refine the generated diagram by giving specific instructions at the bottom.
                       </p>
                     </div>
                   </div>
