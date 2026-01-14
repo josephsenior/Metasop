@@ -923,10 +923,6 @@ export default function CreateDiagramPage() {
                     </Select>
 
                     <div className="flex items-center gap-3">
-                      <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-muted/30 text-[10px] text-muted-foreground transition-opacity group-focus-within:opacity-100 opacity-60">
-                        <Kbd className="bg-transparent border-0 p-0 text-[10px]">Enter</Kbd>
-                        <span className="font-medium">to generate</span>
-                      </div>
                       <span className="text-xs text-muted-foreground mr-1">
                         {prompt.length}/20
                       </span>
