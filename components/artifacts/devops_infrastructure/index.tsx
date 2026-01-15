@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -100,6 +101,7 @@ export default function DevOpsInfrastructurePanel({
 }: {
   artifact: any
 }) {
+  const [activeFile, setActiveFile] = React.useState<'dockerfile' | 'compose'>('dockerfile')
   const data = (artifact?.content || artifact || {}) as DevOpsBackendArtifact
 
   const {
@@ -320,13 +322,25 @@ export default function DevOpsInfrastructurePanel({
                           <div className="lg:col-span-1 border-r border-zinc-800 p-2 space-y-1">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase px-2 py-1 tracking-wider">Files</div>
                             {containerization.dockerfile && (
-                              <div className="flex items-center gap-2 px-2 py-1.5 bg-blue-500/10 text-blue-400 rounded-md text-xs cursor-default">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors",
+                                  activeFile === 'dockerfile' ? "bg-blue-500/10 text-blue-400" : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900"
+                                )}
+                                onClick={() => setActiveFile('dockerfile')}
+                              >
                                 <Terminal className="h-3.5 w-3.5" />
                                 Dockerfile
                               </div>
                             )}
                             {containerization.docker_compose && (
-                              <div className="flex items-center gap-2 px-2 py-1.5 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900 rounded-md text-xs transition-colors cursor-default">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors",
+                                  activeFile === 'compose' ? "bg-blue-500/10 text-blue-400" : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900"
+                                )}
+                                onClick={() => setActiveFile('compose')}
+                              >
                                 <Box className="h-3.5 w-3.5" />
                                 compose.yml
                               </div>
@@ -361,29 +375,56 @@ export default function DevOpsInfrastructurePanel({
 
                           {/* Code Viewer */}
                           <div className="lg:col-span-4 p-0 bg-zinc-950/50 relative group">
-                            {containerization.dockerfile ? (
-                              <>
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                  <CopyButton text={containerization.dockerfile} />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-zinc-800"
-                                    onClick={() => downloadFile(containerization.dockerfile!, "Dockerfile", "text/plain")}
-                                  >
-                                    <Download className="h-3.5 w-3.5" />
-                                  </Button>
+                            {activeFile === 'dockerfile' ? (
+                              containerization.dockerfile ? (
+                                <>
+                                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <CopyButton text={containerization.dockerfile} />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                      onClick={() => downloadFile(containerization.dockerfile!, "Dockerfile", "text/plain")}
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                  <ScrollArea className="h-[400px] w-full">
+                                    <pre className="p-4 font-mono text-xs text-blue-300 leading-relaxed whitespace-pre-wrap">
+                                      {containerization.dockerfile.replace(/\\n/g, '\n')}
+                                    </pre>
+                                  </ScrollArea>
+                                </>
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+                                  No Dockerfile content available
                                 </div>
-                                <ScrollArea className="h-[400px] w-full">
-                                  <pre className="p-4 font-mono text-xs text-blue-300 leading-relaxed whitespace-pre-wrap">
-                                    {containerization.dockerfile.replace(/\\n/g, '\n')}
-                                  </pre>
-                                </ScrollArea>
-                              </>
+                              )
                             ) : (
-                              <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
-                                No Dockerfile content available
-                              </div>
+                              containerization.docker_compose ? (
+                                <>
+                                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <CopyButton text={containerization.docker_compose} />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                      onClick={() => downloadFile(containerization.docker_compose!, "docker-compose.yml", "text/plain")}
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                  <ScrollArea className="h-[400px] w-full">
+                                    <pre className="p-4 font-mono text-xs text-emerald-300 leading-relaxed whitespace-pre-wrap">
+                                      {containerization.docker_compose.replace(/\\n/g, '\n')}
+                                    </pre>
+                                  </ScrollArea>
+                                </>
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+                                  No Docker Compose content available
+                                </div>
+                              )
                             )}
                           </div>
                         </div>

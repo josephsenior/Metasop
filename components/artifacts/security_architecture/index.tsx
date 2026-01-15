@@ -39,6 +39,7 @@ export default function SecurityArchitecturePanel({
 }: {
   artifact: any
 }) {
+  const [activeStandard, setActiveStandard] = React.useState<string | null>(null)
   const data = (artifact?.content || artifact || {}) as SecurityBackendArtifact
 
   const {
@@ -161,8 +162,37 @@ export default function SecurityArchitecturePanel({
                             {threat.severity}
                           </Badge>
                         </div>
-                        <div className="p-4 space-y-3">
+                        <div className="p-4 space-y-4">
                           <p className="text-xs text-muted-foreground leading-relaxed">{threat.description}</p>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            {threat.impact && (
+                              <div className="bg-muted/30 p-2 rounded-lg border border-border/40">
+                                <div className="text-[9px] uppercase font-bold text-muted-foreground/60 mb-0.5">Impact</div>
+                                <div className="text-[10px] font-medium text-foreground capitalize">{threat.impact}</div>
+                              </div>
+                            )}
+                            {threat.likelihood && (
+                              <div className="bg-muted/30 p-2 rounded-lg border border-border/40">
+                                <div className="text-[9px] uppercase font-bold text-muted-foreground/60 mb-0.5">Likelihood</div>
+                                <div className="text-[10px] font-medium text-foreground capitalize">{threat.likelihood}</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {threat.affected_components && threat.affected_components.length > 0 && (
+                            <div className="space-y-1.5">
+                              <div className="text-[9px] uppercase font-bold text-muted-foreground/60">Affected Components</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {threat.affected_components.map((comp: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="text-[9px] font-mono px-1.5 py-0 h-4 bg-red-500/5 text-red-600 border-red-500/10 dark:bg-red-500/10 dark:text-red-400">
+                                    {comp}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {threat.mitigation && (
                             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-2.5">
                               <div className="text-[9px] font-bold text-emerald-600 uppercase flex items-center gap-1 mb-1">
@@ -325,12 +355,39 @@ export default function SecurityArchitecturePanel({
                           <div className="text-sm font-medium">{authz?.model || "RBAC"}</div>
                         </div>
                         {Array.isArray((authz as any)?.roles) && (
-                          <div className="space-y-2">
+                          <div className="space-y-2 pb-2">
                             <div className="text-[10px] uppercase text-muted-foreground font-bold">Roles</div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-wrap gap-1.5">
                               {(authz as any).roles.map((role: any, i: number) => (
-                                <div key={i} className="text-xs bg-muted/20 p-1.5 rounded border border-border/20 truncate">
+                                <Badge key={i} variant="outline" className="text-[10px] bg-purple-500/5 text-purple-600 border-purple-500/20">
                                   {typeof role === 'string' ? role : role.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {Array.isArray(authz?.policies) && authz.policies.length > 0 && (
+                          <div className="space-y-3 pt-3 border-t border-border/40">
+                            <div className="text-[10px] uppercase text-muted-foreground font-bold">Access Policies</div>
+                            <div className="space-y-2">
+                              {authz.policies.map((policy: any, i: number) => (
+                                <div key={i} className="bg-muted/30 rounded-lg p-2.5 border border-border/40 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-foreground">{policy.resource}</span>
+                                    <div className="flex gap-1">
+                                      {policy.permissions?.map((p: string, idx: number) => (
+                                        <Badge key={idx} variant="outline" className="text-[8px] uppercase font-mono px-1 h-3.5 border-purple-500/30 text-purple-600">{p}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">{policy.description}</p>
+                                  {policy.roles && (
+                                    <div className="flex flex-wrap gap-1 pt-1 opacity-70">
+                                      {policy.roles.map((r: string, idx: number) => (
+                                        <span key={idx} className="text-[8px] font-mono text-purple-600/60 ring-1 ring-purple-500/20 px-1 rounded">{r}</span>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -448,17 +505,65 @@ export default function SecurityArchitecturePanel({
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="flex flex-wrap gap-2">
-                            {compliance.map((std: any, i: number) => (
-                              <div key={i} className="flex flex-col gap-1">
-                                <Badge variant="outline" className="py-1 px-3 border-indigo-500/20 text-indigo-600 bg-indigo-500/5">
-                                  {typeof std === "string" ? std : (std.standard || "standard")}
-                                </Badge>
-                                {std.implementation_status && (
-                                  <span className="text-[8px] text-muted-foreground text-center italic">{std.implementation_status}</span>
-                                )}
-                              </div>
-                            ))}
+                          <div className="flex flex-col gap-3">
+                            {compliance.map((std: any, i: number) => {
+                              const stdName = typeof std === "string" ? std : (std.standard || "standard")
+                              const isExpanded = activeStandard === stdName
+
+                              return (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    "flex flex-col rounded-lg border transition-all cursor-pointer",
+                                    isExpanded ? "bg-indigo-500/5 border-indigo-500/30 shadow-sm" : "bg-muted/10 border-border/50 hover:bg-muted/20"
+                                  )}
+                                  onClick={() => setActiveStandard(isExpanded ? null : stdName)}
+                                >
+                                  <div className="flex items-center justify-between p-3">
+                                    <div className="flex flex-col">
+                                      <span className="text-xs font-bold text-foreground">{stdName}</span>
+                                      {std.implementation_status && (
+                                        <span className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">{std.implementation_status}</span>
+                                      )}
+                                    </div>
+                                    <Badge variant="outline" className={cn(
+                                      "text-[9px] uppercase font-mono px-1.5",
+                                      std.implementation_status === 'compliant' ? "text-emerald-500 border-emerald-500/20 bg-emerald-500/5" :
+                                        std.implementation_status === 'in-progress' ? "text-amber-500 border-amber-500/20 bg-amber-500/5" :
+                                          "text-blue-500 border-blue-500/20 bg-blue-500/5"
+                                    )}>
+                                      {std.implementation_status || 'planned'}
+                                    </Badge>
+                                  </div>
+
+                                  {isExpanded && (std.description || std.requirements) && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: 'auto', opacity: 1 }}
+                                      className="px-3 pb-3 space-y-3 overflow-hidden border-t border-indigo-500/10 pt-3"
+                                    >
+                                      {std.description && (
+                                        <p className="text-[11px] text-foreground/80 leading-relaxed italic border-l-2 border-indigo-500/20 pl-3">
+                                          {std.description}
+                                        </p>
+                                      )}
+                                      {Array.isArray(std.requirements) && (
+                                        <div className="space-y-1.5">
+                                          <div className="text-[9px] font-bold text-indigo-600 uppercase">Requirements</div>
+                                          <div className="flex flex-wrap gap-1.5">
+                                            {std.requirements.map((req: string, idx: number) => (
+                                              <Badge key={idx} variant="secondary" className="text-[9px] bg-background border border-border/50 text-indigo-700/80">
+                                                {req}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </motion.div>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         </CardContent>
                       </Card>

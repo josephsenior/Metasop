@@ -21,8 +21,10 @@ import {
   X,
   Play,
   Save,
-  Download
+  Download,
+  FileText
 } from "lucide-react"
+import { generateAgentContextMarkdown } from "@/lib/metasop/utils/export-context"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -41,8 +43,10 @@ import {
 } from "@/components/ui/select"
 import { Brain, Cpu, Zap, Search, Tag, Filter, Palette } from "lucide-react"
 import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export const dynamic = 'force-dynamic'
 
@@ -66,17 +70,11 @@ export default function CreateDiagramPage() {
     }
   }, [searchParams])
 
-  // Separate effect to trigger generation once prompt is set from URL
-  useEffect(() => {
-    const queryPrompt = searchParams.get("prompt")
-    if (queryPrompt && prompt === decodeURIComponent(queryPrompt) && !isGenerating && !currentDiagram) {
-      handleGenerate()
-    }
-  }, [prompt]) // Trigger when prompt matches URL
   const [includeStateManagement] = useState(true)
   const [includeAPIs] = useState(true)
   const [includeDatabase] = useState(true)
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview")
+  const [isReasoningEnabled, setIsReasoningEnabled] = useState(false)
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -191,7 +189,9 @@ export default function CreateDiagramPage() {
             includeStateManagement,
             includeAPIs,
             includeDatabase,
+            includeDatabase,
             model: selectedModel,
+            reasoning: isReasoningEnabled,
           },
         }),
       })
@@ -549,6 +549,35 @@ export default function CreateDiagramPage() {
     }
   }
 
+  const handleExportContext = () => {
+    if (!currentDiagram) return
+
+    try {
+      const markdown = generateAgentContextMarkdown(currentDiagram)
+      const blob = new Blob([markdown], { type: 'text/markdown' })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `agent-context-${currentDiagram.title?.toLowerCase().replace(/\s+/g, '-') || 'project'}.md`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Agent Context exported",
+        description: "Document optimized for AI coding assistants has been downloaded.",
+      })
+    } catch (err: any) {
+      toast({
+        title: "Export failed",
+        description: err.message || "Failed to export agent context.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <AuthGuard requireAuth={false}>
       <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -619,24 +648,45 @@ export default function CreateDiagramPage() {
             )}
 
             {currentDiagram && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownloadSpecs}
-                      className="gap-1 sm:gap-2 border-dashed"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Download Specs</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Download diagram JSON specs <Kbd>D</Kbd>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <div className="flex items-center gap-1.5">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleExportContext}
+                        className="gap-1 sm:gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-400/10"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span className="hidden sm:inline">Export Context</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Export for AI Coding Assistants <Kbd>E</Kbd>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownloadSpecs}
+                        className="gap-1 sm:gap-2 border-dashed"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Download Specs</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Download diagram JSON specs <Kbd>D</Kbd>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             )}
           </div>
         </div>
@@ -735,7 +785,7 @@ export default function CreateDiagramPage() {
                     </div>
 
                     {/* Category Filter */}
-                    <ScrollArea className="w-full whitespace-nowrap pb-2">
+                    <ScrollArea className="w-full whitespace-nowrap pb-4" type="always">
                       <div className="flex gap-1.5">
                         {templateCategories.map((category) => (
                           <Button
@@ -744,14 +794,15 @@ export default function CreateDiagramPage() {
                             size="sm"
                             onClick={() => setActiveCategory(category)}
                             className={`h-7 px-3 text-[10px] rounded-full transition-all duration-300 ${activeCategory === category
-                                ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                                : "hover:bg-blue-50 hover:text-blue-600 border-border/50"
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "hover:bg-blue-50 hover:text-blue-600 border-border/50"
                               }`}
                           >
                             {category}
                           </Button>
                         ))}
                       </div>
+                      <ScrollBar orientation="horizontal" />
                     </ScrollArea>
 
                     {/* Search Templates */}
@@ -777,7 +828,7 @@ export default function CreateDiagramPage() {
                             whileHover={{ y: -2 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setPrompt(template.prompt)}
-                            className="group text-left p-3 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 hover:bg-linear-to-br hover:from-blue-500/[0.02] hover:to-purple-500/[0.02] transition-all duration-300 shadow-sm hover:shadow-md"
+                            className="group text-left p-3 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 hover:bg-linear-to-br hover:from-blue-500/2 hover:to-purple-500/2 transition-all duration-300 shadow-sm hover:shadow-md"
                           >
                             <div className="flex items-start justify-between gap-2 mb-1.5">
                               <h4 className="text-[11px] font-bold text-foreground group-hover:text-blue-600 transition-colors">
@@ -844,15 +895,6 @@ export default function CreateDiagramPage() {
               <div className="absolute top-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-md border-b border-border shadow-lg">
                 <div className="p-4">
                   <GenerationProgress steps={generationSteps} />
-                </div>
-                {/* Helpful tips while generating */}
-                <div className="px-4 pb-3 border-t border-border/50 pt-3 flex items-center justify-between">
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
-                    <p>
-                      <span className="font-medium text-foreground">Tip:</span> Our AI agents are working together. You can see their reasoning below.
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
@@ -951,7 +993,7 @@ export default function CreateDiagramPage() {
                     placeholder="Describe your application..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="min-h-[50px] max-h-[150px] resize-none text-sm pr-40 sm:pr-48"
+                    className="min-h-[50px] max-h-[150px] resize-none text-sm pl-60 sm:pl-72 pr-40 sm:pr-48"
                     disabled={isGenerating}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -962,11 +1004,11 @@ export default function CreateDiagramPage() {
                       }
                     }}
                   />
-                  <div className="absolute bottom-2 right-2 flex items-center gap-4">
-                    {/* Model Selector */}
+                  {/* Model Selector - Left Side */}
+                  <div className="absolute bottom-2 left-2 z-50 flex items-center bg-background/50 backdrop-blur-md border border-white/10 rounded-lg shadow-sm hover:bg-white/5 transition-all duration-300 divide-x divide-white/10">
+                    {/* Model Selector Section */}
                     <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger className="h-8 w-[130px] sm:w-[150px] bg-background/50 backdrop-blur-md border border-white/10 hover:bg-white/5 transition-all duration-300 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 shadow-sm rounded-lg">
-                        <Brain className="h-3 w-3 text-blue-500" />
+                      <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 rounded-none rounded-l-lg px-3">
                         <SelectValue placeholder="Model" />
                       </SelectTrigger>
                       <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
@@ -976,7 +1018,7 @@ export default function CreateDiagramPage() {
                             <span>Gemini 3 Flash</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="gemini-3-pro" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                        <SelectItem value="gemini-3-pro-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
                           <div className="flex items-center gap-2">
                             <Cpu className="h-3 w-3 text-purple-500" />
                             <span>Gemini 3 Pro</span>
@@ -985,29 +1027,49 @@ export default function CreateDiagramPage() {
                       </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground mr-1">
-                        {prompt.length}/20
-                      </span>
-                      <Button
-                        onClick={handleGenerate}
-                        disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
-                        size="sm"
-                        className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
+                    {/* Thinking Toggle Section */}
+                    <div className="flex items-center gap-2 px-3 h-8">
+                      <Switch
+                        id="reasoning-mode"
+                        checked={isReasoningEnabled}
+                        onCheckedChange={setIsReasoningEnabled}
+                        className="scale-75 data-[state=checked]:bg-blue-600"
+                      />
+                      <Label
+                        htmlFor="reasoning-mode"
+                        className="text-[10px] font-medium text-muted-foreground cursor-pointer select-none flex items-center gap-1.5"
                       >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-xs">Generating...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            <span className="text-xs">Generate</span>
-                          </>
+                        Thinking
+                        {isReasoningEnabled && (
+                          <Brain className="h-3 w-3 text-blue-500 animate-pulse" />
                         )}
-                      </Button>
+                      </Label>
                     </div>
+                  </div>
+
+
+                  <div className="absolute bottom-2 right-2 flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground mr-1">
+                      {prompt.length}/20
+                    </span>
+                    <Button
+                      onClick={handleGenerate}
+                      disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
+                      size="sm"
+                      className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-xs">Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          <span className="text-xs">Generate</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1015,6 +1077,6 @@ export default function CreateDiagramPage() {
           </div>
         </div>
       </div>
-    </AuthGuard>
+    </AuthGuard >
   )
 }

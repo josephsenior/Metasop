@@ -70,7 +70,7 @@ Focus on creating a professional, battle-hardened verification strategy. Precisi
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "QA"

@@ -64,7 +64,7 @@ Your design must be professional, scalable, and optimized for high-throughput pr
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "Architect"

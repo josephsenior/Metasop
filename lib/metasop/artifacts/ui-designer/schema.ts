@@ -21,7 +21,8 @@ export const uiDesignerSchema = {
                             props: {
                                 type: "array",
                                 items: { type: "string" },
-                                description: "Component props/attributes",
+                                maxItems: 10,
+                                description: "Key component props (max 10)",
                             },
                             children: {
                                 type: "array",
@@ -31,7 +32,7 @@ export const uiDesignerSchema = {
                                     type: "object",
                                     properties: {
                                         name: { type: "string" },
-                                        props: { type: "array", items: { type: "string" } },
+                                        props: { type: "array", items: { type: "string" }, maxItems: 10 },
                                         children: {
                                             type: "array",
                                             maxItems: 3,

@@ -92,7 +92,19 @@ function getRelatedArtifacts(
 
     for (const depId of deps) {
         if (allArtifacts[depId]) {
-            related[depId] = allArtifacts[depId];
+            let artifactContent = allArtifacts[depId];
+
+            // SANITIZATION: Strip heavy content from Engineer artifact to prevent token exhaustion
+            if (depId === "engineer_impl") {
+                logger.info("Sanitizing engineer_impl artifact for refinement context");
+                const { file_contents, file_structure, ...sanitized } = artifactContent.content || artifactContent;
+                artifactContent = {
+                    ...artifactContent,
+                    content: sanitized
+                };
+            }
+
+            related[depId] = artifactContent;
         }
     }
 

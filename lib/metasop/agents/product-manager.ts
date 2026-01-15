@@ -82,7 +82,7 @@ Your specifications must provide the definitive "Source of Truth" for the archit
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "Product Manager"
@@ -99,6 +99,7 @@ Your specifications must provide the definitive "Source of Truth" for the archit
         errorStack: error.stack,
         errorType: error.constructor.name,
       });
+      throw error;
     }
 
     // Use LLM-generated PM spec if available

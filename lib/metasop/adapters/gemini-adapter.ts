@@ -30,15 +30,15 @@ export class GeminiLLMProvider implements LLMProvider {
     // Cached: Tokens read from context cache (discounted)
     // Output: Candidate tokens + native thoughts tokens
     const pricing: Record<string, { input: number; output: number; cached: number }> = {
-      'gemini-3-flash': { input: 0.1, output: 0.4, cached: 0.025 },
-      'gemini-3-pro': { input: 1.25, output: 5.0, cached: 0.3125 },
+      'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-3-pro-preview': { input: 1.25, output: 5.0, cached: 0.3125 },
       'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
     };
 
     // Extract base model name
     const isFlash = model.toLowerCase().includes('flash');
     const isPro = model.toLowerCase().includes('pro');
-    const rates = isFlash ? pricing['gemini-3-flash'] : (isPro ? pricing['gemini-3-pro'] : pricing['gemini-3-flash']);
+    const rates = isFlash ? pricing['gemini-3-flash-preview'] : (isPro ? pricing['gemini-3-pro-preview'] : pricing['gemini-3-flash-preview']);
 
     // Live prompt tokens = Total prompt - Cached
     const livePromptTokens = Math.max(0, promptTokens - cachedTokens);
@@ -130,6 +130,7 @@ ${prompt}`
         console.log(`   Cached: ${cached} (${savedPercent}% saved)${usage.cacheTokensDetails ? ` (${JSON.stringify(usage.cacheTokensDetails)})` : ""}`);
         console.log(`   Total: ${total}`);
         console.log(`   Cost: $${cost.toFixed(6)}`);
+        console.log(`   Reasoning: ${!!options?.reasoning}`);
         console.log(`   Latency: ${Date.now() - startTime}ms`);
         console.log("-".repeat(40) + "\n");
 
@@ -340,6 +341,7 @@ ${prompt}`
         ${usage.thoughtsTokenCount ? `Thoughts: ${usage.thoughtsTokenCount}\n        ` : ""}Cached: ${cached} (${savedPercent}% saved)${usage.cacheTokensDetails ? ` (${JSON.stringify(usage.cacheTokensDetails)})` : ""}
         Total: ${total}
         Cost: $${cost.toFixed(6)}
+        Reasoning: ${!!options?.reasoning}
         Latency: ${Date.now() - startTime} ms
         Finish Reason: ${finishReason}
         ----------------------------------------

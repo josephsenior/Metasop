@@ -166,9 +166,17 @@ export default function EngineerImplPanel({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <h2 className={styles.typography.h2}>Engineering Specification</h2>
-              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 text-[10px] px-1.5 h-5">
+              <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 text-[10px] px-1.5 h-5">
                 Implementation
               </Badge>
+              {data.tests_added !== undefined && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px] px-1.5 h-5",
+                  data.tests_added ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/5" : "text-amber-600 border-amber-500/30 bg-amber-500/5"
+                )}>
+                  {data.tests_added ? "Tests Included" : "No Tests"}
+                </Badge>
+              )}
               {runResults.test_commands && runResults.test_commands.length > 0 && (
                 <Badge variant="outline" className="text-[10px] font-mono text-green-600 border-green-500/30 uppercase px-1.5 h-5">
                   Tests Included
@@ -419,6 +427,16 @@ export default function EngineerImplPanel({
                                   <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase bg-background">System</Badge>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground line-clamp-2">{env.description}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <code className="text-[10px] bg-muted px-1 py-0.5 rounded border border-border/50 text-foreground/80 font-mono break-all">
+                                    {env.value}
+                                  </code>
+                                  {env.example && (
+                                    <span className="text-[10px] text-muted-foreground italic border-l border-border/50 pl-2">
+                                      ex: {env.example}
+                                    </span>
+                                  )}
+                                </div>
                               </motion.div>
                             ))}
                           </CardContent>

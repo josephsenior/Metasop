@@ -94,11 +94,26 @@ export async function POST(request: NextRequest) {
       const encoder = new TextEncoder();
       const customReadable = new ReadableStream({
         async start(controller) {
+          let isStreamClosed = false;
+
+          const safeClose = () => {
+            if (!isStreamClosed) {
+              isStreamClosed = true;
+              try {
+                controller.close();
+              } catch (e) {
+                console.error("[Backend] Error closing controller:", e);
+              }
+            }
+          };
+
           const safeEnqueue = (payload: any) => {
+            if (isStreamClosed) return false;
             try {
               controller.enqueue(encoder.encode(JSON.stringify(payload) + "\n"));
               return true;
-            } catch {
+            } catch (e) {
+              console.warn("[Backend] Failed to enqueue, stream might be closed:", e);
               return false;
             }
           };
@@ -216,7 +231,7 @@ export async function POST(request: NextRequest) {
                 timestamp: new Date().toISOString()
               });
             } finally {
-              controller.close();
+              safeClose();
             }
           } catch (error: any) {
             // Clear heartbeat on error
@@ -231,7 +246,7 @@ export async function POST(request: NextRequest) {
             } catch (enqueueError) {
               console.error("[Backend] Error enqueuing failure event:", enqueueError);
             } finally {
-              controller.close();
+              safeClose();
             }
           }
         },

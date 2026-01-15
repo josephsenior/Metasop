@@ -41,19 +41,32 @@ export const ProductManagerArtifactSchema = z.object({
   acceptance_criteria: z.array(AcceptanceCriterionSchema).min(1, "At least one acceptance criterion is required"),
   ui_multi_section: z.boolean().optional().default(false),
   ui_sections: z.number().int().min(0).max(20).optional().default(1),
-  assumptions: z.array(z.string().min(10, "Assumption must be at least 10 characters")).optional(),
-  out_of_scope: z.array(z.string().min(5, "Out of scope item must be at least 5 characters")).optional(),
+  assumptions: z.array(z.string()).optional(),
+  out_of_scope: z.array(z.string()).optional(),
   swot: z.object({
-    strengths: z.array(z.string()),
-    weaknesses: z.array(z.string()),
-    opportunities: z.array(z.string()),
-    threats: z.array(z.string()),
+    strengths: z.array(z.string()).optional(),
+    weaknesses: z.array(z.string()).optional(),
+    opportunities: z.array(z.string()).optional(),
+    threats: z.array(z.string()).optional(),
   }).optional(),
   stakeholders: z.array(z.object({
-    role: z.string(),
-    interest: z.string(),
-    influence: z.enum(["high", "medium", "low"]),
+    role: z.string().optional(),
+    interest: z.string().optional(),
+    influence: z.enum(["high", "medium", "low"]).optional(),
   })).optional(),
+  invest_analysis: z.array(z.object({
+    user_story_id: z.string().optional(),
+    independent: z.boolean().optional(),
+    negotiable: z.boolean().optional(),
+    valuable: z.boolean().optional(),
+    estimatable: z.boolean().optional(),
+    small: z.boolean().optional(),
+    testable: z.boolean().optional(),
+    score: z.number().optional(),
+    comments: z.string().optional(),
+  })).optional(),
+  summary: z.string().optional(),
+  description: z.string().optional(),
 });
 
 // ============================================================================
@@ -64,7 +77,7 @@ const APISchema = z.object({
   path: z.string().regex(/^\/.*/, "API path must start with /"),
   method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
   description: z.string().min(10, "API description must be at least 10 characters"),
-  endpoint: z.string().optional(),
+  // endpoint removed as it is not in JSON schema
   request_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
   response_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
   auth_required: z.boolean().optional(),
@@ -77,12 +90,15 @@ const DecisionSchema = z.object({
   tradeoffs: z.string().min(5, "Tradeoffs must be at least 5 characters"),
   alternatives: z.array(z.string()).optional(),
   status: z.string().optional(),
+  rationale: z.string().optional(),
   consequences: z.string().optional(),
 });
 
 const NextTaskSchema = z.object({
   role: z.enum(["Engineer", "DevOps", "QA", "Designer", "Product Manager"]),
-  task: z.string().min(20, "Task must be at least 20 characters"),
+  task: z.string().min(10, "Task must be at least 10 characters"),
+  title: z.string().optional(),
+  priority: z.enum(["high", "medium", "low"]).optional(),
   description: z.string().optional(),
 });
 
@@ -131,6 +147,8 @@ const TechnologyStackSchema = z.object({
 
 const IntegrationPointSchema = z.object({
   service: z.string().min(1, "Service name is required"),
+  name: z.string().optional(),
+  system: z.string().optional(),
   purpose: z.string().min(1, "Purpose is required"),
   api_docs: z.string().url("API docs must be a valid URL").optional(),
 });
@@ -189,7 +207,7 @@ const EnvironmentVariableSchema = z.object({
 
 export const EngineerArtifactSchema = z.object({
   artifact_path: z.string().min(1, "Artifact path is required"),
-  tests_added: z.boolean(),
+  tests_added: z.boolean().optional(),
   run_results: RunResultsSchema,
   files: z.array(FileNodeSchema).optional(),
   file_changes: z.array(FileNodeSchema).optional(),
@@ -298,6 +316,7 @@ export const QAArtifactSchema = z.object({
   coverage_delta: CoverageDeltaSchema.optional(),
   security_findings: z.array(SecurityFindingSchema).optional(),
   performance_metrics: PerformanceMetricsSchema.optional(),
+  description: z.string().optional(),
 });
 
 // ============================================================================
@@ -462,6 +481,16 @@ export const DevOpsArtifactSchema = z.object({
   deployment: DeploymentSchema,
   monitoring: MonitoringSchema,
   scaling: ScalingSchema.optional(),
+  disaster_recovery: z.object({
+    rpo: z.string(),
+    rto: z.string(),
+    backup_strategy: z.string(),
+    failover_plan: z.string().optional(),
+  }),
+  summary: z.string(),
+  description: z.string(),
+  cloud_provider: z.string().optional(),
+  infra_components: z.number().optional(),
 });
 
 export function validateDevOpsArtifact(data: unknown) {
@@ -483,6 +512,7 @@ const AuthenticationSchema = z.object({
   refresh_tokens: z.boolean().optional(),
   multi_factor_auth: z.boolean().optional(),
   description: z.string().optional(),
+  mfa_enabled: z.boolean().optional(),
 });
 
 const AuthorizationPolicySchema = z.object({
@@ -543,6 +573,8 @@ const EncryptionSchema = z.object({
   data_at_rest: DataAtRestEncryptionSchema,
   data_in_transit: DataInTransitEncryptionSchema,
   key_management: KeyManagementSchema,
+  envelope_encryption: z.boolean().optional(),
+  secrets_management: z.string().optional(),
 });
 
 const ComplianceSchema = z.object({
@@ -600,6 +632,14 @@ const A2UINodeSchema: z.ZodType<any> = z.lazy(() =>
     children: z.array(z.lazy(() => A2UINodeSchema)).optional(),
   })
 );
+
+const WebsiteLayoutSchema = z.object({
+  pages: z.array(z.object({
+    name: z.string(),
+    route: z.string(),
+    sections: z.array(z.string()).optional(),
+  })).min(1, "At least one page is required"),
+});
 
 const ComponentHierarchySchema = z.object({
   root: z.string(),
@@ -673,6 +713,9 @@ export const UIDesignerArtifactSchema = z.object({
     focus_indicators: z.boolean().optional(),
     wcag_level: z.enum(["A", "AA", "AAA"]).optional(),
   }).optional(),
+  website_layout: WebsiteLayoutSchema.optional(),
+  summary: z.string().optional(),
+  description: z.string().optional(),
 });
 
 export function validateUIDesignerArtifact(data: unknown) {

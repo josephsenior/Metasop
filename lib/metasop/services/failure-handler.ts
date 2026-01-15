@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 export enum FailureType {
   TIMEOUT = "timeout",
   NETWORK = "network",
+  RATE_LIMIT = "rate_limit",
   VALIDATION = "validation",
   EXECUTION = "execution",
   UNKNOWN = "unknown",
@@ -50,6 +51,21 @@ export class FailureHandler {
         type: FailureType.NETWORK,
         isRetryable: true,
         message: "Network error",
+        details: { originalError: error.message },
+      };
+    }
+
+    // Rate limit and quota errors
+    if (
+      errorMessage.includes("rate limit") ||
+      errorMessage.includes("too many requests") ||
+      errorMessage.includes("quota") ||
+      errorMessage.includes("exhausted")
+    ) {
+      return {
+        type: FailureType.RATE_LIMIT,
+        isRetryable: true,
+        message: "Rate limit or quota exceeded",
         details: { originalError: error.message },
       };
     }

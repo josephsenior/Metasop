@@ -62,7 +62,9 @@ MISSION OBJECTIVES:
 
 Important Guidelines:
 - Focus on architectural clarity and visual consistency.
+- Focus on architectural clarity and visual consistency.
 - Keep all textual fields professional and extremely concise (max 100 characters).
+- **CRITICAL**: Do NOT exhaustively list every possible HTML/React prop or state boolean (e.g., avoid listing isVisible, isEnabled, etc. unless critical). Limit to the 5-10 most architecturally significant props per component.
 - Avoid repetitive phrasing and ensure every field provides unique value.
 
 RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
@@ -80,7 +82,7 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "UI Designer",

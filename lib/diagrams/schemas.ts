@@ -8,6 +8,7 @@ export const CreateDiagramSchema = z.object({
         includeAPIs: z.boolean().optional(),
         includeDatabase: z.boolean().optional(),
         model: z.string().optional(),
+        reasoning: z.boolean().optional(),
     }).optional(),
 });
 

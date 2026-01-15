@@ -94,7 +94,7 @@ export const defaultConfig: MetaSOPConfig = {
   llm: {
     provider: process.env.NODE_ENV === "test" ? "mock" : "gemini",
     model: "gemini-3-flash-preview", // Use Gemini 3 Flash Preview for fast, high-quality orchestration
-    temperature: 0.7,
+    temperature: 0.3,
     maxTokens: 32000,
   },
   performance: {

@@ -12,6 +12,8 @@ import { createCacheWithLLM } from "./utils/llm-helper";
 import { ExecutionService } from "./services/execution-service";
 import { RetryService, RetryPolicy } from "./services/retry-service";
 import { FailureHandler } from "./services/failure-handler";
+import * as fs from "fs";
+import * as path from "path";
 import {
   safeValidateProductManagerArtifact,
   safeValidateArchitectArtifact,
@@ -115,12 +117,16 @@ export class MetaSOPOrchestrator {
       includeStateManagement?: boolean;
       includeAPIs?: boolean;
       includeDatabase?: boolean;
+      reasoning?: boolean;
     },
     onProgress?: (event: MetaSOPEvent) => void
   ): Promise<MetaSOPResult> {
     const startTime = Date.now();
-    logger.info("Starting MetaSOP orchestration", { user_request: user_request.substring(0, 100) });
-
+    logger.info("Starting MetaSOP Orchestration", {
+      agents: this.config.agents.enabled.length,
+      model: this.config.llm.model,
+      reasoning: options?.reasoning ?? false
+    });
     this.steps = [];
     this.artifacts = {};
     this.report = { events: [] };
@@ -462,6 +468,21 @@ Maintain all existing high-quality elements while incorporating necessary adjust
       step.artifact = result.artifact;
       step.timestamp = new Date().toISOString();
       this.addStepToReport(stepId, role, "success", result.artifact);
+
+      // DEBUG: Dump raw artifact to file for inspection
+      try {
+        const dumpPath = path.join(process.cwd(), `${stepId}_raw_response.json`);
+        const dumpContent = {
+          step_id: stepId,
+          role: role,
+          content: result.artifact.content
+        };
+        // Use synchronous write to ensure it's written before moving on
+        fs.writeFileSync(dumpPath, JSON.stringify(dumpContent, null, 2));
+        logger.info(`[DEBUG] Dumped raw artifact to ${dumpPath}`);
+      } catch (dumpError: any) {
+        logger.warn(`[DEBUG] Failed to dump artifact for ${stepId}: ${dumpError.message}`);
+      }
 
       // --- A2A: Mark task completed and send completion message ---
       this.updateA2ATask(a2aTask.id, "completed", result.artifact?.content || result.artifact);

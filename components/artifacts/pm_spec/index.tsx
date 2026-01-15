@@ -268,6 +268,13 @@ export default function PMSpecPanel({
             color="text-emerald-600 dark:text-emerald-400"
             bg="bg-emerald-500/10"
           />
+          <StatsCard
+            icon={GanttChartSquare}
+            label="INVEST"
+            value={investAnalysis.length}
+            color="text-blue-600 dark:text-blue-400"
+            bg="bg-blue-500/10"
+          />
         </div>
       </div>
 

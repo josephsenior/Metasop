@@ -99,6 +99,8 @@ export interface AgentContext {
     includeStateManagement?: boolean;
     includeAPIs?: boolean;
     includeDatabase?: boolean;
+    model?: string;
+    reasoning?: boolean;
   };
   refinement?: {
     instruction: string;

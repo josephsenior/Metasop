@@ -110,7 +110,9 @@ export class RetryService {
     return message.includes('rate limit') ||
            message.includes('too many requests') ||
            message.includes('requests per min') ||
-           message.includes('rpm');
+           message.includes('rpm') ||
+           message.includes('quota') ||
+           message.includes('exhausted');
   }
 
   /**

@@ -67,7 +67,7 @@ Focus on creating a professional, cost-optimized, and battle-hardened infrastruc
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "DevOps"

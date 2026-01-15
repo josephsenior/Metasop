@@ -65,7 +65,7 @@ Focus on creating a secure-by-default architecture that is perfectly synchronize
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3,
           cacheId: context.cacheId,
           role: "Security"

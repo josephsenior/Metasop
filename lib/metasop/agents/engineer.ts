@@ -77,7 +77,7 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
           }
         },
         {
-          reasoning: true,
+          reasoning: context.options?.reasoning ?? false,
           temperature: 0.3, // Increased to avoid deterministic loops/recitation
           cacheId: context.cacheId,
           role: "Engineer",
