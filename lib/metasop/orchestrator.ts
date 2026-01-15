@@ -157,7 +157,9 @@ ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
 `.trim();
           this.cacheId = await createCacheWithLLM(
             cacheContent,
-            "You are a professional software development team. This is a shared context cache for collaborative agent work. Use it to avoid redundancy."
+            "You are a professional software development team. This is a shared context cache for collaborative agent work. Use it to avoid redundancy.",
+            3600,
+            this.config.llm.model
           );
           logger.info("Orchestrator created base context cache", { cacheId: this.cacheId });
         } catch (cacheError: any) {
@@ -189,7 +191,9 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
 `.trim();
           const newCacheId = await createCacheWithLLM(
             deepCacheContent,
-            "You are a professional software development team. This is deep shared context including architecture design. Reference this to ensure technical consistency across all agents."
+            "You are a professional software development team. This is deep shared context including architecture design. Reference this to ensure technical consistency across all agents.",
+            3600,
+            this.config.llm.model
           );
           this.cacheId = newCacheId;
           context.cacheId = this.cacheId;

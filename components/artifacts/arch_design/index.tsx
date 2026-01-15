@@ -97,7 +97,7 @@ function ApiEndpointCard({ api }: { api: any }) {
           if (typeof raw === 'string') {
             try {
               content = JSON.parse(raw)
-            } catch (e) {
+            } catch {
               content = raw // Fallback to raw string
             }
           }

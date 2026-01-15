@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Brain, Cpu, Zap, Search, Tag, Filter, Palette } from "lucide-react"
+import { Brain, Cpu, Zap, Search, Tag, Palette } from "lucide-react"
 import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
@@ -188,7 +188,6 @@ export default function CreateDiagramPage() {
           options: {
             includeStateManagement,
             includeAPIs,
-            includeDatabase,
             includeDatabase,
             model: selectedModel,
             reasoning: isReasoningEnabled,

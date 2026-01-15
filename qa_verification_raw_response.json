@@ -1,0 +1,126 @@
+{
+  "step_id": "qa_verification",
+  "role": "QA",
+  "content": {
+    "ok": true,
+    "test_strategy": {
+      "unit": "Isolated testing of Domain entities and Use Cases using Vitest. Mocking of external dependencies via Dependency Injection to ensure business logic purity.",
+      "integration": "Testing of NestJS controllers and Repository implementations using Supertest and Testcontainers for PostgreSQL/Redis. Verification of Event-Driven flows via RabbitMQ message interception.",
+      "e2e": "Full-path verification using Playwright. Focuses on critical user journeys: Registration, Course Purchase, and Video Playback across desktop and mobile viewports.",
+      "approach": "Shift-left BDD methodology. Automated quality gates in CI/CD prevent merging code that fails coverage or regression suites. Contract testing for Stripe and Auth0 integrations.",
+      "tools": [
+        "Vitest",
+        "Playwright",
+        "Supertest",
+        "Testcontainers",
+        "K6",
+        "Lighthouse",
+        "Snyk"
+      ],
+      "types": [
+        "Functional",
+        "Contract",
+        "Load",
+        "Security",
+        "Accessibility (WCAG 2.1)",
+        "Visual Regression"
+      ]
+    },
+    "test_cases": [
+      {
+        "name": "Critical Path: Secure Enrollment Flow",
+        "priority": "critical",
+        "type": "e2e",
+        "description": "Verifies that a user can successfully purchase a course and gain immediate access.",
+        "expected_result": "User is redirected to the course player with an active enrollment record in the database.",
+        "gherkin": "Given a logged-in learner on a course landing page, When they complete a Stripe checkout with a valid test card, Then they should see a 'Success' message and the 'Enroll' button should change to 'Start Learning'."
+      },
+      {
+        "name": "Real-time Progress Heartbeat",
+        "priority": "critical",
+        "type": "integration",
+        "description": "Ensures the Progress Service correctly persists video timestamps every 30 seconds.",
+        "expected_result": "Database record for user progress matches the last heartbeat timestamp sent by the client.",
+        "gherkin": "Given an active video session for Lesson ID 123, When a PATCH request is sent to /progress with {last_watched_second: 30}, Then the Progress Service should return 200 OK and the database should reflect 30 seconds watched."
+      },
+      {
+        "name": "RBAC: Instructor Dashboard Access",
+        "priority": "high",
+        "type": "security",
+        "description": "Verifies that only users with the 'instructor' role can access CMS endpoints.",
+        "expected_result": "Learner role receives 403 Forbidden; Instructor role receives 200 OK.",
+        "gherkin": "Given a user authenticated with the 'learner' role, When they attempt to POST to /api/v1/instructor/courses, Then the system should return a 403 Forbidden error."
+      },
+      {
+        "name": "Search Faceted Filtering",
+        "priority": "high",
+        "type": "integration",
+        "description": "Validates that Elasticsearch correctly filters courses by level and category.",
+        "expected_result": "Returned course list contains only items matching the 'Beginner' level filter.",
+        "gherkin": "Given 10 courses across various levels, When a GET request is made to /courses?level=Beginner, Then the response data array should only contain courses where level equals 'Beginner'."
+      },
+      {
+        "name": "Automated Quiz Grading Logic",
+        "priority": "medium",
+        "type": "unit",
+        "description": "Tests the pure logic of the grading engine for multiple-choice questions.",
+        "expected_result": "Score is calculated correctly based on correct/incorrect answer weights.",
+        "gherkin": "Given a quiz with 5 questions, When a user submits 4 correct answers and 1 incorrect answer, Then the grading service should return a score of 80%."
+      }
+    ],
+    "security_plan": {
+      "auth_verification_steps": [
+        "Verify JWT signature and expiration on every protected request.",
+        "Validate Auth0 'scope' and 'permissions' claims against the requested resource.",
+        "Test for session fixation and CSRF protection on the Next.js frontend.",
+        "Ensure PII (email, bio) is encrypted at rest in PostgreSQL."
+      ],
+      "vulnerability_scan_strategy": "Snyk for SCA (Software Composition Analysis) on every PR; OWASP ZAP DAST scans running weekly against the staging environment."
+    },
+    "manual_verification_steps": [
+      "Visual inspection of video player controls (Play, Pause, Speed) on iOS Safari and Android Chrome.",
+      "Verification of PDF certificate layout and dynamic field injection (Name, Date).",
+      "UAT of the 'Drag-and-Drop' curriculum builder for instructors.",
+      "Screen reader navigation check for the course search interface (WCAG compliance)."
+    ],
+    "risk_analysis": [
+      {
+        "impact": "high",
+        "mitigation": "Implement idempotency keys for progress updates and use a Dead Letter Queue (DLQ) for failed event processing.",
+        "risk": "Eventual consistency lag in progress tracking due to event-driven architecture."
+      },
+      {
+        "impact": "high",
+        "mitigation": "Use CloudFront signed URLs and implement adaptive bitrate streaming (HLS) with automated quality switching.",
+        "risk": "Video buffering or unauthorized access to premium content."
+      },
+      {
+        "impact": "medium",
+        "mitigation": "Implement circuit breakers (Hystrix/Resilience4j pattern) for the Stripe API integration.",
+        "risk": "Payment gateway downtime preventing course enrollments."
+      }
+    ],
+    "summary": "The EduStream QA Plan utilizes a multi-layered automated approach to ensure the reliability of a high-scale e-learning platform. By combining BDD-driven E2E tests with rigorous security auditing and performance benchmarking, we guarantee a seamless experience for both learners and instructors.",
+    "coverage": {
+      "branches": 80,
+      "functions": 85,
+      "lines": 90,
+      "percentage": 85,
+      "statements": 90,
+      "threshold": 80
+    },
+    "performance_metrics": {
+      "api_response_time_p95": "< 200ms",
+      "database_query_time": "< 50ms",
+      "first_contentful_paint": "< 1.2s",
+      "largest_contentful_paint": "< 2.5s",
+      "page_load_time": "< 2.0s",
+      "recommendations": [
+        "Implement Redis caching for course metadata",
+        "Optimize video segment sizes for mobile networks",
+        "Use Brotli compression for static assets"
+      ],
+      "time_to_interactive": "< 3.0s"
+    }
+  }
+}

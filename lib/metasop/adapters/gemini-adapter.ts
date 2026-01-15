@@ -152,14 +152,14 @@ ${prompt}`
   /**
    * Create a context cache for large prompts
    */
-  async createCache(content: string, systemInstruction?: string, ttlSeconds: number = 3600): Promise<string> {
-    const model = `models/${this.defaultModel}`;
+  async createCache(content: string, systemInstruction?: string, ttlSeconds: number = 3600, model?: string): Promise<string> {
+    const modelName = model ? (model.startsWith('models/') ? model : `models/${model}`) : `models/${this.defaultModel}`;
 
     try {
-      logger.info("Creating Gemini context cache", { model, contentLength: content.length });
+      logger.info("Creating Gemini context cache", { model: modelName, contentLength: content.length });
 
       const body: any = {
-        model,
+        model: modelName,
         ttl: `${ttlSeconds}s`,
       };
 
@@ -385,6 +385,7 @@ ${prompt}`
         let cleaned = jsonText.trim();
 
         // 1. Extract JSON content boundaries
+        // We look for the first { or [ to start the JSON
         const firstBrace = cleaned.indexOf('{');
         const firstBracket = cleaned.indexOf('[');
         let startIdx = -1;
@@ -394,35 +395,54 @@ ${prompt}`
           startIdx = firstBrace !== -1 ? firstBrace : firstBracket;
         }
 
-        const lastBrace = cleaned.lastIndexOf('}');
-        const lastBracket = cleaned.lastIndexOf(']');
-        let endIdx = -1;
-        if (lastBrace !== -1 && lastBracket !== -1) {
-          endIdx = Math.max(lastBrace, lastBracket);
-        } else {
-          endIdx = lastBrace !== -1 ? lastBrace : lastBracket;
-        }
+        if (startIdx !== -1) {
+          // Check if it ends with a closing character
+          const lastChar = cleaned.trim().slice(-1);
+          const isFinished = lastChar === '}' || lastChar === ']';
 
-        if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-          cleaned = cleaned.substring(startIdx, endIdx + 1);
+          if (isFinished) {
+            // If it seems finished, we find the last closing character
+            const lastBrace = cleaned.lastIndexOf('}');
+            const lastBracket = cleaned.lastIndexOf(']');
+            const endIdx = Math.max(lastBrace, lastBracket);
+            cleaned = cleaned.substring(startIdx, endIdx + 1);
+          } else {
+            // If it seems truncated, we take everything from startIdx and try to repair it
+            cleaned = cleaned.substring(startIdx);
+          }
         } else {
+          // No braces found, try cleaning markdown blocks
           cleaned = cleaned.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
         }
 
         cleaned = cleaned.trim();
 
-        // 2. Fix unterminated strings
-        if (!cleaned.endsWith('}') && !cleaned.endsWith(']') && !cleaned.endsWith('"')) {
-          const quoteCount = (cleaned.match(/"/g) || []).length;
-          if (quoteCount % 2 !== 0) {
-            cleaned += '"';
+        // 2. Handle truncation at key/value level
+        // Remove trailing commas which are invalid in JSON
+        cleaned = cleaned.replace(/,\s*$/g, "");
+
+        // 3. Fix unterminated strings
+        // If it doesn't end with a closing brace or bracket, it might be a truncated string
+        if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+          const lastQuote = cleaned.lastIndexOf('"');
+          const lastBrace = cleaned.lastIndexOf('{');
+          const lastBracket = cleaned.lastIndexOf('[');
+          const lastComma = cleaned.lastIndexOf(',');
+          const lastColon = cleaned.lastIndexOf(':');
+
+          // If the last quote is after all other structural characters, it's likely an open string
+          if (lastQuote !== -1 && lastQuote > Math.max(lastBrace, lastBracket, lastComma, lastColon)) {
+            const quoteCount = (cleaned.match(/"/g) || []).length;
+            if (quoteCount % 2 !== 0) {
+              cleaned += '"';
+            }
           }
         }
 
-        // 3. Remove trailing commas
+        // 4. Remove trailing commas again after possible string repair
         cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
-        // 4. Balance braces and brackets
+        // 5. Balance braces and brackets
         let openBraces = (cleaned.match(/\{/g) || []).length;
         let closeBraces = (cleaned.match(/\}/g) || []).length;
         let openBrackets = (cleaned.match(/\[/g) || []).length;

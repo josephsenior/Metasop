@@ -32,7 +32,6 @@ export async function architectAgent(
       architectPrompt = buildRefinementPrompt(context, "Architect", guidelines);
     } else {
       const projectTitle = (pmSpec?.content as any)?.title || "Project";
-      const userStories = (pmSpec?.content as any)?.user_stories || [];
 
       architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.
 

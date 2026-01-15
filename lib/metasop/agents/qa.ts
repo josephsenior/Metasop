@@ -37,25 +37,24 @@ export async function qaAgent(
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as ArchitectBackendArtifact | undefined;
       const projectTitle = pmArtifact?.title || "Project";
-      const userStories = pmArtifact?.user_stories || [];
       const techStackString = archArtifact?.technology_stack ? Object.values(archArtifact.technology_stack).flat().slice(0, 5).join(", ") : "Modern Stack";
 
-      qaPrompt = `As a Lead Quality Assurance Engineer, design a comprehensive verification STRATEGY for '${projectTitle}'.
+      qaPrompt = `As a Lead Quality Assurance Engineer, design a concise but comprehensive verification STRATEGY for '${projectTitle}'.
 
 ${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}` : `User Request: ${user_request}`}
 ${archDesign?.content ? `Tech Stack: ${techStackString}` : ""}
 ${engineerImpl?.content ? `Implementation Patterns: ${(engineerImpl.content as any).technical_patterns?.join(", ")}` : ""}
 
 MISSION OBJECTIVES:
-1. **High-Fidelity Strategy**: Define a robust test strategy covering Unit, Integration, and E2E layers. Specify tools (e.g., Vitest, Playwright) and the general architectural approach to testing.
-2. **BDD Scenario Mapping**: Map critical-path test scenarios DIRECTLY to user stories. For each test case, include a **Gherkin (Given/When/Then)** specification and precise **Expected Results**.
-3. **Quality Gates & Coverage**: Define mandatory code coverage thresholds (Lines, Functions, Statements, Branches). Target at least 80% coverage for core business logic.
-4. **Resilience & Risk Analysis**: Conduct a risk analysis of the architecture. Identify potential failure modes and define technical mitigations and verification steps.
-5. **Full-Spectrum Benchmarking**: Specify target performance metrics including P95 API response times, Page Load Time, and Core Web Vitals (FCP, LCP, TTI).
-6. **Security & Manual Audits**: Define an authentication verification plan and manual UAT steps for visual/UX inspection.
-7. **Executive Summary**: Provide a high-level summary and detailed description of the Quality Assurance Plan.
+1. **High-Fidelity Strategy**: Define a robust test strategy covering Unit, Integration, and E2E layers.
+2. **BDD Scenario Mapping**: Map 4-6 critical-path test scenarios DIRECTLY to user stories. For each test case, include a **Gherkin (Given/When/Then)** specification and precise **Expected Results**.
+3. **Quality Gates & Coverage**: Define mandatory code coverage thresholds. Target at least 80% coverage for core business logic.
+4. **Resilience & Risk Analysis**: Conduct a risk analysis of the architecture (3-5 key risks). Identify potential failure modes and define technical mitigations.
+5. **Full-Spectrum Benchmarking**: Specify target performance metrics (P95 latency, load times).
+6. **Security & Manual Audits**: Define an authentication verification plan and 3-5 manual UAT steps.
+7. **Executive Summary**: Provide a high-level summary and description.
 
-Focus on creating a professional, battle-hardened verification strategy. Precision and technical rigor are prioritized. Respond with ONLY the JSON object.`;
+Focus on creating a professional, battle-hardened verification strategy. Be technical and precise, but avoid excessive verbosity. Respond with ONLY the JSON object. Keep the total response size manageable.`;
     }
 
     let llmQA: QABackendArtifact | null = null;

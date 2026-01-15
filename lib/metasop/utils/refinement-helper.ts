@@ -97,7 +97,11 @@ function getRelatedArtifacts(
             // SANITIZATION: Strip heavy content from Engineer artifact to prevent token exhaustion
             if (depId === "engineer_impl") {
                 logger.info("Sanitizing engineer_impl artifact for refinement context");
-                const { file_contents, file_structure, ...sanitized } = artifactContent.content || artifactContent;
+                const { ...sanitized } = artifactContent.content || artifactContent;
+                // Note: file_contents and file_structure are intentionally excluded from sanitized context
+                if ((sanitized as any).file_contents) delete (sanitized as any).file_contents;
+                if ((sanitized as any).file_structure) delete (sanitized as any).file_structure;
+                
                 artifactContent = {
                     ...artifactContent,
                     content: sanitized

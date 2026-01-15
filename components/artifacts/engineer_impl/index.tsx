@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Braces,
   Layers,
-  Map,
   Files,
   Folder,
   File,

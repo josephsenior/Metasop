@@ -12,7 +12,7 @@ export interface LLMProvider {
     onProgress: (event: any) => void,
     options?: LLMOptions
   ): Promise<T>;
-  createCache?(content: string, systemInstruction?: string, ttlSeconds?: number): Promise<string>;
+  createCache?(content: string, systemInstruction?: string, ttlSeconds?: number, model?: string): Promise<string>;
 }
 
 export interface LLMOptions {

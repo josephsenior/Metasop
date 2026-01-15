@@ -4,9 +4,8 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, User, Copy, Download, Archive, ChevronDown, LayoutDashboard } from "lucide-react"
+import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, User, Download, Archive, ChevronDown, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Send, Loader2, Sparkles as SparklesIcon } from "lucide-react"
 import { metasopApi } from "@/lib/api/metasop"
 import { useToast } from "@/components/ui/use-toast"
@@ -104,17 +103,6 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
     const availableTabs = agentTabs.filter((tab) => tab.id === "summary" || !!artifacts[tab.id as keyof typeof artifacts])
     const currentTab = agentTabs.find(t => t.id === activeTab) || agentTabs[0]
     const Icon = currentTab.icon
-
-    const handleCopyJson = () => {
-        const data = artifacts[activeTab as keyof typeof artifacts]
-        if (data) {
-            navigator.clipboard.writeText(JSON.stringify(data, null, 2))
-            toast({
-                title: "JSON Copied",
-                description: "Artifact data copied to clipboard.",
-            })
-        }
-    }
 
     const handleExportAll = () => {
         const data = JSON.stringify(artifacts, null, 2)

@@ -1,0 +1,339 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "content": {
+    "summary": "TradePulse is a comprehensive SaaS platform designed to unify the fragmented crypto trading experience. It aggregates portfolio data, provides advanced charting, and enables multi-exchange trade execution from a single, secure terminal.",
+    "description": "The cryptocurrency market is highly fragmented, forcing traders to manage assets across multiple exchanges (Binance, Coinbase, Kraken, etc.) and use separate tools for charting, news, and portfolio tracking. TradePulse solves this by acting as a 'layer 2' interface over existing exchanges. \n\nCore features include:\n1. **Portfolio Aggregation**: Real-time view of net worth across all connected accounts.\n2. **Unified Trading Terminal**: Execute trades on any connected exchange via a single API-driven interface.\n3. **AI-Driven Analytics**: Sentiment analysis and automated pattern recognition to aid decision-making.\n4. **Risk Management**: Global stop-losses and automated alerts.\n\nThe vision is to become the 'Bloomberg Terminal' for the retail crypto trader, prioritizing speed, security, and actionable data.",
+    "user_stories": [
+      {
+        "title": "Exchange API Integration",
+        "story": "As a Trader, I want to securely connect my exchange accounts (e.g., Binance, Coinbase) via API keys so that I can view my aggregated portfolio in one place.",
+        "description": "Users need a secure interface to input API keys and secrets. The system must validate these keys immediately and fetch initial balance data. Security is paramount; keys must be encrypted.",
+        "priority": "critical",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "User can select an exchange from a dropdown list.",
+          "User can input API Key and Secret.",
+          "System validates credentials with the exchange immediately.",
+          "API keys are stored using AES-256 encryption.",
+          "Read-only permissions are verified by default."
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Eliminates the need to log in to multiple websites to check balances.",
+        "dependencies": [],
+        "id": "US-1"
+      },
+      {
+        "title": "Unified Portfolio Dashboard",
+        "story": "As a Trader, I want to see a consolidated dashboard of all my assets so that I can understand my total net worth and asset allocation.",
+        "description": "The dashboard should aggregate data from all connected exchanges. It needs to display total value in USD (or selected fiat), 24h change, and a pie chart of asset distribution.",
+        "priority": "high",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "Dashboard displays Total Balance in USD.",
+          "Dashboard shows 24h Profit/Loss percentage and absolute value.",
+          "Asset allocation pie chart updates based on current holdings.",
+          "Data refreshes automatically every 60 seconds."
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Provides an immediate, holistic view of financial health.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-2"
+      },
+      {
+        "title": "Real-time Trading Terminal",
+        "story": "As a Day Trader, I want to execute buy and sell orders directly from the interface so that I can react quickly to market movements without switching tabs.",
+        "description": "A trading interface that allows selecting a connected exchange, a trading pair, and an order type (Limit/Market). It must route the request to the specific exchange API.",
+        "priority": "critical",
+        "story_points": 13,
+        "acceptance_criteria": [
+          "User can select Exchange, Pair, and Order Type.",
+          "Interface displays current order book and recent trades.",
+          "Buy/Sell buttons execute orders via Exchange API.",
+          "User receives immediate feedback on order success or failure.",
+          "Latency for order transmission is under 200ms."
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Enables rapid execution across different liquidity pools from a single screen.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-3"
+      },
+      {
+        "title": "Advanced Charting with Indicators",
+        "story": "As a Technical Analyst, I want to view interactive candlestick charts with technical indicators so that I can identify entry and exit points.",
+        "description": "Integration of a charting library (e.g., TradingView) allowing users to draw lines, add indicators (RSI, MACD), and change timeframes.",
+        "priority": "high",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "Charts load historical data for selected pairs.",
+          "User can toggle between timeframes (1m, 5m, 1h, 1d).",
+          "Standard indicators (RSI, Moving Averages) are available.",
+          "Chart state persists between sessions."
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Essential for making informed trading decisions based on price action.",
+        "dependencies": [],
+        "id": "US-4"
+      },
+      {
+        "title": "Smart Price Alerts",
+        "story": "As a Mobile User, I want to set custom price alerts so that I am notified via push notification or email when an asset hits a target price.",
+        "description": "A background service that monitors price feeds and triggers notifications. Users can set logic like 'BTC > 50000' or 'ETH drops 5%'.",
+        "priority": "medium",
+        "story_points": 3,
+        "acceptance_criteria": [
+          "User can create an alert for a specific coin and price condition.",
+          "System monitors prices continuously.",
+          "Notification is sent within 30 seconds of condition trigger.",
+          "User can manage (edit/delete) active alerts."
+        ],
+        "estimated_complexity": "small",
+        "user_value": "Allows traders to step away from the screen without missing opportunities.",
+        "dependencies": [],
+        "id": "US-5"
+      },
+      {
+        "title": "AI Sentiment Analysis Feed",
+        "story": "As a Speculator, I want to see an AI-generated sentiment score for top assets so that I can gauge market emotion.",
+        "description": "A widget that aggregates news headlines and social media mentions, processing them through an NLP model to output a 'Bullish' or 'Bearish' score.",
+        "priority": "medium",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "System scrapes news and social data for top 20 coins.",
+          "NLP model assigns a sentiment score (-1 to +1).",
+          "UI displays a sentiment gauge or trend line.",
+          "Sentiment data updates hourly."
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Provides alternative data points beyond technical analysis.",
+        "dependencies": [],
+        "id": "US-6"
+      },
+      {
+        "title": "Tax Reporting Export",
+        "story": "As a User, I want to generate a CSV report of all my trades so that I can file my taxes accurately.",
+        "description": "A reporting module that aggregates trade history from all connected exchanges, calculates cost basis (FIFO/LIFO), and exports a standardized CSV.",
+        "priority": "low",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "User can select a date range for the report.",
+          "System fetches full trade history from connected APIs.",
+          "CSV format is compatible with major tax software (e.g., Koinly).",
+          "Report generation completes asynchronously."
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Solves a major pain point regarding compliance and record-keeping.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-7"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "criteria": "Data Encryption at Rest",
+        "description": "All sensitive user data, specifically API secrets and personal information, must be encrypted in the database using AES-256 or higher standards.",
+        "id": "AC-1",
+        "priority": "must",
+        "title": "Security Compliance"
+      },
+      {
+        "criteria": "99.9% System Uptime",
+        "description": "The platform must maintain 99.9% availability during market hours to prevent loss of trading opportunities.",
+        "id": "AC-2",
+        "priority": "must",
+        "title": "Reliability"
+      },
+      {
+        "criteria": "Sub-second Data Latency",
+        "description": "Price feeds on the dashboard and trading terminal must not lag behind the source exchange by more than 500ms.",
+        "id": "AC-3",
+        "priority": "should",
+        "title": "Performance"
+      },
+      {
+        "criteria": "Mobile Responsiveness",
+        "description": "The UI must be fully functional and visually coherent on mobile viewports (375px width and up).",
+        "id": "AC-4",
+        "priority": "must",
+        "title": "Usability"
+      },
+      {
+        "criteria": "API Rate Limit Handling",
+        "description": "The system must gracefully handle exchange API rate limits by implementing exponential backoff strategies, preventing user bans.",
+        "id": "AC-5",
+        "priority": "must",
+        "title": "Resilience"
+      },
+      {
+        "criteria": "Two-Factor Authentication (2FA)",
+        "description": "Users must be able to enable TOTP-based 2FA (Google Authenticator) for login and withdrawals/API key viewing.",
+        "id": "AC-6",
+        "priority": "must",
+        "title": "Account Security"
+      },
+      {
+        "criteria": "GDPR Compliance",
+        "description": "Users must have the ability to download all their data and request account deletion (Right to be Forgotten).",
+        "id": "AC-7",
+        "priority": "should",
+        "title": "Legal Compliance"
+      },
+      {
+        "criteria": "Dark Mode Support",
+        "description": "The interface must support a dark theme as the default, given the preference of traders for low-light environments.",
+        "id": "AC-8",
+        "priority": "could",
+        "title": "User Experience"
+      }
+    ],
+    "ui_multi_section": true,
+    "assumptions": [
+      "Users are willing to trust a third-party platform with their Exchange API keys.",
+      "Major cryptocurrency exchanges (Binance, Coinbase) will maintain stable public APIs.",
+      "Users possess a basic understanding of API key permissions (Read vs. Trade vs. Withdraw).",
+      "Regulatory environments in target markets (US, EU) will allow for non-custodial trading interfaces."
+    ],
+    "out_of_scope": [
+      "Custodial Wallet Services (we do not hold user funds).",
+      "Fiat On-Ramp/Off-Ramp capabilities (users must deposit fiat on the exchanges directly).",
+      "Creation of a proprietary blockchain or token.",
+      "Decentralized Exchange (DEX) integration for the MVP phase."
+    ],
+    "swot": {
+      "strengths": [
+        "Unified User Experience: Solves 'tab fatigue'.",
+        "Non-Custodial: Reduced liability as we don't hold funds.",
+        "AI Integration: Unique value proposition with sentiment analysis.",
+        "Scalability: Cloud-native architecture."
+      ],
+      "weaknesses": [
+        "Platform Dependency: Entirely reliant on 3rd party Exchange APIs.",
+        "Trust Barrier: Users are hesitant to share API keys.",
+        "Latency: Aggregation layer adds slight latency compared to direct exchange usage."
+      ],
+      "opportunities": [
+        "DeFi Integration: Expanding to track on-chain wallets (Metamask).",
+        "Social Trading: Allowing users to copy-trade successful portfolios.",
+        "B2B Licensing: Selling the terminal technology to smaller funds.",
+        "Mobile App: Native iOS/Android application."
+      ],
+      "threats": [
+        "Exchange API Changes: Breaking changes could disrupt service.",
+        "Regulatory Crackdown: Bans on crypto trading tools in certain jurisdictions.",
+        "Competitors: Established players like CoinStats or 3Commas.",
+        "Security Breaches: A leak of user API keys would be catastrophic."
+      ]
+    },
+    "stakeholders": [
+      {
+        "role": "Retail Traders",
+        "interest": "Ease of use, data accuracy, and execution speed.",
+        "influence": "high"
+      },
+      {
+        "role": "Product Manager",
+        "interest": "Feature prioritization, roadmap adherence, and user retention.",
+        "influence": "high"
+      },
+      {
+        "role": "Lead Engineer",
+        "interest": "System stability, security architecture, and technical debt management.",
+        "influence": "high"
+      },
+      {
+        "role": "Compliance Officer",
+        "interest": "Ensuring the platform does not violate financial regulations (KYC/AML where applicable).",
+        "influence": "medium"
+      },
+      {
+        "role": "Investors",
+        "interest": "ROI, user growth metrics, and market capture.",
+        "influence": "medium"
+      }
+    ],
+    "invest_analysis": [
+      {
+        "user_story_id": "US-1",
+        "independent": true,
+        "negotiable": false,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Highly independent, though critical path. Not very negotiable as it's the core enabler."
+      },
+      {
+        "user_story_id": "US-2",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 7,
+        "comments": "Depends on US-1. High value, but the specific visualizations are negotiable."
+      },
+      {
+        "user_story_id": "US-3",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": false,
+        "testable": true,
+        "score": 6,
+        "comments": "Large and complex. Depends on US-1. Could be split into 'Limit Orders' and 'Market Orders' to make it smaller."
+      },
+      {
+        "user_story_id": "US-4",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Excellent candidate for a standalone feature using a library like TradingView."
+      },
+      {
+        "user_story_id": "US-5",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 10,
+        "comments": "Perfect INVEST score. Small, independent, high value for mobile users."
+      },
+      {
+        "user_story_id": "US-6",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": false,
+        "small": true,
+        "testable": true,
+        "score": 7,
+        "comments": "Hard to estimate due to AI/NLP complexity. Value is subjective to the user."
+      },
+      {
+        "user_story_id": "US-7",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 8,
+        "comments": "Depends on data from US-1. Very testable (math-based)."
+      }
+    ]
+  }
+}

@@ -1,0 +1,457 @@
+{
+  "step_id": "engineer_impl",
+  "role": "Engineer",
+  "content": {
+    "summary": "A high-performance, secure crypto trading SaaS utilizing a hybrid Node.js/Python architecture. It features real-time portfolio aggregation, unified execution via CCXT, and AI-driven sentiment analysis, all secured by AES-256 encryption.",
+    "description": "TradePulse addresses the fragmentation of the crypto market by providing a 'Layer 2' terminal. The system is built as a monorepo containing a NestJS API for core business logic and order routing, a React frontend for the trading interface, and a Python microservice for NLP-based sentiment analysis. \n\nData persistence is handled by a hybrid approach: PostgreSQL for relational user data and TimescaleDB for high-frequency time-series data (price history, portfolio snapshots). Real-time updates are propagated via Redis Pub/Sub and Socket.io. Security is a primary concern, with all user API secrets encrypted at the application level before storage.",
+    "artifact_path": "tradepulse-monorepo",
+    "file_structure": {
+      "name": "tradepulse-monorepo",
+      "type": "directory",
+      "children": [
+        {
+          "name": "apps",
+          "type": "directory"
+        },
+        {
+          "name": "api",
+          "type": "directory"
+        },
+        {
+          "name": "src",
+          "type": "directory"
+        },
+        {
+          "name": "config",
+          "type": "directory"
+        },
+        {
+          "name": "database.config.ts",
+          "type": "file"
+        },
+        {
+          "name": "auth.config.ts",
+          "type": "file"
+        },
+        {
+          "name": "modules",
+          "type": "directory"
+        },
+        {
+          "name": "auth",
+          "type": "directory"
+        },
+        {
+          "name": "auth.controller.ts",
+          "type": "file"
+        },
+        {
+          "name": "auth.service.ts",
+          "type": "file"
+        },
+        {
+          "name": "strategies",
+          "type": "directory"
+        },
+        {
+          "name": "jwt.strategy.ts",
+          "type": "file"
+        },
+        {
+          "name": "portfolio",
+          "type": "directory"
+        },
+        {
+          "name": "portfolio.controller.ts",
+          "type": "file"
+        },
+        {
+          "name": "portfolio.service.ts",
+          "type": "file"
+        },
+        {
+          "name": "entities",
+          "type": "directory"
+        },
+        {
+          "name": "portfolio-snapshot.entity.ts",
+          "type": "file"
+        },
+        {
+          "name": "exchange",
+          "type": "directory"
+        },
+        {
+          "name": "exchange.service.ts",
+          "type": "file"
+        },
+        {
+          "name": "key-management.service.ts",
+          "type": "file"
+        },
+        {
+          "name": "adapters",
+          "type": "directory"
+        },
+        {
+          "name": "ccxt.adapter.ts",
+          "type": "file"
+        },
+        {
+          "name": "market-data",
+          "type": "directory"
+        },
+        {
+          "name": "market-data.gateway.ts",
+          "type": "file"
+        },
+        {
+          "name": "market-data.service.ts",
+          "type": "file"
+        },
+        {
+          "name": "orders",
+          "type": "directory"
+        },
+        {
+          "name": "orders.controller.ts",
+          "type": "file"
+        },
+        {
+          "name": "orders.processor.ts",
+          "type": "file"
+        },
+        {
+          "name": "common",
+          "type": "directory"
+        },
+        {
+          "name": "guards",
+          "type": "directory"
+        },
+        {
+          "name": "api-key.guard.ts",
+          "type": "file"
+        },
+        {
+          "name": "utils",
+          "type": "directory"
+        },
+        {
+          "name": "encryption.util.ts",
+          "type": "file"
+        },
+        {
+          "name": "main.ts",
+          "type": "file"
+        },
+        {
+          "name": "app.module.ts",
+          "type": "file"
+        },
+        {
+          "name": "web",
+          "type": "directory"
+        },
+        {
+          "name": "src",
+          "type": "directory"
+        },
+        {
+          "name": "assets",
+          "type": "directory"
+        },
+        {
+          "name": "components",
+          "type": "directory"
+        },
+        {
+          "name": "ui",
+          "type": "directory"
+        },
+        {
+          "name": "Button.tsx",
+          "type": "file"
+        },
+        {
+          "name": "Input.tsx",
+          "type": "file"
+        },
+        {
+          "name": "Modal.tsx",
+          "type": "file"
+        },
+        {
+          "name": "trading",
+          "type": "directory"
+        },
+        {
+          "name": "OrderBook.tsx",
+          "type": "file"
+        },
+        {
+          "name": "TradeForm.tsx",
+          "type": "file"
+        },
+        {
+          "name": "ChartWidget.tsx",
+          "type": "file"
+        },
+        {
+          "name": "layout",
+          "type": "directory"
+        },
+        {
+          "name": "Sidebar.tsx",
+          "type": "file"
+        },
+        {
+          "name": "Header.tsx",
+          "type": "file"
+        },
+        {
+          "name": "features",
+          "type": "directory"
+        },
+        {
+          "name": "dashboard",
+          "type": "directory"
+        },
+        {
+          "name": "DashboardPage.tsx",
+          "type": "file"
+        },
+        {
+          "name": "PortfolioSummary.tsx",
+          "type": "file"
+        },
+        {
+          "name": "terminal",
+          "type": "directory"
+        },
+        {
+          "name": "TerminalPage.tsx",
+          "type": "file"
+        },
+        {
+          "name": "hooks",
+          "type": "directory"
+        },
+        {
+          "name": "useWebSocket.ts",
+          "type": "file"
+        },
+        {
+          "name": "useMarketData.ts",
+          "type": "file"
+        },
+        {
+          "name": "store",
+          "type": "directory"
+        },
+        {
+          "name": "useAuthStore.ts",
+          "type": "file"
+        },
+        {
+          "name": "useOrderStore.ts",
+          "type": "file"
+        },
+        {
+          "name": "useSettingsStore.ts",
+          "type": "file"
+        },
+        {
+          "name": "services",
+          "type": "directory"
+        },
+        {
+          "name": "api.ts",
+          "type": "file"
+        },
+        {
+          "name": "socket.ts",
+          "type": "file"
+        },
+        {
+          "name": "App.tsx",
+          "type": "file"
+        },
+        {
+          "name": "main.tsx",
+          "type": "file"
+        },
+        {
+          "name": "ai-worker",
+          "type": "directory"
+        },
+        {
+          "name": "app",
+          "type": "directory"
+        },
+        {
+          "name": "api",
+          "type": "directory"
+        },
+        {
+          "name": "endpoints.py",
+          "type": "file"
+        },
+        {
+          "name": "core",
+          "type": "directory"
+        },
+        {
+          "name": "nlp_engine.py",
+          "type": "file"
+        },
+        {
+          "name": "scraper.py",
+          "type": "file"
+        },
+        {
+          "name": "models",
+          "type": "directory"
+        },
+        {
+          "name": "sentiment.py",
+          "type": "file"
+        },
+        {
+          "name": "main.py",
+          "type": "file"
+        },
+        {
+          "name": "requirements.txt",
+          "type": "file"
+        },
+        {
+          "name": "docker-compose.yml",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.base.json",
+          "type": "file"
+        }
+      ]
+    },
+    "implementation_plan": "# TradePulse Implementation Roadmap\n\n## Phase 1: Infrastructure & Foundation\n**Goal**: Establish the monorepo, database infrastructure, and core security utilities.\n1. **Monorepo Setup**: Initialize a workspace (Nx or Turborepo) containing `apps/api` (NestJS), `apps/web` (React), and `apps/ai-worker` (Python).\n2. **Database Provisioning**: Set up Docker containers for PostgreSQL (with TimescaleDB extension) and Redis.\n3. **Encryption Module**: Implement the `EncryptionUtil` in NestJS using Node's `crypto` module (AES-256-GCM). This is a blocker for storing API keys.\n4. **Auth0 Integration**: Configure Auth0 tenant. Implement `JwtStrategy` in NestJS to validate Bearer tokens.\n\n## Phase 2: Exchange Connectivity (Backend)\n**Goal**: Securely connect to exchanges and fetch balances.\n1. **Key Management API**: Create endpoints to accept, encrypt, and store user API keys in `user_exchange_keys` table.\n2. **CCXT Integration**: Implement the `ExchangeService` using CCXT. Create a factory method to instantiate exchange instances with decrypted keys on the fly.\n3. **Portfolio Sync**: Create a background job (BullMQ) that iterates through users, decrypts keys, fetches balances via CCXT, and updates the `portfolio_snapshots` hypertable.\n\n## Phase 3: Real-time Market Data\n**Goal**: Stream live prices to the frontend.\n1. **WebSocket Aggregator**: Build a service in NestJS that connects to public WebSockets of major exchanges (Binance, Coinbase).\n2. **Normalization**: Convert incoming raw ticker data into a standard format `{ symbol, price, exchange, timestamp }`.\n3. **Pub/Sub Layer**: Push normalized data to Redis Pub/Sub.\n4. **Gateway**: Implement a Socket.io Gateway in NestJS that subscribes to Redis and broadcasts updates to connected frontend clients.\n\n## Phase 4: Frontend Core & Dashboard\n**Goal**: Visualize portfolio data.\n1. **UI Shell**: Implement the Sidebar, Header, and Dark Mode theme using Tailwind CSS.\n2. **State Management**: Set up Zustand stores for `Auth` and `Portfolio`.\n3. **Dashboard Widgets**: Build the Total Balance card and Asset Allocation pie chart using Recharts.\n4. **API Integration**: Connect the frontend to `/api/v1/portfolio/summary`.\n\n## Phase 5: Trading Terminal\n**Goal**: Enable order execution.\n1. **Charting**: Integrate `lightweight-charts`. Create a wrapper component that accepts OHLCV data.\n2. **Order Form**: Build a reactive form for Limit/Market orders with validation.\n3. **Execution Endpoint**: Implement `POST /orders`. The backend must receive the request, decrypt the user's keys, and route the order via CCXT.\n4. **Optimistic UI**: Update the local order book/history immediately upon submission, then reconcile with the actual API response.\n\n## Phase 6: AI & Analytics\n**Goal**: Add sentiment analysis value-add.\n1. **Python Service**: Initialize the FastAPI app. Implement a scraper for CryptoPanic/Twitter.\n2. **NLP Pipeline**: Use NLTK or a pre-trained Transformer model (HuggingFace) to score headlines (-1 to +1).\n3. **Caching**: Store calculated sentiment scores in Redis with a 1-hour TTL.\n4. **Integration**: Create an endpoint in the Node.js API that proxies requests to the Python service or reads directly from Redis.",
+    "dependencies": [
+      "@nestjs/core@^10.0.0",
+      "@nestjs/common@^10.0.0",
+      "@nestjs/typeorm@^10.0.0",
+      "@nestjs/passport@^10.0.0",
+      "@nestjs/platform-socket.io@^10.0.0",
+      "typeorm@^0.3.0",
+      "pg@^8.0.0",
+      "ccxt@^4.0.0",
+      "bullmq@^4.0.0",
+      "ioredis@^5.0.0",
+      "passport-jwt@^4.0.0",
+      "jwks-rsa@^3.0.0",
+      "react@^18.2.0",
+      "react-dom@^18.2.0",
+      "zustand@^4.4.0",
+      "lightweight-charts@^4.1.0",
+      "axios@^1.5.0",
+      "socket.io-client@^4.7.0",
+      "tailwindcss@^3.3.0",
+      "fastapi@^0.100.0",
+      "uvicorn@^0.23.0",
+      "pandas@^2.0.0",
+      "nltk@^3.8.0",
+      "sqlalchemy@^2.0.0"
+    ],
+    "technical_decisions": [
+      {
+        "decision": "CCXT Library",
+        "rationale": "Provides a unified API for over 100 exchanges, drastically reducing the maintenance burden of writing custom adapters for each exchange API.",
+        "alternatives": "Custom adapters, Shrimpy API"
+      },
+      {
+        "decision": "TimescaleDB",
+        "rationale": "Allows storing high-volume financial time-series data within the same PostgreSQL instance used for relational user data, simplifying the stack.",
+        "alternatives": "InfluxDB, MongoDB"
+      },
+      {
+        "decision": "Zustand for State Management",
+        "rationale": "Chosen for its minimal boilerplate and transient update capabilities, which are crucial for high-frequency order book and price updates without triggering excessive React re-renders.",
+        "alternatives": "Redux Toolkit, Context API"
+      },
+      {
+        "decision": "Hybrid Microservices (Node + Python)",
+        "rationale": "Node.js is superior for I/O-bound tasks (WebSockets, API Gateway), while Python is the industry standard for the CPU-bound AI/NLP tasks required for sentiment analysis.",
+        "alternatives": "Full Node.js, Full Python"
+      },
+      {
+        "decision": "Application-Level AES-256 Encryption",
+        "rationale": "Ensures that even if the database is compromised, user API keys remain secure. Keys are only decrypted in memory during the instant of trade execution.",
+        "alternatives": "Database TDE, Hashicorp Vault (deferred for Enterprise)"
+      }
+    ],
+    "environment_variables": [
+      {
+        "name": "DATABASE_URL",
+        "description": "Connection string for PostgreSQL/TimescaleDB",
+        "example": "postgresql://user:pass@localhost:5432/tradepulse"
+      },
+      {
+        "name": "REDIS_URL",
+        "description": "Connection string for Redis Cache and Pub/Sub",
+        "example": "redis://localhost:6379"
+      },
+      {
+        "name": "AUTH0_DOMAIN",
+        "description": "Auth0 tenant domain",
+        "example": "tradepulse.us.auth0.com"
+      },
+      {
+        "name": "AUTH0_AUDIENCE",
+        "description": "Auth0 API Identifier",
+        "example": "https://api.tradepulse.io"
+      },
+      {
+        "name": "ENCRYPTION_MASTER_KEY",
+        "description": "32-byte hex string used for AES-256 encryption of user API keys",
+        "example": "a1b2c3d4..."
+      },
+      {
+        "name": "AI_SERVICE_URL",
+        "description": "Internal URL for the Python AI worker",
+        "example": "http://ai-worker:8000"
+      }
+    ],
+    "technical_patterns": [
+      "Adapter Pattern (wrapping CCXT)",
+      "Repository Pattern (TypeORM)",
+      "Pub/Sub (Redis for market data)",
+      "Strategy Pattern (Auth strategies)",
+      "DTO (Data Transfer Objects)"
+    ],
+    "state_management": {
+      "tool": "Zustand",
+      "strategy": "Split Store Pattern. 'UserStore' handles auth and settings (persisted). 'MarketStore' handles high-frequency price data (transient, non-persisted). 'OrderStore' manages the active trading form state."
+    },
+    "run_results": {
+      "setup_commands": [
+        "npm install",
+        "pip install -r apps/ai-worker/requirements.txt",
+        "docker-compose up -d postgres redis",
+        "npm run typeorm:migration:run"
+      ],
+      "test_commands": [
+        "npm run test",
+        "npm run test:e2e",
+        "pytest apps/ai-worker"
+      ],
+      "dev_commands": [
+        "npm run start:dev",
+        "uvicorn apps.ai-worker.app.main:app --reload"
+      ]
+    }
+  }
+}

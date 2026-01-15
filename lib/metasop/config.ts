@@ -56,37 +56,37 @@ export const defaultConfig: MetaSOPConfig = {
       // Increased timeouts for LLM calls which can take longer
       pm_spec: {
         stepId: "pm_spec",
-        timeout: 180000, // 300 seconds (5 minutes) - Free models can be very slow with structured output
+        timeout: 300000, // 300 seconds (5 minutes) - Free models can be very slow with structured output
         retries: 2, // Increased for rate limit handling
       },
       arch_design: {
         stepId: "arch_design",
-        timeout: 180000,
+        timeout: 300000, // 300 seconds (5 minutes)
         retries: 2,
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 180000,
+        timeout: 300000, // 300 seconds (5 minutes)
         retries: 2,
       },
       security_architecture: {
         stepId: "security_architecture",
-        timeout: 180000,
+        timeout: 300000, // 300 seconds (5 minutes)
         retries: 2,
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 180000, // 900 seconds (15 minutes) - increased for large artifact generation
+        timeout: 600000, // 600 seconds (10 minutes) - increased for large artifact generation
         retries: 2, // Increased retries for rate limit scenarios
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 180000, // 300 seconds (5 minutes)
+        timeout: 300000, // 300 seconds (5 minutes)
         retries: 2,
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 180000, // 300 seconds (5 minutes)
+        timeout: 420000, // 420 seconds (7 minutes)
         retries: 2,
       },
     },
@@ -95,7 +95,7 @@ export const defaultConfig: MetaSOPConfig = {
     provider: process.env.NODE_ENV === "test" ? "mock" : "gemini",
     model: "gemini-3-flash-preview", // Use Gemini 3 Flash Preview for fast, high-quality orchestration
     temperature: 0.3,
-    maxTokens: 32000,
+    maxTokens: 64000,
   },
   performance: {
     cacheEnabled: true,

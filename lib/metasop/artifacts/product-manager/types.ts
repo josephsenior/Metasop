@@ -29,6 +29,7 @@ export interface ProductManagerBackendArtifact {
         }
     >; // REQUIRED: minItems: 1
     ui_multi_section?: boolean; // Default: false
+    ui_sections?: number; // Default: 1
     assumptions?: string[]; // Array of strings (minLength: 10)
     out_of_scope?: string[]; // Array of strings (minLength: 5)
     swot?: {

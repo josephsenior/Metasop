@@ -117,14 +117,15 @@ export async function generateStreamingStructuredWithLLM<T>(
 /**
  * Create a context cache using Gemini LLM
  */
-export async function createCacheWithLLM(content: string, systemInstruction?: string, ttlSeconds: number = 3600): Promise<string> {
+export async function createCacheWithLLM(content: string, systemInstruction?: string, ttlSeconds: number = 3600, model?: string): Promise<string> {
   const provider = getLLMProvider();
+  const config = getConfig();
 
   if (!provider.createCache) {
     throw new Error("Context caching is not supported by the current LLM provider");
   }
 
-  return provider.createCache(content, systemInstruction, ttlSeconds);
+  return provider.createCache(content, systemInstruction, ttlSeconds, model || config.llm.model);
 }
 
 /**

@@ -21,7 +21,6 @@ import {
   X,
   AlertTriangle,
   GanttChartSquare,
-  Layout,
   Info,
   Map,
   Layers

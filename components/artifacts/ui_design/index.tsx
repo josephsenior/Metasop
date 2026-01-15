@@ -12,7 +12,6 @@ import {
   Type,
   Layout,
   Layers,
-  Zap,
   Box,
   Component,
   Copy,

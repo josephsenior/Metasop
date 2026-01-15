@@ -1,0 +1,247 @@
+{
+  "step_id": "devops_infrastructure",
+  "role": "DevOps",
+  "content": {
+    "infrastructure": {
+      "cloud_provider": "AWS",
+      "services": [
+        {
+          "name": "Amazon EKS",
+          "type": "compute",
+          "configuration": {
+            "key": "version",
+            "value": "1.27"
+          },
+          "description": "Managed Kubernetes Service for orchestrating Node.js and Python microservices."
+        },
+        {
+          "name": "Amazon RDS for PostgreSQL",
+          "type": "database",
+          "configuration": {
+            "key": "engine_version",
+            "value": "15.3 (with TimescaleDB extension)"
+          },
+          "description": "Primary relational store for user data and time-series financial data."
+        },
+        {
+          "name": "Amazon ElastiCache (Redis)",
+          "type": "database",
+          "configuration": {
+            "key": "cluster_mode",
+            "value": "enabled"
+          },
+          "description": "In-memory caching for session management and Pub/Sub for real-time market data."
+        },
+        {
+          "name": "Application Load Balancer",
+          "type": "load-balancer",
+          "configuration": {
+            "key": "scheme",
+            "value": "internet-facing"
+          },
+          "description": "Layer 7 load balancing for API Gateway and WebSocket traffic."
+        },
+        {
+          "name": "AWS WAF",
+          "type": "security",
+          "configuration": {
+            "key": "managed_rules",
+            "value": "AWSManagedRulesCommonRuleSet"
+          },
+          "description": "Web Application Firewall to protect against common exploits and bots."
+        },
+        {
+          "name": "Amazon S3",
+          "type": "storage",
+          "configuration": {
+            "key": "encryption",
+            "value": "AES-256"
+          },
+          "description": "Object storage for logs, reports, and build artifacts."
+        }
+      ],
+      "iac": "Terraform",
+      "regions": [
+        "us-east-1",
+        "us-west-2"
+      ]
+    },
+    "cicd": {
+      "pipeline_stages": [
+        {
+          "name": "Continuous Integration",
+          "steps": [
+            "Linting (ESLint/Pylint)",
+            "Unit Tests (Jest/Pytest)",
+            "SAST Security Scan",
+            "Build Docker Images"
+          ],
+          "description": "Code quality checks and artifact creation.",
+          "status": "active"
+        },
+        {
+          "name": "Continuous Delivery (Staging)",
+          "steps": [
+            "Push to ECR",
+            "Deploy to EKS Staging Namespace",
+            "Run Integration Tests",
+            "Run DAST Scan"
+          ],
+          "description": "Automated deployment to staging environment for validation.",
+          "status": "active"
+        },
+        {
+          "name": "Continuous Deployment (Production)",
+          "steps": [
+            "Manual Approval Gate",
+            "Blue-Green Deployment Trigger",
+            "Traffic Shift (Canary 10% -> 100%)",
+            "Health Check Verification"
+          ],
+          "description": "Controlled release to production users.",
+          "status": "active"
+        }
+      ],
+      "tools": [
+        "GitHub Actions",
+        "ArgoCD",
+        "SonarQube",
+        "Trivy"
+      ],
+      "triggers": [
+        {
+          "type": "push",
+          "branch": "main",
+          "description": "Triggers CI and Staging deployment."
+        },
+        {
+          "type": "pull_request",
+          "branch": "*",
+          "description": "Triggers CI (Lint/Test) only."
+        }
+      ]
+    },
+    "deployment": {
+      "strategy": "blue-green",
+      "environments": [
+        {
+          "name": "development",
+          "configuration": {
+            "key": "scaling_policy",
+            "value": "min_replicas=1"
+          },
+          "description": "Ephemeral environment for feature testing."
+        },
+        {
+          "name": "staging",
+          "configuration": {
+            "key": "data_sanitization",
+            "value": "true"
+          },
+          "description": "Pre-production environment mirroring production config."
+        },
+        {
+          "name": "production",
+          "configuration": {
+            "key": "multi_az",
+            "value": "true"
+          },
+          "description": "High-availability environment for end users."
+        }
+      ],
+      "rollback_strategy": "Automated rollback via ArgoCD if health checks fail or error rate exceeds threshold within 5 minutes of deployment."
+    },
+    "monitoring": {
+      "tools": [
+        "Prometheus",
+        "Grafana",
+        "Datadog",
+        "PagerDuty"
+      ],
+      "metrics": [
+        "Request Latency (p95, p99)",
+        "Error Rate (HTTP 5xx)",
+        "Throughput (RPS)",
+        "CPU/Memory Saturation",
+        "Exchange API Rate Limit Remaining",
+        "WebSocket Connection Count"
+      ],
+      "alerts": [
+        {
+          "name": "High Error Rate",
+          "condition": "5xx errors > 1% for 5 minutes",
+          "severity": "critical"
+        },
+        {
+          "name": "High Latency",
+          "condition": "p95 latency > 500ms for 5 minutes",
+          "severity": "warning"
+        },
+        {
+          "name": "Exchange API Throttling",
+          "condition": "Rate limit remaining < 10%",
+          "severity": "critical"
+        }
+      ],
+      "logging": {
+        "retention": "90 days",
+        "tools": [
+          "Fluent Bit",
+          "Amazon CloudWatch Logs",
+          "Elasticsearch"
+        ]
+      }
+    },
+    "containerization": {
+      "docker_compose": "version: '3.8'\nservices:\n  api:\n    build: ./apps/api\n  worker:\n    build: ./apps/worker",
+      "dockerfile": "FROM node:18-alpine AS builder\nWORKDIR /app\nCOPY . .\nRUN npm ci && npm run build\n\nFROM node:18-alpine AS runner\nCOPY --from=builder /app/dist ./dist\nCMD [\"node\", \"dist/main\"]",
+      "kubernetes": {
+        "namespace": "tradepulse-prod",
+        "services": [
+          {
+            "name": "api-gateway",
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 3000
+              }
+            ],
+            "type": "LoadBalancer"
+          },
+          {
+            "name": "market-streamer",
+            "ports": [
+              {
+                "port": 8080,
+                "targetPort": 8080
+              }
+            ],
+            "type": "ClusterIP"
+          }
+        ]
+      }
+    },
+    "scaling": {
+      "auto_scaling": {
+        "enabled": true,
+        "max_replicas": 20,
+        "min_replicas": 2,
+        "target_cpu": 70,
+        "target_memory": 80
+      },
+      "manual_scaling": {
+        "replicas": 1
+      }
+    },
+    "disaster_recovery": {
+      "rpo": "5 minutes",
+      "rto": "1 hour",
+      "backup_strategy": "Automated daily RDS snapshots with continuous WAL archiving (Point-in-Time Recovery). Cross-region replication of encrypted snapshots to us-west-2.",
+      "failover_plan": "Manual trigger via Terraform to promote Read Replicas in DR region to Primary. DNS failover via Route53 to redirect traffic to DR load balancers."
+    },
+    "summary": "A high-availability, event-driven infrastructure built on AWS EKS, leveraging TimescaleDB for financial data and Redis for real-time state.",
+    "description": "The infrastructure is designed to support the high-frequency nature of crypto trading. We utilize AWS EKS (Kubernetes) to orchestrate the polyglot microservices (Node.js/Python), providing superior control over scaling and resource isolation compared to standard ECS. Data persistence is handled by a hardened RDS PostgreSQL instance with the TimescaleDB extension, optimized for time-series chart data. Redis ElastiCache serves as the backbone for the Pub/Sub mechanism required for real-time price updates. The entire stack is defined in Terraform, ensuring reproducible environments across Dev, Staging, and Production. Security is paramount, with WAF protecting the edge and strict IAM roles governing service-to-service communication.",
+    "cloud_provider": "AWS",
+    "infra_components": 6
+  }
+}
