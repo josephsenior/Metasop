@@ -92,17 +92,23 @@ export async function POST(request: NextRequest) {
 
     if (useStreaming) {
       const encoder = new TextEncoder();
+      let isStreamClosed = false;
+      let heartbeatInterval: NodeJS.Timeout | undefined;
+
       const customReadable = new ReadableStream({
         async start(controller) {
-          let isStreamClosed = false;
-
           const safeClose = () => {
             if (!isStreamClosed) {
               isStreamClosed = true;
+              if (heartbeatInterval) clearInterval(heartbeatInterval);
               try {
                 controller.close();
-              } catch (e) {
-                console.error("[Backend] Error closing controller:", e);
+              } catch (e: any) {
+                // Suppress "already closed" errors as they are common in async cleanup
+                const isAlreadyClosed = e instanceof TypeError && e.message.includes("already closed");
+                if (!isAlreadyClosed) {
+                  console.error("[Backend] Error closing controller:", e);
+                }
               }
             }
           };
@@ -112,8 +118,14 @@ export async function POST(request: NextRequest) {
             try {
               controller.enqueue(encoder.encode(JSON.stringify(payload) + "\n"));
               return true;
-            } catch (e) {
-              console.warn("[Backend] Failed to enqueue, stream might be closed:", e);
+            } catch (e: any) {
+              isStreamClosed = true;
+              if (heartbeatInterval) clearInterval(heartbeatInterval);
+              // Suppress "already closed" errors
+              const isAlreadyClosed = e instanceof TypeError && e.message.includes("already closed");
+              if (!isAlreadyClosed) {
+                console.warn("[Backend] Failed to enqueue, stream might be closed:", e.message);
+              }
               return false;
             }
           };
@@ -121,10 +133,10 @@ export async function POST(request: NextRequest) {
           safeEnqueue({ type: "stream_open", timestamp: new Date().toISOString() });
 
           // Set up a heartbeat to keep the connection alive
-          const heartbeatInterval = setInterval(() => {
+          heartbeatInterval = setInterval(() => {
             const ok = safeEnqueue({ type: "heartbeat", timestamp: new Date().toISOString() });
             if (!ok) {
-              clearInterval(heartbeatInterval);
+              if (heartbeatInterval) clearInterval(heartbeatInterval);
             }
           }, 15000); // 15 seconds heartbeat
 
@@ -135,7 +147,12 @@ export async function POST(request: NextRequest) {
               (event) => {
                 // Stream event to client
                 console.log("[Backend] Streaming event:", event.type, event.step_id || event.role || "");
-                safeEnqueue(event);
+                const ok = safeEnqueue(event);
+                
+                // If the stream is closed, we throw a special error to stop the orchestrator
+                if (!ok && isStreamClosed) {
+                  throw new Error("STREAM_CLOSED");
+                }
               }
             );
 
@@ -236,6 +253,14 @@ export async function POST(request: NextRequest) {
           } catch (error: any) {
             // Clear heartbeat on error
             clearInterval(heartbeatInterval);
+
+            // Handle intentional stream closure stop
+            if (error.message === "STREAM_CLOSED") {
+              console.log("[Backend] Orchestration stopped because client disconnected.");
+              safeClose();
+              return;
+            }
+
             console.error("[Backend] Streaming error:", error);
             try {
               safeEnqueue({
@@ -250,6 +275,11 @@ export async function POST(request: NextRequest) {
             }
           }
         },
+        cancel() {
+          console.log("[Backend] Stream cancelled by client.");
+          isStreamClosed = true;
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
+        }
       });
 
       return new NextResponse(customReadable, {

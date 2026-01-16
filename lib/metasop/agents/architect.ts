@@ -35,20 +35,24 @@ export async function architectAgent(
 
       architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.
 
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize a clean, standard stack, and straightforward data flow. Keep justifications brief and focused on implementation speed.
+- For **complex/enterprise systems**: Provide exhaustive technical rigor, systemic clarity, and production-ready depth.
+
 ${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}
 Target Audience: ${(pmSpec.content as any).description}` : `User Request: ${user_request}`}
 
 MISSION OBJECTIVES:
-1. **System Pattern Selection**: Define the authoritative architecture pattern (e.g., Event-Driven Microservices, Clean Architecture). Justify your choice based on the core user stories.
-2. **Database Intelligence**: Architect a relational schema with specific indexing, relationship strategies, and migrations approach. Prioritize data integrity and performance.
-3. **High-Impact API Design**: Define a type-safe API contract with CRUD coverage, authentication requirements, and rate limits.
-4. **Technology Stack**: Specify the exact frontend, backend, database, and hosting solutions with technical justifications.
-5. **Integration Points**: Identify critical external services (Auth, Payment, CDN, etc.) and their specific purpose.
-6. **Scalability & Security Philosophy**: Detail how the system will scale horizontally and mitigate architectural risks (OWASP, data encryption).
-7. **Comprehensive Design Doc**: Provide a detailed Blueprint/Manifesto covering the system overview and architectural patterns.
-8. **Actionable Roadmap**: Provide a prioritized list of next tasks with roles and priorities for immediate execution.
+1. **System Pattern Selection**: Define the authoritative architecture pattern (e.g., MVC, Event-Driven, Clean Architecture). Provide a justification proportional to the project's scale.
+2. **Database Intelligence**: Architect a relational schema. Specify table structures, data types, indexing strategies, and relationships.
+3. **API Design**: Define a type-safe API contract. Include CRUD coverage, error handling, and authentication flows.
+4. **Technology Stack**: Specify the complete tech stack with justifications for every choice.
+5. **Integration Points**: Identify critical external services (Auth, Payment, etc.) and their integration patterns.
+6. **Scalability & Security Philosophy**: Detail a security strategy and a scalability plan suitable for the project's requirements.
+7. **Design Doc**: Provide a definitive Blueprint covering system overview and data flow.
+8. **Actionable Roadmap**: Provide a prioritized list of technical tasks with clear roles and dependencies.
 
-Your design must be professional, scalable, and optimized for high-throughput production environments. Focus on systemic clarity and technical rigor. Respond with ONLY the JSON object.`;
+Focus on technical rigor and actionable value. Match the complexity of your design to the inherent needs of the project. Respond with ONLY the JSON object.`;
     }
 
     let llmArchitecture: ArchitectBackendArtifact | null = null;

@@ -2,80 +2,95 @@
   "step_id": "ui_design",
   "role": "UI Designer",
   "content": {
-    "summary": "A high-performance, dark-mode-first financial terminal UI optimized for data density and speed.",
-    "description": "The TradePulse design system prioritizes low-latency visual feedback and information density. Using a dark palette (#0B0E11) reduces eye strain for traders. 'JetBrains Mono' is used for all financial data to ensure tabular alignment. The UI is modular, allowing the 'Trading Terminal' to be composed of resizable grid widgets (Chart, Order Book, Depth). Color semantics are strict: Green (#10B981) for positive/buy, Red (#EF4444) for negative/sell.",
+    "summary": "A high-density, dark-mode-first trading interface designed for professional traders. The UI emphasizes data readability, low-latency updates, and efficient screen real estate usage.",
+    "description": "The CryptoPulse design system is built on a 'Dark Technical' aesthetic, utilizing deep grays and blacks to reduce eye strain during prolonged trading sessions. It features a modular grid layout allowing for a 'Single Pane of Glass' experience. Typography is split between 'Inter' for UI elements and 'JetBrains Mono' for tabular financial data to ensure precise alignment. The color palette relies on semantic coloring (Green/Red) for market movements, with a vibrant Electric Blue for primary actions. Components are designed to be compact, minimizing padding to maximize data density.",
     "schema_version": "0.8",
     "component_hierarchy": {
-      "root": "TradePulseApp",
+      "root": "App",
       "children": [
         {
           "name": "AuthProvider",
           "children": [
             {
+              "name": "WebSocketProvider",
+              "props": [
+                "url",
+                "reconnectInterval"
+              ]
+            },
+            {
+              "name": "ThemeContext",
+              "props": [
+                "defaultTheme"
+              ]
+            },
+            {
+              "name": "Router",
+              "props": [
+                "routes"
+              ]
+            },
+            {
               "name": "MainLayout",
               "props": [
                 "userProfile",
-                "themeMode"
+                "notifications"
               ]
             },
             {
               "name": "SidebarNavigation",
               "props": [
-                "activeRoute",
-                "isCollapsed"
+                "collapsed",
+                "menuItems"
               ]
             },
             {
-              "name": "GlobalHeader",
+              "name": "TopBar",
               "props": [
-                "marketStatus",
-                "notifications"
+                "breadcrumbs",
+                "globalSearch"
               ]
             },
             {
-              "name": "TradingTerminalPage",
+              "name": "DashboardView",
               "props": [
-                "activeSymbol",
-                "connectionStatus"
+                "layoutConfig"
               ]
             },
             {
-              "name": "MarketTickerHeader",
+              "name": "PortfolioSummaryWidget",
               "props": [
-                "symbol",
-                "24hChange",
-                "currentPrice"
+                "totalBalance",
+                "pnl24h",
+                "isLoading"
               ]
             },
             {
-              "name": "ChartWidget",
+              "name": "AssetAllocationChart",
               "props": [
-                "symbol",
-                "interval",
-                "indicators"
+                "data",
+                "type"
               ]
             },
             {
-              "name": "OrderBookPanel",
+              "name": "RecentTradesTable",
               "props": [
-                "bids",
-                "asks",
-                "spread"
+                "trades",
+                "limit"
               ]
             },
             {
-              "name": "OrderEntryForm",
+              "name": "ExchangeConnectionModal",
               "props": [
-                "orderType",
-                "availableBalance",
-                "onSubmit"
+                "isOpen",
+                "supportedExchanges"
               ]
             },
             {
-              "name": "ActiveOrdersTable",
+              "name": "ToastNotificationContainer",
               "props": [
-                "orders",
-                "onCancel"
+                "position",
+                "autoClose"
               ]
             }
           ]
@@ -90,7 +105,7 @@
         "primary": "#2563EB",
         "secondary": "#64748B",
         "success": "#10B981",
-        "surface": "#151A21",
+        "surface": "#151A1F",
         "text": "#F3F4F6",
         "warning": "#F59E0B"
       },
@@ -98,9 +113,9 @@
         "2xl": "48px",
         "lg": "24px",
         "md": "16px",
-        "sm": "8px",
+        "sm": "12px",
         "xl": "32px",
-        "xs": "4px"
+        "xs": "8px"
       },
       "typography": {
         "fontFamily": "Inter, system-ui, sans-serif",
@@ -119,133 +134,93 @@
           "normal": "400",
           "semibold": "600"
         },
-        "headingFont": "JetBrains Mono, monospace"
+        "headingFont": "Inter, sans-serif"
       },
       "borderRadius": {
         "full": "9999px",
-        "lg": "12px",
-        "md": "8px",
-        "none": "0px",
+        "lg": "8px",
+        "md": "6px",
+        "none": "0",
         "sm": "4px"
       },
       "shadows": {
-        "inner": "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)",
-        "lg": "0 10px 15px -3px rgb(0 0 0 / 0.5)",
-        "md": "0 4px 6px -1px rgb(0 0 0 / 0.3)",
-        "sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)"
+        "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
+        "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+        "md": "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
+        "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.5)"
       }
     },
     "ui_patterns": [
-      "Skeleton Loading States",
-      "Real-time Data Streaming (WebSocket)",
-      "Optimistic UI Updates",
       "Dashboard Grid Layout",
-      "Modal Overlays for Auth",
-      "Toast Notifications"
+      "Real-time Data Tickers",
+      "Modal Wizards (Exchange Connection)",
+      "Infinite Scroll Tables",
+      "Skeleton Loading States",
+      "Toast Notifications for Alerts",
+      "Master-Detail Views"
     ],
     "component_specs": [
       {
-        "name": "OrderEntryForm",
-        "description": "Primary input mechanism for executing trades. Supports Limit and Market orders.",
+        "name": "MetricCard",
+        "description": "A compact card displaying a single key metric with a trend indicator.",
         "props": {
-          "symbol": "string",
-          "availableBalance": "number",
-          "currentPrice": "number",
+          "label": "string",
+          "value": "string|number",
+          "trend": "number",
+          "trendType": "'percent'|'absolute'",
+          "loading": "boolean"
+        },
+        "states": [
+          "loading",
+          "positive-trend",
+          "negative-trend",
+          "neutral"
+        ],
+        "variants": [
+          "primary",
+          "secondary",
+          "compact"
+        ]
+      },
+      {
+        "name": "ExchangeConnector",
+        "description": "A form component for inputting API keys with validation feedback.",
+        "props": {
+          "exchangeName": "string",
+          "logoUrl": "string",
           "onSubmit": "function",
-          "isLoading": "boolean"
+          "isValidating": "boolean",
+          "error": "string"
         },
         "states": [
           "idle",
           "validating",
-          "submitting",
           "success",
           "error"
         ],
         "variants": [
-          "buy-side",
-          "sell-side",
-          "compact",
-          "expanded"
+          "modal",
+          "inline"
         ]
       },
       {
-        "name": "ChartWidget",
-        "description": "Wrapper around Lightweight Charts library for candlestick visualization.",
+        "name": "PriceTicker",
+        "description": "A real-time updating text component for asset prices.",
         "props": {
           "symbol": "string",
-          "interval": "enum(1m,5m,1h,1d)",
-          "data": "array",
-          "indicators": "string[]"
+          "price": "number",
+          "previousPrice": "number",
+          "currency": "string"
         },
         "states": [
-          "loading",
-          "streaming",
-          "disconnected",
-          "historical-fetch"
+          "flash-up",
+          "flash-down",
+          "stable"
         ],
         "variants": [
-          "candlestick",
-          "line",
-          "area"
-        ]
-      },
-      {
-        "name": "OrderBook",
-        "description": "Visualizes the depth of market with bids and asks lists.",
-        "props": {
-          "bids": "array",
-          "asks": "array",
-          "depth": "number",
-          "spread": "number",
-          "symbol": "string"
-        },
-        "states": [
-          "active",
-          "stale",
-          "connecting"
-        ],
-        "variants": [
-          "standard",
-          "depth-visualizer",
-          "vertical-split"
-        ]
-      },
-      {
-        "name": "PortfolioSummaryCard",
-        "description": "High-level view of total net worth and 24h performance.",
-        "props": {
-          "totalValueUsd": "number",
-          "changePercent": "number",
-          "allocation": "object[]",
-          "isHidden": "boolean"
-        },
-        "states": [
-          "loading",
-          "loaded",
-          "error"
-        ],
-        "variants": [
-          "dashboard-hero",
-          "sidebar-mini"
-        ]
-      },
-      {
-        "name": "ExchangeConnectionModal",
-        "description": "Form to securely input API keys for external exchanges.",
-        "props": {
-          "isOpen": "boolean",
-          "supportedExchanges": "string[]",
-          "onConnect": "function",
-          "error": "string"
-        },
-        "states": [
-          "input",
-          "verifying",
-          "success",
-          "permission-error"
-        ],
-        "variants": [
-          "default"
+          "large",
+          "table-cell",
+          "header"
         ]
       }
     ],
@@ -259,16 +234,15 @@
     "accessibility": {
       "aria_labels": true,
       "checklist": [
-        "Color contrast > 4.5:1",
-        "Focus visible on inputs",
-        "Semantic HTML structure",
-        "Alt text for charts"
+        "Ensure sufficient color contrast for text on dark backgrounds (4.5:1)",
+        "Provide alternative text for trend icons (up/down arrows)",
+        "Support keyboard navigation for grid widgets",
+        "Use aria-live regions for real-time price updates"
       ],
       "focus_indicators": true,
       "guidelines": [
-        "Use ARIA live regions for price updates",
-        "Ensure keyboard navigation for order form",
-        "Avoid color-only status indicators"
+        "WCAG 2.1 AA",
+        "WAI-ARIA 1.2"
       ],
       "keyboard_navigation": true,
       "screen_reader_support": true,
@@ -283,23 +257,24 @@
         "Badge",
         "Spinner",
         "Icon",
-        "Toggle"
+        "Toggle",
+        "Divider"
       ],
       "molecules": [
         "FormField",
+        "SearchInput",
+        "AlertItem",
         "TickerRow",
-        "StatCard",
-        "TabGroup",
-        "AlertBanner",
-        "PriceTag"
+        "StatItem",
+        "TabGroup"
       ],
       "organisms": [
-        "OrderForm",
-        "OrderBook",
-        "PortfolioTable",
         "NavBar",
+        "SideBar",
+        "ExchangeCard",
+        "TradeHistoryTable",
         "ChartContainer",
-        "ExchangeList"
+        "AlertsPanel"
       ]
     },
     "website_layout": {
@@ -308,41 +283,54 @@
           "name": "Dashboard",
           "route": "/dashboard",
           "sections": [
-            "GlobalHeader",
-            "PortfolioHero",
-            "AssetAllocationChart",
-            "RecentActivity"
-          ]
-        },
-        {
-          "name": "Trading Terminal",
-          "route": "/trade/:symbol",
-          "sections": [
-            "MarketHeader",
-            "ChartWidget",
-            "OrderBook",
-            "OrderEntryForm",
-            "TradeHistory"
+            "Portfolio Summary",
+            "Asset Allocation",
+            "Recent Activity",
+            "Active Alerts"
           ]
         },
         {
           "name": "Portfolio",
           "route": "/portfolio",
           "sections": [
-            "NetWorthSummary",
-            "AssetTable",
-            "ExchangeBreakdown",
-            "ExportTools"
+            "Asset List",
+            "Performance Charts",
+            "Exchange Breakdown"
+          ]
+        },
+        {
+          "name": "Analytics",
+          "route": "/analytics",
+          "sections": [
+            "Technical Chart",
+            "Indicators Panel",
+            "Order Book"
+          ]
+        },
+        {
+          "name": "Journal",
+          "route": "/journal",
+          "sections": [
+            "Trade Log",
+            "Notes Editor",
+            "Performance Tags"
           ]
         },
         {
           "name": "Settings",
           "route": "/settings",
           "sections": [
-            "ProfileSettings",
-            "APIKeyManager",
-            "SecuritySettings",
-            "NotificationPrefs"
+            "API Keys Management",
+            "Notification Preferences",
+            "Security Settings"
+          ]
+        },
+        {
+          "name": "Login",
+          "route": "/login",
+          "sections": [
+            "Auth Form",
+            "Feature Highlights"
           ]
         }
       ]

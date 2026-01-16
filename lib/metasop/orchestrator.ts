@@ -251,9 +251,21 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
   async refineArtifact(
     stepId: string,
     instruction: string,
-    onProgress?: (event: MetaSOPEvent) => void
+    onProgress?: (event: MetaSOPEvent) => void,
+    depth: number = 0
   ): Promise<MetaSOPResult> {
-    logger.info("Starting artifact refinement", { stepId, instruction });
+    logger.info("Starting artifact refinement", { stepId, instruction, depth });
+
+    if (depth > this.config.performance.maxRefinementDepth) {
+      logger.warn(`Refinement depth limit reached (${depth}), stopping recursion.`);
+      return {
+        success: true,
+        artifacts: { ...this.artifacts } as any,
+        report: this.report,
+        steps: this.steps,
+        graph: this.buildKnowledgeGraph(),
+      };
+    }
 
     const currentArtifact = this.artifacts[stepId];
     if (!currentArtifact) {
@@ -306,12 +318,13 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
   async cascadeRefinement(
     stepId: string,
     instruction: string,
-    onProgress?: (event: MetaSOPEvent) => void
+    onProgress?: (event: MetaSOPEvent) => void,
+    depth: number = 0
   ): Promise<MetaSOPResult> {
-    logger.info("Starting cascading refinement", { stepId, instruction });
+    logger.info("Starting cascading refinement", { stepId, instruction, depth });
 
     // 1. Refine the initial target
-    const result = await this.refineArtifact(stepId, instruction, onProgress);
+    const result = await this.refineArtifact(stepId, instruction, onProgress, depth);
     if (!result.success) return result;
 
     // 2. Identify downstream agents based on the standard MetaSOP pipeline order
@@ -331,9 +344,14 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     }
 
     const downstreamSteps = pipelineOrder.slice(startIndex + 1);
+    let rippleCount = 0;
 
     // 3. Ripple the changes through downstream dependents
     for (const downstreamId of downstreamSteps) {
+      if (rippleCount >= this.config.performance.maxCascadeRipples) {
+        logger.warn(`Cascade ripple limit reached (${rippleCount}), stopping.`);
+        break;
+      }
       // Skip if agent is disabled in config
       if (!this.config.agents.enabled.includes(downstreamId)) {
         logger.debug(`Skipping disabled downstream agent during cascade: ${downstreamId}`);
@@ -353,12 +371,13 @@ Maintain all existing high-quality elements while incorporating necessary adjust
       logger.info(`Cascading ripple update to ${downstreamId}...`);
 
       try {
-        const cascadeResult = await this.refineArtifact(downstreamId, alignmentInstruction, onProgress);
+        const cascadeResult = await this.refineArtifact(downstreamId, alignmentInstruction, onProgress, depth + 1);
 
         if (!cascadeResult.success) {
           logger.error(`Cascading refinement failed at ${downstreamId}`);
           return cascadeResult;
         }
+        rippleCount++;
       } catch (error: any) {
         logger.error(`Error during cascading refinement for ${downstreamId}: ${error.message}`);
         // For cascade, we can decide if we want to fail hard or just log a warning

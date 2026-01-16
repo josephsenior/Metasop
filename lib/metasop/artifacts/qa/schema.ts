@@ -58,6 +58,7 @@ export const qaSchema = {
             type: "array",
             items: {
                 type: "object",
+                required: ["risk", "impact", "mitigation"],
                 properties: {
                     risk: { type: "string", description: "Potential failure mode or quality risk" },
                     impact: { type: "string", enum: ["high", "medium", "low"] },

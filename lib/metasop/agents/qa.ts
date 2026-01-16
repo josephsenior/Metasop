@@ -39,22 +39,26 @@ export async function qaAgent(
       const projectTitle = pmArtifact?.title || "Project";
       const techStackString = archArtifact?.technology_stack ? Object.values(archArtifact.technology_stack).flat().slice(0, 5).join(", ") : "Modern Stack";
 
-      qaPrompt = `As a Lead Quality Assurance Engineer, design a concise but comprehensive verification STRATEGY for '${projectTitle}'.
+      qaPrompt = `As a Lead Quality Assurance Engineer, design a verification strategy for '${projectTitle}'.
+
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize essential test cases, basic security checks, and straightforward manual verification. Focus on core functional stability.
+- For **complex/enterprise systems**: Provide exhaustive BDD scenario mapping, deep risk analysis, and production-ready verification rigor.
 
 ${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}` : `User Request: ${user_request}`}
 ${archDesign?.content ? `Tech Stack: ${techStackString}` : ""}
 ${engineerImpl?.content ? `Implementation Patterns: ${(engineerImpl.content as any).technical_patterns?.join(", ")}` : ""}
 
 MISSION OBJECTIVES:
-1. **High-Fidelity Strategy**: Define a robust test strategy covering Unit, Integration, and E2E layers.
-2. **BDD Scenario Mapping**: Map 4-6 critical-path test scenarios DIRECTLY to user stories. For each test case, include a **Gherkin (Given/When/Then)** specification and precise **Expected Results**.
-3. **Quality Gates & Coverage**: Define mandatory code coverage thresholds. Target at least 80% coverage for core business logic.
-4. **Resilience & Risk Analysis**: Conduct a risk analysis of the architecture (3-5 key risks). Identify potential failure modes and define technical mitigations.
-5. **Full-Spectrum Benchmarking**: Specify target performance metrics (P95 latency, load times).
-6. **Security & Manual Audits**: Define an authentication verification plan and 3-5 manual UAT steps.
-7. **Executive Summary**: Provide a high-level summary and description.
+1. **Verification Strategy**: Define a test strategy covering Unit, Integration, and E2E layers proportional to the project's scale.
+2. **BDD Scenario Mapping**: Map a comprehensive set of test scenarios DIRECTLY to user stories. The volume of scenarios should be proportional to the project's complexity. For each test case, include a **Gherkin (Given/When/Then)** specification.
+3. **Quality Gates & Coverage**: Define code coverage thresholds (Line, Branch, Function) suitable for the project's requirements.
+4. **Risk Analysis**: Conduct a simple but concise risk analysis of the architecture, identifying key risks proportional to the system's complexity. **For each risk, you MUST provide a specific mitigation strategy.** Keep descriptions to a maximum of 2 sentences.
+5. **Benchmarking**: Specify target performance metrics (latency, throughput) as needed.
+6. **Security & Manual Audits**: Define an authentication verification plan and manual UAT steps.
+7. **Accessibility**: Design a verification plan for accessibility compliance (WCAG).
 
-Focus on creating a professional, battle-hardened verification strategy. Be technical and precise, but avoid excessive verbosity. Respond with ONLY the JSON object. Keep the total response size manageable.`;
+Focus on technical rigor and actionable verification value. Match the complexity of your verification strategy to the inherent needs of the project. Respond with ONLY the JSON object.`;
     }
 
     let llmQA: QABackendArtifact | null = null;
@@ -70,7 +74,7 @@ Focus on creating a professional, battle-hardened verification strategy. Be tech
         },
         {
           reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3,
+          temperature: 0.2, 
           cacheId: context.cacheId,
           role: "QA"
         }

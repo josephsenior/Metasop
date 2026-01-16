@@ -44,30 +44,27 @@ Core User Stories: ${pmArtifact.user_stories?.slice(0, 3).map((s: any) => s.titl
 Key APIs: ${archArtifact.apis?.slice(0, 3).map((a: any) => a.path).join(", ")}`
         : "";
 
-      uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture.
+      uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture for '${user_request}'.
+
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize a clean, minimal design system and straightforward component hierarchy. Focus on core usability and fast implementation.
+- For **complex/enterprise systems**: Provide exhaustive design tokens, a deep atomic hierarchy, and production-ready design rigor.
 
 ${projectContext}
 ${techContext}
 
 MISSION OBJECTIVES:
-1. **Definitve Design Language**: Establish elite Design Tokens. Include Colors, Spacing, Typography, and Border Radii.
-2. **Atomic Structure**: Map the core screen real estate into atoms, molecules, and organisms (names only).
-3. **Primary Feature Manifest**: Generate a high-fidelity **A2UI Manifest** (v0.8) for the most critical user workflow.
-4. **WCAG AA+ Accessibility**: Design for inclusivity. Map out ARIA strategies, keyboard navigation, and focus indicators.
-5. **Component Blueprint**: Detail at least 5 key components with their required Props, Variants, and States. Focus on technical specs over long descriptions.
-6. **Responsive Strategy**: Define layout breakpoints (sm, md, lg, xl) and how the system adapts across devices.
-7. **UI Patterns**: List the fundamental patterns used (e.g., Infinite Scroll, Skeleton Loading, Multi-step Form).
-8. **Executive Summary**: Provide a high-level summary and detailed description of the visual strategy.
-9. **Information Architecture**: Define the website layout pages structure. For each page, specify a name, URL route, and key layout sections (e.g., Navbar, Hero, Features, Footer).
+1. **Design Language**: Establish a set of Design Tokens (Colors, Spacing, Typography, etc.) proportional to the project's scale.
+2. **Atomic Structure**: Map the application real estate into an atomic hierarchy: Atoms, Molecules, Organisms, Templates, and Pages.
+3. **Primary Feature Manifest**: Generate an **A2UI Manifest** (v0.8) for the critical user workflows.
+4. **Accessibility**: Design for inclusivity (WCAG 2.1). Map out ARIA strategies and keyboard navigation at an appropriate level.
+5. **Component Blueprint**: Detail key components proportional to the project's complexity with technical specs: Props, Variants, States, etc.
+6. **Responsive Strategy**: Define a responsive layout strategy with specific breakpoints and fluid rules.
+7. **UI Patterns**: List the fundamental patterns used (e.g., Error States, Empty States).
+8. **Information Architecture**: Define the website layout structure (pages, routes, layout sections).
+9. **Visual Design Philosophy**: Define the core aesthetic principles and brand alignment.
 
-Important Guidelines:
-- Focus on architectural clarity and visual consistency.
-- Focus on architectural clarity and visual consistency.
-- Keep all textual fields professional and extremely concise (max 100 characters).
-- **CRITICAL**: Do NOT exhaustively list every possible HTML/React prop or state boolean (e.g., avoid listing isVisible, isEnabled, etc. unless critical). Limit to the 5-10 most architecturally significant props per component.
-- Avoid repetitive phrasing and ensure every field provides unique value.
-
-RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
+Focus on architectural clarity and production-ready detail. Match the complexity of your UI architecture to the inherent needs of the project. Respond with ONLY the JSON object.`;
     }
 
     let llmUIDesign: any = null;
@@ -83,10 +80,9 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
         },
         {
           reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3,
+          temperature: 0.4, // Higher for design and layout creativity
           cacheId: context.cacheId,
           role: "UI Designer",
-          maxTokens: 32000
         }
       );
     } catch (error: any) {

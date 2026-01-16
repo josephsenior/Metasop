@@ -2,43 +2,59 @@
   "step_id": "arch_design",
   "role": "Architect",
   "content": {
-    "design_doc": "# TradePulse System Architecture\n\n## 1. System Overview\nTradePulse is a high-frequency, low-latency SaaS platform acting as a 'Layer 2' aggregation terminal over centralized cryptocurrency exchanges (CEXs). The system does not hold user funds (non-custodial); instead, it manages execution and data visualization via API keys provided by the user. The architecture prioritizes security (specifically regarding API credential storage), real-time data synchronization, and unified execution capability.\n\n## 2. Architectural Pattern: Event-Driven Microservices\nGiven the requirement for real-time price updates, asynchronous order execution, and independent AI processing, an **Event-Driven Microservices** architecture is selected.\n\n### Core Services:\n- **API Gateway**: Entry point for the frontend, handling auth, rate limiting, and request routing.\n- **Portfolio Service**: Manages user exchange keys (encrypted), syncs balances, and calculates historical net worth.\n- **Execution Engine**: A high-performance wrapper around the CCXT library to normalize order execution across exchanges.\n- **Market Data Streamer**: Connects to Exchange WebSockets, normalizes tickers, and pushes updates to the frontend via Socket.io/Redis PubSub.\n- **AI/Sentiment Worker**: A Python-based service running NLP models on news feeds, decoupled from the core trading path.\n- **Alerts Processor**: Consumes price events and triggers notifications when conditions are met.\n\n## 3. Data Flow\n1. **Onboarding**: User submits Exchange API Key/Secret. Keys are encrypted (AES-256-GCM) and stored in `user_exchange_keys`.\n2. **Data Ingestion**: The Portfolio Service performs an initial sync of balances. The Market Data Streamer subscribes to relevant WebSocket channels on external exchanges.\n3. **Trading**: User places an order -> API Gateway -> Execution Engine -> Decrypts Keys -> Calls External Exchange API -> Returns Result -> Updates Local Order History.\n4. **Analytics**: AI Worker scrapes data -> Processes Sentiment -> Writes to Time-Series DB -> API serves cached sentiment score.\n\n## 4. Security Architecture\n- **Zero-Trust Storage**: API Secrets are never stored in plain text. They are encrypted using a master key managed by a KMS (Key Management Service).\n- **Scope Validation**: The system validates that keys have 'Trade' and 'Read' permissions but strictly rejects keys with 'Withdraw' permissions enabled.\n- **Isolation**: The AI service has read-only access to market data and no access to user credentials.\n\n## 5. Scalability\n- **Horizontal**: The API Gateway and Market Data Streamers are stateless and scale horizontally behind a Load Balancer.\n- **Caching**: Redis is used heavily for 'hot' price data and user session management to reduce DB load.\n- **Database**: TimescaleDB (PostgreSQL extension) is used for efficient storage of time-series chart data and portfolio snapshots.",
+    "design_doc": "# CryptoPulse System Architecture\n\n## 1. System Overview\nCryptoPulse is a non-custodial, multi-exchange trading terminal. The system acts as a secure proxy and aggregation layer between the user and various cryptocurrency exchanges (Binance, Coinbase, Kraken, etc.). The core value proposition is normalizing fragmented data (balances, prices, order books) into a unified schema and providing a low-latency execution environment.\n\n## 2. Architecture Patterns\nWe will utilize a **Event-Driven Microservices Architecture** (or Modular Monolith for MVP phase) centered around a **Normalization Layer**.\n\n### Core Components:\n1.  **API Gateway / Load Balancer**: Entry point for REST and WebSocket connections.\n2.  **Core API Service (NestJS)**: Handles user authentication, portfolio management, and order routing logic.\n3.  **Market Data Engine**: A specialized service using the CCXT library to connect to external Exchange WebSockets, normalize the payloads, and push updates to our internal Event Bus.\n4.  **Execution Engine**: Handles the lifecycle of trade orders, including validation, submission to exchanges, and monitoring for fill status.\n5.  **Notification Service**: Background worker for processing price alerts and sending emails/push notifications.\n\n## 3. Data Flow\n1.  **Data Ingestion**: The Market Data Engine subscribes to external exchange WebSockets. Incoming data is normalized to a standard internal format.\n2.  **Real-time Distribution**: Normalized data is published to Redis Pub/Sub. The Core API (via WebSocket Gateway) subscribes to these channels and pushes updates to connected frontend clients.\n3.  **Order Execution**: \n    - User submits order -> Core API validates balance/permissions.\n    - Order is encrypted and passed to Execution Engine.\n    - Execution Engine decrypts keys (in memory only), calls Exchange API, and updates local DB with status.\n\n## 4. Security Architecture\n-   **Zero-Knowledge Storage**: We do not store funds. We only store API credentials.\n-   **Envelope Encryption**: API Secrets are encrypted using AES-256-GCM. The Data Encryption Key (DEK) is stored in the database, but the Key Encryption Key (KEK) is managed via AWS KMS. This ensures that a database dump is useless without the KMS permissions.\n-   **Isolation**: The service handling decryption for signing requests is isolated from the public-facing API.\n\n## 5. Scalability\n-   **Stateless Services**: The API and Data Engine are stateless, allowing horizontal scaling behind a load balancer.\n-   **Redis Backplane**: Used for distributing WebSocket events across multiple API nodes.\n-   **Rate Limit Management**: A distributed semaphore system (Redis-based) tracks usage per exchange/per user to respect external API limits.",
     "apis": [
       {
-        "path": "/api/v1/exchanges/connect",
+        "path": "/api/v1/auth/login",
         "method": "POST",
-        "description": "Securely link a new exchange account using API credentials. Validates permissions immediately.",
+        "description": "Authenticates user and returns JWT + Refresh Token.",
         "request_schema": {
-          "exchange_id": "string (enum: binance, coinbase, kraken)",
+          "email": "string",
+          "password": "string",
+          "totp_code": "string (optional)"
+        },
+        "response_schema": {
+          "access_token": "string",
+          "refresh_token": "string",
+          "user": {
+            "id": "uuid",
+            "email": "string"
+          }
+        },
+        "auth_required": false,
+        "rate_limit": "5 requests/minute"
+      },
+      {
+        "path": "/api/v1/exchanges/connections",
+        "method": "POST",
+        "description": "Adds a new exchange API key connection. Validates keys before saving.",
+        "request_schema": {
+          "exchange_id": "string (binance, coinbase)",
           "api_key": "string",
           "api_secret": "string",
-          "account_nickname": "string"
+          "connection_name": "string"
         },
         "response_schema": {
           "id": "uuid",
-          "status": "connected",
-          "permissions_verified": [
-            "read",
-            "trade"
-          ]
+          "status": "active",
+          "exchange_id": "string"
         },
         "auth_required": true,
-        "rate_limit": "10 requests/minute"
+        "rate_limit": "10 requests/hour"
       },
       {
         "path": "/api/v1/portfolio/summary",
         "method": "GET",
-        "description": "Get aggregated portfolio balance, 24h change, and asset allocation across all connected exchanges.",
+        "description": "Get aggregated portfolio balance converted to base currency.",
         "request_schema": {},
         "response_schema": {
           "total_balance_usd": "number",
-          "change_24h_percent": "number",
           "assets": [
             {
               "symbol": "string",
               "amount": "number",
-              "value_usd": "number",
-              "source_exchange": "string"
+              "usd_value": "number",
+              "exchange": "string"
             }
           ]
         },
@@ -48,141 +64,129 @@
       {
         "path": "/api/v1/orders",
         "method": "POST",
-        "description": "Execute a trade on a specific exchange.",
+        "description": "Place a new order on a specific exchange.",
         "request_schema": {
-          "exchange_connection_id": "uuid",
-          "symbol": "string (e.g. BTC/USDT)",
+          "connection_id": "uuid",
+          "symbol": "string (BTC/USDT)",
           "side": "string (buy|sell)",
           "type": "string (limit|market)",
-          "quantity": "number",
-          "price": "number (optional for market)"
+          "amount": "number",
+          "price": "number (optional)"
         },
         "response_schema": {
           "order_id": "string",
           "external_id": "string",
-          "status": "filled|open",
-          "executed_price": "number"
+          "status": "open",
+          "filled": "number"
         },
         "auth_required": true,
         "rate_limit": "20 requests/minute"
       },
       {
-        "path": "/api/v1/market/sentiment",
+        "path": "/api/v1/market/candles",
         "method": "GET",
-        "description": "Retrieve AI-generated sentiment analysis for specific assets.",
+        "description": "Proxy endpoint to fetch historical OHLCV data for charts.",
         "request_schema": {
-          "symbols": "string[] (query param)"
+          "exchange": "string",
+          "symbol": "string",
+          "timeframe": "string (1h, 4h)",
+          "limit": "number"
         },
         "response_schema": {
-          "data": [
-            {
-              "symbol": "string",
-              "score": "number (-1 to 1)",
-              "label": "bullish|bearish",
-              "last_updated": "timestamp"
-            }
+          "candles": [
+            [
+              1620000000,
+              50000,
+              51000,
+              49000,
+              50500,
+              100
+            ]
           ]
         },
         "auth_required": true,
         "rate_limit": "100 requests/minute"
-      },
-      {
-        "path": "/api/v1/alerts",
-        "method": "POST",
-        "description": "Create a new price alert.",
-        "request_schema": {
-          "symbol": "string",
-          "condition": "string (gt|lt)",
-          "price_target": "number",
-          "notification_method": "string (push|email)"
-        },
-        "response_schema": {
-          "alert_id": "uuid",
-          "status": "active"
-        },
-        "auth_required": true,
-        "rate_limit": "50 requests/minute"
       }
     ],
-    "summary": "TradePulse utilizes a hybrid Event-Driven Microservices architecture centered around Node.js (NestJS) for core orchestration and Python for AI analytics. It leverages CCXT for unified exchange connectivity and TimescaleDB for high-performance financial data storage. Security is enforced via application-level AES-256 encryption for user credentials.",
-    "description": "The system is designed to act as a secure, high-performance proxy between the user and multiple crypto exchanges. The backend is split into a Core API (handling user requests, portfolio logic, and order routing) and specialized workers (Market Data Streamer, AI Analyzer). \n\nReal-time data is paramount; thus, a Redis Pub/Sub layer distributes WebSocket updates from exchanges to the frontend client. The database strategy uses a relational model for critical user data and a time-series model for the heavy lifting of chart data and portfolio history. \n\nThe AI component runs in isolation, scraping external news sources and updating a sentiment score cache, ensuring that heavy ML processing does not degrade the latency of the trading terminal.",
+    "summary": "CryptoPulse utilizes a secure, event-driven Node.js architecture to aggregate crypto exchange data. By leveraging CCXT for normalization and Redis for real-time distribution, it provides a unified trading experience. Security is anchored by AWS KMS envelope encryption for user API keys.",
+    "description": "The system is designed as a high-performance aggregator. The backend is built with NestJS, providing a structured and type-safe environment. The critical challenge is managing connections to multiple third-party exchanges (Binance, Kraken, etc.) which have different API standards. We solve this using the CCXT library wrapped in a custom service layer. \n\nData flow starts with the 'Market Data Engine' ingesting WebSocket feeds. This data is normalized and pushed to Redis Pub/Sub. The 'API Gateway' subscribes to these channels and forwards updates to the React frontend via Socket.io. \n\nFor execution, the system acts as a router. It validates the user's intent and permissions locally, decrypts the stored API keys using a master key from AWS KMS, signs the request, and forwards it to the specific exchange. This ensures that the platform is non-custodial and secure.",
     "decisions": [
       {
         "decision": "Use CCXT Library for Exchange Integration",
         "status": "accepted",
-        "reason": "CCXT is the industry standard open-source library that normalizes the APIs of over 100 cryptocurrency exchanges into a single interface.",
-        "rationale": "Building custom adapters is unmaintainable for a small team. CCXT is robust and widely used.",
-        "tradeoffs": "Dependency on a large external library implies we must keep it updated frequently to match exchange API changes.",
-        "consequences": "Drastically reduces development time for US-1 and US-3. Simplifies the 'Unified Terminal' logic.",
+        "reason": "CCXT is the industry standard open-source library supporting 100+ exchanges. It handles the normalization of API responses, error codes, and signing algorithms.",
+        "rationale": "Efficiency and maintainability are key for an aggregator.",
+        "tradeoffs": "Dependency on a large third-party library. Updates to exchanges might lag slightly behind official APIs, but the community is very active.",
+        "consequences": "Drastically reduces development time for adding new exchanges. We only write code against the CCXT interface, not individual exchange REST APIs.",
         "alternatives": [
           "Build custom adapters for each exchange",
-          "Use a commercial aggregation API (e.g., Shrimpy)"
+          "Use a paid aggregation API (e.g., Shrimpy) - rejected due to cost and vendor lock-in"
         ]
       },
       {
-        "decision": "Hybrid Database Strategy (Postgres + TimescaleDB)",
+        "decision": "Envelope Encryption for API Secrets",
         "status": "accepted",
-        "reason": "We need relational integrity for user data/orders (Postgres) but high-performance time-series handling for chart data and portfolio snapshots (Timescale).",
-        "rationale": "TimescaleDB is an extension of Postgres, allowing us to use a single database connection and SQL syntax for both relational and time-series data.",
-        "tradeoffs": "Slightly higher complexity in database management compared to a standard Postgres instance.",
-        "consequences": "Allows for extremely fast querying of historical portfolio performance and OHLCV data.",
+        "reason": "Storing API secrets in plain text is a critical vulnerability. Database encryption alone is insufficient if the DB is compromised.",
+        "rationale": "Security is a 'must-have' for a fintech product.",
+        "tradeoffs": "Adds latency to every authenticated exchange request due to the decryption step. Requires key management infrastructure (AWS KMS).",
+        "consequences": "High security assurance. Even if the DB is leaked, the attacker cannot use the API keys without the master key from KMS.",
         "alternatives": [
-          "Postgres + InfluxDB",
-          "MongoDB for everything"
+          "Database-level encryption (TDE)",
+          "Hashicorp Vault (too complex for current scale)"
         ]
       },
       {
-        "decision": "Application-Level Encryption for API Keys",
+        "decision": "Redis Pub/Sub for Real-time Data",
         "status": "accepted",
-        "reason": "Database-level encryption (TDE) protects against physical theft, but App-level encryption protects against SQL injection or compromised DB credentials.",
-        "rationale": "AES-256-GCM implemented in the backend service is sufficient for MVP, with plans to migrate to Vault for Enterprise.",
-        "tradeoffs": "Key management complexity. If the application master key is lost, all user API connections are broken.",
-        "consequences": "High security for sensitive user data (AC-1). Requires strict key rotation policies.",
+        "reason": "We need to broadcast price updates from the ingestion service to multiple frontend clients connected via WebSockets.",
+        "rationale": "Redis is fast, simple, and sufficient for the throughput.",
+        "tradeoffs": "Redis becomes a critical infrastructure component. If Redis fails, real-time updates stop.",
+        "consequences": "Decouples the data fetching logic from the client connection handling. Allows scaling WebSocket servers horizontally.",
         "alternatives": [
-          "Hashicorp Vault",
-          "AWS KMS direct integration"
+          "Kafka (overkill for ephemeral price ticks)",
+          "Direct memory event bus (doesn't scale across nodes)"
         ]
       }
     ],
     "next_tasks": [
       {
         "role": "DevOps",
-        "task": "Setup Infrastructure as Code (Terraform)",
-        "description": "Provision AWS ECS, RDS (Postgres/Timescale), and ElastiCache (Redis). Configure VPC and Security Groups.",
+        "task": "Setup AWS KMS and Database Infrastructure",
+        "description": "Provision RDS (Postgres), ElastiCache (Redis), and create the KMS Customer Master Key (CMK) for encryption.",
         "priority": "high",
         "title": "Infra Setup"
       },
       {
         "role": "Engineer",
-        "task": "Implement Exchange Connection Service",
-        "description": "Build the backend module to accept API keys, encrypt them, and validate permissions using CCXT.",
+        "task": "Implement CCXT Wrapper Service",
+        "description": "Create the backend module that wraps CCXT, handles rate limiting, and normalizes the 'fetchBalance' and 'createOrder' calls.",
         "priority": "high",
-        "title": "Exchange Auth Module"
+        "title": "Exchange Adapter"
       },
       {
         "role": "Engineer",
-        "task": "Develop WebSocket Aggregator",
-        "description": "Create a service that connects to Binance/Coinbase WS, normalizes the ticker data, and pushes to Redis Pub/Sub.",
+        "task": "Develop Encryption/Decryption Utilities",
+        "description": "Implement the AES-256-GCM logic using the KMS key for encrypting user API secrets before storage.",
         "priority": "high",
-        "title": "Real-time Feed"
+        "title": "Security Module"
       },
       {
         "role": "Designer",
-        "task": "High-Fidelity Trading Terminal UI",
-        "description": "Design the main dashboard including the chart widget, order form, and order book visualization.",
+        "task": "Design Dashboard Layout",
+        "description": "Create high-fidelity mockups for the portfolio overview and trading terminal view, focusing on dense data visualization.",
         "priority": "medium",
-        "title": "Terminal UI Design"
+        "title": "UI Design"
       },
       {
-        "role": "Product Manager",
-        "task": "Define AI Sentiment Data Sources",
-        "description": "Select specific news APIs (CryptoPanic, Twitter API) and define the scoring logic for the NLP model.",
+        "role": "QA",
+        "task": "Create Exchange Mock Server",
+        "description": "Build a mock server that simulates Binance/Coinbase APIs to test error handling and rate limits without using real funds.",
         "priority": "medium",
-        "title": "AI Logic Spec"
+        "title": "Test Harness"
       }
     ],
     "database_schema": {
-      "migrations_strategy": "Knex.js or TypeORM migrations run on container startup.",
+      "migrations_strategy": "TypeORM Migrations",
       "tables": [
         {
           "name": "users",
@@ -192,43 +196,40 @@
               "type": "uuid",
               "constraints": [
                 "PRIMARY KEY",
-                "DEFAULT gen_random_uuid()"
+                "DEFAULT uuid_generate_v4()"
               ],
               "description": "Unique user identifier"
             },
             {
               "name": "email",
-              "type": "varchar(255)",
+              "type": "varchar",
               "constraints": [
                 "UNIQUE",
                 "NOT NULL"
               ],
-              "description": "User email"
+              "description": "User email address"
             },
             {
-              "name": "auth0_sub",
-              "type": "varchar(255)",
+              "name": "password_hash",
+              "type": "varchar",
               "constraints": [
-                "UNIQUE",
                 "NOT NULL"
               ],
-              "description": "External Auth ID"
-            }
-          ],
-          "description": "Core user identity table.",
-          "indexes": [
+              "description": "Bcrypt hash"
+            },
             {
-              "columns": [
-                "email"
-              ],
-              "reason": "Fast lookup for login",
-              "type": "btree"
+              "name": "two_factor_secret",
+              "type": "varchar",
+              "constraints": [],
+              "description": "Encrypted TOTP secret"
             }
           ],
+          "description": "Core user identity table",
+          "indexes": [],
           "relationships": []
         },
         {
-          "name": "user_exchange_keys",
+          "name": "exchange_connections",
           "columns": [
             {
               "name": "id",
@@ -236,65 +237,55 @@
               "constraints": [
                 "PRIMARY KEY"
               ],
-              "description": "Key ID"
+              "description": "Connection ID"
             },
             {
               "name": "user_id",
               "type": "uuid",
               "constraints": [
                 "NOT NULL",
-                "REFERENCES users(id)"
+                "FOREIGN KEY"
               ],
-              "description": "Owner"
+              "description": "Owner of the connection"
             },
             {
-              "name": "exchange_name",
-              "type": "varchar(50)",
+              "name": "exchange_id",
+              "type": "varchar",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "e.g., 'binance'"
+              "description": "CCXT exchange ID (e.g., 'binance')"
             },
             {
-              "name": "encrypted_api_key",
+              "name": "api_key_ciphertext",
               "type": "text",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "AES-256 Encrypted Key"
+              "description": "Encrypted API Key"
             },
             {
-              "name": "encrypted_secret",
+              "name": "api_secret_ciphertext",
               "type": "text",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "AES-256 Encrypted Secret"
+              "description": "Encrypted API Secret"
             },
             {
-              "name": "iv",
-              "type": "varchar(255)",
-              "constraints": [
-                "NOT NULL"
-              ],
-              "description": "Initialization Vector for encryption"
-            },
-            {
-              "name": "is_valid",
-              "type": "boolean",
-              "constraints": [
-                "DEFAULT true"
-              ],
-              "description": "Flag to disable invalid keys"
+              "name": "label",
+              "type": "varchar",
+              "constraints": [],
+              "description": "User defined label"
             }
           ],
-          "description": "Stores encrypted credentials for external exchanges.",
+          "description": "Stores credentials for external exchanges",
           "indexes": [
             {
               "columns": [
                 "user_id"
               ],
-              "reason": "Fetch all keys for a user",
+              "reason": "Frequent lookup for portfolio aggregation",
               "type": "btree"
             }
           ],
@@ -303,53 +294,91 @@
               "type": "many-to-one",
               "from": "user_id",
               "to": "users.id",
-              "description": "User owns keys"
+              "description": "User owns connections"
             }
           ]
         },
         {
-          "name": "portfolio_snapshots",
+          "name": "orders",
           "columns": [
             {
-              "name": "time",
-              "type": "timestamptz",
-              "constraints": [
-                "NOT NULL"
-              ],
-              "description": "TimescaleDB hypertable time column"
-            },
-            {
-              "name": "user_id",
+              "name": "id",
               "type": "uuid",
               "constraints": [
-                "NOT NULL"
+                "PRIMARY KEY"
               ],
-              "description": "User ID"
+              "description": "Internal Order ID"
             },
             {
-              "name": "total_balance_usd",
-              "type": "decimal(18, 2)",
+              "name": "connection_id",
+              "type": "uuid",
+              "constraints": [
+                "NOT NULL",
+                "FOREIGN KEY"
+              ],
+              "description": "Which exchange connection used"
+            },
+            {
+              "name": "external_order_id",
+              "type": "varchar",
+              "constraints": [],
+              "description": "ID assigned by the exchange"
+            },
+            {
+              "name": "symbol",
+              "type": "varchar",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "Aggregated net worth"
+              "description": "Trading pair (e.g. BTC/USD)"
+            },
+            {
+              "name": "status",
+              "type": "varchar",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "open, closed, canceled, failed"
+            },
+            {
+              "name": "side",
+              "type": "varchar",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "buy or sell"
+            },
+            {
+              "name": "amount",
+              "type": "decimal(24,12)",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Order size"
             }
           ],
-          "description": "Historical record of user net worth for charting.",
+          "description": "Local record of orders placed via the platform",
           "indexes": [
             {
               "columns": [
-                "time",
-                "user_id"
+                "connection_id",
+                "status"
               ],
-              "reason": "Time-series queries per user",
+              "reason": "Filtering active orders",
               "type": "btree"
             }
           ],
-          "relationships": []
+          "relationships": [
+            {
+              "type": "many-to-one",
+              "from": "connection_id",
+              "to": "exchange_connections.id",
+              "description": "Order belongs to a connection"
+            }
+          ]
         },
         {
-          "name": "price_alerts",
+          "name": "alerts",
           "columns": [
             {
               "name": "id",
@@ -369,30 +398,38 @@
             },
             {
               "name": "symbol",
-              "type": "varchar(20)",
+              "type": "varchar",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "e.g. BTC/USDT"
+              "description": "Target symbol"
             },
             {
               "name": "target_price",
-              "type": "decimal(18, 8)",
+              "type": "decimal(24,12)",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "Trigger price"
+              "description": "Price threshold"
             },
             {
               "name": "condition",
-              "type": "varchar(10)",
+              "type": "varchar",
               "constraints": [
                 "NOT NULL"
               ],
-              "description": "'gt' or 'lt'"
+              "description": "gt (greater than) or lt (less than)"
+            },
+            {
+              "name": "is_active",
+              "type": "boolean",
+              "constraints": [
+                "DEFAULT true"
+              ],
+              "description": "Enabled status"
             }
           ],
-          "description": "User configured price alerts.",
+          "description": "User configured price alerts",
           "indexes": [],
           "relationships": []
         }
@@ -400,25 +437,26 @@
     },
     "technology_stack": {
       "authentication": [
-        "Auth0 (Identity Provider)",
-        "JWT (Session Management)"
+        "JWT (JSON Web Tokens)",
+        "Passport.js",
+        "TOTP (2FA)"
       ],
       "backend": [
-        "Node.js (NestJS) - Core API & Gateway",
-        "Python (FastAPI) - AI/ML Service",
-        "CCXT - Crypto Exchange Library"
+        "Node.js",
+        "NestJS (Framework)",
+        "TypeScript",
+        "CCXT (Crypto Library)"
       ],
       "database": [
         "PostgreSQL 15 (Primary Data)",
-        "TimescaleDB (Time-series extension)",
-        "Redis (Cache & Pub/Sub)"
+        "Redis 7 (Cache & Pub/Sub)"
       ],
       "frontend": [
-        "React",
+        "React 18",
         "TypeScript",
         "Tailwind CSS",
-        "Zustand (State Management)",
-        "Lightweight Charts (TradingView Library)"
+        "Lightweight Charts (TradingView)",
+        "Zustand (State Management)"
       ],
       "hosting": [
         "AWS ECS (Fargate)",
@@ -426,53 +464,53 @@
         "AWS ElastiCache"
       ],
       "other": [
-        "BullMQ (Job Queues)",
-        "Socket.io (Real-time communication)",
-        "Docker"
+        "AWS KMS (Key Management)",
+        "Socket.io (WebSockets)",
+        "BullMQ (Job Queue for Alerts)"
       ]
     },
     "integration_points": [
       {
-        "service": "Exchange APIs (Binance, Coinbase, etc.)",
-        "purpose": "Execution of trades and fetching of account balances.",
-        "api_docs": "https://github.com/ccxt/ccxt",
-        "name": "Crypto Exchanges",
-        "system": "External"
+        "service": "Binance API",
+        "purpose": "Market data and order execution",
+        "api_docs": "https://binance-docs.github.io/apidocs/",
+        "name": "Binance",
+        "system": "External Exchange"
       },
       {
-        "service": "Auth0",
-        "purpose": "User authentication and identity management (OIDC).",
-        "api_docs": "https://auth0.com/docs/api",
-        "name": "Auth0",
-        "system": "Identity Provider"
+        "service": "Coinbase Pro API",
+        "purpose": "Market data and order execution",
+        "api_docs": "https://docs.cloud.coinbase.com/exchange/docs/",
+        "name": "Coinbase",
+        "system": "External Exchange"
       },
       {
-        "service": "CryptoPanic API",
-        "purpose": "Source for news headlines for the AI Sentiment engine.",
-        "api_docs": "https://cryptopanic.com/developers/api/",
-        "name": "News Aggregator",
-        "system": "Data Provider"
+        "service": "AWS KMS",
+        "purpose": "Encryption of API Secrets",
+        "api_docs": "https://docs.aws.amazon.com/kms/",
+        "name": "Key Management Service",
+        "system": "AWS"
       },
       {
         "service": "SendGrid",
-        "purpose": "Sending email notifications for price alerts.",
-        "api_docs": "https://docs.sendgrid.com/",
+        "purpose": "Transactional emails (Alerts, 2FA)",
+        "api_docs": "https://docs.sendgrid.com/api-reference",
         "name": "SendGrid",
-        "system": "Notification Service"
+        "system": "Email Provider"
       }
     ],
     "security_considerations": [
-      "API Secrets must be encrypted using AES-256-GCM with a unique IV per record.",
-      "The application must never log API secrets or raw request bodies containing credentials.",
-      "Implement strict Rate Limiting (Throttling) on the API Gateway to prevent DDoS.",
-      "Use Content Security Policy (CSP) headers to prevent XSS on the trading terminal.",
-      "Ensure the 'Withdraw' permission is explicitly checked and rejected during Exchange Key validation."
+      "API Keys must never be logged in plain text in application logs.",
+      "Implement strict Content Security Policy (CSP) to prevent XSS, which could steal session tokens.",
+      "Use 'httpOnly' and 'Secure' cookies for session management to mitigate XSS token theft.",
+      "Rate limiting must be applied per IP and per User ID to prevent DDoS and brute force attacks.",
+      "All internal communication between services (if split) should be over mTLS or private VPC subnets."
     ],
     "scalability_approach": {
-      "caching_strategy": "Use Redis to cache 'Ticker' data (1s TTL) and 'Sentiment' scores (1h TTL). User sessions cached for 15m.",
-      "database_scaling": "TimescaleDB handles high-volume insert loads for historical data. Read replicas for Postgres can be added if user count grows.",
-      "horizontal_scaling": "The Node.js API and Python AI workers are containerized (Docker) and can be auto-scaled via AWS ECS based on CPU/Memory usage.",
-      "performance_targets": "Order execution latency < 200ms (internal processing). Dashboard load time < 1s."
+      "caching_strategy": "Redis will cache 'Ticker' and 'OrderBook' data with a short TTL (1-5 seconds) to serve high-frequency read requests without hitting exchange rate limits.",
+      "database_scaling": "Read Replicas for PostgreSQL will be used for the 'Tax Export' and 'History' features to offload heavy analytical queries from the primary writer node.",
+      "horizontal_scaling": "The Node.js API layer is stateless and can be autoscaled based on CPU/Memory usage. WebSocket servers will use a Redis Adapter to broadcast messages across multiple instances.",
+      "performance_targets": "API response time < 100ms for cached data. WebSocket latency < 200ms from exchange ingestion to client push."
     }
   }
 }

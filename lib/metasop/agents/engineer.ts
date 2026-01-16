@@ -39,7 +39,11 @@ export async function engineerAgent(
       const uiArtifact = uiDesign?.content as any;
       const projectTitle = pmArtifact?.title || "Project";
 
-      engineerPrompt = `As an expert Software Engineer, your task is to design a high-fidelity and comprehensive technical implementation blueprint for '${projectTitle}'.
+      engineerPrompt = `As an expert Software Engineer, design a high-fidelity technical implementation blueprint for '${projectTitle}'.
+
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize a flat, efficient file structure and straightforward state management. Focus on "getting it running" with standard best practices.
+- For **complex/enterprise systems**: Provide exhaustive technical depth, a deep modular architecture, and production-ready rigor.
 
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
 ${archArtifact ? `Architecture Target: ${archArtifact.summary}
@@ -47,20 +51,19 @@ Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0,
 ${uiArtifact ? `Visual Strategy: ${uiArtifact.summary}
 Design Tokens: primary=${uiArtifact.design_tokens?.colors?.primary}, background=${uiArtifact.design_tokens?.colors?.background}` : ""}
 
-Please provide a comprehensive and detailed technical roadmap:
-1. **Implementation Plan**: A detailed step-by-step technical implementation guide (Markdown). This should be a robust roadmap that a senior developer could follow.
+Please provide a comprehensive technical roadmap:
+1. **Implementation Plan**: A detailed step-by-step technical implementation guide (Markdown). Match the detail level to the project's scale.
 2. **State Management**: Your specific strategy for managing application state, including tool choices and data flow.
-3. **File Structure**: A deep, organized directory tree that mirrors a professional senior architecture. Go beyond the top-level folders; show the nested structures of modules, components, services, and utilities. Note: Only include metadata (names), DO NOT include any file source code or content.
+3. **File Structure**: An organized directory tree that mirrors a professional architecture. Propose a depth proportional to the project's complexity. Note: Only include metadata (names), DO NOT include any file source code.
 4. **Technical Decisions**: Critical architectural choices, rationales, and considered alternatives.
-5. **Dependencies**: Essential libraries and tools required for the build, including versions.
+5. **Dependencies**: Essential libraries and tools required for the build.
 6. **Phases**: Essential implementation phases with granular technical tasks and milestones.
 
 Important Guidelines:
-- Focus on high architectural clarity, technical depth, and exhaustive detail.
-- Propose a deep folder hierarchy that represents a real production-ready monorepo or modular monolith where applicable.
-- Avoid being brief; ensure every section provides granular, actionable technical value.
-- Keep descriptions professional and avoid repetitive phrasing.
-- Ensure all fields in the schema are populated with meaningful, detailed data.
+- Focus on architectural clarity and actionable technical value.
+- Match the folder hierarchy depth to the project's inherent complexity.
+- Avoid being overly brief, but prioritize essential patterns for simple apps.
+- Ensure all fields in the schema are populated with meaningful data.
 
 RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
     }
@@ -81,7 +84,6 @@ RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
           temperature: 0.3, // Increased to avoid deterministic loops/recitation
           cacheId: context.cacheId,
           role: "Engineer",
-          maxTokens: 32000 // Safer token limit to prevent overflow
         }
       );
     } catch (error: any) {

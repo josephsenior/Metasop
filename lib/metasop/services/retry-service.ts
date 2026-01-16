@@ -57,6 +57,16 @@ export class RetryService {
       } catch (error: any) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
+        // DO NOT retry if the client disconnected (Stream closed)
+        if (lastError.message === "STREAM_CLOSED") {
+          return {
+            success: false,
+            error: lastError,
+            attempts,
+            totalDuration: Date.now() - startTime,
+          };
+        }
+
         if (attempt < policy.maxRetries) {
           // Check if this is a rate limit error and apply special handling
           const isRateLimit = this.isRateLimitError(lastError);

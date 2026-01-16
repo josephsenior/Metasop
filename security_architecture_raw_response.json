@@ -2,34 +2,33 @@
   "step_id": "security_architecture",
   "role": "Security",
   "content": {
-    "summary": "TradePulse employs a Defense-in-Depth strategy focused on protecting User Exchange API Keys, which are the 'crown jewels' of the platform. The architecture utilizes Zero-Trust principles for identity (Auth0/OIDC), application-level envelope encryption for secrets, and strict network isolation within AWS. A key security feature is the proactive rejection of any Exchange API keys that have 'Withdrawal' permissions enabled, mitigating the risk of fund theft even in a total compromise scenario.",
-    "description": "The security architecture is built around the concept that TradePulse is a high-value target due to its ability to execute trades. \n\n1. **Identity**: We offload identity management to Auth0, enforcing MFA and using short-lived JWTs. \n2. **Data Protection**: While volume encryption protects against physical drive theft, we implement application-layer encryption (AES-256-GCM) for API keys. This ensures that even a database dump (SQL injection) yields useless encrypted blobs without the KMS-managed keys. \n3. **Network Security**: The API Gateway acts as the single entry point, protected by AWS WAF. Internal services (AI Worker, Execution Engine) reside in private subnets with no direct internet access, communicating only via the Gateway or Message Queue. \n4. **Operational Security**: Automated pipelines scan for vulnerabilities, and logs are centralized for anomaly detection (e.g., unusual trading volume from a single user).",
+    "summary": "The security architecture for CryptoPulse is designed to protect high-value assets (Exchange API Keys) in a non-custodial environment. The core defense is Application-Level Envelope Encryption using AWS KMS, ensuring that even a full database compromise does not yield usable API secrets. Authentication relies on standard JWT flows hardened with MFA and HttpOnly cookies. The infrastructure leverages AWS VPC isolation to separate the public API from the sensitive Execution Engine.",
+    "description": "CryptoPulse operates in a high-threat environment where user trust is paramount. The architecture adopts a 'Zero Trust' approach to data storage. \n\n1. **Identity**: Users authenticate via email/password + TOTP. Sessions are managed via secure, HTTP-only cookies to mitigate XSS token theft.\n2. **Data Protection**: The 'Crown Jewels' (Exchange API Secrets) are encrypted using a unique Data Encryption Key (DEK) for each entry. This DEK is encrypted by a Master Key (KEK) stored in AWS KMS. The application only decrypts secrets in memory within the isolated 'Execution Engine' service for the brief moment required to sign a transaction.\n3. **Network**: The Execution Engine resides in a private subnet with no direct internet ingress. It communicates outbound to exchanges via a NAT Gateway with strict egress filtering.\n4. **Resilience**: Rate limiting is applied at both the Global (WAF) and Application (Redis) layers to protect against DDoS and ensure fair usage of exchange API quotas.",
     "security_architecture": {
       "authentication": {
-        "method": "OpenID Connect",
-        "description": "Authentication is delegated to Auth0 as the Identity Provider (IdP). The frontend retrieves an Access Token (JWT) via the Authorization Code Flow with PKCE. This token is passed in the Authorization header (Bearer schema) for all API requests.",
+        "method": "JWT",
+        "description": "Stateless authentication using short-lived JWT Access Tokens (15m) and long-lived Refresh Tokens (7d). Refresh tokens are rotated on use (Refresh Token Rotation) to detect theft.",
         "mfa_enabled": true,
         "multi_factor_auth": true,
         "providers": [
-          "Auth0 (Database Connection)",
-          "Google Workspace",
-          "GitHub"
+          "local-email-password"
         ],
         "refresh_tokens": true,
-        "token_expiry": "1h"
+        "token_expiry": "15m"
       },
       "authorization": {
         "model": "RBAC",
-        "description": "Role-Based Access Control is enforced at the API Gateway and Service level using NestJS Guards. Ownership checks (ABAC-lite) are applied to ensure users can only manipulate their own resources (e.g., Exchange Keys, Orders).",
+        "description": "Role-Based Access Control enforcing strict resource ownership. Users can only access their own exchange connections and orders.",
         "policies": [
           {
-            "resource": "exchange_keys",
+            "resource": "exchange_connections",
             "permissions": [
               "create",
               "read",
+              "update",
               "delete"
             ],
-            "description": "Manage external exchange API credentials. Secrets are write-only.",
+            "description": "Users manage their own exchange API keys.",
             "roles": [
               "user"
             ]
@@ -41,18 +40,18 @@
               "read",
               "cancel"
             ],
-            "description": "Execute and manage trades on connected exchanges.",
+            "description": "Users can place and cancel orders on their connected exchanges.",
             "roles": [
               "user"
             ]
           },
           {
-            "resource": "system_config",
+            "resource": "system_admin",
             "permissions": [
-              "read",
-              "update"
+              "view_metrics",
+              "manage_users"
             ],
-            "description": "Manage global platform settings and feature flags.",
+            "description": "Admins can view system health but cannot decrypt user API keys.",
             "roles": [
               "admin"
             ]
@@ -61,165 +60,162 @@
         "roles": [
           "user",
           "admin",
-          "support_agent"
+          "auditor"
         ]
       },
       "session_management": {
         "http_only_cookies": true,
         "same_site_policy": "strict",
         "secure_cookies": true,
-        "session_timeout": "1h",
+        "session_timeout": "7d",
         "strategy": "stateless"
       }
     },
     "threat_model": [
       {
-        "threat": "Compromise of User Exchange API Keys",
+        "threat": "Compromise of Exchange API Secrets (Information Disclosure)",
         "severity": "critical",
-        "mitigation": "Application-level AES-256-GCM encryption. Keys are never logged. Database access is strictly limited. 'Withdraw' permission is validated and rejected upon connection.",
+        "mitigation": "Envelope encryption using AWS KMS. Database only stores encrypted data (ciphertext); decryption occurs only in volatile memory within the isolated Execution Engine.",
         "affected_components": [
           "Database",
-          "Portfolio Service",
           "Execution Engine"
         ],
-        "impact": "Attacker could execute unauthorized trades, potentially draining user funds via wash trading, though direct withdrawals are blocked.",
-        "likelihood": "medium"
-      },
-      {
-        "threat": "Unauthorized Trading (Account Takeover)",
-        "severity": "critical",
-        "mitigation": "Mandatory MFA for login. Email notifications for new device logins. Rate limiting on order execution.",
-        "affected_components": [
-          "Auth Service",
-          "Execution Engine"
-        ],
-        "impact": "Financial loss for the user due to malicious trades.",
-        "likelihood": "medium"
-      },
-      {
-        "threat": "Man-in-the-Middle (MitM) Attack",
-        "severity": "high",
-        "mitigation": "Enforce TLS 1.3 with HSTS. Certificate pinning for mobile clients (future).",
-        "affected_components": [
-          "API Gateway",
-          "Frontend Client"
-        ],
-        "impact": "Interception of JWTs or sensitive data in transit.",
+        "impact": "Attackers could drain user funds via wash trading on external exchanges.",
         "likelihood": "low"
       },
       {
-        "threat": "API Rate Limit Exhaustion (DoS)",
+        "threat": "Cross-Site Scripting (XSS) leading to Session Hijacking",
+        "severity": "high",
+        "mitigation": "Strict Content Security Policy (CSP), HttpOnly/Secure cookies for tokens, and sanitization of all user inputs (e.g., connection labels).",
+        "affected_components": [
+          "Frontend",
+          "API Gateway"
+        ],
+        "impact": "Attacker executes trades on behalf of the logged-in user.",
+        "likelihood": "medium"
+      },
+      {
+        "threat": "Man-in-the-Middle (MitM) Attacks on API Traffic",
+        "severity": "high",
+        "mitigation": "Enforce TLS 1.3 for all client-server communications and strict certificate validation for backend-to-exchange connections.",
+        "affected_components": [
+          "API Gateway",
+          "Exchange Adapter"
+        ],
+        "impact": "Interception of auth tokens or manipulation of trade orders in transit.",
+        "likelihood": "low"
+      },
+      {
+        "threat": "API Rate Limit Exhaustion (Denial of Service)",
         "severity": "medium",
-        "mitigation": "Implement token bucket rate limiting per user ID in Redis. Exponential backoff for upstream exchange calls.",
+        "mitigation": "Distributed rate limiting via Redis (Token Bucket algorithm) per user and per exchange IP to prevent upstream bans.",
         "affected_components": [
-          "API Gateway",
-          "Exchange Connector"
+          "Exchange Adapter",
+          "API Gateway"
         ],
-        "impact": "Service unavailability for legitimate users.",
+        "impact": "System becomes unable to fetch prices or execute orders for legitimate users.",
         "likelihood": "medium"
       },
       {
-        "threat": "Injection Attacks (SQL/NoSQL)",
-        "severity": "high",
-        "mitigation": "Use of ORM (TypeORM/Knex) with parameterized queries. Strict input validation using Zod/DTOs.",
+        "threat": "Credential Stuffing / Brute Force",
+        "severity": "medium",
+        "mitigation": "Implement exponential backoff on login endpoints and require CAPTCHA after 3 failed attempts.",
         "affected_components": [
-          "Core API",
-          "Database"
+          "Auth Service"
         ],
-        "impact": "Data leakage or corruption.",
-        "likelihood": "low"
+        "impact": "Unauthorized access to user accounts.",
+        "likelihood": "high"
       }
     ],
     "encryption": {
       "data_at_rest": {
         "method": "AES-256-GCM",
-        "key_management": "AWS KMS (Key Management Service)",
-        "description": "Dual-layer encryption: 1. AWS RDS Storage Encryption (Volume level). 2. Application-level encryption for the 'encrypted_api_key' and 'encrypted_secret' columns in the 'user_exchange_keys' table."
+        "key_management": "AWS KMS (Envelope Encryption)",
+        "description": "Sensitive fields (API Secrets) are encrypted at the application level before DB insertion. The Database volume is also encrypted via AWS RDS encryption."
       },
       "data_in_transit": {
         "method": "TLS 1.3",
         "certificate_management": "AWS Certificate Manager (ACM) with auto-renewal",
-        "description": "All HTTP traffic is encrypted via TLS. Internal microservices communication is secured via private VPC subnets and Service Mesh (optional) or TLS."
+        "description": "All HTTP/WebSocket traffic is encrypted. Internal service-to-service communication within the VPC uses private subnets."
       },
       "key_management": {
-        "strategy": "Envelope Encryption",
-        "description": "A Master Key (CMK) in AWS KMS encrypts Data Encryption Keys (DEKs). The DEKs are used to encrypt user API secrets. DEKs are cached in memory for short durations to improve performance.",
-        "rotation_policy": "90 days"
+        "strategy": "Centralized Cloud KMS",
+        "description": "Master keys (KEK) never leave AWS KMS. Data Encryption Keys (DEK) are generated per user/connection, encrypted by KEK, and stored alongside data.",
+        "rotation_policy": "Automatic annual rotation of Customer Master Keys (CMK)."
       },
       "envelope_encryption": true,
-      "secrets_management": "AWS Secrets Manager for infrastructure secrets (DB creds, Auth0 Client Secret). Environment variables for non-sensitive config."
+      "secrets_management": "AWS Secrets Manager for application infrastructure secrets (DB credentials, 3rd party API keys)."
     },
     "compliance": [
       {
         "standard": "GDPR",
         "requirements": [
-          "Right to Access",
           "Right to be Forgotten",
           "Data Portability",
           "Consent Management"
         ],
-        "description": "Ensuring EU user data privacy. Users can export their trade history and delete their account (which wipes keys and PII).",
-        "implementation_status": "in-progress"
+        "description": "Ensure EU users can request deletion of their account and all associated data (including API keys).",
+        "implementation_status": "planned"
       },
       {
         "standard": "SOC2",
         "requirements": [
-          "Security",
-          "Availability",
-          "Confidentiality"
+          "Access Control",
+          "Change Management",
+          "System Operations"
         ],
-        "description": "Voluntary compliance standard to build trust with enterprise/pro traders. Focus on rigorous access controls and change management.",
+        "description": "Future target for enterprise readiness; currently implementing logging and access controls to align with Trust Services Criteria.",
         "implementation_status": "planned"
       }
     ],
     "security_controls": [
       {
         "control": "Web Application Firewall (WAF)",
-        "implementation": "AWS WAF configured on the Application Load Balancer (ALB) with rules for SQLi, XSS, and IP reputation lists.",
+        "implementation": "AWS WAF configured with rules to block SQL injection, XSS patterns, and known malicious IP addresses.",
         "category": "preventive",
         "priority": "high"
       },
       {
-        "control": "Input Validation",
-        "implementation": "Strict schema validation using Zod/Class-Validator on all API endpoints. Rejection of unknown properties.",
+        "control": "Strict Content Security Policy (CSP)",
+        "implementation": "HTTP Header configuration preventing execution of inline scripts and restricting resource loading to trusted domains.",
         "category": "preventive",
-        "priority": "critical"
+        "priority": "high"
       },
       {
-        "control": "Permission Scope Validation",
-        "implementation": "Logic in the 'Exchange Connection' service that tests API keys against the exchange to ensure 'Withdraw' permission is FALSE. If TRUE, the key is rejected.",
+        "control": "Two-Factor Authentication (TOTP)",
+        "implementation": "Mandatory for critical actions (API Key deletion, Password change) and optional for login.",
         "category": "preventive",
         "priority": "critical"
       },
       {
         "control": "Audit Logging",
-        "implementation": "Structured logging of all critical actions (Login, Connect Exchange, Execute Order) to CloudWatch Logs with user_id and IP context.",
+        "implementation": "Immutable logs of all 'Trade' and 'Auth' events, stored in S3 with Object Lock (WORM compliance).",
         "category": "detective",
-        "priority": "high"
+        "priority": "medium"
       },
       {
         "control": "Dependency Scanning",
-        "implementation": "Snyk integrated into the CI/CD pipeline to block builds with high-severity vulnerabilities in npm/pip packages.",
+        "implementation": "Automated Snyk scans in CI/CD pipeline to block builds with critical vulnerabilities in npm packages.",
         "category": "preventive",
-        "priority": "medium"
+        "priority": "high"
       }
     ],
     "vulnerability_management": {
-      "patch_management": "Automated dependency updates via Renovate/Dependabot. OS patching handled by AWS Fargate (Serverless).",
-      "scanning_frequency": "Weekly automated scans; Continuous CI/CD scanning.",
+      "patch_management": "Automated dependency updates via Dependabot; Critical OS patches applied within 48h via AWS Systems Manager.",
+      "scanning_frequency": "Continuous (CI/CD) + Weekly Static Analysis",
       "tools": [
         "Snyk (SCA)",
-        "OWASP ZAP (DAST)",
-        "AWS ECR Image Scanning"
+        "SonarQube (SAST)",
+        "OWASP ZAP (DAST)"
       ]
     },
     "security_monitoring": {
-      "incident_response_plan": "Playbooks defined for: 1. API Key Leakage (Rotate Master Key, invalidate user sessions), 2. DDoS Attack, 3. Data Breach. Drills conducted quarterly.",
-      "log_retention": "90 days hot storage (CloudWatch), 1 year cold storage (S3 Glacier).",
+      "incident_response_plan": "Playbooks defined for 'API Key Leak', 'DDoS', and 'Exchange Outage'. On-call rotation established via PagerDuty.",
+      "log_retention": "90 days hot storage (CloudWatch), 1 year cold storage (S3 Glacier)",
       "tools": [
-        "AWS CloudWatch Logs",
-        "AWS GuardDuty",
-        "PagerDuty (Alerting)"
+        "AWS GuardDuty (Threat Detection)",
+        "AWS CloudTrail (API Auditing)",
+        "ELK Stack (Log Aggregation)"
       ]
     }
   }

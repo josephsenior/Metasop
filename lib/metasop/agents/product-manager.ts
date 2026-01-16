@@ -36,37 +36,24 @@ export async function productManagerAgent(
       pmPrompt = buildRefinementPrompt(context, "Product Manager", guidelines);
     } else {
       // Original generation logic
-      const hasCache = !!context.cacheId;
+      pmPrompt = `As a Principal Product Manager, create a high-fidelity product specification for '${user_request}'.
 
-      pmPrompt = hasCache
-        ? `As a Principal Product Manager, refine the product specification based on the cached User Request and context. 
-
-CRITICAL GOALS:
-1. **Refined Vision**: Deepen the product vision and high-level requirements.
-2. **INVEST User Stories**: Provide 8-12 elite user stories. Each MUST be Independent, Negotiable, Valuable, Estimable, Small, and Testable.
-3. **Acceptance Criteria**: Define rigorous global acceptance criteria (Definition of Done) and specific criteria for each story.
-4. **INVEST Analysis**: Conduct a technical INVEST score-based analysis for every user story.
-5. **Strategic SWOT**: Conduct a thorough SWOT analysis (Strengths, Weaknesses, Opportunities, Threats).
-6. **Stakeholder Mapping**: Identify key roles, their specific interests, and their influence levels.
-7. **Constraints & Boundary**: Define explicit Assumptions and Out-of-Scope items to prevent scope creep.
-8. **Navigation Strategy**: Specify if the UI requires a multi-section navigation structure.
-
-Ensure the specification is battle-hardened and ready for a complex engineering cycle. Respond with ONLY the JSON object.`
-        : `As a Principal Product Manager, create a comprehensive product specification.
-
-User Request: ${user_request}
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize clarity, essential functionality, and speed. Keep descriptions concise and focused on the core value proposition.
+- For **complex/enterprise systems**: Provide exhaustive technical depth, battle-hardened specs, and detailed strategic alignment.
 
 CRITICAL GOALS:
-1. **Vision & Scope**: Define a crystal-clear product vision and rigorous description of the product and its vision.
-2. **INVEST User Stories**: Develop 8-12 detailed user stories following the INVEST framework. Include IDs (US-1...), titles, stories, priorities, and story points.
-3. **Acceptance Criteria**: Generate a set of comprehensive global acceptance criteria (AC-1...).
-4. **INVEST Analysis**: For each user story, provide a detailed INVEST quality analysis and score (0-10).
-5. **Strategic SWOT**: Evaluate the product's Strengths, Weaknesses, Opportunities, and Threats for strategic alignment.
-6. **Stakeholder Mapping**: Identify key roles, their interest in the project, and their level of influence.
-7. **Assumptions & Boundaries**: Explicitly list all project Assumptions and Out-of-Scope items.
-8. **Navigation Strategy**: Determine if the app requires a multi-section navigation structure.
+1. **Vision & Scope**: Define a crystal-clear product vision and description. Explain the core "Why" and the strategic value.
+2. **INVEST User Stories**: Develop a comprehensive set of user stories following the INVEST framework. The number of stories should be proportional to the project's complexity. Include IDs (US-1...), titles, detailed stories, priorities, and story points.
+3. **Acceptance Criteria**: Generate global acceptance criteria (AC-1...) and specific criteria for user stories.
+4. **INVEST Analysis**: For every user story, provide an INVEST quality analysis and a technical score (0-10).
+5. **Strategic SWOT Analysis**: Conduct a thorough evaluation of the product's Strengths, Weaknesses, Opportunities, and Threats.
+6. **Stakeholder Mapping**: Identify key roles, their interests, and communication requirements.
+7. **Assumptions & Boundaries**: Explicitly list project Assumptions, Constraints, and Out-of-Scope items to prevent scope creep.
+8. **Navigation & Information Architecture**: Define the core navigation strategy and information architecture.
+9. **Success Metrics (KPIs)**: Define the core success metrics and KPIs for the product.
 
-Your specifications must provide the definitive "Source of Truth" for the architecture and engineering teams. Respond with ONLY the JSON object.`;
+Your specifications must provide the definitive "Source of Truth" for the architecture and engineering teams. Match the granularity of your response to the inherent complexity of the user's request. Respond with ONLY the JSON object.`;
     }
 
     let llmPMSpec: ProductManagerBackendArtifact | null = null;
@@ -83,7 +70,7 @@ Your specifications must provide the definitive "Source of Truth" for the archit
         },
         {
           reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3,
+          temperature: 0.4, // Slightly higher for strategic creativity
           cacheId: context.cacheId,
           role: "Product Manager"
         }

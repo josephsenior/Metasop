@@ -6,22 +6,22 @@
       "cloud_provider": "AWS",
       "services": [
         {
-          "name": "Amazon EKS",
+          "name": "Amazon ECS (Fargate)",
           "type": "compute",
           "configuration": {
-            "key": "version",
-            "value": "1.27"
+            "key": "launch_type",
+            "value": "FARGATE"
           },
-          "description": "Managed Kubernetes Service for orchestrating Node.js and Python microservices."
+          "description": "Serverless container compute for API and Market Data Engine services to ensure scalability without managing instances."
         },
         {
           "name": "Amazon RDS for PostgreSQL",
           "type": "database",
           "configuration": {
             "key": "engine_version",
-            "value": "15.3 (with TimescaleDB extension)"
+            "value": "15.x"
           },
-          "description": "Primary relational store for user data and time-series financial data."
+          "description": "Managed relational database with Multi-AZ deployment for high availability of user data and trade history."
         },
         {
           "name": "Amazon ElastiCache (Redis)",
@@ -30,7 +30,16 @@
             "key": "cluster_mode",
             "value": "enabled"
           },
-          "description": "In-memory caching for session management and Pub/Sub for real-time market data."
+          "description": "In-memory data store for real-time market data Pub/Sub, WebSocket session management, and rate-limit semaphores."
+        },
+        {
+          "name": "AWS KMS",
+          "type": "security",
+          "configuration": {
+            "key": "algorithm",
+            "value": "SYMMETRIC_DEFAULT"
+          },
+          "description": "Key Management Service for envelope encryption of user API secrets (AES-256-GCM)."
         },
         {
           "name": "Application Load Balancer",
@@ -39,31 +48,31 @@
             "key": "scheme",
             "value": "internet-facing"
           },
-          "description": "Layer 7 load balancing for API Gateway and WebSocket traffic."
+          "description": "Layer 7 load balancer handling WebSocket upgrades (WSS) and HTTPS traffic distribution."
         },
         {
           "name": "AWS WAF",
           "type": "security",
           "configuration": {
-            "key": "managed_rules",
+            "key": "rule_set",
             "value": "AWSManagedRulesCommonRuleSet"
           },
-          "description": "Web Application Firewall to protect against common exploits and bots."
+          "description": "Web Application Firewall to protect against SQL injection, XSS, and DDoS attacks."
         },
         {
-          "name": "Amazon S3",
-          "type": "storage",
+          "name": "NAT Gateway",
+          "type": "networking",
           "configuration": {
-            "key": "encryption",
-            "value": "AES-256"
+            "key": "redundancy",
+            "value": "multi-az"
           },
-          "description": "Object storage for logs, reports, and build artifacts."
+          "description": "Allows private subnet resources (ECS, RDS) to access external Exchange APIs securely."
         }
       ],
       "iac": "Terraform",
       "regions": [
         "us-east-1",
-        "us-west-2"
+        "eu-central-1"
       ]
     },
     "cicd": {
@@ -71,53 +80,67 @@
         {
           "name": "Continuous Integration",
           "steps": [
-            "Linting (ESLint/Pylint)",
-            "Unit Tests (Jest/Pytest)",
-            "SAST Security Scan",
-            "Build Docker Images"
+            "Checkout Code",
+            "Install Dependencies",
+            "Linting (ESLint)",
+            "Unit Tests (Jest)",
+            "SAST Scan (SonarQube)",
+            "Secret Scanning (TruffleHog)"
           ],
-          "description": "Code quality checks and artifact creation.",
+          "description": "Code quality and security verification.",
           "status": "active"
         },
         {
-          "name": "Continuous Delivery (Staging)",
+          "name": "Build & Publish",
           "steps": [
-            "Push to ECR",
-            "Deploy to EKS Staging Namespace",
-            "Run Integration Tests",
-            "Run DAST Scan"
+            "Build Docker Image",
+            "Container Image Scan (Trivy)",
+            "Push to Amazon ECR",
+            "Tag with Commit SHA"
           ],
-          "description": "Automated deployment to staging environment for validation.",
+          "description": "Artifact creation and registry push.",
           "status": "active"
         },
         {
-          "name": "Continuous Deployment (Production)",
+          "name": "Deploy to Staging",
+          "steps": [
+            "Update ECS Task Definition",
+            "Terraform Apply (Staging)",
+            "Run Database Migrations",
+            "Integration Tests (Cypress/Supertest)"
+          ],
+          "description": "Deployment to pre-production environment.",
+          "status": "active"
+        },
+        {
+          "name": "Production Release",
           "steps": [
             "Manual Approval Gate",
-            "Blue-Green Deployment Trigger",
-            "Traffic Shift (Canary 10% -> 100%)",
-            "Health Check Verification"
+            "Terraform Apply (Production)",
+            "Blue/Green Deployment Trigger",
+            "Health Check Verification",
+            "Traffic Switch"
           ],
-          "description": "Controlled release to production users.",
+          "description": "Zero-downtime production deployment.",
           "status": "active"
         }
       ],
       "tools": [
         "GitHub Actions",
-        "ArgoCD",
+        "Terraform Cloud",
         "SonarQube",
-        "Trivy"
+        "Amazon ECR"
       ],
       "triggers": [
         {
           "type": "push",
           "branch": "main",
-          "description": "Triggers CI and Staging deployment."
+          "description": "Triggers CI and Staging deploy"
         },
         {
           "type": "pull_request",
           "branch": "*",
-          "description": "Triggers CI (Lint/Test) only."
+          "description": "Triggers CI and Test builds"
         }
       ]
     },
@@ -127,18 +150,18 @@
         {
           "name": "development",
           "configuration": {
-            "key": "scaling_policy",
-            "value": "min_replicas=1"
+            "key": "debug_mode",
+            "value": "true"
           },
-          "description": "Ephemeral environment for feature testing."
+          "description": "Ephemeral environments for feature branches."
         },
         {
           "name": "staging",
           "configuration": {
-            "key": "data_sanitization",
-            "value": "true"
+            "key": "replica_count",
+            "value": "2"
           },
-          "description": "Pre-production environment mirroring production config."
+          "description": "Mirror of production for UAT and load testing."
         },
         {
           "name": "production",
@@ -146,60 +169,76 @@
             "key": "multi_az",
             "value": "true"
           },
-          "description": "High-availability environment for end users."
+          "description": "High-availability environment with strict security controls."
         }
       ],
-      "rollback_strategy": "Automated rollback via ArgoCD if health checks fail or error rate exceeds threshold within 5 minutes of deployment."
+      "rollback_strategy": "Automated rollback via AWS CodeDeploy if health checks fail during the traffic shifting phase (10% -> 100%)."
     },
     "monitoring": {
       "tools": [
-        "Prometheus",
-        "Grafana",
         "Datadog",
+        "AWS CloudWatch",
         "PagerDuty"
       ],
       "metrics": [
-        "Request Latency (p95, p99)",
-        "Error Rate (HTTP 5xx)",
-        "Throughput (RPS)",
-        "CPU/Memory Saturation",
-        "Exchange API Rate Limit Remaining",
-        "WebSocket Connection Count"
+        "WebSocket Active Connections",
+        "Exchange API Latency (p95, p99)",
+        "Order Execution Time (Internal + External)",
+        "Redis CPU Utilization",
+        "ECS Task CPU/Memory",
+        "Rate Limit Consumption (per Exchange)"
       ],
       "alerts": [
         {
-          "name": "High Error Rate",
-          "condition": "5xx errors > 1% for 5 minutes",
-          "severity": "critical"
-        },
-        {
-          "name": "High Latency",
-          "condition": "p95 latency > 500ms for 5 minutes",
+          "name": "High Exchange Latency",
+          "condition": "avg(exchange_latency) > 500ms for 2m",
           "severity": "warning"
         },
         {
-          "name": "Exchange API Throttling",
-          "condition": "Rate limit remaining < 10%",
+          "name": "Order Execution Failure Spike",
+          "condition": "sum(failed_orders) > 5 in 1m",
+          "severity": "critical"
+        },
+        {
+          "name": "Redis Memory Critical",
+          "condition": "redis_memory_usage > 85%",
           "severity": "critical"
         }
       ],
       "logging": {
         "retention": "90 days",
         "tools": [
-          "Fluent Bit",
-          "Amazon CloudWatch Logs",
-          "Elasticsearch"
+          "AWS CloudWatch Logs",
+          "Datadog Log Management"
         ]
       }
     },
     "containerization": {
-      "docker_compose": "version: '3.8'\nservices:\n  api:\n    build: ./apps/api\n  worker:\n    build: ./apps/worker",
-      "dockerfile": "FROM node:18-alpine AS builder\nWORKDIR /app\nCOPY . .\nRUN npm ci && npm run build\n\nFROM node:18-alpine AS runner\nCOPY --from=builder /app/dist ./dist\nCMD [\"node\", \"dist/main\"]",
+      "docker_compose": "version: '3.8'",
+      "dockerfile": "Multi-stage build: Base (Node 18 Alpine) -> Builder (Install deps & build) -> Runner (Production deps only)",
       "kubernetes": {
-        "namespace": "tradepulse-prod",
-        "services": [
+        "deployments": [
           {
             "name": "api-gateway",
+            "replicas": 3,
+            "resources": {
+              "cpu": "1024",
+              "memory": "2048Mi"
+            }
+          },
+          {
+            "name": "market-data-engine",
+            "replicas": 2,
+            "resources": {
+              "cpu": "2048",
+              "memory": "4096Mi"
+            }
+          }
+        ],
+        "namespace": "cryptopulse-prod",
+        "services": [
+          {
+            "name": "api-service",
             "ports": [
               {
                 "port": 80,
@@ -207,16 +246,6 @@
               }
             ],
             "type": "LoadBalancer"
-          },
-          {
-            "name": "market-streamer",
-            "ports": [
-              {
-                "port": 8080,
-                "targetPort": 8080
-              }
-            ],
-            "type": "ClusterIP"
           }
         ]
       }
@@ -225,9 +254,9 @@
       "auto_scaling": {
         "enabled": true,
         "max_replicas": 20,
-        "min_replicas": 2,
-        "target_cpu": 70,
-        "target_memory": 80
+        "min_replicas": 3,
+        "target_cpu": 60,
+        "target_memory": 70
       },
       "manual_scaling": {
         "replicas": 1
@@ -236,12 +265,12 @@
     "disaster_recovery": {
       "rpo": "5 minutes",
       "rto": "1 hour",
-      "backup_strategy": "Automated daily RDS snapshots with continuous WAL archiving (Point-in-Time Recovery). Cross-region replication of encrypted snapshots to us-west-2.",
-      "failover_plan": "Manual trigger via Terraform to promote Read Replicas in DR region to Primary. DNS failover via Route53 to redirect traffic to DR load balancers."
+      "backup_strategy": "Automated daily RDS snapshots with 35-day retention. Cross-region snapshot replication to eu-central-1 for catastrophe recovery. Point-in-time recovery (PITR) enabled.",
+      "failover_plan": "DNS failover via Route53 to secondary region. Read replicas promoted to primary. Redis cache is rebuilt from cold start (acceptable performance degradation)."
     },
-    "summary": "A high-availability, event-driven infrastructure built on AWS EKS, leveraging TimescaleDB for financial data and Redis for real-time state.",
-    "description": "The infrastructure is designed to support the high-frequency nature of crypto trading. We utilize AWS EKS (Kubernetes) to orchestrate the polyglot microservices (Node.js/Python), providing superior control over scaling and resource isolation compared to standard ECS. Data persistence is handled by a hardened RDS PostgreSQL instance with the TimescaleDB extension, optimized for time-series chart data. Redis ElastiCache serves as the backbone for the Pub/Sub mechanism required for real-time price updates. The entire stack is defined in Terraform, ensuring reproducible environments across Dev, Staging, and Production. Security is paramount, with WAF protecting the edge and strict IAM roles governing service-to-service communication.",
+    "summary": "Enterprise-grade AWS infrastructure leveraging ECS Fargate for compute and RDS/ElastiCache for state. Designed for high availability and security compliance.",
+    "description": "The infrastructure is designed to support a high-frequency trading terminal. It prioritizes security (private subnets, KMS), low latency (Redis, ALB WebSocket support), and reliability (Multi-AZ RDS, Blue/Green deployments). Terraform manages the entire stack to ensure reproducibility.",
     "cloud_provider": "AWS",
-    "infra_components": 6
+    "infra_components": 7
   }
 }

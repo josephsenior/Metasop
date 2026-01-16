@@ -15,6 +15,7 @@ export function generateAgentContextMarkdown(diagram: any): string {
     const eng = artifacts.engineer_impl?.content || {};
     const sec = artifacts.security_architecture?.content || {};
     const devops = artifacts.devops_infrastructure?.content || {};
+    const qa = artifacts.qa_verification?.content || {};
 
     let md = `# ${diagram.title || pm.title || "Project Architecture Blueprint"}\n\n`;
     md += `${diagram.description || pm.summary || ""}\n\n`;
@@ -26,50 +27,183 @@ export function generateAgentContextMarkdown(diagram: any): string {
     md += `## 1. Product Specification & Strategy\n\n`;
     md += `### Summary\n${pm.summary || "N/A"}\n\n`;
     md += `### Description\n${pm.description || "N/A"}\n\n`;
-    md += `### Core User Flows\n`;
-    if (pm.user_flows && Array.isArray(pm.user_flows)) {
+
+    md += `### User Stories\n`;
+    if (pm.user_stories && Array.isArray(pm.user_stories)) {
+        pm.user_stories.forEach((story: any) => {
+            md += `- **${story.title || story.name}** (${story.priority || 'medium'}, ${story.story_points || 'N/A'} pts): ${story.story || story.description}\n`;
+            if (story.user_value) md += `  - *Value*: ${story.user_value}\n`;
+            if (story.estimated_complexity) md += `  - *Complexity*: ${story.estimated_complexity}\n`;
+            if (story.acceptance_criteria && Array.isArray(story.acceptance_criteria)) {
+                story.acceptance_criteria.forEach((ac: string) => {
+                    md += `  - [ ] AC: ${ac}\n`;
+                });
+            }
+            if (story.dependencies && Array.isArray(story.dependencies) && story.dependencies.length > 0) {
+                md += `  - *Dependencies*: ${story.dependencies.join(", ")}\n`;
+            }
+        });
+    } else if (pm.user_flows && Array.isArray(pm.user_flows)) {
         pm.user_flows.forEach((flow: any) => {
             md += `- **${flow.name}**: ${flow.description}\n`;
-        });
-    } else if (pm.user_stories && Array.isArray(pm.user_stories)) {
-        pm.user_stories.forEach((story: any) => {
-            md += `- **${story.title}**: ${story.description || story.story}\n`;
         });
     } else {
         md += "N/A\n";
     }
     md += `\n`;
+
+    if (pm.acceptance_criteria && Array.isArray(pm.acceptance_criteria)) {
+        md += `### Global Acceptance Criteria\n`;
+        pm.acceptance_criteria.forEach((ac: any) => {
+            const criteria = typeof ac === 'string' ? ac : ac.criteria || ac.description;
+            const priority = ac.priority ? ` (${ac.priority})` : "";
+            md += `- [ ] ${criteria}${priority}\n`;
+        });
+        md += `\n`;
+    }
+
+    if (pm.stakeholders && Array.isArray(pm.stakeholders)) {
+        md += `### Stakeholders\n`;
+        md += `| Role | Interest | Influence |\n`;
+        md += `|------|----------|-----------|\n`;
+        pm.stakeholders.forEach((s: any) => {
+            md += `| ${s.role} | ${s.interest} | ${s.influence} |\n`;
+        });
+        md += `\n`;
+    }
+
+    if (pm.invest_analysis && Array.isArray(pm.invest_analysis)) {
+        md += `### INVEST Analysis\n`;
+        md += `| Story ID | I | N | V | E | S | T | Score | Comments |\n`;
+        md += `|----------|---|---|---|---|---|---|-------|----------|\n`;
+        pm.invest_analysis.forEach((i: any) => {
+            md += `| ${i.user_story_id} | ${i.independent ? "✅" : "❌"} | ${i.negotiable ? "✅" : "❌"} | ${i.valuable ? "✅" : "❌"} | ${i.estimatable ? "✅" : "❌"} | ${i.small ? "✅" : "❌"} | ${i.testable ? "✅" : "❌"} | ${i.score}/10 | ${i.comments || ""} |\n`;
+        });
+        md += `\n`;
+    }
+
+    if (pm.assumptions && Array.isArray(pm.assumptions)) {
+        md += `### Key Assumptions\n`;
+        pm.assumptions.forEach((a: string) => md += `- ${a}\n`);
+        md += `\n`;
+    }
+
+    if (pm.out_of_scope && Array.isArray(pm.out_of_scope)) {
+        md += `### Out of Scope\n`;
+        pm.out_of_scope.forEach((o: string) => md += `- ${o}\n`);
+        md += `\n`;
+    }
+
+    if (pm.swot) {
+        md += `### SWOT Analysis\n`;
+        if (pm.swot.strengths) md += `- **Strengths**: ${Array.isArray(pm.swot.strengths) ? pm.swot.strengths.join(", ") : pm.swot.strengths}\n`;
+        if (pm.swot.weaknesses) md += `- **Weaknesses**: ${Array.isArray(pm.swot.weaknesses) ? pm.swot.weaknesses.join(", ") : pm.swot.weaknesses}\n`;
+        if (pm.swot.opportunities) md += `- **Opportunities**: ${Array.isArray(pm.swot.opportunities) ? pm.swot.opportunities.join(", ") : pm.swot.opportunities}\n`;
+        if (pm.swot.threats) md += `- **Threats**: ${Array.isArray(pm.swot.threats) ? pm.swot.threats.join(", ") : pm.swot.threats}\n`;
+        md += `\n`;
+    }
 
     // 2. Architectural Design
     md += `## 2. Architectural Design\n\n`;
     md += `### System Documentation\n${arch.design_doc || arch.description || "N/A"}\n\n`;
 
+    if (arch.decisions && Array.isArray(arch.decisions)) {
+        md += `### Architectural Decisions (ADRs)\n`;
+        arch.decisions.forEach((d: any) => {
+            md += `- **${d.decision}** (${d.status})\n`;
+            md += `  - *Rationale*: ${d.reason || d.rationale}\n`;
+            if (d.tradeoffs) md += `  - *Tradeoffs*: ${d.tradeoffs}\n`;
+            if (d.consequences) md += `  - *Consequences*: ${d.consequences}\n`;
+            if (d.alternatives && Array.isArray(d.alternatives) && d.alternatives.length > 0) {
+                md += `  - *Alternatives*: ${d.alternatives.join(", ")}\n`;
+            }
+        });
+        md += `\n`;
+    }
+
     md += `### Core APIs\n`;
     if (arch.apis && Array.isArray(arch.apis)) {
-        md += `| Method | Path | Description | Auth |\n`;
-        md += `|--------|------|-------------|------|\n`;
+        md += `| Method | Path | Description | Auth | Rate Limit |\n`;
+        md += `|--------|------|-------------|------|------------|\n`;
         arch.apis.forEach((api: any) => {
-            md += `| ${api.method} | \`${api.path}\` | ${api.description} | ${api.auth_required ? "Yes" : "No"} |\n`;
+            md += `| ${api.method} | \`${api.path}\` | ${api.description} | ${api.auth_required ? "Yes" : "No"} | ${api.rate_limit || "N/A"} |\n`;
+            if (api.request_schema) md += `  - *Request*: \`${JSON.stringify(api.request_schema)}\` \n`;
+            if (api.response_schema) md += `  - *Response*: \`${JSON.stringify(api.response_schema)}\` \n`;
         });
     } else {
         md += "N/A\n";
     }
     md += `\n`;
+
+    if (arch.integration_points && Array.isArray(arch.integration_points)) {
+        md += `### Integration Points\n`;
+        md += `| Service | Purpose | System | Docs |\n`;
+        md += `|---------|---------|--------|------|\n`;
+        arch.integration_points.forEach((ip: any) => {
+            md += `| ${ip.service || ip.name} | ${ip.purpose} | ${ip.system || "N/A"} | ${ip.api_docs || "N/A"} |\n`;
+        });
+        md += `\n`;
+    }
+
+    if (arch.security_considerations && Array.isArray(arch.security_considerations)) {
+        md += `### Architectural Security Considerations\n`;
+        arch.security_considerations.forEach((s: string) => md += `- ${s}\n`);
+        md += `\n`;
+    }
+
+    if (arch.scalability_approach) {
+        md += `### Scalability Approach\n`;
+        const s = arch.scalability_approach;
+        if (s.horizontal_scaling) md += `- **Horizontal Scaling**: ${s.horizontal_scaling}\n`;
+        if (s.database_scaling) md += `- **Database Scaling**: ${s.database_scaling}\n`;
+        if (s.caching_strategy) md += `- **Caching Strategy**: ${s.caching_strategy}\n`;
+        if (s.performance_targets) md += `- **Performance Targets**: ${s.performance_targets}\n`;
+        md += `\n`;
+    }
+
+    if (arch.next_tasks && Array.isArray(arch.next_tasks)) {
+        md += `### Next Implementation Tasks\n`;
+        arch.next_tasks.forEach((t: any) => {
+            md += `- [ ] **${t.role}**: ${t.task || t.title} (${t.priority || 'medium'})\n`;
+            if (t.description) md += `  - *Details*: ${t.description}\n`;
+        });
+        md += `\n`;
+    }
 
     md += `### Database Schema\n`;
     if (arch.database_schema && arch.database_schema.tables && Array.isArray(arch.database_schema.tables)) {
         arch.database_schema.tables.forEach((table: any) => {
             md += `#### Table: \`${table.name}\`\n`;
             md += `${table.description || ""}\n\n`;
-            md += `| Column | Type | Constraints |\n`;
-            md += `|--------|------|-------------|\n`;
+            md += `| Column | Type | Constraints | Description |\n`;
+            md += `|--------|------|-------------|-------------|\n`;
             if (table.columns && Array.isArray(table.columns)) {
                 table.columns.forEach((col: any) => {
-                    md += `| ${col.name} | ${col.type} | ${col.constraints?.join(", ") || ""} |\n`;
+                    md += `| ${col.name} | ${col.type} | ${col.constraints?.join(", ") || ""} | ${col.description || ""} |\n`;
                 });
             }
             md += `\n`;
+
+            if (table.indexes && Array.isArray(table.indexes) && table.indexes.length > 0) {
+                md += `**Indexes**:\n`;
+                table.indexes.forEach((idx: any) => {
+                    md += `- \`${idx.columns.join(", ")}\` (${idx.type || 'btree'}): ${idx.reason || ""}\n`;
+                });
+                md += `\n`;
+            }
+
+            if (table.relationships && Array.isArray(table.relationships) && table.relationships.length > 0) {
+                md += `**Relationships**:\n`;
+                table.relationships.forEach((rel: any) => {
+                    md += `- ${rel.type}: \`${rel.from}\` -> \`${rel.to}\` ${rel.through ? `(via \`${rel.through}\`)` : ""} ${rel.description ? `(${rel.description})` : ""}\n`;
+                });
+                md += `\n`;
+            }
         });
+
+        if (arch.database_schema.migrations_strategy) {
+            md += `**Migration Strategy**: ${arch.database_schema.migrations_strategy}\n\n`;
+        }
     } else {
         md += "N/A\n";
     }
@@ -83,32 +217,108 @@ export function generateAgentContextMarkdown(diagram: any): string {
         md += `### Design Tokens\n`;
         const tokens = ui.design_tokens;
         if (tokens.colors) {
-            md += `- **Primary Color**: ${tokens.colors.primary || "N/A"}\n`;
-            md += `- **Secondary Color**: ${tokens.colors.secondary || "N/A"}\n`;
-            md += `- **Background**: ${tokens.colors.background || "N/A"}\n`;
-        } else {
-            md += `- **Primary Color**: ${tokens.primary_color || "N/A"}\n`;
-            md += `- **Secondary Color**: ${tokens.secondary_color || "N/A"}\n`;
+            md += `#### Colors\n`;
+            Object.entries(tokens.colors).forEach(([name, value]) => {
+                md += `- **${name}**: \`${value}\`\n`;
+            });
         }
         if (tokens.typography) {
-            md += `- **Font Family**: ${tokens.typography.fontFamily || tokens.typography.headingFont || "N/A"}\n`;
+            md += `\n#### Typography\n`;
+            if (tokens.typography.fontFamily) md += `- **Font Family**: ${tokens.typography.fontFamily}\n`;
+            if (tokens.typography.headingFont) md += `- **Heading Font**: ${tokens.typography.headingFont}\n`;
+            if (tokens.typography.fontSize) {
+                md += `- **Font Sizes**: ${Object.entries(tokens.typography.fontSize).map(([k, v]) => `${k}: ${v}`).join(", ")}\n`;
+            }
+            if (tokens.typography.fontWeight) {
+                md += `- **Font Weights**: ${Object.entries(tokens.typography.fontWeight).map(([k, v]) => `${k}: ${v}`).join(", ")}\n`;
+            }
+        }
+        if (tokens.spacing) {
+            md += `\n#### Spacing\n`;
+            Object.entries(tokens.spacing).forEach(([name, value]) => {
+                md += `- **${name}**: ${value}\n`;
+            });
+        }
+        if (tokens.borderRadius) {
+            md += `\n#### Border Radius\n`;
+            Object.entries(tokens.borderRadius).forEach(([name, value]) => {
+                md += `- **${name}**: ${value}\n`;
+            });
+        }
+        if (tokens.shadows) {
+            md += `\n#### Shadows\n`;
+            Object.entries(tokens.shadows).forEach(([name, value]) => {
+                md += `- **${name}**: ${value}\n`;
+            });
         }
         md += `\n`;
     }
 
-    md += `### Component Hierarchy\n`;
-    if (ui.component_hierarchy && ui.component_hierarchy.children) {
-        ui.component_hierarchy.children.forEach((comp: any) => {
-            md += `- **${comp.name}**: ${comp.description || ""}\n`;
+    if (ui.layout_breakpoints) {
+        md += `### Responsive Breakpoints\n`;
+        Object.entries(ui.layout_breakpoints).forEach(([name, value]) => {
+            md += `- **${name}**: ${value}\n`;
         });
-    } else if (ui.component_specs && Array.isArray(ui.component_specs)) {
+        md += `\n`;
+    }
+
+    if (ui.ui_patterns && Array.isArray(ui.ui_patterns)) {
+        md += `### Key UI Patterns\n`;
+        ui.ui_patterns.forEach((p: string) => md += `- ${p}\n`);
+        md += `\n`;
+    }
+
+    if (ui.atomic_structure) {
+        md += `### Atomic Structure\n`;
+        if (ui.atomic_structure.atoms) md += `- **Atoms**: ${ui.atomic_structure.atoms.join(", ")}\n`;
+        if (ui.atomic_structure.molecules) md += `- **Molecules**: ${ui.atomic_structure.molecules.join(", ")}\n`;
+        if (ui.atomic_structure.organisms) md += `- **Organisms**: ${ui.atomic_structure.organisms.join(", ")}\n`;
+        md += `\n`;
+    }
+
+    md += `### Component Specifications\n`;
+    if (ui.component_specs && Array.isArray(ui.component_specs)) {
         ui.component_specs.forEach((comp: any) => {
-            md += `- **${comp.name}**: ${comp.description || ""}\n`;
+            md += `#### ${comp.name}\n`;
+            md += `${comp.description || ""}\n\n`;
+            if (comp.props) {
+                md += `**Props**:\n`;
+                Object.entries(comp.props).forEach(([name, type]) => {
+                    md += `- \`${name}\`: ${type}\n`;
+                });
+            }
+            if (comp.variants && comp.variants.length > 0) md += `- **Variants**: ${comp.variants.join(", ")}\n`;
+            if (comp.states && comp.states.length > 0) md += `- **States**: ${comp.states.join(", ")}\n`;
+            md += `\n`;
         });
     } else {
         md += "N/A\n";
     }
     md += `\n`;
+
+    if (ui.accessibility) {
+        md += `### Accessibility\n`;
+        const a = ui.accessibility;
+        if (typeof a === 'string') {
+            md += `${a}\n`;
+        } else {
+            if (a.standard) md += `- **Standard**: ${a.standard}\n`;
+            if (a.wcag_level) md += `- **WCAG Level**: ${a.wcag_level}\n`;
+            if (a.aria_labels !== undefined) md += `- **ARIA Labels**: ${a.aria_labels ? "Yes" : "No"}\n`;
+            if (a.keyboard_navigation !== undefined) md += `- **Keyboard Navigation**: ${a.keyboard_navigation ? "Yes" : "No"}\n`;
+            if (a.screen_reader_support !== undefined) md += `- **Screen Reader Support**: ${a.screen_reader_support ? "Yes" : "No"}\n`;
+            if (a.focus_indicators !== undefined) md += `- **Focus Indicators**: ${a.focus_indicators ? "Yes" : "No"}\n`;
+            if (a.guidelines && Array.isArray(a.guidelines)) {
+                md += `\n**Guidelines**:\n`;
+                a.guidelines.forEach((g: string) => md += `- ${g}\n`);
+            }
+            if (a.checklist && Array.isArray(a.checklist)) {
+                md += `\n**Checklist**:\n`;
+                a.checklist.forEach((c: string) => md += `- [ ] ${c}\n`);
+            }
+        }
+        md += `\n`;
+    }
 
     if (ui.website_layout && Array.isArray(ui.website_layout)) {
         md += `### Website Layout Pages\n`;
@@ -120,10 +330,38 @@ export function generateAgentContextMarkdown(diagram: any): string {
 
     // 4. Engineering Blueprint
     md += `## 4. Engineering Blueprint\n\n`;
+    md += `### Strategy\n${eng.summary || eng.description || "N/A"}\n\n`;
 
     const stack = arch.technology_stack || {};
-    const techItems = Object.values(stack).flat().filter(Boolean);
-    md += `### Tech Stack\n${techItems.length > 0 ? techItems.join(", ") : "N/A"}\n\n`;
+    const techItems = Object.entries(stack).map(([cat, items]) => `**${cat}**: ${Array.isArray(items) ? items.join(", ") : items}`);
+    md += `### Tech Stack\n${techItems.length > 0 ? techItems.join(" | ") : "N/A"}\n\n`;
+
+    if (eng.dependencies && Array.isArray(eng.dependencies)) {
+        md += `### Core Dependencies\n`;
+        md += eng.dependencies.join(", ") + `\n\n`;
+    }
+
+    if (eng.technical_patterns && Array.isArray(eng.technical_patterns)) {
+        md += `### Technical Patterns\n`;
+        eng.technical_patterns.forEach((p: string) => md += `- ${p}\n`);
+        md += `\n`;
+    }
+
+    if (eng.technical_decisions && Array.isArray(eng.technical_decisions)) {
+        md += `### Technical Decisions\n`;
+        eng.technical_decisions.forEach((d: any) => {
+            md += `- **${d.decision}**: ${d.rationale}\n`;
+            if (d.alternatives) md += `  - *Alternatives*: ${d.alternatives}\n`;
+        });
+        md += `\n`;
+    }
+
+    if (eng.state_management) {
+        md += `### State Management\n`;
+        md += `- **Tool**: ${eng.state_management.tool}\n`;
+        md += `- **Strategy**: ${eng.state_management.strategy}\n`;
+        md += `\n`;
+    }
 
     md += `### Recommended File Structure\n`;
     md += "```text\n";
@@ -143,6 +381,26 @@ export function generateAgentContextMarkdown(diagram: any): string {
         md += "N/A\n";
     }
     md += "```\n\n";
+
+    if (eng.environment_variables && Array.isArray(eng.environment_variables)) {
+        md += `### Environment Variables\n`;
+        md += "| Variable | Purpose | Required | Example |\n";
+        md += "|----------|---------|----------|---------|\n";
+        eng.environment_variables.forEach((env: any) => {
+            const name = typeof env === 'string' ? env : env.name;
+            const purpose = typeof env === 'string' ? "" : env.description || env.purpose;
+            md += `| \`${name}\` | ${purpose} | ${env.required ? "Yes" : "No"} | ${env.example || "N/A"} |\n`;
+        });
+        md += `\n`;
+    }
+
+    if (eng.run_results) {
+        md += `### Project Commands\n`;
+        if (eng.run_results.setup_commands) md += `- **Setup**: \`${eng.run_results.setup_commands.join(" && ")}\` \n`;
+        if (eng.run_results.dev_commands) md += `- **Development**: \`${eng.run_results.dev_commands.join(" && ")}\` \n`;
+        if (eng.run_results.test_commands) md += `- **Testing**: \`${eng.run_results.test_commands.join(" && ")}\` \n`;
+        md += `\n`;
+    }
 
     md += `### Implementation Roadmap\n`;
     if (eng.implementation_plan) {
@@ -167,6 +425,46 @@ export function generateAgentContextMarkdown(diagram: any): string {
     md += `## 5. Security Architecture\n\n`;
     md += `### Security Model\n${sec.summary || sec.description || "N/A"}\n\n`;
 
+    if (sec.security_architecture) {
+        md += `### Core Controls\n`;
+        const sa = sec.security_architecture;
+        if (sa.authentication) {
+            md += `- **Authentication**: ${sa.authentication.method}\n`;
+            if (sa.authentication.providers) md += `  - *Providers*: ${sa.authentication.providers.join(", ")}\n`;
+            if (sa.authentication.token_expiry) md += `  - *Token Expiry*: ${sa.authentication.token_expiry}\n`;
+            if (sa.authentication.multi_factor_auth !== undefined) md += `  - *MFA Required*: ${sa.authentication.multi_factor_auth ? "Yes" : "No"}\n`;
+        }
+        if (sa.authorization) {
+            md += `- **Authorization**: ${sa.authorization.model}\n`;
+            if (sa.authorization.roles) md += `  - *Roles*: ${sa.authorization.roles.join(", ")}\n`;
+        }
+        if (sa.session_management) {
+            md += `- **Session Management**: ${sa.session_management.strategy}\n`;
+            if (sa.session_management.session_timeout) md += `  - *Timeout*: ${sa.session_management.session_timeout}\n`;
+            if (sa.session_management.secure_cookies !== undefined) md += `  - *Secure Cookies*: ${sa.session_management.secure_cookies ? "Yes" : "No"}\n`;
+        }
+        md += `\n`;
+    }
+
+    if (sec.encryption) {
+        md += `### Encryption & Secrets\n`;
+        const e = sec.encryption;
+        if (e.data_at_rest) md += `- **Data at Rest**: ${e.data_at_rest.method} (Key Mgmt: ${e.data_at_rest.key_management})\n`;
+        if (e.data_in_transit) md += `- **Data in Transit**: ${e.data_in_transit.method}\n`;
+        if (e.secrets_management) md += `- **Secrets Management**: ${e.secrets_management}\n`;
+        md += `\n`;
+    }
+
+    if (sec.security_controls && Array.isArray(sec.security_controls)) {
+        md += `### Detailed Security Controls\n`;
+        md += `| Control | Category | Priority | Implementation |\n`;
+        md += `|---------|----------|----------|----------------|\n`;
+        sec.security_controls.forEach((c: any) => {
+            md += `| ${c.control} | ${c.category || "N/A"} | ${c.priority || "N/A"} | ${c.implementation} |\n`;
+        });
+        md += `\n`;
+    }
+
     md += `### Threat Model Highlights\n`;
     if (sec.threats && Array.isArray(sec.threats)) {
         sec.threats.forEach((t: any) => {
@@ -181,21 +479,166 @@ export function generateAgentContextMarkdown(diagram: any): string {
     }
     md += `\n`;
 
+    if (sec.compliance && Array.isArray(sec.compliance)) {
+        md += `### Compliance Standards\n`;
+        sec.compliance.forEach((c: string) => md += `- ${c}\n`);
+        md += `\n`;
+    }
+
+    if (sec.vulnerability_management) {
+        md += `### Vulnerability Management\n`;
+        const v = sec.vulnerability_management;
+        if (v.scanning_frequency) md += `- **Scanning Frequency**: ${v.scanning_frequency}\n`;
+        if (v.tools && v.tools.length > 0) md += `- **Tools**: ${v.tools.join(", ")}\n`;
+        if (v.patch_management) md += `- **Patch Management**: ${v.patch_management}\n`;
+        md += `\n`;
+    }
+
+    if (sec.security_monitoring) {
+        md += `### Security Monitoring\n`;
+        const m = sec.security_monitoring;
+        if (m.tools && m.tools.length > 0) md += `- **Monitoring Tools**: ${m.tools.join(", ")}\n`;
+        if (m.log_retention) md += `- **Log Retention**: ${m.log_retention}\n`;
+        if (m.incident_response_plan) md += `- **Incident Response**: ${m.incident_response_plan}\n`;
+        md += `\n`;
+    }
+
     // 6. Infrastructure & Operations
     md += `## 6. Infrastructure & DevOps\n\n`;
-    md += `### Cloud Provider: ${devops.cloud_provider || "N/A"}\n\n`;
+    md += `### DevOps Strategy\n${devops.summary || devops.description || "N/A"}\n\n`;
 
-    md += `### Infrastructure Components\n`;
-    if (devops.services && Array.isArray(devops.services)) {
-        devops.services.forEach((s: any) => {
-            md += `- **${s.name}** (${s.type}): ${s.description}\n`;
+    if (devops.cloud_provider) {
+        md += `### Cloud Infrastructure\n`;
+        md += `- **Provider**: ${devops.cloud_provider.name}\n`;
+        md += `- **Region**: ${devops.cloud_provider.region}\n`;
+        if (devops.cloud_provider.services && devops.cloud_provider.services.length > 0) {
+            md += `- **Services**: ${devops.cloud_provider.services.join(", ")}\n`;
+        }
+        md += `\n`;
+    }
+
+    if (devops.containerization) {
+        md += `### Containerization\n`;
+        md += `- **Tool**: ${devops.containerization.tool}\n`;
+        md += `- **Base Image**: ${devops.containerization.base_image}\n`;
+        if (devops.containerization.orchestration) md += `- **Orchestration**: ${devops.containerization.orchestration}\n`;
+        md += `\n`;
+    }
+
+    if (devops.ci_cd) {
+        md += `### CI/CD Pipeline\n`;
+        md += `- **Tool**: ${devops.ci_cd.tool}\n`;
+        if (devops.ci_cd.stages && devops.ci_cd.stages.length > 0) {
+            md += `\n**Stages**:\n`;
+            devops.ci_cd.stages.forEach((s: any) => {
+                md += `- **${s.name}**: ${s.tasks.join(", ")}\n`;
+            });
+        }
+        md += `\n`;
+    }
+
+    if (devops.deployment_strategy) {
+        md += `### Deployment Strategy\n`;
+        md += `- **Type**: ${devops.deployment_strategy.type}\n`;
+        if (devops.deployment_strategy.environment) md += `- **Environment**: ${devops.deployment_strategy.environment}\n`;
+        md += `\n`;
+    }
+
+    if (devops.scaling_strategy) {
+        md += `### Scaling Strategy\n`;
+        md += `- **Auto Scaling**: ${devops.scaling_strategy.auto_scaling ? "Enabled" : "Disabled"}\n`;
+        if (devops.scaling_strategy.triggers && devops.scaling_strategy.triggers.length > 0) {
+            md += `- **Triggers**: ${devops.scaling_strategy.triggers.join(", ")}\n`;
+        }
+        md += `\n`;
+    }
+
+    if (devops.disaster_recovery) {
+        md += `### Disaster Recovery\n`;
+        md += `- **RPO**: ${devops.disaster_recovery.rpo}\n`;
+        md += `- **RTO**: ${devops.disaster_recovery.rto}\n`;
+        md += `- **Backup Strategy**: ${devops.disaster_recovery.backup_strategy}\n`;
+        md += `\n`;
+    }
+
+    if (devops.monitoring && Array.isArray(devops.monitoring)) {
+        md += `### Monitoring & Observability\n`;
+        devops.monitoring.forEach((m: string) => md += `- ${m}\n`);
+        md += `\n`;
+    }
+
+    // 7. Quality Assurance & Testing
+    md += `## 7. Quality Assurance & Testing\n\n`;
+    md += `### QA Strategy\n${qa.summary || qa.description || "N/A"}\n\n`;
+
+    if (qa.test_strategy) {
+        md += `### Testing Strategy\n`;
+        const ts = qa.test_strategy;
+        if (ts.unit) md += `- **Unit Testing**: ${ts.unit}\n`;
+        if (ts.integration) md += `- **Integration Testing**: ${ts.integration}\n`;
+        if (ts.e2e) md += `- **E2E Testing**: ${ts.e2e}\n`;
+        if (ts.performance_testing) md += `- **Performance Testing**: ${ts.performance_testing}\n`;
+        if (ts.accessibility_testing) md += `- **Accessibility Testing**: ${ts.accessibility_testing}\n`;
+        if (ts.tools && ts.tools.length > 0) md += `- **Tools**: ${ts.tools.join(", ")}\n`;
+        md += `\n`;
+    }
+
+    if (qa.coverage_requirements) {
+        md += `### Coverage Requirements\n`;
+        const cr = qa.coverage_requirements;
+        if (cr.unit !== undefined) md += `- **Unit**: ${cr.unit}%\n`;
+        if (cr.integration !== undefined) md += `- **Integration**: ${cr.integration}%\n`;
+        if (cr.e2e !== undefined) md += `- **E2E**: ${cr.e2e}%\n`;
+        md += `\n`;
+    }
+
+    if (qa.security_test_plan) {
+        md += `### Security Testing\n`;
+        const stp = qa.security_test_plan;
+        if (stp.tools && stp.tools.length > 0) md += `- **Tools**: ${stp.tools.join(", ")}\n`;
+        if (stp.methods && stp.methods.length > 0) md += `- **Methods**: ${stp.methods.join(", ")}\n`;
+        md += `\n`;
+    }
+
+    if (qa.manual_verification && qa.manual_verification.length > 0) {
+        md += `### Manual Verification\n`;
+        qa.manual_verification.forEach((v: string) => md += `- ${v}\n`);
+        md += `\n`;
+    }
+
+    md += `### Critical Test Cases\n`;
+    if (qa.test_cases && Array.isArray(qa.test_cases)) {
+        qa.test_cases.forEach((tc: any) => {
+            md += `- **${tc.name}** (${tc.priority}): ${tc.description}\n`;
+            if (tc.expected_result) md += `  - *Expected*: ${tc.expected_result}\n`;
         });
     } else {
         md += "N/A\n";
     }
     md += `\n`;
 
-    md += `### Deployment Strategy\n${devops.rollback_strategy || "N/A"}\n\n`;
+    md += `### Risk Analysis\n`;
+    if (qa.risk_analysis && Array.isArray(qa.risk_analysis)) {
+        qa.risk_analysis.forEach((r: any) => {
+            md += `- **Risk**: ${r.risk}\n`;
+            md += `  - *Impact*: ${r.impact}\n`;
+            md += `  - *Mitigation*: ${r.mitigation}\n`;
+        });
+    } else {
+        md += "N/A\n";
+    }
+    md += `\n`;
+
+    if (qa.performance_metrics) {
+        md += `### Performance Requirements\n`;
+        if (qa.performance_metrics.api_response_time_p95) md += `- **API P95 Response Time**: ${qa.performance_metrics.api_response_time_p95}\n`;
+        if (qa.performance_metrics.page_load_time) md += `- **Page Load Time**: ${qa.performance_metrics.page_load_time}\n`;
+        if (qa.performance_metrics.recommendations && Array.isArray(qa.performance_metrics.recommendations)) {
+            md += `- **Optimization Recommendations**:\n`;
+            qa.performance_metrics.recommendations.forEach((rec: string) => md += `  - ${rec}\n`);
+        }
+        md += `\n`;
+    }
 
     md += `---` + `\n`;
     md += `*Generated by MetaSop - Your AI Architectural Partner*`;

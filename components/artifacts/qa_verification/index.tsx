@@ -85,23 +85,48 @@ function TestPlanCard({ tc }: { tc: any }) {
 }
 
 function RiskCard({ risk }: { risk: any }) {
+  const impactConfig = {
+    high: { icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+    medium: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+    low: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' }
+  }[risk.impact as 'high' | 'medium' | 'low'] || { icon: Info, color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
+
+  const Icon = impactConfig.icon;
+
   return (
     <motion.div
       variants={item}
-      className="p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors"
+      className="group relative p-4 rounded-xl border border-border/40 bg-muted/5 hover:bg-muted/10 transition-all duration-300"
     >
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-xs font-bold text-foreground">{risk.risk}</span>
-        <Badge className={cn(
-          "text-[8px] h-4 px-1.5 uppercase",
-          risk.impact === 'high' ? 'bg-red-500' : risk.impact === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
-        )}>
-          {risk.impact} IMPACT
-        </Badge>
+      <div className={cn(
+        "absolute top-0 left-0 w-1 h-full rounded-l-xl opacity-20 group-hover:opacity-100 transition-opacity",
+        risk.impact === 'high' ? 'bg-red-500' : risk.impact === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+      )} />
+      
+      <div className="space-y-3">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex gap-2.5">
+            <Icon className={cn("h-4 w-4 shrink-0 mt-0.5", impactConfig.color)} />
+            <span className="text-xs font-bold text-foreground leading-tight tracking-tight">{risk.risk}</span>
+          </div>
+          <Badge variant="outline" className={cn(
+            "text-[9px] h-5 px-2 uppercase font-black tracking-wider shrink-0",
+            impactConfig.bg, impactConfig.color, impactConfig.border
+          )}>
+            {risk.impact}
+          </Badge>
+        </div>
+
+        <div className="relative pl-7 py-2.5 rounded-lg bg-background/40 border border-border/20">
+          <div className="absolute left-2.5 top-3">
+            <Zap className="h-3 w-3 text-amber-500/70" />
+          </div>
+          <div className="text-[8px] uppercase font-black text-muted-foreground/40 tracking-[0.1em] mb-1">Mitigation Strategy</div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed font-medium italic">
+            {risk.mitigation}
+          </p>
+        </div>
       </div>
-      <p className="text-[11px] text-muted-foreground leading-relaxed italic border-l-2 border-amber-500/20 pl-3">
-        Mitigation: {risk.mitigation}
-      </p>
     </motion.div>
   )
 }

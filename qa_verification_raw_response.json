@@ -4,123 +4,134 @@
   "content": {
     "ok": true,
     "test_strategy": {
-      "unit": "Isolated testing of Domain entities and Use Cases using Vitest. Mocking of external dependencies via Dependency Injection to ensure business logic purity.",
-      "integration": "Testing of NestJS controllers and Repository implementations using Supertest and Testcontainers for PostgreSQL/Redis. Verification of Event-Driven flows via RabbitMQ message interception.",
-      "e2e": "Full-path verification using Playwright. Focuses on critical user journeys: Registration, Course Purchase, and Video Playback across desktop and mobile viewports.",
-      "approach": "Shift-left BDD methodology. Automated quality gates in CI/CD prevent merging code that fails coverage or regression suites. Contract testing for Stripe and Auth0 integrations.",
+      "unit": "Jest will be used for all NestJS services, with heavy mocking of the CCXT library and TypeORM repositories. Special focus on 'pure' logic components like the PnL Calculator and Tax Engine (FIFO/LIFO algorithms) to ensure mathematical accuracy.",
+      "integration": "Supertest with Testcontainers (PostgreSQL & Redis) to verify API endpoints and database interactions. Integration tests will also cover the 'Ingestion Engine' worker by pushing mock jobs to BullMQ and verifying the database state changes without hitting real external exchanges.",
+      "e2e": "Playwright will be used to simulate critical user flows on the React frontend, specifically the 'Add Exchange' flow and the 'Real-time Dashboard' updates. We will mock WebSocket messages to verify UI reactivity.",
+      "approach": "Test Pyramid strategy with a heavy base of unit tests for financial logic, followed by integration tests for the microservices data flow. Performance testing is treated as a first-class citizen due to the real-time requirement.",
       "tools": [
-        "Vitest",
-        "Playwright",
+        "Jest",
         "Supertest",
-        "Testcontainers",
-        "K6",
-        "Lighthouse",
-        "Snyk"
+        "Playwright",
+        "k6",
+        "OWASP ZAP",
+        "Testcontainers"
       ],
       "types": [
         "Functional",
-        "Contract",
-        "Load",
-        "Security",
-        "Accessibility (WCAG 2.1)",
-        "Visual Regression"
+        "Performance (Load)",
+        "Security (SAST/DAST)",
+        "Usability (Mobile)",
+        "Data Integrity"
       ]
     },
     "test_cases": [
       {
-        "name": "Critical Path: Secure Enrollment Flow",
+        "name": "Exchange API Key Integration - Success",
         "priority": "critical",
+        "type": "integration",
+        "description": "Verify that a user can successfully add valid Binance API credentials and that the system initiates a sync.",
+        "expected_result": "200 OK response, keys stored encrypted in DB, and a sync job added to the queue.",
+        "gherkin": "Given a logged-in user\nWhen they submit valid Binance API Key and Secret\nThen the system validates the credentials via CCXT\nAnd the keys are stored using AES-256 encryption\nAnd a 'sync_balances' job is added to the ingestion queue"
+      },
+      {
+        "name": "Exchange API Key Integration - Invalid Credentials",
+        "priority": "high",
+        "type": "integration",
+        "description": "Verify that the system rejects invalid API keys and provides a meaningful error message.",
+        "expected_result": "400 Bad Request, specific error message from exchange adapter.",
+        "gherkin": "Given a logged-in user\nWhen they submit an invalid API Key or Secret\nThen the system attempts validation via CCXT\nAnd receives an authentication error\nAnd returns a 400 error to the user without saving the keys"
+      },
+      {
+        "name": "Real-time Price Update via WebSocket",
+        "priority": "high",
         "type": "e2e",
-        "description": "Verifies that a user can successfully purchase a course and gain immediate access.",
-        "expected_result": "User is redirected to the course player with an active enrollment record in the database.",
-        "gherkin": "Given a logged-in learner on a course landing page, When they complete a Stripe checkout with a valid test card, Then they should see a 'Success' message and the 'Enroll' button should change to 'Start Learning'."
+        "description": "Verify that the dashboard updates the portfolio value when a price update is received.",
+        "expected_result": "Total Portfolio Value changes in the UI without a page refresh.",
+        "gherkin": "Given the user is on the Dashboard page\nAnd the WebSocket connection is active\nWhen the backend publishes a new price for BTC/USDT\nThen the 'Total Balance' widget updates within 500ms\nAnd the PnL percentage is recalculated"
       },
       {
-        "name": "Real-time Progress Heartbeat",
-        "priority": "critical",
-        "type": "integration",
-        "description": "Ensures the Progress Service correctly persists video timestamps every 30 seconds.",
-        "expected_result": "Database record for user progress matches the last heartbeat timestamp sent by the client.",
-        "gherkin": "Given an active video session for Lesson ID 123, When a PATCH request is sent to /progress with {last_watched_second: 30}, Then the Progress Service should return 200 OK and the database should reflect 30 seconds watched."
-      },
-      {
-        "name": "RBAC: Instructor Dashboard Access",
+        "name": "Tax Calculation - FIFO Logic",
         "priority": "high",
-        "type": "security",
-        "description": "Verifies that only users with the 'instructor' role can access CMS endpoints.",
-        "expected_result": "Learner role receives 403 Forbidden; Instructor role receives 200 OK.",
-        "gherkin": "Given a user authenticated with the 'learner' role, When they attempt to POST to /api/v1/instructor/courses, Then the system should return a 403 Forbidden error."
-      },
-      {
-        "name": "Search Faceted Filtering",
-        "priority": "high",
-        "type": "integration",
-        "description": "Validates that Elasticsearch correctly filters courses by level and category.",
-        "expected_result": "Returned course list contains only items matching the 'Beginner' level filter.",
-        "gherkin": "Given 10 courses across various levels, When a GET request is made to /courses?level=Beginner, Then the response data array should only contain courses where level equals 'Beginner'."
-      },
-      {
-        "name": "Automated Quiz Grading Logic",
-        "priority": "medium",
         "type": "unit",
-        "description": "Tests the pure logic of the grading engine for multiple-choice questions.",
-        "expected_result": "Score is calculated correctly based on correct/incorrect answer weights.",
-        "gherkin": "Given a quiz with 5 questions, When a user submits 4 correct answers and 1 incorrect answer, Then the grading service should return a score of 80%."
+        "description": "Verify the tax engine correctly calculates short-term vs long-term gains using FIFO method.",
+        "expected_result": "Calculated capital gains match the known mathematical baseline.",
+        "gherkin": "Given a history of 3 Buy orders and 1 Sell order spanning 13 months\nWhen the Tax Service runs with 'FIFO' method selected\nThen the cost basis is derived from the earliest Buy order\nAnd the gain is classified as 'Long Term' for assets held > 1 year"
+      },
+      {
+        "name": "Volatility Alert Trigger",
+        "priority": "medium",
+        "type": "integration",
+        "description": "Verify that the notification service triggers an alert when price volatility exceeds the threshold.",
+        "expected_result": "Alert entry created in DB and mock email sent.",
+        "gherkin": "Given a user has set a '5% drop in 1 hour' alert for ETH\nWhen the Ingestion Engine records a price drop of 6% within 1 hour\nThen the Alert Service detects the condition\nAnd a notification event is dispatched to the user's preferred channel"
+      },
+      {
+        "name": "API Key Encryption at Rest",
+        "priority": "critical",
+        "type": "security",
+        "description": "Verify that API keys are never stored in plaintext in the database.",
+        "expected_result": "Database inspection shows ciphertext, not plaintext.",
+        "gherkin": "Given a user has saved their exchange keys\nWhen an admin inspects the 'exchange_keys' table directly\nThen the 'api_secret' column contains a randomized ciphertext string\nAnd the 'iv' column is present and unique"
       }
     ],
     "security_plan": {
       "auth_verification_steps": [
-        "Verify JWT signature and expiration on every protected request.",
-        "Validate Auth0 'scope' and 'permissions' claims against the requested resource.",
-        "Test for session fixation and CSRF protection on the Next.js frontend.",
-        "Ensure PII (email, bio) is encrypted at rest in PostgreSQL."
+        "Verify JWT signature validation on all protected routes.",
+        "Test Access Token expiration (short-lived) and Refresh Token rotation flow.",
+        "Attempt to use a revoked Refresh Token to gain access.",
+        "Verify that API Secrets are decrypted ONLY within the Ingestion Engine memory space."
       ],
-      "vulnerability_scan_strategy": "Snyk for SCA (Software Composition Analysis) on every PR; OWASP ZAP DAST scans running weekly against the staging environment."
+      "vulnerability_scan_strategy": "Weekly automated scans using OWASP ZAP against the staging environment. Static Analysis (SonarQube) runs on every Pull Request to detect hardcoded secrets or unsafe regex."
     },
     "manual_verification_steps": [
-      "Visual inspection of video player controls (Play, Pause, Speed) on iOS Safari and Android Chrome.",
-      "Verification of PDF certificate layout and dynamic field injection (Name, Date).",
-      "UAT of the 'Drag-and-Drop' curriculum builder for instructors.",
-      "Screen reader navigation check for the course search interface (WCAG compliance)."
+      "Visually verify the 'Donut Chart' rendering on a mobile device (iPhone SE/Pixel 4a viewport).",
+      "Manually disconnect the internet while on the dashboard to verify the 'Reconnecting...' WebSocket UI state.",
+      "Verify the 'Dark Mode' toggle persists across page reloads.",
+      "Check that the 'Trade Journal' rich text editor handles image pasting correctly."
     ],
     "risk_analysis": [
       {
+        "risk": "Exchange Rate Limiting (IP Ban)",
         "impact": "high",
-        "mitigation": "Implement idempotency keys for progress updates and use a Dead Letter Queue (DLQ) for failed event processing.",
-        "risk": "Eventual consistency lag in progress tracking due to event-driven architecture."
+        "mitigation": "Implement strict Token Bucket rate limiting per exchange/user in the Ingestion Engine; use proxy rotation if necessary."
       },
       {
+        "risk": "API Key Leakage via Logs",
         "impact": "high",
-        "mitigation": "Use CloudFront signed URLs and implement adaptive bitrate streaming (HLS) with automated quality switching.",
-        "risk": "Video buffering or unauthorized access to premium content."
+        "mitigation": "Configure logger (Winston/Pino) to redact fields named 'api_key', 'secret', or 'token' automatically."
       },
       {
+        "risk": "WebSocket Broadcast Latency",
         "impact": "medium",
-        "mitigation": "Implement circuit breakers (Hystrix/Resilience4j pattern) for the Stripe API integration.",
-        "risk": "Payment gateway downtime preventing course enrollments."
+        "mitigation": "Load test with k6 to 10k connections; optimize Redis Pub/Sub usage and scale Socket.io servers horizontally."
+      },
+      {
+        "risk": "Inaccurate PnL due to Missing History",
+        "impact": "medium",
+        "mitigation": "Implement a 'Gap Detection' algorithm that flags portfolios with negative balances (indicating missing buy history)."
       }
     ],
-    "summary": "The EduStream QA Plan utilizes a multi-layered automated approach to ensure the reliability of a high-scale e-learning platform. By combining BDD-driven E2E tests with rigorous security auditing and performance benchmarking, we guarantee a seamless experience for both learners and instructors.",
+    "summary": "The QA strategy for CryptoPulse prioritizes data integrity and security above all else. Given the financial nature of the application, Unit Testing coverage for the Tax and PnL engines must be exhaustive. Integration testing will focus on the reliability of the Event-Driven architecture, ensuring that the Ingestion Engine and WebSocket Streamer coordinate effectively without race conditions. Security testing is critical to ensure the 'Zero-Knowledge' promise for API keys is kept.",
     "coverage": {
       "branches": 80,
-      "functions": 85,
-      "lines": 90,
+      "functions": 90,
+      "lines": 85,
       "percentage": 85,
-      "statements": 90,
+      "statements": 85,
       "threshold": 80
     },
     "performance_metrics": {
-      "api_response_time_p95": "< 200ms",
-      "database_query_time": "< 50ms",
-      "first_contentful_paint": "< 1.2s",
-      "largest_contentful_paint": "< 2.5s",
-      "page_load_time": "< 2.0s",
+      "api_response_time_p95": "200ms",
+      "database_query_time": "50ms",
+      "first_contentful_paint": "1.5s",
+      "largest_contentful_paint": "2.5s",
+      "page_load_time": "2.0s",
       "recommendations": [
-        "Implement Redis caching for course metadata",
-        "Optimize video segment sizes for mobile networks",
-        "Use Brotli compression for static assets"
+        "Use Redis caching for the Portfolio Summary endpoint.",
+        "Optimize TimescaleDB queries using continuous aggregates for historical charts.",
+        "Implement code-splitting in React to reduce initial bundle size."
       ],
-      "time_to_interactive": "< 3.0s"
+      "time_to_interactive": "2.0s"
     }
   }
 }

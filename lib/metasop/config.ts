@@ -37,6 +37,8 @@ export interface MetaSOPConfig {
   // Performance settings
   performance: {
     cacheEnabled: boolean; // Enable caching of agent responses
+    maxRefinementDepth: number; // Maximum depth for recursive refinements
+    maxCascadeRipples: number; // Maximum number of agents a cascade can affect
   };
 
   // Logging
@@ -99,6 +101,8 @@ export const defaultConfig: MetaSOPConfig = {
   },
   performance: {
     cacheEnabled: true,
+    maxRefinementDepth: 3, // Prevent infinite refinement loops
+    maxCascadeRipples: 10, // Limit cascade updates
   },
   logging: {
     level: process.env.NODE_ENV === "development" ? "debug" : "info",

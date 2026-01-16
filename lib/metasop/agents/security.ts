@@ -36,21 +36,25 @@ export async function securityAgent(
       const archArtifact = archDesign?.content as any;
       const projectTitle = pmArtifact?.title || "Project";
 
-      securityPrompt = `As a Principal Security Architect, design a battle-hardened security architecture for '${projectTitle}'.
+      securityPrompt = `As a Principal Security Architect, design a robust security architecture for '${projectTitle}'.
+
+ADAPTIVE DEPTH GUIDELINE:
+- For **simple web apps/utilities**: Prioritize standard security best practices (HTTPS, secure headers, basic auth). Focus on the most common web vulnerabilities.
+- For **complex/enterprise systems**: Provide exhaustive threat modeling, zero-trust flows, and production-ready security rigor.
 
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
 ${archArtifact ? `Architecture Target: ${archArtifact.summary}
 Integrated APIs: ${archArtifact.apis?.slice(0, 3).map((a: any) => a.path).join(", ")}` : ""}
 
 MISSION OBJECTIVES:
-1. **Integrated Threat Modeling**: Conduct a multi-vector threat model using the STRIDE framework. Identify threats, severities, likelihoods, and specific mitigations for each component.
-2. **Zero-Trust Identity Flow**: Define the authentication (OAuth2, JWT, etc.) and authorization (RBAC/ABAC) architecture. Include session management strategies and MFA requirements.
-3. **Professional Encryption & Secrets**: Specify encryption-at-rest (AES-256) and in-transit (TLS 1.3) strategies. Detail a secrets management policy and key rotation strategy.
-4. **Security Controls & Compliance**: Map security controls to categories (preventive, detective). List compliance benchmarks (GDPR, HIPAA, SOC2) relevant to the project.
-5. **Vulnerability & Monitoring**: Define scanning frequencies, security tools (WAF, SIEM), and incident response plans to ensure long-term resilience.
-6. **Executive Summary**: Provide a high-level summary and detailed description of the security architecture.
+1. **Threat Modeling**: Conduct a threat model using the STRIDE framework. Identify threats and mitigations proportional to the project's scale. **Keep descriptions to a maximum of 2 sentences.**
+2. **Identity & Access Flow**: Define the authentication (OAuth2/OIDC) and authorization (RBAC) architecture suitable for the project.
+3. **Encryption & Secrets**: Specify encryption-at-rest and in-transit strategies. Detail a secrets management policy.
+4. **Security Controls & Compliance**: Map security controls and relevant compliance benchmarks (GDPR, etc.) with implementation details.
+5. **Vulnerability & Monitoring**: Define a security operations plan (DevSecOps) including scanning and incident response at an appropriate level.
+6. **Network Security**: Specify network isolation and secure provisioning policies.
 
-Focus on creating a secure-by-default architecture that is perfectly synchronized with the underlying system design. Quality, precision, and battle-hardened logic are prioritized. Respond with ONLY the JSON object.`;
+Focus on technical rigor and secure-by-default logic. Match the complexity of your security design to the inherent needs of the project. Respond with ONLY the JSON object.`;
     }
 
     let llmSecurity: SecurityBackendArtifact | null = null;
@@ -66,7 +70,7 @@ Focus on creating a secure-by-default architecture that is perfectly synchronize
         },
         {
           reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3,
+          temperature: 0.2, // Lower for high-precision security analysis
           cacheId: context.cacheId,
           role: "Security"
         }
