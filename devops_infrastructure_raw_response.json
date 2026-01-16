@@ -6,73 +6,41 @@
       "cloud_provider": "AWS",
       "services": [
         {
-          "name": "Amazon ECS (Fargate)",
+          "name": "EduPulse-EKS-Cluster",
           "type": "compute",
-          "configuration": {
-            "key": "launch_type",
-            "value": "FARGATE"
-          },
-          "description": "Serverless container compute for API and Market Data Engine services to ensure scalability without managing instances."
+          "description": "Managed Kubernetes cluster for microservices orchestration across multiple availability zones."
         },
         {
-          "name": "Amazon RDS for PostgreSQL",
+          "name": "EduPulse-Aurora-Postgres",
           "type": "database",
-          "configuration": {
-            "key": "engine_version",
-            "value": "15.x"
-          },
-          "description": "Managed relational database with Multi-AZ deployment for high availability of user data and trade history."
+          "description": "Multi-region Aurora PostgreSQL with global database clusters for low-latency data access."
         },
         {
-          "name": "Amazon ElastiCache (Redis)",
-          "type": "database",
-          "configuration": {
-            "key": "cluster_mode",
-            "value": "enabled"
-          },
-          "description": "In-memory data store for real-time market data Pub/Sub, WebSocket session management, and rate-limit semaphores."
+          "name": "EduPulse-S3-Content",
+          "type": "storage",
+          "description": "Object storage for raw and transcoded video assets with cross-region replication."
         },
         {
-          "name": "AWS KMS",
-          "type": "security",
-          "configuration": {
-            "key": "algorithm",
-            "value": "SYMMETRIC_DEFAULT"
-          },
-          "description": "Key Management Service for envelope encryption of user API secrets (AES-256-GCM)."
+          "name": "EduPulse-CloudFront",
+          "type": "cdn",
+          "description": "Global CDN for low-latency delivery of HLS video segments and static assets."
         },
         {
-          "name": "Application Load Balancer",
-          "type": "load-balancer",
-          "configuration": {
-            "key": "scheme",
-            "value": "internet-facing"
-          },
-          "description": "Layer 7 load balancer handling WebSocket upgrades (WSS) and HTTPS traffic distribution."
-        },
-        {
-          "name": "AWS WAF",
-          "type": "security",
-          "configuration": {
-            "key": "rule_set",
-            "value": "AWSManagedRulesCommonRuleSet"
-          },
-          "description": "Web Application Firewall to protect against SQL injection, XSS, and DDoS attacks."
-        },
-        {
-          "name": "NAT Gateway",
+          "name": "EduPulse-MSK-Kafka",
           "type": "networking",
-          "configuration": {
-            "key": "redundancy",
-            "value": "multi-az"
-          },
-          "description": "Allows private subnet resources (ECS, RDS) to access external Exchange APIs securely."
+          "description": "Managed Streaming for Apache Kafka to handle event-driven microservices communication."
+        },
+        {
+          "name": "EduPulse-ALB",
+          "type": "load-balancer",
+          "description": "Application Load Balancer with WAF integration for secure traffic distribution."
         }
       ],
       "iac": "Terraform",
       "regions": [
         "us-east-1",
-        "eu-central-1"
+        "eu-central-1",
+        "ap-southeast-1"
       ]
     },
     "cicd": {
@@ -80,88 +48,71 @@
         {
           "name": "Continuous Integration",
           "steps": [
-            "Checkout Code",
-            "Install Dependencies",
-            "Linting (ESLint)",
-            "Unit Tests (Jest)",
-            "SAST Scan (SonarQube)",
-            "Secret Scanning (TruffleHog)"
+            "Linting and Static Analysis",
+            "Unit and Integration Testing",
+            "Container Image Build",
+            "Vulnerability Scanning (Trivy)"
           ],
-          "description": "Code quality and security verification.",
+          "description": "Validates code quality and security before artifact creation.",
           "status": "active"
         },
         {
-          "name": "Build & Publish",
+          "name": "Artifact Management",
           "steps": [
-            "Build Docker Image",
-            "Container Image Scan (Trivy)",
             "Push to Amazon ECR",
-            "Tag with Commit SHA"
+            "Sign Images with Cosign"
           ],
-          "description": "Artifact creation and registry push.",
+          "description": "Securely stores and signs container images.",
           "status": "active"
         },
         {
-          "name": "Deploy to Staging",
+          "name": "Continuous Deployment",
           "steps": [
-            "Update ECS Task Definition",
-            "Terraform Apply (Staging)",
-            "Run Database Migrations",
-            "Integration Tests (Cypress/Supertest)"
+            "ArgoCD Sync",
+            "Canary Analysis",
+            "Automated Rollback on Failure"
           ],
-          "description": "Deployment to pre-production environment.",
-          "status": "active"
-        },
-        {
-          "name": "Production Release",
-          "steps": [
-            "Manual Approval Gate",
-            "Terraform Apply (Production)",
-            "Blue/Green Deployment Trigger",
-            "Health Check Verification",
-            "Traffic Switch"
-          ],
-          "description": "Zero-downtime production deployment.",
+          "description": "GitOps-based deployment to Kubernetes environments.",
           "status": "active"
         }
       ],
       "tools": [
         "GitHub Actions",
-        "Terraform Cloud",
-        "SonarQube",
-        "Amazon ECR"
+        "ArgoCD",
+        "Amazon ECR",
+        "Snyk"
       ],
       "triggers": [
         {
           "type": "push",
           "branch": "main",
-          "description": "Triggers CI and Staging deploy"
+          "description": "Triggers production deployment pipeline."
         },
         {
           "type": "pull_request",
-          "branch": "*",
-          "description": "Triggers CI and Test builds"
+          "branch": "develop",
+          "description": "Triggers CI and staging preview."
         }
       ]
     },
     "deployment": {
-      "strategy": "blue-green",
+      "strategy": "canary",
       "environments": [
         {
           "name": "development",
           "configuration": {
-            "key": "debug_mode",
-            "value": "true"
+            "key": "instance_type",
+            "value": "t3.medium"
           },
-          "description": "Ephemeral environments for feature branches."
+          "description": "Sandbox for feature development and testing."
         },
         {
           "name": "staging",
           "configuration": {
             "key": "replica_count",
-            "value": "2"
+            "value": "3"
           },
-          "description": "Mirror of production for UAT and load testing."
+          "description": "Pre-production environment mirroring production configuration."
         },
         {
           "name": "production",
@@ -169,80 +120,76 @@
             "key": "multi_az",
             "value": "true"
           },
-          "description": "High-availability environment with strict security controls."
+          "description": "High-availability global production environment."
         }
       ],
-      "rollback_strategy": "Automated rollback via AWS CodeDeploy if health checks fail during the traffic shifting phase (10% -> 100%)."
+      "rollback_strategy": "Automated rollback via Argo Rollouts based on Prometheus error rate metrics exceeding 1% threshold during canary phase."
     },
     "monitoring": {
       "tools": [
-        "Datadog",
-        "AWS CloudWatch",
-        "PagerDuty"
+        "Prometheus",
+        "Grafana",
+        "Datadog APM",
+        "Jaeger"
       ],
       "metrics": [
-        "WebSocket Active Connections",
-        "Exchange API Latency (p95, p99)",
-        "Order Execution Time (Internal + External)",
-        "Redis CPU Utilization",
-        "ECS Task CPU/Memory",
-        "Rate Limit Consumption (per Exchange)"
+        "Request Latency (P99)",
+        "Error Rate per Microservice",
+        "Kafka Consumer Lag",
+        "HPA Scaling Events",
+        "CDN Cache Hit Ratio"
       ],
       "alerts": [
         {
-          "name": "High Exchange Latency",
-          "condition": "avg(exchange_latency) > 500ms for 2m",
+          "name": "High Error Rate",
+          "condition": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) > 0.05",
+          "severity": "critical"
+        },
+        {
+          "name": "Latency Spike",
+          "condition": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 2",
           "severity": "warning"
-        },
-        {
-          "name": "Order Execution Failure Spike",
-          "condition": "sum(failed_orders) > 5 in 1m",
-          "severity": "critical"
-        },
-        {
-          "name": "Redis Memory Critical",
-          "condition": "redis_memory_usage > 85%",
-          "severity": "critical"
         }
       ],
       "logging": {
-        "retention": "90 days",
+        "retention": "30 days",
         "tools": [
-          "AWS CloudWatch Logs",
-          "Datadog Log Management"
+          "Fluentbit",
+          "Amazon CloudWatch Logs",
+          "Elasticsearch"
         ]
       }
     },
     "containerization": {
-      "docker_compose": "version: '3.8'",
-      "dockerfile": "Multi-stage build: Base (Node 18 Alpine) -> Builder (Install deps & build) -> Runner (Production deps only)",
+      "docker_compose": "version: '3.8'\nservices:\n  api:\n    build: .\n    ports:\n      - \"8080:8080\"\n    environment:\n      - DB_URL=postgres://user:pass@db:5432/edupulse",
+      "dockerfile": "FROM golang:1.21-alpine AS builder\nWORKDIR /app\nCOPY . .\nRUN go build -o main .\nFROM alpine:latest\nCOPY --from=builder /app/main /main\nENTRYPOINT [\"/main\"]",
       "kubernetes": {
         "deployments": [
           {
-            "name": "api-gateway",
-            "replicas": 3,
+            "name": "learning-engine",
+            "replicas": 5,
             "resources": {
-              "cpu": "1024",
-              "memory": "2048Mi"
+              "cpu": "500m",
+              "memory": "1Gi"
             }
           },
           {
-            "name": "market-data-engine",
-            "replicas": 2,
+            "name": "ai-recommendation",
+            "replicas": 3,
             "resources": {
-              "cpu": "2048",
-              "memory": "4096Mi"
+              "cpu": "2",
+              "memory": "4Gi"
             }
           }
         ],
-        "namespace": "cryptopulse-prod",
+        "namespace": "edupulse-prod",
         "services": [
           {
-            "name": "api-service",
+            "name": "api-gateway",
             "ports": [
               {
                 "port": 80,
-                "targetPort": 3000
+                "targetPort": 8080
               }
             ],
             "type": "LoadBalancer"
@@ -253,24 +200,24 @@
     "scaling": {
       "auto_scaling": {
         "enabled": true,
-        "max_replicas": 20,
+        "max_replicas": 50,
         "min_replicas": 3,
-        "target_cpu": 60,
-        "target_memory": 70
+        "target_cpu": 70,
+        "target_memory": 80
       },
       "manual_scaling": {
-        "replicas": 1
+        "replicas": 10
       }
     },
     "disaster_recovery": {
-      "rpo": "5 minutes",
-      "rto": "1 hour",
-      "backup_strategy": "Automated daily RDS snapshots with 35-day retention. Cross-region snapshot replication to eu-central-1 for catastrophe recovery. Point-in-time recovery (PITR) enabled.",
-      "failover_plan": "DNS failover via Route53 to secondary region. Read replicas promoted to primary. Redis cache is rebuilt from cold start (acceptable performance degradation)."
+      "rpo": "15 minutes",
+      "rto": "60 minutes",
+      "backup_strategy": "Daily RDS snapshots with cross-region copy; S3 Versioning and Cross-Region Replication (CRR) enabled for all course content.",
+      "failover_plan": "Route53 Health Checks trigger DNS failover to secondary region; Global Aurora Database promotion to primary in standby region."
     },
-    "summary": "Enterprise-grade AWS infrastructure leveraging ECS Fargate for compute and RDS/ElastiCache for state. Designed for high availability and security compliance.",
-    "description": "The infrastructure is designed to support a high-frequency trading terminal. It prioritizes security (private subnets, KMS), low latency (Redis, ALB WebSocket support), and reliability (Multi-AZ RDS, Blue/Green deployments). Terraform manages the entire stack to ensure reproducibility.",
+    "summary": "Production-grade AWS infrastructure utilizing EKS for orchestration, Aurora for global data consistency, and a GitOps CI/CD pipeline for secure, automated deployments.",
+    "description": "The EduPulse SRE strategy focuses on high availability and global performance. It leverages Terraform for multi-region provisioning, ArgoCD for canary deployments, and a comprehensive observability stack to maintain 99.99% uptime for 50,000 concurrent learners.",
     "cloud_provider": "AWS",
-    "infra_components": 7
+    "infra_components": 12
   }
 }

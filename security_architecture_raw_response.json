@@ -2,220 +2,226 @@
   "step_id": "security_architecture",
   "role": "Security",
   "content": {
-    "summary": "The security architecture for CryptoPulse is designed to protect high-value assets (Exchange API Keys) in a non-custodial environment. The core defense is Application-Level Envelope Encryption using AWS KMS, ensuring that even a full database compromise does not yield usable API secrets. Authentication relies on standard JWT flows hardened with MFA and HttpOnly cookies. The infrastructure leverages AWS VPC isolation to separate the public API from the sensitive Execution Engine.",
-    "description": "CryptoPulse operates in a high-threat environment where user trust is paramount. The architecture adopts a 'Zero Trust' approach to data storage. \n\n1. **Identity**: Users authenticate via email/password + TOTP. Sessions are managed via secure, HTTP-only cookies to mitigate XSS token theft.\n2. **Data Protection**: The 'Crown Jewels' (Exchange API Secrets) are encrypted using a unique Data Encryption Key (DEK) for each entry. This DEK is encrypted by a Master Key (KEK) stored in AWS KMS. The application only decrypts secrets in memory within the isolated 'Execution Engine' service for the brief moment required to sign a transaction.\n3. **Network**: The Execution Engine resides in a private subnet with no direct internet ingress. It communicates outbound to exchanges via a NAT Gateway with strict egress filtering.\n4. **Resilience**: Rate limiting is applied at both the Global (WAF) and Application (Redis) layers to protect against DDoS and ensure fair usage of exchange API quotas.",
+    "summary": "EduPulse employs a zero-trust security model centered on identity-first principles and robust data protection. By combining OAuth2/OIDC for identity, AES-256/TLS 1.3 for encryption, and CloudFront Signed URLs for content protection, the platform ensures a secure environment for both intellectual property and user PII.",
+    "description": "The security architecture is designed to meet the high-concurrency and high-availability needs of a modern e-learning platform. It leverages cloud-native security services for automated threat detection and key management, while implementing application-level controls like RBAC and RLS to maintain strict data isolation across its microservices ecosystem.",
     "security_architecture": {
       "authentication": {
-        "method": "JWT",
-        "description": "Stateless authentication using short-lived JWT Access Tokens (15m) and long-lived Refresh Tokens (7d). Refresh tokens are rotated on use (Refresh Token Rotation) to detect theft.",
+        "method": "OAuth2",
+        "description": "Centralized identity management using OIDC with Auth0 to handle social logins and JWT issuance. Multi-factor authentication is enforced for instructor and administrative accounts to protect high-value content and system settings.",
         "mfa_enabled": true,
         "multi_factor_auth": true,
         "providers": [
-          "local-email-password"
+          "Google",
+          "LinkedIn"
         ],
         "refresh_tokens": true,
-        "token_expiry": "15m"
+        "token_expiry": "1h"
       },
       "authorization": {
         "model": "RBAC",
-        "description": "Role-Based Access Control enforcing strict resource ownership. Users can only access their own exchange connections and orders.",
+        "description": "Role-Based Access Control managed at the API Gateway and enforced via JWT claims. Fine-grained access to specific course resources is further validated using Row Level Security (RLS) within the database layer.",
         "policies": [
           {
-            "resource": "exchange_connections",
+            "resource": "course_content",
+            "permissions": [
+              "read",
+              "stream"
+            ],
+            "description": "Allows learners to view and stream content for enrolled courses.",
+            "roles": [
+              "learner"
+            ]
+          },
+          {
+            "resource": "curriculum_management",
             "permissions": [
               "create",
-              "read",
               "update",
               "delete"
             ],
-            "description": "Users manage their own exchange API keys.",
+            "description": "Allows instructors to manage their own course materials and structure.",
             "roles": [
-              "user"
-            ]
-          },
-          {
-            "resource": "orders",
-            "permissions": [
-              "create",
-              "read",
-              "cancel"
-            ],
-            "description": "Users can place and cancel orders on their connected exchanges.",
-            "roles": [
-              "user"
-            ]
-          },
-          {
-            "resource": "system_admin",
-            "permissions": [
-              "view_metrics",
-              "manage_users"
-            ],
-            "description": "Admins can view system health but cannot decrypt user API keys.",
-            "roles": [
-              "admin"
+              "instructor"
             ]
           }
         ],
         "roles": [
-          "user",
-          "admin",
-          "auditor"
+          "learner",
+          "instructor",
+          "admin"
         ]
       },
       "session_management": {
         "http_only_cookies": true,
-        "same_site_policy": "strict",
+        "same_site_policy": "lax",
         "secure_cookies": true,
-        "session_timeout": "7d",
+        "session_timeout": "24h",
         "strategy": "stateless"
       }
     },
     "threat_model": [
       {
-        "threat": "Compromise of Exchange API Secrets (Information Disclosure)",
-        "severity": "critical",
-        "mitigation": "Envelope encryption using AWS KMS. Database only stores encrypted data (ciphertext); decryption occurs only in volatile memory within the isolated Execution Engine.",
+        "threat": "Unauthorized Video Access (Information Disclosure)",
+        "severity": "high",
+        "mitigation": "Implement CloudFront Signed URLs with short expiration times to ensure only authenticated learners can stream content.",
         "affected_components": [
-          "Database",
-          "Execution Engine"
+          "CloudFront",
+          "S3",
+          "Video Service"
         ],
-        "impact": "Attackers could drain user funds via wash trading on external exchanges.",
-        "likelihood": "low"
+        "impact": "Loss of revenue and intellectual property due to content piracy.",
+        "likelihood": "high"
       },
       {
-        "threat": "Cross-Site Scripting (XSS) leading to Session Hijacking",
-        "severity": "high",
-        "mitigation": "Strict Content Security Policy (CSP), HttpOnly/Secure cookies for tokens, and sanitization of all user inputs (e.g., connection labels).",
+        "threat": "Course Price Manipulation (Tampering)",
+        "severity": "critical",
+        "mitigation": "Server-side validation of course prices during checkout against the authoritative database record.",
         "affected_components": [
-          "Frontend",
-          "API Gateway"
+          "Payment Service",
+          "Checkout API"
         ],
-        "impact": "Attacker executes trades on behalf of the logged-in user.",
+        "impact": "Financial loss and exploitation of the payment workflow.",
         "likelihood": "medium"
       },
       {
-        "threat": "Man-in-the-Middle (MitM) Attacks on API Traffic",
+        "threat": "Account Takeover via Social Auth (Spoofing)",
         "severity": "high",
-        "mitigation": "Enforce TLS 1.3 for all client-server communications and strict certificate validation for backend-to-exchange connections.",
+        "mitigation": "Strict validation of OAuth2 state parameters and nonce values to prevent CSRF and replay attacks.",
+        "affected_components": [
+          "Identity Service",
+          "Auth API"
+        ],
+        "impact": "Unauthorized access to user PII and purchased content.",
+        "likelihood": "medium"
+      },
+      {
+        "threat": "API Denial of Service (DoS)",
+        "severity": "medium",
+        "mitigation": "Implement rate limiting and request throttling at the API Gateway level based on IP and User ID.",
         "affected_components": [
           "API Gateway",
-          "Exchange Adapter"
+          "All Microservices"
         ],
-        "impact": "Interception of auth tokens or manipulation of trade orders in transit.",
+        "impact": "Platform unavailability for legitimate users during peak times.",
+        "likelihood": "high"
+      },
+      {
+        "threat": "SQL Injection in Search (Tampering/Disclosure)",
+        "severity": "high",
+        "mitigation": "Use parameterized queries and leverage Elasticsearch's DSL which is inherently resistant to traditional SQLi.",
+        "affected_components": [
+          "Search Service",
+          "Elasticsearch"
+        ],
+        "impact": "Potential data leak or corruption of the search index.",
         "likelihood": "low"
       },
       {
-        "threat": "API Rate Limit Exhaustion (Denial of Service)",
-        "severity": "medium",
-        "mitigation": "Distributed rate limiting via Redis (Token Bucket algorithm) per user and per exchange IP to prevent upstream bans.",
+        "threat": "Privilege Escalation to Admin (Elevation of Privilege)",
+        "severity": "critical",
+        "mitigation": "Enforce strict JWT scope validation and secondary authorization checks for all administrative endpoints.",
         "affected_components": [
-          "Exchange Adapter",
-          "API Gateway"
+          "Admin Dashboard",
+          "Identity Service"
         ],
-        "impact": "System becomes unable to fetch prices or execute orders for legitimate users.",
-        "likelihood": "medium"
-      },
-      {
-        "threat": "Credential Stuffing / Brute Force",
-        "severity": "medium",
-        "mitigation": "Implement exponential backoff on login endpoints and require CAPTCHA after 3 failed attempts.",
-        "affected_components": [
-          "Auth Service"
-        ],
-        "impact": "Unauthorized access to user accounts.",
-        "likelihood": "high"
+        "impact": "Full system compromise and data destruction.",
+        "likelihood": "low"
       }
     ],
     "encryption": {
       "data_at_rest": {
-        "method": "AES-256-GCM",
-        "key_management": "AWS KMS (Envelope Encryption)",
-        "description": "Sensitive fields (API Secrets) are encrypted at the application level before DB insertion. The Database volume is also encrypted via AWS RDS encryption."
+        "method": "AES-256",
+        "key_management": "AWS KMS",
+        "description": "All database volumes, S3 buckets, and backups are encrypted using provider-managed keys with automatic rotation."
       },
       "data_in_transit": {
         "method": "TLS 1.3",
-        "certificate_management": "AWS Certificate Manager (ACM) with auto-renewal",
-        "description": "All HTTP/WebSocket traffic is encrypted. Internal service-to-service communication within the VPC uses private subnets."
+        "certificate_management": "AWS Certificate Manager (ACM)",
+        "description": "Encryption is enforced for all external traffic and internal service-to-service communication via mTLS."
       },
       "key_management": {
-        "strategy": "Centralized Cloud KMS",
-        "description": "Master keys (KEK) never leave AWS KMS. Data Encryption Keys (DEK) are generated per user/connection, encrypted by KEK, and stored alongside data.",
-        "rotation_policy": "Automatic annual rotation of Customer Master Keys (CMK)."
+        "strategy": "Cloud-Native KMS",
+        "description": "Centralized key management using AWS KMS with strict IAM policies restricting key usage to specific service roles.",
+        "rotation_policy": "Annual automatic rotation for master keys."
       },
       "envelope_encryption": true,
-      "secrets_management": "AWS Secrets Manager for application infrastructure secrets (DB credentials, 3rd party API keys)."
+      "secrets_management": "AWS Secrets Manager"
     },
     "compliance": [
       {
         "standard": "GDPR",
         "requirements": [
-          "Right to be Forgotten",
+          "Right to Erasure",
           "Data Portability",
-          "Consent Management"
+          "Privacy by Design"
         ],
-        "description": "Ensure EU users can request deletion of their account and all associated data (including API keys).",
-        "implementation_status": "planned"
+        "description": "Ensures European user data is handled according to strict privacy standards, including automated data deletion workflows.",
+        "implementation_status": "in-progress"
+      },
+      {
+        "standard": "PCI-DSS",
+        "requirements": [
+          "SAQ-A for Stripe Integration",
+          "Encryption of Cardholder Data"
+        ],
+        "description": "EduPulse uses Stripe Elements to ensure no sensitive card data ever touches the platform's servers, maintaining a reduced compliance scope.",
+        "implementation_status": "compliant"
       },
       {
         "standard": "SOC2",
         "requirements": [
-          "Access Control",
+          "Audit Logging",
           "Change Management",
-          "System Operations"
+          "Incident Response"
         ],
-        "description": "Future target for enterprise readiness; currently implementing logging and access controls to align with Trust Services Criteria.",
+        "description": "Framework for managing data based on security, availability, processing integrity, confidentiality, and privacy.",
         "implementation_status": "planned"
       }
     ],
     "security_controls": [
       {
         "control": "Web Application Firewall (WAF)",
-        "implementation": "AWS WAF configured with rules to block SQL injection, XSS patterns, and known malicious IP addresses.",
+        "implementation": "Deployment of AWS WAF with managed rulesets to block common OWASP Top 10 attacks.",
         "category": "preventive",
         "priority": "high"
       },
       {
-        "control": "Strict Content Security Policy (CSP)",
-        "implementation": "HTTP Header configuration preventing execution of inline scripts and restricting resource loading to trusted domains.",
-        "category": "preventive",
-        "priority": "high"
-      },
-      {
-        "control": "Two-Factor Authentication (TOTP)",
-        "implementation": "Mandatory for critical actions (API Key deletion, Password change) and optional for login.",
+        "control": "CloudFront Signed URLs",
+        "implementation": "Generating time-limited URLs for HLS stream manifests to prevent direct S3 access.",
         "category": "preventive",
         "priority": "critical"
       },
       {
-        "control": "Audit Logging",
-        "implementation": "Immutable logs of all 'Trade' and 'Auth' events, stored in S3 with Object Lock (WORM compliance).",
-        "category": "detective",
-        "priority": "medium"
+        "control": "Database Row Level Security",
+        "implementation": "PostgreSQL RLS policies to ensure learners can only query their own enrollment and progress records.",
+        "category": "preventive",
+        "priority": "high"
       },
       {
-        "control": "Dependency Scanning",
-        "implementation": "Automated Snyk scans in CI/CD pipeline to block builds with critical vulnerabilities in npm packages.",
+        "control": "VPC Security Groups",
+        "implementation": "Strict ingress/egress rules allowing only necessary traffic between microservices and databases.",
         "category": "preventive",
         "priority": "high"
       }
     ],
     "vulnerability_management": {
-      "patch_management": "Automated dependency updates via Dependabot; Critical OS patches applied within 48h via AWS Systems Manager.",
-      "scanning_frequency": "Continuous (CI/CD) + Weekly Static Analysis",
+      "patch_management": "Automated patching of EKS worker nodes using Amazon Linux 2 managed node groups and weekly container image rebuilds.",
+      "scanning_frequency": "Continuous",
       "tools": [
-        "Snyk (SCA)",
-        "SonarQube (SAST)",
-        "OWASP ZAP (DAST)"
+        "Snyk",
+        "Dependabot",
+        "Amazon Inspector",
+        "OWASP ZAP"
       ]
     },
     "security_monitoring": {
-      "incident_response_plan": "Playbooks defined for 'API Key Leak', 'DDoS', and 'Exchange Outage'. On-call rotation established via PagerDuty.",
-      "log_retention": "90 days hot storage (CloudWatch), 1 year cold storage (S3 Glacier)",
+      "incident_response_plan": "Automated alerts via PagerDuty triggered by AWS GuardDuty findings and CloudWatch anomaly detection.",
+      "log_retention": "365 days",
       "tools": [
-        "AWS GuardDuty (Threat Detection)",
-        "AWS CloudTrail (API Auditing)",
-        "ELK Stack (Log Aggregation)"
+        "AWS GuardDuty",
+        "AWS CloudTrail",
+        "ELK Stack (Security Logs)",
+        "Datadog Security Monitoring"
       ]
     }
   }

@@ -2,244 +2,218 @@
   "step_id": "pm_spec",
   "role": "Product Manager",
   "content": {
-    "summary": "A high-fidelity SaaS trading terminal designed to aggregate fragmented crypto exchange accounts into a single, secure interface. It offers real-time portfolio tracking, multi-exchange order execution, and advanced technical analysis tools for serious traders.",
-    "description": "The 'CryptoPulse' SaaS platform addresses the fragmentation of the cryptocurrency market where traders hold assets across multiple exchanges (Binance, Coinbase, Kraken, etc.). The product vision is to become the 'Bloomberg Terminal' for retail and prosumer crypto traders. \n\nThe core architecture relies on a secure backend that manages API connections to third-party exchanges, normalizing data streams into a unified format. The frontend is a high-performance React application focusing on low-latency data visualization. \n\nKey capabilities include a unified dashboard for net-worth tracking, a smart order router that allows execution on any connected exchange, and a reporting engine for tax compliance. Security is paramount, with non-custodial architecture (we do not hold user funds) and military-grade encryption for API credentials.",
+    "summary": "EduPulse is a high-fidelity e-learning ecosystem designed to provide personalized, interactive, and verifiable education at scale. It bridges the gap between expert knowledge and learner needs through AI-driven paths and robust instructor tools.",
+    "description": "The EduPulse platform is built on a microservices architecture to support a global audience. Its vision is to become the primary destination for professional upskilling by offering a seamless transition from content consumption to certified mastery. Key differentiators include an interactive video player, AI-curated learning paths, and a high-performance instructor suite. The platform prioritizes accessibility, security, and low-latency content delivery to ensure an elite user experience.",
     "user_stories": [
       {
-        "title": "Multi-Exchange API Integration",
-        "story": "As a crypto trader, I want to securely connect multiple exchange accounts (Binance, Coinbase, Kraken) via API keys so that I can view and manage my entire portfolio from a single dashboard.",
-        "description": "The system must allow users to input Read and Trade permission API keys. These keys must be encrypted at rest and in transit. The system should validate the keys immediately upon entry and fetch initial balance data.",
+        "title": "User Onboarding and Profile Setup",
+        "story": "As a new learner, I want to create an account and set my learning preferences so that the platform can recommend relevant courses to me.",
+        "description": "A seamless registration process supporting OAuth2 (Google, LinkedIn) and a preference wizard to capture interests, skill levels, and career goals.",
         "priority": "critical",
-        "story_points": 8,
+        "story_points": 3,
         "acceptance_criteria": [
-          "User can select from a list of supported exchanges.",
-          "System validates API keys via a test request to the exchange.",
-          "API Secrets are encrypted using AES-256 before storage.",
-          "Invalid keys return a specific error message to the user.",
-          "Successful connection triggers an initial balance sync."
+          "User can register via email or social login.",
+          "Preference wizard includes at least 5 categories of interest.",
+          "Profile page allows uploading a photo and editing bio.",
+          "System sends a verification email upon registration."
         ],
-        "estimated_complexity": "large",
-        "user_value": "Eliminates the need to log in to multiple websites to check balances.",
-        "dependencies": [],
+        "estimated_complexity": "small",
+        "user_value": "Enables personalized discovery and identity management.",
         "id": "US-1"
       },
       {
-        "title": "Unified Portfolio Dashboard",
-        "story": "As a trader, I want to see a consolidated view of my total net worth across all connected exchanges so that I can understand my overall market position in real-time.",
-        "description": "The dashboard should aggregate balances from all connected sources, converting values to a base currency (USD/USDT/BTC). It must update in real-time via WebSockets where possible.",
+        "title": "Advanced Course Search and Filtering",
+        "story": "As a learner, I want to search for courses by keywords, categories, and ratings so that I can find the most suitable content quickly.",
+        "description": "A robust search engine utilizing Elasticsearch to provide real-time suggestions and multi-faceted filtering (price, duration, level, language).",
         "priority": "high",
         "story_points": 5,
         "acceptance_criteria": [
-          "Total balance is calculated by summing up assets across all exchanges.",
-          "User can toggle base currency between USD, EUR, and BTC.",
-          "A pie chart visualizes asset allocation by token.",
-          "Data refreshes automatically without page reload (WebSocket or polling < 10s).",
-          "24h Portfolio change percentage is displayed."
+          "Search results return in under 500ms.",
+          "Filters update dynamically based on the result set.",
+          "Search supports partial matches and synonyms.",
+          "Users can save searches for future notifications."
         ],
         "estimated_complexity": "medium",
-        "user_value": "Provides immediate situational awareness of financial health.",
-        "dependencies": [
-          "US-1"
-        ],
+        "user_value": "Reduces friction in finding educational content.",
         "id": "US-2"
       },
       {
-        "title": "Smart Order Routing Execution",
-        "story": "As a high-volume trader, I want to execute buy/sell orders on specific exchanges directly from the interface so that I can act on market movements without leaving the platform.",
-        "description": "Users should be able to select a trading pair, choose the exchange, and place Limit, Market, or Stop-Loss orders. The UI must provide feedback on order status (Open, Filled, Cancelled).",
+        "title": "Interactive Video Learning Interface",
+        "story": "As a learner, I want to watch course videos with interactive transcripts and note-taking capabilities so that I can engage deeply with the material.",
+        "description": "A custom video player supporting HLS streaming, synchronized transcripts, and a sidebar for timestamped personal notes.",
         "priority": "critical",
-        "story_points": 13,
+        "story_points": 8,
         "acceptance_criteria": [
-          "Support for Market and Limit orders is mandatory for v1.",
-          "UI prevents orders exceeding available balance.",
-          "Order confirmation modal summarizes fees and total cost.",
-          "Real-time toast notification upon order fill.",
-          "Failed orders return specific error codes from the exchange API."
+          "Video player supports 0.5x to 2.0x playback speed.",
+          "Transcripts highlight the current spoken sentence.",
+          "Notes are automatically saved and linked to the video timestamp.",
+          "Player supports picture-in-picture mode."
         ],
         "estimated_complexity": "large",
-        "user_value": "Enables rapid execution and arbitrage opportunities.",
-        "dependencies": [
-          "US-1"
-        ],
+        "user_value": "Enhances the core learning experience and knowledge retention.",
         "id": "US-3"
       },
       {
-        "title": "Advanced Charting & Technical Analysis",
-        "story": "As a technical analyst, I want access to advanced charting tools (candlesticks, RSI, MACD) so that I can identify entry and exit points.",
-        "description": "Integration of a charting library (e.g., TradingView) to display historical price data. Users must be able to overlay indicators and draw trend lines.",
-        "priority": "medium",
-        "story_points": 8,
+        "title": "Instructor Course Builder",
+        "story": "As an instructor, I want to upload videos, create quizzes, and organize modules so that I can publish a comprehensive course.",
+        "description": "A drag-and-drop curriculum builder for instructors to manage content hierarchy, upload assets to S3, and define passing grades for quizzes.",
+        "priority": "high",
+        "story_points": 13,
         "acceptance_criteria": [
-          "Candlestick charts available for 1m, 5m, 15m, 1h, 4h, 1d timeframes.",
-          "At least 5 standard indicators (RSI, MACD, Bollinger Bands, MA, Volume) available.",
-          "Chart state (drawings/indicators) persists on browser refresh.",
-          "Data flows from the selected exchange's feed."
+          "Instructors can drag and drop lessons to reorder them.",
+          "Supports bulk video upload with progress tracking.",
+          "Quiz builder supports multiple choice and true/false questions.",
+          "Draft mode allows saving progress without publishing."
         ],
-        "estimated_complexity": "medium",
-        "user_value": "Allows for informed decision-making based on market trends.",
-        "dependencies": [],
+        "estimated_complexity": "large",
+        "user_value": "Empowers content creators to build high-quality educational products.",
         "id": "US-4"
       },
       {
-        "title": "Automated Price & Volatility Alerts",
-        "story": "As a passive investor, I want to set custom alerts for price targets or high volatility so that I am notified via email or push notification when I need to take action.",
-        "description": "A background service that monitors price feeds against user-defined thresholds. Alerts should be deliverable via Email, SMS, or In-App notifications.",
+        "title": "Automated Certification Engine",
+        "story": "As a learner, I want to receive a verifiable certificate upon course completion so that I can share my achievement on professional networks.",
+        "description": "A system that triggers certificate generation (PDF) once all course requirements are met, including a unique verification URL or QR code.",
         "priority": "medium",
         "story_points": 5,
         "acceptance_criteria": [
-          "User can set 'Greater Than' and 'Less Than' price alerts.",
-          "User can configure alert delivery method (Email/Push).",
-          "System checks prices at least once every minute.",
-          "Alerts are triggered only once per threshold crossing to prevent spam.",
-          "User can view a history of triggered alerts."
+          "Certificates are generated within 60 seconds of completion.",
+          "PDF includes learner name, course title, date, and unique ID.",
+          "One-click sharing to LinkedIn Featured section.",
+          "Public verification page exists for each certificate."
         ],
         "estimated_complexity": "medium",
-        "user_value": "Reduces screen time and fear of missing out (FOMO).",
-        "dependencies": [],
+        "user_value": "Provides tangible proof of skill acquisition for career growth.",
         "id": "US-5"
       },
       {
-        "title": "Tax & Transaction History Export",
-        "story": "As a compliant citizen, I want to export my complete transaction history across all exchanges into a CSV format so that I can file my taxes accurately.",
-        "description": "A reporting module that aggregates trade history, deposits, and withdrawals. It should normalize the data format across different exchanges into a single standard CSV.",
-        "priority": "low",
-        "story_points": 5,
+        "title": "AI-Driven Learning Path Recommendations",
+        "story": "As a learner, I want the system to suggest my next course based on my previous completions and career goals so that I have a clear roadmap.",
+        "description": "A machine learning model that analyzes user behavior and market trends to suggest 'Learning Paths' rather than just individual courses.",
+        "priority": "medium",
+        "story_points": 13,
         "acceptance_criteria": [
-          "Export generates a downloadable CSV file.",
-          "CSV includes timestamp, pair, side (buy/sell), price, amount, fee, and exchange.",
-          "Date range filter allows selecting specific tax years.",
-          "Support for at least 10,000 rows of data without timeout."
+          "Recommendations update after every course completion.",
+          "System explains 'Why' a course was recommended.",
+          "Users can dismiss irrelevant recommendations to tune the model.",
+          "Supports 'Career Track' bundles (e.g., Full Stack Dev path)."
         ],
-        "estimated_complexity": "small",
-        "user_value": "Saves hours of manual spreadsheet work during tax season.",
-        "dependencies": [
-          "US-1"
-        ],
+        "estimated_complexity": "large",
+        "user_value": "Provides strategic guidance and increases platform stickiness.",
         "id": "US-6"
       }
     ],
     "acceptance_criteria": [
       {
-        "criteria": "Data Latency",
-        "description": "Real-time price feeds must update on the frontend with a latency of no more than 200ms from the time the data is received from the exchange WebSocket.",
+        "criteria": "The platform must achieve a Lighthouse accessibility score of 90 or higher.",
+        "description": "Ensures compliance with WCAG 2.1 AA standards for inclusive learning.",
         "id": "AC-1",
         "priority": "must",
-        "title": "Real-time Performance"
+        "title": "Accessibility Compliance"
       },
       {
-        "criteria": "Security Compliance",
-        "description": "All user data, specifically API secrets and personal information, must be encrypted at rest using AES-256 and in transit using TLS 1.3.",
+        "criteria": "All video content must be delivered via a Content Delivery Network (CDN).",
+        "description": "Minimizes latency and buffering for global users.",
         "id": "AC-2",
         "priority": "must",
-        "title": "Data Encryption"
+        "title": "Global Performance"
       },
       {
-        "criteria": "API Rate Limiting",
-        "description": "The system must handle exchange API rate limits gracefully, implementing exponential backoff strategies to prevent IP bans.",
+        "criteria": "The system must support concurrent users up to 50,000 without performance degradation.",
+        "description": "Ensures scalability during peak hours or marketing campaigns.",
         "id": "AC-3",
         "priority": "must",
-        "title": "Rate Limit Handling"
+        "title": "System Scalability"
       },
       {
-        "criteria": "Decimal Precision",
-        "description": "All financial calculations must handle up to 18 decimal places to accurately account for low-value tokens (e.g., Wei in Ethereum) without rounding errors.",
+        "criteria": "All user data must be encrypted at rest and in transit using AES-256 and TLS 1.3.",
+        "description": "Protects sensitive user information and payment data.",
         "id": "AC-4",
         "priority": "must",
-        "title": "Financial Accuracy"
+        "title": "Data Security"
       },
       {
-        "criteria": "Mobile Responsiveness",
-        "description": "The trading dashboard must be fully functional on mobile viewports (375px width) without horizontal scrolling or overlapping elements.",
+        "criteria": "The UI must be fully responsive across mobile, tablet, and desktop breakpoints.",
+        "description": "Provides a consistent experience regardless of the device used.",
         "id": "AC-5",
-        "priority": "should",
-        "title": "Mobile Layout"
-      },
-      {
-        "criteria": "Two-Factor Authentication",
-        "description": "Users must be able to enable TOTP (Google Authenticator) for login and critical actions like API key deletion.",
-        "id": "AC-6",
         "priority": "must",
-        "title": "2FA Implementation"
+        "title": "Responsive Design"
       },
       {
-        "criteria": "Uptime Guarantee",
-        "description": "The platform must maintain 99.9% uptime during market hours, with redundant server infrastructure.",
-        "id": "AC-7",
+        "criteria": "Payment processing must support 3D Secure authentication.",
+        "description": "Reduces fraud and complies with international banking regulations.",
+        "id": "AC-6",
         "priority": "should",
-        "title": "System Availability"
+        "title": "Secure Payments"
       },
       {
-        "criteria": "Cross-Browser Compatibility",
-        "description": "The application must function correctly on the latest two versions of Chrome, Firefox, Safari, and Edge.",
+        "criteria": "The platform must support offline viewing via a mobile application.",
+        "description": "Allows learners to continue studying without an active internet connection.",
+        "id": "AC-7",
+        "priority": "could",
+        "title": "Offline Access"
+      },
+      {
+        "criteria": "Course ratings must be protected by a verified-purchase algorithm.",
+        "description": "Prevents review manipulation and ensures trust in the platform.",
         "id": "AC-8",
         "priority": "must",
-        "title": "Browser Support"
+        "title": "Review Integrity"
       }
     ],
     "ui_multi_section": true,
     "assumptions": [
-      "Users already possess verified accounts on supported exchanges.",
-      "Exchange APIs will remain stable and backward compatible during the development phase.",
-      "Users are willing to trust a third-party application with 'Trade' permission API keys.",
-      "Regulatory frameworks in target jurisdictions allow for trade aggregation services.",
-      "The platform will not handle fiat currency directly (no banking integration required)."
+      "Users have access to a minimum 5Mbps internet connection for standard video streaming.",
+      "Instructors will provide content in supported formats (MP4, PDF, etc.).",
+      "Third-party payment gateways (Stripe/PayPal) will handle currency conversion.",
+      "Cloud infrastructure (AWS/GCP) provides 99.9% uptime."
     ],
     "out_of_scope": [
-      "Fiat on-ramping or off-ramping (handling actual USD/EUR transfers).",
-      "KYC/AML verification of users (relying on the underlying exchanges for this).",
-      "Social trading or copy-trading features for MVP.",
-      "Decentralized Exchange (DEX) integration (Uniswap, PancakeSwap) for v1.",
-      "Native mobile application (iOS/Android) - Web Mobile only for v1."
+      "Live 1-on-1 video tutoring sessions (Phase 2).",
+      "Physical textbook shipping and logistics.",
+      "Development of proprietary video encoding hardware.",
+      "In-person classroom management features."
     ],
     "swot": {
       "strengths": [
-        "Unified User Experience: Solves the pain of tab-switching between exchanges.",
-        "Non-Custodial: Reduced liability as the platform does not hold user funds.",
-        "Advanced Analytics: Superior charting compared to basic exchange interfaces.",
-        "Agility: Faster feature deployment than regulated exchanges."
+        "AI-driven personalization engine",
+        "Highly scalable microservices architecture",
+        "Superior interactive video UX"
       ],
       "weaknesses": [
-        "Platform Dependency: Entirely reliant on third-party Exchange APIs uptime.",
-        "Trust Barrier: Users are hesitant to share API keys due to phishing fears.",
-        "Latency: Aggregation layer adds a small latency overhead compared to direct exchange usage."
+        "High initial cost of content acquisition",
+        "Dependency on third-party CDN providers",
+        "Brand recognition compared to incumbents"
       ],
       "opportunities": [
-        "Institutional Features: Upselling to crypto funds for portfolio management.",
-        "AI Integration: Adding sentiment analysis and automated trading bots.",
-        "Tax Partnerships: Integrating directly with tax software providers.",
-        "DEX Integration: capturing the DeFi market share in v2."
+        "Expansion into corporate B2B training markets",
+        "Integration with VR/AR for technical skills",
+        "Partnerships with accredited universities"
       ],
       "threats": [
-        "Exchange API Changes: Sudden deprecation of API endpoints.",
-        "Regulatory Crackdown: Bans on crypto trading in key jurisdictions.",
-        "Exchange Insolvency: If a major exchange (e.g., FTX style) fails, users lose funds, blaming the dashboard.",
-        "Competitors: Established players like Coinigy or 3Commas."
+        "Aggressive pricing from established competitors like Udemy",
+        "Rapidly changing web accessibility regulations",
+        "Potential for content piracy"
       ]
     },
     "stakeholders": [
       {
-        "role": "Product Manager",
-        "interest": "Ensuring feature parity with roadmap and user adoption.",
+        "role": "Learners",
+        "interest": "Affordable, high-quality, and career-relevant education.",
         "influence": "high"
       },
       {
-        "role": "Lead Developer",
-        "interest": "API stability, security architecture, and technical debt management.",
+        "role": "Instructors",
+        "interest": "Ease of course creation and fair revenue sharing.",
         "influence": "high"
       },
       {
-        "role": "Crypto Trader (User)",
-        "interest": "Platform reliability, data accuracy, and execution speed.",
-        "influence": "high"
-      },
-      {
-        "role": "Security Auditor",
-        "interest": "Ensuring API keys and user data are not vulnerable to leaks.",
+        "role": "Engineering Team",
+        "interest": "Technical stability, scalability, and clear documentation.",
         "influence": "medium"
       },
       {
-        "role": "Legal/Compliance",
-        "interest": "Ensuring the platform does not inadvertently act as a broker-dealer.",
+        "role": "Corporate Partners",
+        "interest": "Employee progress tracking and skill gap analysis.",
         "influence": "medium"
       }
     ],
@@ -247,24 +221,24 @@
       {
         "user_story_id": "US-1",
         "independent": true,
-        "negotiable": false,
-        "valuable": true,
-        "estimatable": true,
-        "small": false,
-        "testable": true,
-        "score": 8.5,
-        "comments": "Foundational story. Not very small, but critical. Must be done first."
-      },
-      {
-        "user_story_id": "US-2",
-        "independent": false,
         "negotiable": true,
         "valuable": true,
         "estimatable": true,
         "small": true,
         "testable": true,
-        "score": 7,
-        "comments": "Dependent on US-1 for data. High value for the user."
+        "score": 10,
+        "comments": "Standard feature set with clear boundaries."
+      },
+      {
+        "user_story_id": "US-2",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Requires Elasticsearch setup but well-defined."
       },
       {
         "user_story_id": "US-3",
@@ -274,8 +248,8 @@
         "estimatable": true,
         "small": false,
         "testable": true,
-        "score": 6.5,
-        "comments": "Complex story involving financial risk. Dependent on US-1. Needs rigorous testing."
+        "score": 8,
+        "comments": "Complex UI interactions; depends on video hosting infrastructure."
       },
       {
         "user_story_id": "US-4",
@@ -283,24 +257,13 @@
         "negotiable": true,
         "valuable": true,
         "estimatable": true,
-        "small": true,
+        "small": false,
         "testable": true,
-        "score": 9,
-        "comments": "Can be developed in parallel using mock data. High INVEST score."
+        "score": 7,
+        "comments": "Large scope; may need to be broken down into smaller epics."
       },
       {
         "user_story_id": "US-5",
-        "independent": true,
-        "negotiable": true,
-        "valuable": true,
-        "estimatable": true,
-        "small": true,
-        "testable": true,
-        "score": 9.5,
-        "comments": "Excellent candidate for a standalone feature sprint."
-      },
-      {
-        "user_story_id": "US-6",
         "independent": false,
         "negotiable": true,
         "valuable": true,
@@ -308,7 +271,18 @@
         "small": true,
         "testable": true,
         "score": 8,
-        "comments": "Dependent on data ingestion, but logic is straightforward."
+        "comments": "Depends on the completion logic of US-3."
+      },
+      {
+        "user_story_id": "US-6",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": false,
+        "small": false,
+        "testable": true,
+        "score": 6,
+        "comments": "High R&D risk; depends on data accumulation from other stories."
       }
     ]
   }

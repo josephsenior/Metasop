@@ -48,6 +48,10 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
+import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
+import { Share2, MessageSquare, Keyboard } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+
 export const dynamic = 'force-dynamic'
 
 export default function CreateDiagramPage() {
@@ -80,6 +84,8 @@ export default function CreateDiagramPage() {
 
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
+  const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
+  const [isChatOpen, setIsChatOpen] = useState(true)
   const [currentDiagram, setCurrentDiagram] = useState<{
     nodes: DiagramNode[]
     edges: DiagramEdge[]
@@ -898,181 +904,219 @@ export default function CreateDiagramPage() {
               </div>
             )}
 
-            {/* Main Content Area - with padding bottom for chat input */}
-            <div className="flex-1 overflow-hidden" style={{ paddingBottom: '100px' }}>
-              {currentDiagram && currentDiagram.metadata?.metasop_artifacts ? (
-                <div className="h-full" style={{ marginTop: isGenerating && generationSteps.length > 0 ? '180px' : '0' }}>
-                  <ArtifactsPanel
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+              <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
+                <div className="flex-1 overflow-hidden" style={{ paddingBottom: currentDiagram ? '0' : '100px' }}>
+                  {currentDiagram && currentDiagram.metadata?.metasop_artifacts ? (
+                    <div className="h-full" style={{ marginTop: isGenerating && generationSteps.length > 0 ? '180px' : '0' }}>
+                      <ArtifactsPanel
+                        diagramId={currentDiagram.id || ""}
+                        artifacts={currentDiagram.metadata.metasop_artifacts}
+                        steps={currentDiagram.metadata.metasop_steps}
+                        className="h-full"
+                        activeTab={activeArtifactTab}
+                        onTabChange={setActiveArtifactTab}
+                      />
+                    </div>
+                  ) : currentDiagram && (!currentDiagram.nodes || currentDiagram.nodes.length === 0) ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center space-y-5 max-w-lg px-6"
+                      >
+                        <div className="w-20 h-20 mx-auto rounded-2xl bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30">
+                          <AlertCircle className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-foreground mb-2">
+                            Diagram Generated but Empty
+                          </h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed mb-1">
+                            The diagram was created but no nodes were generated. This might happen if the prompt was too vague or the AI couldn't extract enough information.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            💡 Try being more specific about features, technologies, or architecture patterns.
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                          <Button
+                            onClick={() => handleGenerate()}
+                            variant="default"
+                            size="lg"
+                            className="gap-2"
+                          >
+                            <Play className="h-4 w-4" />
+                            Try Again
+                          </Button>
+                          <Button
+                            onClick={() => setIsLeftPanelOpen(true)}
+                            variant="outline"
+                            size="lg"
+                            className="gap-2"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Edit Prompt
+                          </Button>
+                        </div>
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-background">
+                      <div className="text-center space-y-6 max-w-lg px-6">
+                        <motion.div
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.3 }}
+                          className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center border border-blue-600/30"
+                        >
+                          <Sparkles className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                        </motion.div>
+                        <motion.div
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.1, duration: 0.3 }}
+                        >
+                          <h3 className="text-2xl font-bold text-foreground mb-3">
+                            Create Your Architecture Diagram
+                          </h3>
+                          <p className="text-base text-muted-foreground leading-relaxed mb-2">
+                            Describe your application in plain English, and our AI-powered multi-agent system will generate a comprehensive architecture diagram for you.
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            ✨ No technical knowledge required • ⚡ Generated in minutes
+                          </p>
+                        </motion.div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Simple Input Area - Only show if NO diagram or left panel open */}
+                {(!currentDiagram || isLeftPanelOpen) && (
+                  <div className="absolute bottom-0 left-0 right-0 z-40 p-4">
+                    <div className="max-w-4xl mx-auto">
+                      <div className="relative">
+                        <Textarea
+                          id="prompt"
+                          placeholder="Describe your application..."
+                          value={prompt}
+                          onChange={(e) => setPrompt(e.target.value)}
+                          className="min-h-[50px] max-h-[150px] resize-none text-sm pl-60 sm:pl-72 pr-40 sm:pr-48 shadow-xl"
+                          disabled={isGenerating}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              if (prompt.trim().length >= 20 && !isGenerating) {
+                                handleGenerate()
+                              }
+                            }
+                          }}
+                        />
+                        {/* Model Selector - Left Side */}
+                        <div className="absolute bottom-2 left-2 z-50 flex items-center bg-background/50 backdrop-blur-md border border-white/10 rounded-lg shadow-sm hover:bg-white/5 transition-all duration-300 divide-x divide-white/10">
+                          {/* Model Selector Section */}
+                          <Select value={selectedModel} onValueChange={setSelectedModel}>
+                            <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 rounded-none rounded-l-lg px-3">
+                              <SelectValue placeholder="Model" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
+                              <SelectItem value="gemini-3-flash-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                                <div className="flex items-center gap-2">
+                                  <Zap className="h-3 w-3 text-amber-500" />
+                                  <span>Gemini 3 Flash</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="gemini-3-pro-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                                <div className="flex items-center gap-2">
+                                  <Cpu className="h-3 w-3 text-purple-500" />
+                                  <span>Gemini 3 Pro</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {/* Thinking Toggle Section */}
+                          <div className="flex items-center gap-2 px-3 h-8">
+                            <Switch
+                              id="reasoning-mode"
+                              checked={isReasoningEnabled}
+                              onCheckedChange={setIsReasoningEnabled}
+                              className="scale-75 data-[state=checked]:bg-blue-600"
+                            />
+                            <Label
+                              htmlFor="reasoning-mode"
+                              className="text-[10px] font-medium text-muted-foreground cursor-pointer select-none flex items-center gap-1.5"
+                            >
+                              Thinking
+                              {isReasoningEnabled && (
+                                <Brain className="h-3 w-3 text-blue-500 animate-pulse" />
+                              )}
+                            </Label>
+                          </div>
+                        </div>
+
+                        <div className="absolute bottom-2 right-2 flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground mr-1">
+                            {prompt.length}/20
+                          </span>
+                          <Button
+                            onClick={handleGenerate}
+                            disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
+                            size="sm"
+                            className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-xs">Generating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4" />
+                                <span className="text-xs">Generate</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Chat Panel */}
+              {currentDiagram && currentDiagram.metadata?.metasop_artifacts && isChatOpen && (
+                <div className="hidden lg:block w-96 shrink-0 border-l border-border bg-card/50 backdrop-blur-sm h-full relative z-40">
+                  <ProjectChatPanel
                     diagramId={currentDiagram.id || ""}
                     artifacts={currentDiagram.metadata.metasop_artifacts}
-                    steps={currentDiagram.metadata.metasop_steps}
-                    className="h-full"
+                    activeTab={activeArtifactTab}
                   />
-                </div>
-              ) : currentDiagram && (!currentDiagram.nodes || currentDiagram.nodes.length === 0) ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-background">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center space-y-5 max-w-lg px-6"
-                  >
-                    <div className="w-20 h-20 mx-auto rounded-2xl bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30">
-                      <AlertCircle className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground mb-2">
-                        Diagram Generated but Empty
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-                        The diagram was created but no nodes were generated. This might happen if the prompt was too vague or the AI couldn't extract enough information.
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        💡 Try being more specific about features, technologies, or architecture patterns.
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                      <Button
-                        onClick={() => handleGenerate()}
-                        variant="default"
-                        size="lg"
-                        className="gap-2"
-                      >
-                        <Play className="h-4 w-4" />
-                        Try Again
-                      </Button>
-                      <Button
-                        onClick={() => setIsLeftPanelOpen(true)}
-                        variant="outline"
-                        size="lg"
-                        className="gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Edit Prompt
-                      </Button>
-                    </div>
-                  </motion.div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center bg-background">
-                  <div className="text-center space-y-6 max-w-lg px-6">
-                    <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-20 h-20 mx-auto rounded-2xl bg-linear-to-br from-blue-600/20 to-purple-600/20 flex items-center justify-center border border-blue-600/30"
-                    >
-                      <Sparkles className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-                    </motion.div>
-                    <motion.div
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
-                    >
-                      <h3 className="text-2xl font-bold text-foreground mb-3">
-                        Create Your Architecture Diagram
-                      </h3>
-                      <p className="text-base text-muted-foreground leading-relaxed mb-2">
-                        Describe your application in plain English, and our AI-powered multi-agent system will generate a comprehensive architecture diagram for you.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        ✨ No technical knowledge required • ⚡ Generated in minutes
-                      </p>
-                    </motion.div>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* Simple Input Area - Fixed at Bottom */}
-            <div className="absolute bottom-0 left-0 right-0 z-40 p-4">
-              <div className="max-w-4xl mx-auto">
-                <div className="relative">
-                  <Textarea
-                    id="prompt"
-                    placeholder="Describe your application..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="min-h-[50px] max-h-[150px] resize-none text-sm pl-60 sm:pl-72 pr-40 sm:pr-48"
-                    disabled={isGenerating}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        if (prompt.trim().length >= 20 && !isGenerating) {
-                          handleGenerate()
-                        }
-                      }
-                    }}
-                  />
-                  {/* Model Selector - Left Side */}
-                  <div className="absolute bottom-2 left-2 z-50 flex items-center bg-background/50 backdrop-blur-md border border-white/10 rounded-lg shadow-sm hover:bg-white/5 transition-all duration-300 divide-x divide-white/10">
-                    {/* Model Selector Section */}
-                    <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 rounded-none rounded-l-lg px-3">
-                        <SelectValue placeholder="Model" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
-                        <SelectItem value="gemini-3-flash-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
-                          <div className="flex items-center gap-2">
-                            <Zap className="h-3 w-3 text-amber-500" />
-                            <span>Gemini 3 Flash</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="gemini-3-pro-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
-                          <div className="flex items-center gap-2">
-                            <Cpu className="h-3 w-3 text-purple-500" />
-                            <span>Gemini 3 Pro</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {/* Thinking Toggle Section */}
-                    <div className="flex items-center gap-2 px-3 h-8">
-                      <Switch
-                        id="reasoning-mode"
-                        checked={isReasoningEnabled}
-                        onCheckedChange={setIsReasoningEnabled}
-                        className="scale-75 data-[state=checked]:bg-blue-600"
-                      />
-                      <Label
-                        htmlFor="reasoning-mode"
-                        className="text-[10px] font-medium text-muted-foreground cursor-pointer select-none flex items-center gap-1.5"
-                      >
-                        Thinking
-                        {isReasoningEnabled && (
-                          <Brain className="h-3 w-3 text-blue-500 animate-pulse" />
-                        )}
-                      </Label>
-                    </div>
-                  </div>
-
-
-                  <div className="absolute bottom-2 right-2 flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground mr-1">
-                      {prompt.length}/20
-                    </span>
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
-                      size="sm"
-                      className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-xs">Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4" />
-                          <span className="text-xs">Generate</span>
-                        </>
-                      )}
+            {/* Mobile Chat Sheet */}
+            {currentDiagram && currentDiagram.metadata?.metasop_artifacts && (
+              <div className="lg:hidden fixed bottom-6 right-6 z-50">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
+                      <MessageSquare className="h-6 w-6" />
                     </Button>
-                  </div>
-                </div>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+                    <ProjectChatPanel
+                      diagramId={currentDiagram.id || ""}
+                      artifacts={currentDiagram.metadata.metasop_artifacts}
+                      activeTab={activeArtifactTab}
+                    />
+                  </SheetContent>
+                </Sheet>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

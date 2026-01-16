@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Kbd } from "@/components/ui/kbd"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export default function DiagramViewPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -43,6 +44,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const [isLoading, setIsLoading] = useState(true)
   const [isGuestDiagram, setIsGuestDiagram] = useState(false)
   const [compactView, setCompactView] = useState(false)
+  const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
   const diagramViewerRef = useRef<HTMLDivElement>(null)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
@@ -366,91 +368,128 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {/* Diagram Viewer */}
-          <Tabs defaultValue="view" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="view" className="gap-2">
-                <Maximize2 className="h-4 w-4" />
-                View
-              </TabsTrigger>
-              <TabsTrigger value="info" className="gap-2">
-                <Info className="h-4 w-4" />
-                Information
-              </TabsTrigger>
-              <TabsTrigger value="json" className="gap-2">
-                <Code2 className="h-4 w-4" />
-                JSON
-              </TabsTrigger>
-            </TabsList>
+          {/* Main Content Area */}
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex-1 w-full min-w-0">
+              <Tabs defaultValue="view" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="view" className="gap-2">
+                    <Maximize2 className="h-4 w-4" />
+                    View
+                  </TabsTrigger>
+                  <TabsTrigger value="info" className="gap-2">
+                    <Info className="h-4 w-4" />
+                    Information
+                  </TabsTrigger>
+                  <TabsTrigger value="json" className="gap-2">
+                    <Code2 className="h-4 w-4" />
+                    JSON
+                  </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="view" className="space-y-4">
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-0">
-                  <div className="w-full min-h-[600px] h-[70vh] max-h-[1000px] rounded-lg overflow-hidden">
-                    {diagram.metadata?.metasop_artifacts ? (
-                      <ArtifactsPanel
-                        diagramId={diagram.id}
-                        artifacts={diagram.metadata.metasop_artifacts}
-                        className="h-full"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
-                        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                        <p>Loading agent artifacts...</p>
+                <TabsContent value="view" className="space-y-4">
+                  <Card className="border-border bg-card/80 backdrop-blur-sm overflow-hidden">
+                    <CardContent className="p-0 h-[70vh] min-h-[600px] max-h-[1000px]">
+                      <div className="w-full h-full">
+                        {diagram.metadata?.metasop_artifacts ? (
+                          <ArtifactsPanel
+                            diagramId={diagram.id}
+                            artifacts={diagram.metadata.metasop_artifacts}
+                            className="h-full"
+                            activeTab={activeArtifactTab}
+                            onTabChange={setActiveArtifactTab}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                            <p>Loading agent artifacts...</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-            <TabsContent value="info">
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle>Diagram Information</CardTitle>
-                  <CardDescription>Details about this architecture diagram</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Status</p>
-                      <StatusBadge status={diagram.status as "completed" | "processing" | "failed" | "pending"} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Components</p>
-                      <p className="text-sm text-muted-foreground">{diagram.nodes.length} nodes</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Connections</p>
-                      <p className="text-sm text-muted-foreground">{diagram.edges.length} edges</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Created</p>
-                      <p className="text-sm text-muted-foreground">{new Date(diagram.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Last Updated</p>
-                      <p className="text-sm text-muted-foreground">{new Date(diagram.updated_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                <TabsContent value="info">
+                  <Card className="border-border bg-card/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Diagram Information</CardTitle>
+                      <CardDescription>Details about this architecture diagram</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Status</p>
+                          <StatusBadge status={diagram.status as "completed" | "processing" | "failed" | "pending"} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Components</p>
+                          <p className="text-sm text-muted-foreground">{diagram.nodes.length} nodes</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Connections</p>
+                          <p className="text-sm text-muted-foreground">{diagram.edges.length} edges</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Created</p>
+                          <p className="text-sm text-muted-foreground">{new Date(diagram.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Last Updated</p>
+                          <p className="text-sm text-muted-foreground">{new Date(diagram.updated_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-            <TabsContent value="json">
-              <Card className="border-border bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle>Diagram JSON</CardTitle>
-                  <CardDescription>Raw JSON representation of the diagram</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <pre className="p-4 rounded-lg bg-muted overflow-auto text-sm max-h-[600px]">
-                    {JSON.stringify(diagram, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                <TabsContent value="json">
+                  <Card className="border-border bg-card/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Diagram JSON</CardTitle>
+                      <CardDescription>Raw JSON representation of the diagram</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <pre className="p-4 rounded-lg bg-muted overflow-auto text-sm max-h-[600px]">
+                        {JSON.stringify(diagram, null, 2)}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Desktop Chat Panel */}
+             {diagram.metadata?.metasop_artifacts && isChatOpen && (
+               <div className="hidden lg:block w-96 shrink-0 h-[calc(70vh+48px)] min-h-[648px] max-h-[1048px] sticky top-8">
+                <ProjectChatPanel
+                  diagramId={diagram.id}
+                  artifacts={diagram.metadata.metasop_artifacts}
+                  activeTab={activeArtifactTab}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Chat Sheet */}
+          {diagram.metadata?.metasop_artifacts && (
+            <div className="lg:hidden fixed bottom-6 right-6 z-50">
+              <Sheet>
+                <SheetTrigger asChild>
+                   <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
+                     <MessageSquare className="h-6 w-6" />
+                   </Button>
+                 </SheetTrigger>
+                <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+                  <ProjectChatPanel
+                    diagramId={diagram.id}
+                    artifacts={diagram.metadata.metasop_artifacts}
+                    activeTab={activeArtifactTab}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          )}
 
         </main>
       </div>

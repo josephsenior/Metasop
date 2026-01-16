@@ -2,11 +2,11 @@
   "step_id": "engineer_impl",
   "role": "Engineer",
   "content": {
-    "summary": "A high-performance crypto trading terminal using a NestJS microservices backend and a React real-time dashboard. The system separates heavy data ingestion (CCXT) from user-facing APIs using Redis queues.",
-    "description": "CryptoPulse is architected to handle the specific challenges of crypto portfolio tracking: high data fragmentation and real-time requirements. The solution uses a monorepo containing three main artifacts: a NestJS API Gateway for user management and serving data, a dedicated NestJS Worker service for handling heavy CCXT exchange interactions, and a React frontend optimized for data density. Data persistence is handled by PostgreSQL with TimescaleDB for efficient time-series storage, while Redis serves as the backbone for job queues and real-time price streaming.",
-    "artifact_path": "cryptopulse-monorepo",
+    "summary": "EduPulse is a high-performance, AI-enhanced e-learning platform designed to provide a seamless educational experience for both learners and instructors.",
+    "description": "The platform utilizes a microservices architecture to ensure maximum scalability and reliability. It features an AI recommendation engine, a robust video delivery network using HLS, and a comprehensive analytics suite. Built with NestJS, Next.js, and FastAPI, it is designed to handle 50,000+ concurrent users.",
+    "artifact_path": "edupulse-monorepo",
     "file_structure": {
-      "name": "cryptopulse-monorepo",
+      "name": "edupulse",
       "type": "directory",
       "children": [
         {
@@ -14,359 +14,104 @@
           "type": "directory"
         },
         {
-          "name": "api",
+          "name": "services",
           "type": "directory"
-        },
-        {
-          "name": "src",
-          "type": "directory"
-        },
-        {
-          "name": "config",
-          "type": "directory"
-        },
-        {
-          "name": "database.config.ts",
-          "type": "file"
-        },
-        {
-          "name": "redis.config.ts",
-          "type": "file"
-        },
-        {
-          "name": "modules",
-          "type": "directory"
-        },
-        {
-          "name": "auth",
-          "type": "directory"
-        },
-        {
-          "name": "auth.controller.ts",
-          "type": "file"
-        },
-        {
-          "name": "auth.service.ts",
-          "type": "file"
-        },
-        {
-          "name": "jwt.strategy.ts",
-          "type": "file"
-        },
-        {
-          "name": "portfolio",
-          "type": "directory"
-        },
-        {
-          "name": "portfolio.controller.ts",
-          "type": "file"
-        },
-        {
-          "name": "portfolio.service.ts",
-          "type": "file"
-        },
-        {
-          "name": "keys",
-          "type": "directory"
-        },
-        {
-          "name": "keys.controller.ts",
-          "type": "file"
-        },
-        {
-          "name": "keys.service.ts",
-          "type": "file"
-        },
-        {
-          "name": "encryption.util.ts",
-          "type": "file"
-        },
-        {
-          "name": "market-stream",
-          "type": "directory"
-        },
-        {
-          "name": "market.gateway.ts",
-          "type": "file"
-        },
-        {
-          "name": "app.module.ts",
-          "type": "file"
-        },
-        {
-          "name": "main.ts",
-          "type": "file"
-        },
-        {
-          "name": "ingestion-worker",
-          "type": "directory"
-        },
-        {
-          "name": "src",
-          "type": "directory"
-        },
-        {
-          "name": "processors",
-          "type": "directory"
-        },
-        {
-          "name": "sync-portfolio.processor.ts",
-          "type": "file"
-        },
-        {
-          "name": "sync-history.processor.ts",
-          "type": "file"
-        },
-        {
-          "name": "adapters",
-          "type": "directory"
-        },
-        {
-          "name": "ccxt.service.ts",
-          "type": "file"
-        },
-        {
-          "name": "worker.module.ts",
-          "type": "file"
-        },
-        {
-          "name": "main.ts",
-          "type": "file"
-        },
-        {
-          "name": "web",
-          "type": "directory"
-        },
-        {
-          "name": "src",
-          "type": "directory"
-        },
-        {
-          "name": "assets",
-          "type": "directory"
-        },
-        {
-          "name": "components",
-          "type": "directory"
-        },
-        {
-          "name": "charts",
-          "type": "directory"
-        },
-        {
-          "name": "TradingViewChart.tsx",
-          "type": "file"
-        },
-        {
-          "name": "dashboard",
-          "type": "directory"
-        },
-        {
-          "name": "PortfolioSummary.tsx",
-          "type": "file"
-        },
-        {
-          "name": "AssetTable.tsx",
-          "type": "file"
-        },
-        {
-          "name": "layout",
-          "type": "directory"
-        },
-        {
-          "name": "Sidebar.tsx",
-          "type": "file"
-        },
-        {
-          "name": "hooks",
-          "type": "directory"
-        },
-        {
-          "name": "useSocket.ts",
-          "type": "file"
-        },
-        {
-          "name": "useAuth.ts",
-          "type": "file"
-        },
-        {
-          "name": "store",
-          "type": "directory"
-        },
-        {
-          "name": "usePortfolioStore.ts",
-          "type": "file"
-        },
-        {
-          "name": "useMarketDataStore.ts",
-          "type": "file"
-        },
-        {
-          "name": "pages",
-          "type": "directory"
-        },
-        {
-          "name": "Dashboard.tsx",
-          "type": "file"
-        },
-        {
-          "name": "Settings.tsx",
-          "type": "file"
-        },
-        {
-          "name": "App.tsx",
-          "type": "file"
-        },
-        {
-          "name": "main.tsx",
-          "type": "file"
         },
         {
           "name": "libs",
           "type": "directory"
         },
         {
-          "name": "shared-types",
+          "name": "infra",
           "type": "directory"
-        },
-        {
-          "name": "src",
-          "type": "directory"
-        },
-        {
-          "name": "index.ts",
-          "type": "file"
-        },
-        {
-          "name": "dto",
-          "type": "directory"
-        },
-        {
-          "name": "trade.dto.ts",
-          "type": "file"
-        },
-        {
-          "name": "docker-compose.yml",
-          "type": "file"
-        },
-        {
-          "name": "package.json",
-          "type": "file"
-        },
-        {
-          "name": "tsconfig.base.json",
-          "type": "file"
         }
       ]
     },
-    "implementation_plan": "# CryptoPulse Implementation Plan\n\n## Phase 1: Infrastructure & Monorepo Setup\n1. **Initialize Monorepo**: Set up a workspace (Nx or Turborepo) to manage `apps/api`, `apps/ingestion-worker`, and `apps/web`.\n2. **Database Provisioning**: Configure `docker-compose.yml` with PostgreSQL (TimescaleDB image) and Redis.\n3. **Shared Libraries**: Create `libs/shared-types` to hold DTOs and interfaces shared between backend and frontend.\n\n## Phase 2: Core Backend (API Service)\n1. **Auth Module**: Implement JWT authentication using Passport.js. Create User entity and migration.\n2. **Key Management**: Implement `KeysModule` with AES-256 encryption. Create endpoints to securely receive and store API keys.\n3. **Database Schema**: Define TypeORM entities for `User`, `ExchangeKey`, `Trade`, and `PortfolioSnapshot`. Enable TimescaleDB hypertables for snapshots.\n\n## Phase 3: Ingestion Engine (Worker Service)\n1. **CCXT Integration**: Create a service wrapper around CCXT to normalize calls across Binance, Coinbase, etc.\n2. **Queue Setup**: Configure BullMQ in both API (producer) and Worker (consumer). Define queues: `sync-balance`, `sync-history`.\n3. **Sync Logic**: Implement the processor to fetch balances, decrypt keys (in memory only), and update the DB. Handle rate limits using CCXT's built-in throttling or a custom Redis limiter.\n\n## Phase 4: Real-Time Data Streaming\n1. **Market Data Service**: Implement a service in the API app that connects to public Exchange WebSockets for price feeds.\n2. **Redis Pub/Sub**: Publish price updates to Redis channels (e.g., `ticker:BTC/USDT`).\n3. **WebSocket Gateway**: Create a NestJS Gateway (`socket.io`) that subscribes to Redis and broadcasts updates to connected frontend clients.\n\n## Phase 5: Frontend Dashboard\n1. **Shell & Auth**: Setup React with Tailwind CSS. Implement Login/Register pages and JWT storage.\n2. **State Management**: Configure Zustand stores. `usePortfolioStore` for user data, `useMarketDataStore` for high-frequency price updates.\n3. **Charts**: Integrate `lightweight-charts`. Create a wrapper component to render candles and overlays.\n4. **Dashboard Widgets**: Build components for Total Balance (donut chart), Recent Trades (table), and Active Alerts.\n\n## Phase 6: Advanced Features & Polish\n1. **PnL Calculation**: Implement the logic to calculate Realized vs Unrealized PnL based on trade history (FIFO method).\n2. **Alerts System**: Implement a background job to check price thresholds against Redis cache and trigger notifications.\n3. **Tax Report**: Create a basic CSV export generator for trade history.\n4. **Security Audit**: Verify encryption at rest and ensure API keys are never sent to the client.",
+    "implementation_plan": "# EduPulse Technical Implementation Roadmap\n\n## Phase 1: Foundation & Identity (Weeks 1-3)\n- **Monorepo Setup**: Initialize Turborepo with NestJS (Backend), Next.js (Frontend), and shared TypeScript configurations.\n- **Identity Provider**: Integrate Auth0 for OIDC/OAuth2. Implement custom login/signup flows with social providers (Google, LinkedIn).\n- **API Gateway**: Deploy a NestJS-based Gateway using `@nestjs/terminus` for health checks and `express-gateway` or custom proxy logic for routing.\n\n## Phase 2: Course Management & Content (Weeks 4-6)\n- **Course Service**: Develop the core CRUD service using NestJS and Prisma ORM. Implement the 'Instructor Dashboard' for curriculum creation.\n- **Database Design**: Set up PostgreSQL with Row Level Security (RLS) to isolate instructor data.\n- **Search Indexing**: Implement a 'Sync Worker' that listens to PostgreSQL changes and updates the Elasticsearch index for real-time discovery.\n\n## Phase 3: Video Engineering Pipeline (Weeks 7-10)\n- **Ingestion**: Create an S3-based upload system with pre-signed URLs for instructors.\n- **Transcoding**: Configure AWS Elemental MediaConvert to trigger on S3 'ObjectCreated' events, generating HLS manifests and multi-bitrate TS files.\n- **Delivery**: Set up CloudFront with Signed Cookies/URLs to protect premium content.\n- **Player Interface**: Build a custom Video.js wrapper in Next.js with HLS support and timestamped note-taking capabilities.\n\n## Phase 4: Commerce & Progress (Weeks 11-13)\n- **Payment Service**: Integrate Stripe Checkout and Webhooks. Implement a 'Purchase' flow that grants course access upon successful payment.\n- **Progress Tracking**: Develop a high-frequency 'Heartbeat' API in Go to handle concurrent progress updates from thousands of active learners.\n- **Analytics**: Aggregate progress data into a 'Student Analytics' dashboard for instructors.\n\n## Phase 5: AI Personalization & Optimization (Weeks 14-16)\n- **AI Service**: Deploy a FastAPI service to process user activity logs. Use a vector database (Pinecone or pgvector) for similarity searches.\n- **Recommendation Engine**: Implement a collaborative filtering model to generate 'Recommended for You' sections.\n- **Performance Tuning**: Optimize Next.js with ISR (Incremental Static Regeneration) for course landing pages and implement Redis caching for API responses.",
     "dependencies": [
-      "@nestjs/core",
-      "@nestjs/common",
-      "@nestjs/platform-socket.io",
-      "@nestjs/typeorm",
-      "@nestjs/passport",
-      "@nestjs/bullmq",
-      "typeorm",
-      "pg",
-      "passport",
-      "passport-jwt",
-      "bcrypt",
-      "ccxt",
-      "bullmq",
-      "ioredis",
-      "socket.io",
-      "class-validator",
-      "react",
-      "react-dom",
-      "zustand",
-      "lightweight-charts",
-      "socket.io-client",
-      "axios",
-      "tailwindcss",
-      "date-fns",
-      "recharts"
+      "@nestjs/core@^10.0.0",
+      "@nestjs/prisma@^0.23.0",
+      "next@^14.0.0",
+      "zustand@^4.4.0",
+      "@tanstack/react-query@^5.0.0",
+      "stripe@^14.0.0",
+      "auth0-js@^9.23.0",
+      "video.js@^8.5.0",
+      "elasticsearch@^8.10.0",
+      "fastapi@^0.104.0",
+      "prisma@^5.5.0",
+      "tailwindcss@^3.3.0",
+      "typescript@^5.2.0"
     ],
     "technical_decisions": [
       {
-        "decision": "Monorepo Structure",
-        "rationale": "Allows sharing of TypeScript interfaces (DTOs) between the API, Worker, and Frontend, ensuring type safety across the entire stack.",
-        "alternatives": "Separate repositories for each service."
+        "decision": "Turborepo Monorepo",
+        "rationale": "Enables shared types and components between the web client and multiple microservices while maintaining independent deployment cycles.",
+        "alternatives": "Polyrepo (too much overhead for shared types)"
       },
       {
-        "decision": "CCXT for Exchange Integration",
-        "rationale": "Reduces the complexity of maintaining 10+ different exchange API implementations. CCXT normalizes responses, saving hundreds of dev hours.",
-        "alternatives": "Custom HTTP wrappers for each exchange."
+        "decision": "Zustand + TanStack Query",
+        "rationale": "Zustand handles lightweight UI state (sidebar, video player controls), while TanStack Query manages complex server-state caching and synchronization.",
+        "alternatives": "Redux Toolkit (too boilerplate-heavy)"
       },
       {
-        "decision": "TimescaleDB",
-        "rationale": "We need relational data (Users, Keys) alongside time-series data (Portfolio Snapshots, Candles). TimescaleDB allows us to use a single Postgres instance for both.",
-        "alternatives": "InfluxDB + PostgreSQL (Two separate DBs to manage)."
+        "decision": "HLS over MP4",
+        "rationale": "Required for adaptive bitrate streaming to satisfy the 'Streaming Reliability' criteria on mobile/4G connections.",
+        "alternatives": "Progressive MP4 (poor performance on slow networks)"
       },
       {
-        "decision": "BullMQ (Redis Queues)",
-        "rationale": "Fetching trade history is slow and rate-limited. Offloading this to a background worker queue prevents the main API from blocking.",
-        "alternatives": "Kafka (Overkill), RabbitMQ."
-      },
-      {
-        "decision": "Zustand for Frontend State",
-        "rationale": "Lightweight and unopinionated. Handles high-frequency updates (like price tickers) better than Context API and with less boilerplate than Redux.",
-        "alternatives": "Redux Toolkit, React Context."
+        "decision": "CQRS with Elasticsearch",
+        "rationale": "Decouples heavy search queries from the primary transactional database, ensuring <500ms search latency.",
+        "alternatives": "PostgreSQL Full-Text Search (doesn't scale as well for complex filters)"
       }
     ],
     "environment_variables": [
       {
         "name": "DATABASE_URL",
-        "description": "Connection string for PostgreSQL/TimescaleDB",
-        "example": "postgres://user:pass@localhost:5432/cryptopulse"
+        "description": "PostgreSQL connection string for the Course Service.",
+        "example": "postgresql://user:password@localhost:5432/edupulse"
       },
       {
-        "name": "REDIS_URL",
-        "description": "Connection string for Redis",
-        "example": "redis://localhost:6379"
+        "name": "AUTH0_DOMAIN",
+        "description": "The domain of the Auth0 tenant for authentication.",
+        "example": "edupulse-prod.auth0.com"
       },
       {
-        "name": "JWT_SECRET",
-        "description": "Secret key for signing JSON Web Tokens",
-        "example": "super_secret_jwt_key_123"
+        "name": "STRIPE_SECRET_KEY",
+        "description": "Secret key for processing payments via Stripe API.",
+        "example": "sk_test_51..."
       },
       {
-        "name": "ENCRYPTION_MASTER_KEY",
-        "description": "32-byte hex string used to encrypt user API keys",
-        "example": "a1b2c3d4..."
-      },
-      {
-        "name": "PORT",
-        "description": "API Server Port",
-        "example": "3000"
+        "name": "AWS_MEDIA_CONVERT_ENDPOINT",
+        "description": "Regional endpoint for AWS Elemental MediaConvert.",
+        "example": "https://abc123xyz.mediaconvert.us-east-1.amazonaws.com"
       }
     ],
     "technical_patterns": [
-      "Microservices (Worker/API split)",
+      "Microservices",
       "Event-Driven Architecture",
-      "Repository Pattern (TypeORM)",
-      "Adapter Pattern (CCXT Wrapper)",
-      "Envelope Encryption"
+      "CQRS",
+      "BFF (Backend for Frontend)",
+      "Repository Pattern",
+      "Dependency Injection"
     ],
     "state_management": {
-      "tool": "Zustand",
-      "strategy": "Split stores: 'UserStore' for persistent auth/settings, 'PortfolioStore' for async data fetching, and 'MarketStore' for ephemeral high-frequency WebSocket updates."
+      "tool": "Zustand & TanStack Query",
+      "strategy": "Slice pattern for UI state (Zustand) and Cache-first hydration for server data (TanStack Query)."
     },
     "run_results": {
       "setup_commands": [
         "npm install",
-        "docker-compose up -d",
-        "npm run typeorm:migration:run"
+        "npx prisma generate --schema=./services/course-service/prisma/schema.prisma",
+        "docker-compose up -d postgres redis elasticsearch"
       ],
       "test_commands": [
-        "npm run test:api",
-        "npm run test:worker",
-        "npm run test:web"
+        "npm run test",
+        "npm run test:e2e"
       ],
       "dev_commands": [
-        "npm run start:dev:api",
-        "npm run start:dev:worker",
-        "npm run start:dev:web"
+        "npm run dev",
+        "cd services/ai-service && uvicorn main:app --reload"
       ]
     }
   }

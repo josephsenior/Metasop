@@ -2,95 +2,79 @@
   "step_id": "ui_design",
   "role": "UI Designer",
   "content": {
-    "summary": "A high-density, dark-mode-first trading interface designed for professional traders. The UI emphasizes data readability, low-latency updates, and efficient screen real estate usage.",
-    "description": "The CryptoPulse design system is built on a 'Dark Technical' aesthetic, utilizing deep grays and blacks to reduce eye strain during prolonged trading sessions. It features a modular grid layout allowing for a 'Single Pane of Glass' experience. Typography is split between 'Inter' for UI elements and 'JetBrains Mono' for tabular financial data to ensure precise alignment. The color palette relies on semantic coloring (Green/Red) for market movements, with a vibrant Electric Blue for primary actions. Components are designed to be compact, minimizing padding to maximize data density.",
+    "summary": "EduPulse UI Architecture: A high-performance, accessible design system optimized for video-centric learning and AI-driven personalization.",
+    "description": "The EduPulse design system utilizes a 'Modern Professional' aesthetic, balancing deep indigo trust-tones with vibrant violet accents to signify AI capabilities. It prioritizes a 'Focus Mode' for the learning interface and a 'Data-Rich' density for the instructor dashboard. The system is built for high-concurrency responsiveness and WCAG 2.1 AA compliance.",
     "schema_version": "0.8",
     "component_hierarchy": {
       "root": "App",
       "children": [
         {
-          "name": "AuthProvider",
+          "name": "Layout",
+          "props": [
+            "theme",
+            "userRole"
+          ]
+        },
+        {
+          "name": "Navigation",
           "children": [
             {
-              "name": "WebSocketProvider",
+              "name": "SearchBar",
               "props": [
-                "url",
-                "reconnectInterval"
+                "placeholder",
+                "onSearch"
               ]
             },
             {
-              "name": "ThemeContext",
+              "name": "UserMenu",
               "props": [
-                "defaultTheme"
-              ]
-            },
-            {
-              "name": "Router",
-              "props": [
-                "routes"
-              ]
-            },
-            {
-              "name": "MainLayout",
-              "props": [
-                "userProfile",
+                "avatarUrl",
                 "notifications"
               ]
-            },
+            }
+          ]
+        },
+        {
+          "name": "CoursePlayer",
+          "children": [
             {
-              "name": "SidebarNavigation",
+              "name": "VideoEngine",
               "props": [
-                "collapsed",
-                "menuItems"
+                "hlsSource",
+                "playbackRate"
               ]
             },
             {
-              "name": "TopBar",
+              "name": "NoteSidebar",
               "props": [
-                "breadcrumbs",
-                "globalSearch"
+                "activeTimestamp",
+                "notes"
               ]
             },
             {
-              "name": "DashboardView",
+              "name": "CurriculumAccordion",
               "props": [
-                "layoutConfig"
+                "sections",
+                "currentLectureId"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "InstructorDashboard",
+          "children": [
+            {
+              "name": "AnalyticsOverview",
+              "props": [
+                "revenueData",
+                "studentCount"
               ]
             },
             {
-              "name": "PortfolioSummaryWidget",
+              "name": "CourseBuilder",
               "props": [
-                "totalBalance",
-                "pnl24h",
-                "isLoading"
-              ]
-            },
-            {
-              "name": "AssetAllocationChart",
-              "props": [
-                "data",
-                "type"
-              ]
-            },
-            {
-              "name": "RecentTradesTable",
-              "props": [
-                "trades",
-                "limit"
-              ]
-            },
-            {
-              "name": "ExchangeConnectionModal",
-              "props": [
-                "isOpen",
-                "supportedExchanges"
-              ]
-            },
-            {
-              "name": "ToastNotificationContainer",
-              "props": [
-                "position",
-                "autoClose"
+                "draftId",
+                "onSave"
               ]
             }
           ]
@@ -99,33 +83,33 @@
     },
     "design_tokens": {
       "colors": {
-        "accent": "#3B82F6",
-        "background": "#0B0E11",
+        "accent": "#8B5CF6",
+        "background": "#F9FAFB",
         "error": "#EF4444",
-        "primary": "#2563EB",
-        "secondary": "#64748B",
-        "success": "#10B981",
-        "surface": "#151A1F",
-        "text": "#F3F4F6",
+        "primary": "#4F46E5",
+        "secondary": "#10B981",
+        "success": "#22C55E",
+        "surface": "#FFFFFF",
+        "text": "#111827",
         "warning": "#F59E0B"
       },
       "spacing": {
-        "2xl": "48px",
-        "lg": "24px",
-        "md": "16px",
-        "sm": "12px",
-        "xl": "32px",
-        "xs": "8px"
+        "2xl": "3rem",
+        "lg": "1.5rem",
+        "md": "1rem",
+        "sm": "0.5rem",
+        "xl": "2rem",
+        "xs": "0.25rem"
       },
       "typography": {
         "fontFamily": "Inter, system-ui, sans-serif",
         "fontSize": {
-          "2xl": "24px",
-          "base": "16px",
-          "lg": "18px",
-          "sm": "14px",
-          "xl": "20px",
-          "xs": "12px"
+          "2xl": "1.5rem",
+          "base": "1rem",
+          "lg": "1.125rem",
+          "sm": "0.875rem",
+          "xl": "1.25rem",
+          "xs": "0.75rem"
         },
         "fontWeight": {
           "bold": "700",
@@ -134,93 +118,92 @@
           "normal": "400",
           "semibold": "600"
         },
-        "headingFont": "Inter, sans-serif"
+        "headingFont": "Montserrat, sans-serif"
       },
       "borderRadius": {
         "full": "9999px",
-        "lg": "8px",
-        "md": "6px",
+        "lg": "0.75rem",
+        "md": "0.5rem",
         "none": "0",
-        "sm": "4px"
+        "sm": "0.25rem"
       },
       "shadows": {
         "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-        "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-        "md": "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
-        "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.5)"
+        "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+        "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
       }
     },
     "ui_patterns": [
-      "Dashboard Grid Layout",
-      "Real-time Data Tickers",
-      "Modal Wizards (Exchange Connection)",
-      "Infinite Scroll Tables",
       "Skeleton Loading States",
-      "Toast Notifications for Alerts",
-      "Master-Detail Views"
+      "Optimistic UI Updates for Note-taking",
+      "Multi-step Checkout Flow",
+      "Contextual AI Recommendations",
+      "Sticky Video Player with Picture-in-Picture",
+      "Drag-and-Drop Curriculum Reordering"
     ],
     "component_specs": [
       {
-        "name": "MetricCard",
-        "description": "A compact card displaying a single key metric with a trend indicator.",
+        "name": "VideoPlayer",
+        "description": "Custom HLS-capable video player with timestamped note integration.",
         "props": {
-          "label": "string",
-          "value": "string|number",
-          "trend": "number",
-          "trendType": "'percent'|'absolute'",
-          "loading": "boolean"
+          "src": "string",
+          "poster": "string",
+          "onProgress": "function",
+          "markers": "array",
+          "autoPlay": "boolean"
         },
         "states": [
-          "loading",
-          "positive-trend",
-          "negative-trend",
-          "neutral"
+          "playing",
+          "paused",
+          "buffering",
+          "seeking",
+          "error"
         ],
         "variants": [
-          "primary",
-          "secondary",
+          "standard",
+          "mini-player",
+          "full-screen"
+        ]
+      },
+      {
+        "name": "CourseCard",
+        "description": "Primary discovery component for course listings.",
+        "props": {
+          "title": "string",
+          "instructor": "string",
+          "rating": "number",
+          "price": "number",
+          "badge": "string",
+          "thumbnail": "string"
+        },
+        "states": [
+          "default",
+          "hover",
+          "loading"
+        ],
+        "variants": [
+          "grid",
+          "list",
           "compact"
         ]
       },
       {
-        "name": "ExchangeConnector",
-        "description": "A form component for inputting API keys with validation feedback.",
+        "name": "ProgressBar",
+        "description": "Visual indicator for course completion or video progress.",
         "props": {
-          "exchangeName": "string",
-          "logoUrl": "string",
-          "onSubmit": "function",
-          "isValidating": "boolean",
-          "error": "string"
+          "value": "number",
+          "max": "number",
+          "color": "string",
+          "showLabel": "boolean"
         },
         "states": [
-          "idle",
-          "validating",
-          "success",
-          "error"
+          "active",
+          "completed"
         ],
         "variants": [
-          "modal",
-          "inline"
-        ]
-      },
-      {
-        "name": "PriceTicker",
-        "description": "A real-time updating text component for asset prices.",
-        "props": {
-          "symbol": "string",
-          "price": "number",
-          "previousPrice": "number",
-          "currency": "string"
-        },
-        "states": [
-          "flash-up",
-          "flash-down",
-          "stable"
-        ],
-        "variants": [
-          "large",
-          "table-cell",
-          "header"
+          "linear",
+          "circular"
         ]
       }
     ],
@@ -234,15 +217,16 @@
     "accessibility": {
       "aria_labels": true,
       "checklist": [
-        "Ensure sufficient color contrast for text on dark backgrounds (4.5:1)",
-        "Provide alternative text for trend icons (up/down arrows)",
-        "Support keyboard navigation for grid widgets",
-        "Use aria-live regions for real-time price updates"
+        "Color contrast ratio >= 4.5:1",
+        "Keyboard focus visible on all interactive elements",
+        "Screen reader announcements for dynamic content (AI suggestions)",
+        "Alt text for all course thumbnails",
+        "Captions and transcripts for all video content"
       ],
       "focus_indicators": true,
       "guidelines": [
-        "WCAG 2.1 AA",
-        "WAI-ARIA 1.2"
+        "WCAG 2.1 Level AA",
+        "WAI-ARIA Authoring Practices"
       ],
       "keyboard_navigation": true,
       "screen_reader_support": true,
@@ -253,84 +237,74 @@
       "atoms": [
         "Button",
         "Input",
-        "Label",
         "Badge",
-        "Spinner",
         "Icon",
-        "Toggle",
-        "Divider"
+        "Avatar",
+        "Tooltip",
+        "Checkbox"
       ],
       "molecules": [
-        "FormField",
-        "SearchInput",
-        "AlertItem",
-        "TickerRow",
-        "StatItem",
-        "TabGroup"
+        "SearchBar",
+        "RatingStars",
+        "NotificationBell",
+        "NoteItem",
+        "Breadcrumb",
+        "FilterChip"
       ],
       "organisms": [
-        "NavBar",
-        "SideBar",
-        "ExchangeCard",
-        "TradeHistoryTable",
-        "ChartContainer",
-        "AlertsPanel"
+        "CourseGrid",
+        "VideoPlayerControls",
+        "InstructorSidebar",
+        "ReviewSection",
+        "CheckoutForm"
       ]
     },
     "website_layout": {
       "pages": [
         {
-          "name": "Dashboard",
-          "route": "/dashboard",
+          "name": "Home",
+          "route": "/home",
           "sections": [
-            "Portfolio Summary",
-            "Asset Allocation",
-            "Recent Activity",
-            "Active Alerts"
+            "Hero",
+            "FeaturedCourses",
+            "Categories",
+            "Testimonials"
           ]
         },
         {
-          "name": "Portfolio",
-          "route": "/portfolio",
+          "name": "Course Catalog",
+          "route": "/courses",
           "sections": [
-            "Asset List",
-            "Performance Charts",
-            "Exchange Breakdown"
+            "FilterSidebar",
+            "CourseResults",
+            "Pagination"
           ]
         },
         {
-          "name": "Analytics",
-          "route": "/analytics",
+          "name": "Learning Interface",
+          "route": "/learn/:courseId",
           "sections": [
-            "Technical Chart",
-            "Indicators Panel",
-            "Order Book"
+            "VideoPlayer",
+            "CurriculumSidebar",
+            "Tabs(Notes, Resources, Q&A)"
           ]
         },
         {
-          "name": "Journal",
-          "route": "/journal",
+          "name": "Instructor Dashboard",
+          "route": "/instructor",
           "sections": [
-            "Trade Log",
-            "Notes Editor",
-            "Performance Tags"
+            "StatsOverview",
+            "CourseManagementList",
+            "RevenueChart"
           ]
         },
         {
-          "name": "Settings",
-          "route": "/settings",
+          "name": "Checkout",
+          "route": "/checkout",
           "sections": [
-            "API Keys Management",
-            "Notification Preferences",
-            "Security Settings"
-          ]
-        },
-        {
-          "name": "Login",
-          "route": "/login",
-          "sections": [
-            "Auth Form",
-            "Feature Highlights"
+            "OrderSummary",
+            "PaymentGateway",
+            "Confirmation"
           ]
         }
       ]
