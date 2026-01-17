@@ -51,3 +51,14 @@ export const AskQuestionSchema = z.object({
 export function validateAskQuestionRequest(data: any) {
     return AskQuestionSchema.parse(data);
 }
+
+export const CreateDocumentSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    type: z.string(),
+    content: z.string().min(1, "Content is required"),
+    url: z.string().optional(),
+});
+
+export function validateCreateDocumentRequest(data: any) {
+    return CreateDocumentSchema.parse(data);
+}

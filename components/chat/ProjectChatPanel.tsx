@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { VoiceInputButton } from "@/components/ui/voice-input-button"
 import { 
     Bot, 
     User, 
@@ -29,6 +30,7 @@ interface Message {
 interface ProjectChatPanelProps {
     diagramId: string
     artifacts: any
+    documents?: any[]
     activeTab?: string
     onRefineComplete?: (result?: any) => void
 }
@@ -36,6 +38,7 @@ interface ProjectChatPanelProps {
 export function ProjectChatPanel({ 
     diagramId, 
     artifacts, 
+    documents = [],
     activeTab = "all",
     onRefineComplete 
 }: ProjectChatPanelProps) {
@@ -118,11 +121,12 @@ export function ProjectChatPanel({
     }
 
     const handleQuestion = async (question: string) => {
-        // Generate context from artifacts
+        // Generate context from artifacts and documents
         // If we have a cacheId, we don't need to send the full context markdown again
         const includeSteps = getOptimizedSteps(activeTab);
         const contextMarkdown = cacheId ? "CACHED" : generateAgentContextMarkdown({
-            metadata: { metasop_artifacts: artifacts }
+            metadata: { metasop_artifacts: artifacts },
+            documents: documents
         }, { includeSteps })
 
         try {
@@ -311,21 +315,28 @@ export function ProjectChatPanel({
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Ask a question or request a change..."
-                        className="pr-10 h-11 bg-background border-border/50 focus-visible:ring-blue-500/30 text-xs rounded-xl shadow-inner"
+                        className="pr-24 h-11 bg-background border-border/50 focus-visible:ring-blue-500/30 text-xs rounded-xl shadow-inner"
                         disabled={isLoading || isRefining}
                     />
-                    <Button 
-                        type="submit" 
-                        size="icon" 
-                        disabled={!input.trim() || isLoading || isRefining}
-                        className="absolute right-1 top-1 h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md"
-                    >
-                        {isLoading || isRefining ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Send className="h-4 w-4" />
-                        )}
-                    </Button>
+                    <div className="absolute right-1 top-1 flex items-center gap-1">
+                        <VoiceInputButton 
+                            onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
+                            disabled={isLoading || isRefining}
+                            className="h-9 w-9"
+                        />
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            disabled={!input.trim() || isLoading || isRefining}
+                            className="h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md"
+                        >
+                            {isLoading || isRefining ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Send className="h-4 w-4" />
+                            )}
+                        </Button>
+                    </div>
                 </form>
                 <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">

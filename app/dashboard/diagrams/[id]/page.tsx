@@ -441,9 +441,11 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                           <ArtifactsPanel
                             diagramId={diagram.id}
                             artifacts={diagram.metadata.metasop_artifacts}
+                            documents={(diagram as any).documents}
                             className="h-full"
                             activeTab={activeArtifactTab}
                             onTabChange={setActiveArtifactTab}
+                            onDocumentAdded={loadDiagram}
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
@@ -511,6 +513,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                 <ProjectChatPanel
                   diagramId={diagram.id}
                   artifacts={diagram.metadata.metasop_artifacts}
+                  documents={(diagram as any).documents}
                   activeTab={activeArtifactTab}
                   onRefineComplete={handleRefineComplete}
                 />
@@ -531,6 +534,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                   <ProjectChatPanel
                     diagramId={diagram.id}
                     artifacts={diagram.metadata.metasop_artifacts}
+                    documents={(diagram as any).documents}
                     activeTab={activeArtifactTab}
                     onRefineComplete={handleRefineComplete}
                   />

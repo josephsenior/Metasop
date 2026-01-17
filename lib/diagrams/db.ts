@@ -8,6 +8,7 @@ function mapToDiagram(d: any): Diagram {
         nodes: d.nodes as any,
         edges: d.edges as any,
         metadata: d.metadata as any,
+        documents: d.documents || [],
         created_at: d.created_at instanceof Date ? d.created_at.toISOString() : d.created_at,
         updated_at: d.updated_at instanceof Date ? d.updated_at.toISOString() : d.updated_at,
     } as Diagram;
@@ -15,10 +16,13 @@ function mapToDiagram(d: any): Diagram {
 
 export const diagramDb = {
     async findById(id: string, userId?: string): Promise<Diagram | null> {
-        const d = await prisma.diagram.findFirst({
+        const d = await (prisma as any).diagram.findFirst({
             where: {
                 id,
                 ...(userId ? { user_id: userId } : {}),
+            },
+            include: {
+                documents: true,
             },
         });
         return mapToDiagram(d);

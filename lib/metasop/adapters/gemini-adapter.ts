@@ -25,20 +25,24 @@ export class GeminiLLMProvider implements LLMProvider {
     const cachedTokens = usage.cachedContentTokenCount || 0;
     const thoughtsTokens = usage.thoughtsTokenCount || 0;
 
-    // Gemini pricing per 1M tokens (as of 2024/2025)
+    // Gemini pricing per 1M tokens (as of 2026)
     // Input: Live prompt tokens
     // Cached: Tokens read from context cache (discounted)
     // Output: Candidate tokens + native thoughts tokens
     const pricing: Record<string, { input: number; output: number; cached: number }> = {
-      'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
       'gemini-3-pro-preview': { input: 1.25, output: 5.0, cached: 0.3125 },
-      'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-2.5-flash-native-audio': { input: 0.1, output: 0.4, cached: 0.025 },
     };
 
     // Extract base model name
-    const isFlash = model.toLowerCase().includes('flash');
     const isPro = model.toLowerCase().includes('pro');
-    const rates = isFlash ? pricing['gemini-3-flash-preview'] : (isPro ? pricing['gemini-3-pro-preview'] : pricing['gemini-3-flash-preview']);
+    const isNativeAudio = model.toLowerCase().includes('native-audio');
+    
+    let rates = pricing['gemini-3-flash-preview'];
+    if (isPro) rates = pricing['gemini-3-pro-preview'];
+    else if (isNativeAudio) rates = pricing['gemini-2.5-flash-native-audio'];
+    else if (model.includes('gemini-3')) rates = pricing['gemini-3-flash-preview'];
 
     // Live prompt tokens = Total prompt - Cached
     const livePromptTokens = Math.max(0, promptTokens - cachedTokens);
@@ -145,6 +149,82 @@ ${prompt}`
       return content;
     } catch (error: any) {
       logger.error("Gemini generation failed", { error: error.message, model });
+      throw error;
+    }
+  }
+
+  /**
+   * Transcribe audio using Gemini 2.5 Flash Native Audio - the dedicated model
+   * for high-fidelity native audio processing.
+   */
+  async transcribe(audioBase64: string, mimeType: string = "audio/webm"): Promise<string> {
+    const startTime = Date.now();
+    // Using dedicated native audio model for best transcription performance
+    const model = "gemini-2.5-flash-native-audio"; 
+
+    try {
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: audioBase64
+                }
+              },
+              {
+                text: `You are a world-class multimodal expert specializing in high-fidelity voice transcription.
+                1. Transcribe the provided audio exactly as spoken with 100% accuracy. 
+                2. Maintain capitalization, punctuation, and formatting for professional readability.
+                3. Expertly handle technical jargon (e.g., 'Prisma', 'Next.js', 'Redis', 'API', 'Docker', 'Zod', 'Tailwind').
+                4. Detect and preserve the speaker's tone and emphasis where appropriate.
+                5. Return ONLY the transcribed text.
+                6. If no speech is detected, return an empty string.
+                
+                No preamble, no markdown, no commentary.`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.0,
+          maxOutputTokens: 2000,
+          responseMimeType: "text/plain",
+        }
+      };
+
+      const response = await fetch(
+        `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+        throw new Error(`Gemini Transcription error: ${error.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (data.usageMetadata) {
+        const cost = this.calculateCost(model, data.usageMetadata);
+        logger.info("Transcription completed", { 
+          latency: Date.now() - startTime, 
+          tokens: data.usageMetadata.totalTokenCount,
+          cost 
+        });
+      }
+
+      return content?.trim() || "";
+    } catch (error: any) {
+      logger.error("Transcription failed", { error: error.message });
       throw error;
     }
   }

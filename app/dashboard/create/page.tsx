@@ -47,6 +47,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { VoiceInputButton } from "@/components/ui/voice-input-button"
 
 import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
 import { MessageSquare } from "lucide-react"
@@ -1058,6 +1059,13 @@ function CreateDiagramContent() {
                         </div>
 
                         <div className="absolute bottom-2 right-2 flex items-center gap-3">
+                          <VoiceInputButton 
+                            onTranscription={(text) => setPrompt(prev => prev + (prev ? " " : "") + text)}
+                            disabled={isGenerating}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/10"
+                          />
                           <span className="text-xs text-muted-foreground mr-1">
                             {prompt.length}/20
                           </span>

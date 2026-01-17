@@ -54,6 +54,7 @@ export * from './toaster';
 export * from './toggle';
 export * from './toggle-group';
 export * from './tooltip';
+export * from './voice-input-button';
 export * from './use-mobile';
 export * from './use-toast';
 export * from './JSONViewer';

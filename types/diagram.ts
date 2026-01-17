@@ -40,6 +40,7 @@ export interface Diagram {
     is_guest?: boolean;
     update_error?: string;
   };
+  documents?: any[];
 }
 
 export interface CreateDiagramRequest {
