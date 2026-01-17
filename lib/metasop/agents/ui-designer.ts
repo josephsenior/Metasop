@@ -3,7 +3,7 @@ import type { UIDesignerBackendArtifact } from "../artifacts/ui-designer/types";
 import { uiDesignerSchema as uiSchema } from "../artifacts/ui-designer/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
+import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 
 /**
  * UI Designer Agent
@@ -18,18 +18,19 @@ export async function uiDesignerAgent(
   logger.info("UI Designer agent starting", { user_request: user_request.substring(0, 100) });
 
   try {
-    let uiPrompt: string;
+    let content: UIDesignerBackendArtifact;
 
     if (shouldUseRefinement(context)) {
-      logger.info("UI Designer agent in REFINEMENT mode");
-      const previousUIContent = context.previous_artifacts?.ui_design?.content as UIDesignerBackendArtifact | undefined;
-      const guidelines = `
-1. **Component Specs**: Add new components or enhance existing ones
-2. **Design Tokens**: Update colors (surface, primary, accent), typography (headingFont), or spacing
-3. **Accessibility**: Enhance WCAG compliance (${previousUIContent?.accessibility?.wcag_level || 'AA'}) or screen reader support
-4. **Atomic Design**: Elaborate on Atoms, Molecules, and Organisms
-5. **Blueprint**: Provide detailed component specs with variants and states`;
-      uiPrompt = buildRefinementPrompt(context, "UI Designer", guidelines);
+      logger.info("UI Designer agent in ATOMIC REFINEMENT mode");
+      content = await refineWithAtomicActions<UIDesignerBackendArtifact>(
+        context,
+        "UI Designer",
+        uiSchema,
+        { 
+          cacheId: context.cacheId,
+          temperature: 0.2 
+        }
+      );
     } else {
       const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
       const archArtifact = context.previous_artifacts?.arch_design?.content as any;
@@ -44,7 +45,7 @@ Core User Stories: ${pmArtifact.user_stories?.slice(0, 3).map((s: any) => s.titl
 Key APIs: ${archArtifact.apis?.slice(0, 3).map((a: any) => a.path).join(", ")}`
         : "";
 
-      uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture for '${user_request}'.
+      const uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture for '${user_request}'.
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize a clean, minimal design system and straightforward component hierarchy. Focus on core usability and fast implementation.
@@ -65,54 +66,50 @@ MISSION OBJECTIVES:
 9. **Visual Design Philosophy**: Define the core aesthetic principles and brand alignment.
 
 Focus on architectural clarity and production-ready detail. Match the complexity of your UI architecture to the inherent needs of the project. Respond with ONLY the JSON object.`;
-    }
 
-    let llmUIDesign: any = null;
+      let llmUIDesign: any = null;
 
-    try {
-      llmUIDesign = await generateStreamingStructuredWithLLM<any>(
-        uiPrompt,
-        uiSchema,
-        (partialEvent) => {
-          if (onProgress) {
-            onProgress(partialEvent);
+      try {
+        llmUIDesign = await generateStreamingStructuredWithLLM<any>(
+          uiPrompt,
+          uiSchema,
+          (partialEvent) => {
+            if (onProgress) {
+              onProgress(partialEvent);
+            }
+          },
+          {
+            reasoning: context.options?.reasoning ?? false,
+            temperature: 0.4, // Higher for design and layout creativity
+            cacheId: context.cacheId,
+            role: "UI Designer",
           }
-        },
-        {
-          reasoning: context.options?.reasoning ?? false,
-          temperature: 0.4, // Higher for design and layout creativity
-          cacheId: context.cacheId,
-          role: "UI Designer",
-        }
-      );
-    } catch (error: any) {
-      logger.error("UI Designer agent LLM call failed", { error: error.message });
-      throw error;
-    }
+        );
+      } catch (error: any) {
+        logger.error("UI Designer agent LLM call failed", { error: error.message });
+        throw error;
+      }
 
-    if (!llmUIDesign) {
-      throw new Error("UI Designer agent failed: No structured data received from LLM");
-    }
+      if (!llmUIDesign) {
+        throw new Error("UI Designer agent failed: No structured data received from LLM");
+      }
 
-    const content: UIDesignerBackendArtifact = {
-      summary: llmUIDesign.summary,
-      description: llmUIDesign.description,
-      schema_version: "0.8",
-      a2ui_manifest: llmUIDesign.a2ui_manifest,
-      component_hierarchy: llmUIDesign.component_hierarchy,
-      design_tokens: llmUIDesign.design_tokens,
-      ui_patterns: llmUIDesign.ui_patterns,
-      component_specs: llmUIDesign.component_specs,
-      layout_breakpoints: llmUIDesign.layout_breakpoints,
-      accessibility: llmUIDesign.accessibility,
-      atomic_structure: llmUIDesign.atomic_structure,
-      website_layout: llmUIDesign.website_layout
-    };
-
-
-    // Validation check
-    if (!content.component_hierarchy || !content.design_tokens) {
-      throw new Error("UI Designer agent failed: Component hierarchy or design tokens are missing");
+      content = {
+        summary: llmUIDesign.summary,
+        description: llmUIDesign.description,
+        schema_version: "0.8",
+        design_tokens: llmUIDesign.design_tokens,
+        atomic_structure: llmUIDesign.atomic_structure,
+        primary_feature_manifest: llmUIDesign.primary_feature_manifest,
+        accessibility: llmUIDesign.accessibility,
+        component_blueprint: llmUIDesign.component_blueprint,
+        layout_strategy: llmUIDesign.layout_strategy,
+        visual_philosophy: llmUIDesign.visual_philosophy,
+        information_architecture: llmUIDesign.information_architecture,
+        responsive_strategy: llmUIDesign.responsive_strategy,
+        ui_patterns: llmUIDesign.ui_patterns,
+        component_hierarchy: llmUIDesign.component_hierarchy
+      };
     }
 
     logger.info("UI Designer agent completed");

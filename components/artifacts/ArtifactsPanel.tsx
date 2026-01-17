@@ -3,15 +3,9 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, User, Download, Archive, ChevronDown, LayoutDashboard } from "lucide-react"
+import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, User, Download, Archive, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Send, Loader2, Sparkles as SparklesIcon } from "lucide-react"
-import { metasopApi } from "@/lib/api/metasop"
 import { useToast } from "@/components/ui/use-toast"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { downloadFile } from "@/lib/utils"
 import {
     DropdownMenu,
@@ -43,6 +37,8 @@ interface ArtifactsPanelProps {
     }
     steps?: any[]
     className?: string
+    activeTab?: string
+    onTabChange?: (tab: string) => void
 }
 
 const agentTabs = [
@@ -56,48 +52,21 @@ const agentTabs = [
     { id: "qa_verification", label: "QA", icon: CheckCircle, color: "text-teal-600", bgColor: "bg-teal-500/10" },
 ]
 
-export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: ArtifactsPanelProps) {
+export function ArtifactsPanel({ 
+    diagramId, 
+    artifacts, 
+    steps, 
+    className = "",
+    activeTab: externalActiveTab,
+    onTabChange
+}: ArtifactsPanelProps) {
     const { toast } = useToast()
-    const [activeTab, setActiveTab] = useState("summary")
-    const [instruction, setInstruction] = useState("")
-    const [isRefining, setIsRefining] = useState(false)
-    const [refineTarget, setRefineTarget] = useState<string>("all")
-    const [cascade, setCascade] = useState(true)
-
-    const handleRefine = async () => {
-        if (!instruction.trim() || !diagramId) return
-
-        try {
-            setIsRefining(true)
-            toast({
-                title: "Refining Project",
-                description: `AI agents (${refineTarget}) are updating the system...`,
-            })
-
-            await metasopApi.refineArtifact({
-                diagramId,
-                stepId: refineTarget === "all" ? activeTab : refineTarget,
-                instruction,
-                previousArtifacts: artifacts,
-                cascade
-            })
-
-            toast({
-                title: "Refinement Complete",
-                description: "The system has been updated.",
-            })
-
-            window.location.reload()
-        } catch (error: any) {
-            toast({
-                title: "Refinement Failed",
-                description: error.message || "Failed to refine.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsRefining(false)
-            setInstruction("")
-        }
+    const [internalActiveTab, setInternalActiveTab] = useState("summary")
+    
+    const activeTab = externalActiveTab || internalActiveTab
+    const setActiveTab = (tab: string) => {
+        setInternalActiveTab(tab)
+        onTabChange?.(tab)
     }
 
     const availableTabs = agentTabs.filter((tab) => tab.id === "summary" || !!artifacts[tab.id as keyof typeof artifacts])
@@ -150,8 +119,8 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
     }
 
     return (
-        <div className={`flex flex-col h-full bg-background ${className}`}>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <div className={`flex flex-col h-full bg-background min-h-0 ${className}`}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div className="border-b border-border bg-background px-3 pt-3 pb-2 sticky top-0 z-20 shrink-0">
                     <div className="flex items-center gap-2 mb-2">
                         <div className={`p-1.5 rounded-lg ${currentTab.bgColor} ${currentTab.color}`}>
@@ -184,7 +153,7 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                         </div>
                     </div>
 
-                    <TabsList className="grid grid-cols-8 w-full h-auto gap-0.5 bg-muted/30 p-0.5 rounded-md">
+                    <TabsList className="flex items-center w-full h-auto gap-0.5 bg-muted/30 p-0.5 rounded-md overflow-x-auto custom-scrollbar">
                         {agentTabs.map((tab) => {
                             const TabIcon = tab.icon
                             const hasData = tab.id === "summary" || !!artifacts[tab.id as keyof typeof artifacts]
@@ -193,7 +162,7 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                                     key={tab.id}
                                     value={tab.id}
                                     disabled={!hasData}
-                                    className="flex flex-col items-center gap-0.5 py-1 px-0.5 data-[state=active]:bg-background data-[state=active]:text-foreground data-disabled:opacity-40 rounded text-[10px]"
+                                    className="flex flex-col items-center gap-0.5 py-1 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-disabled:opacity-40 rounded text-[10px] min-w-[70px]"
                                 >
                                     <TabIcon className={`h-3 w-3 ${hasData && activeTab === tab.id ? tab.color : "text-muted-foreground"}`} />
                                     <span className="text-[9px] font-medium truncate w-full text-center leading-tight">{tab.label.split(' ')[0]}</span>
@@ -204,9 +173,8 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-hidden relative">
-                    <ScrollArea className="h-full w-full">
-                        <div className="p-3 pb-6">
-                            <AnimatePresence mode="wait">
+                    <div className="h-full w-full overflow-y-auto custom-scrollbar p-3 pb-6">
+                        <AnimatePresence mode="wait">
                                 <motion.div
                                     key={activeTab}
                                     initial={{ opacity: 0 }}
@@ -277,10 +245,11 @@ export function ArtifactsPanel({ diagramId, artifacts, steps, className = "" }: 
                                     </div>
                                 )
                             })()}
-                        </div>
-                    </ScrollArea>
+                    </div>
                 </div>
             </Tabs>
+
+
         </div>
     )
 }

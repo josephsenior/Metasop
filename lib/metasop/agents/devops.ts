@@ -3,7 +3,7 @@ import type { DevOpsBackendArtifact } from "../artifacts/devops/types";
 import { devopsSchema } from "../artifacts/devops/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
+import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 
 /**
  * DevOps Agent
@@ -20,23 +20,25 @@ export async function devopsAgent(
   logger.info("DevOps agent starting", { user_request: user_request.substring(0, 100) });
 
   try {
-    let devopsPrompt: string;
+    let content: DevOpsBackendArtifact;
 
     if (shouldUseRefinement(context)) {
-      logger.info("DevOps agent in REFINEMENT mode");
-      const previousDevOpsContent = context.previous_artifacts?.devops_infrastructure?.content as DevOpsBackendArtifact | undefined;
-      const guidelines = `
-1. **Infrastructure**: Update cloud services, regions, or orchestration (${previousDevOpsContent?.cloud_provider || 'provider unknown'})
-2. **CI/CD Pipelines**: Enhance build, test, or deployment stages
-3. **Monitoring & Alerting**: Refine metrics, alerts, or logging strategies
-4. **Disaster Recovery**: Update backup or failover strategies (RPO/RTO)`;
-      devopsPrompt = buildRefinementPrompt(context, "DevOps", guidelines);
+      logger.info("DevOps agent in ATOMIC REFINEMENT mode");
+      content = await refineWithAtomicActions<DevOpsBackendArtifact>(
+        context,
+        "DevOps",
+        devopsSchema,
+        { 
+          cacheId: context.cacheId,
+          temperature: 0.2 
+        }
+      );
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
       const projectTitle = pmArtifact?.title || "Project";
 
-      devopsPrompt = `As a Principal Site Reliability Engineer (SRE), design a modern infrastructure strategy for '${projectTitle}'.
+      const devopsPrompt = `As a Principal Site Reliability Engineer (SRE), design a modern infrastructure strategy for '${projectTitle}'.
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize a simple, cost-effective deployment (e.g., Vercel, Netlify, single-region VPS). Focus on ease of setup and basic CI/CD.
@@ -57,51 +59,47 @@ MISSION OBJECTIVES:
 8. **Security & Compliance**: Integrate security into the DevOps lifecycle (DevSecOps) at an appropriate level.
 
 Focus on technical depth and production-ready rigor. Match the complexity of your infrastructure design to the inherent needs of the project. Respond with ONLY the JSON object.`;
-    }
 
-    let llmDevOps: DevOpsBackendArtifact | null = null;
+      let llmDevOps: DevOpsBackendArtifact | null = null;
 
-    try {
-      llmDevOps = await generateStreamingStructuredWithLLM<DevOpsBackendArtifact>(
-        devopsPrompt,
-        devopsSchema,
-        (partialEvent) => {
-          if (onProgress) {
-            onProgress(partialEvent);
+      try {
+        llmDevOps = await generateStreamingStructuredWithLLM<DevOpsBackendArtifact>(
+          devopsPrompt,
+          devopsSchema,
+          (partialEvent) => {
+            if (onProgress) {
+              onProgress(partialEvent);
+            }
+          },
+          {
+            reasoning: context.options?.reasoning ?? false,
+            temperature: 0.3,
+            cacheId: context.cacheId,
+            role: "DevOps"
           }
-        },
-        {
-          reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3,
-          cacheId: context.cacheId,
-          role: "DevOps"
-        }
-      );
-    } catch (error: any) {
-      logger.error("DevOps agent LLM call failed", { error: error.message });
-      throw error;
-    }
-
-    if (!llmDevOps) {
-      throw new Error("DevOps agent failed: No structured data received from LLM");
-    }
-
-    logger.info("DevOps agent received structured LLM response");
-
-    const content: DevOpsBackendArtifact = {
-      ...llmDevOps,
-      cloud_provider: llmDevOps.cloud_provider || llmDevOps.infrastructure?.cloud_provider,
-      infra_components: llmDevOps.infra_components || llmDevOps.infrastructure?.services?.length || 0,
-      summary: llmDevOps.summary,
-      description: llmDevOps.description,
-      infrastructure: {
-        ...llmDevOps.infrastructure,
+        );
+      } catch (error: any) {
+        logger.error("DevOps agent LLM call failed", { error: error.message });
+        throw error;
       }
-    };
 
-    // Validation check
-    if (!content.infrastructure || !content.cicd) {
-      throw new Error("DevOps agent failed: Infrastructure or CI/CD spec is missing");
+      if (!llmDevOps) {
+        throw new Error("DevOps agent failed: No structured data received from LLM");
+      }
+
+      logger.info("DevOps agent received structured LLM response");
+
+      content = {
+        summary: llmDevOps.summary,
+        description: llmDevOps.description,
+        cloud_provider: llmDevOps.cloud_provider || llmDevOps.infrastructure?.cloud_provider,
+        infra_components: llmDevOps.infra_components || llmDevOps.infrastructure?.services?.length,
+        infrastructure: llmDevOps.infrastructure,
+        cicd: llmDevOps.cicd,
+        containerization: llmDevOps.containerization,
+        monitoring: llmDevOps.monitoring,
+        deployment: llmDevOps.deployment
+      };
     }
 
     logger.info("DevOps agent completed");

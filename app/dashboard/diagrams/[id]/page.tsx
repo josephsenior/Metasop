@@ -12,11 +12,13 @@ import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { diagramsApi } from "@/lib/api/diagrams"
 import { useToast } from "@/components/ui/use-toast"
 import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
+import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
 import type { Diagram } from "@/types/diagram"
-import { ArrowLeft, Share2, Edit, MoreVertical, Copy, Trash2, Maximize2, Info, Code2, Loader2, AlertCircle, Keyboard } from "lucide-react"
+import { ArrowLeft, Share2, Edit, MoreVertical, Copy, Trash2, Maximize2, Info, Code2, Loader2, AlertCircle, Keyboard, MessageSquare } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useFullscreen } from "@/hooks/use-fullscreen"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +47,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const [isGuestDiagram, setIsGuestDiagram] = useState(false)
   const [compactView, setCompactView] = useState(false)
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const diagramViewerRef = useRef<HTMLDivElement>(null)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
@@ -128,6 +131,29 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleRefineComplete = (result?: any) => {
+    if (result && result.artifacts && diagram) {
+      // Optimistic update: update the local state with new artifacts
+      setDiagram({
+        ...diagram,
+        metadata: {
+          ...diagram.metadata,
+          metasop_artifacts: result.artifacts
+        }
+      })
+      
+      toast({
+        title: "Syncing Changes",
+        description: "Local artifacts updated. Synchronizing with server...",
+      })
+      
+      // Still refresh from server to be sure everything is in sync (including diagram nodes/edges)
+      loadDiagram()
+    } else {
+      loadDiagram()
     }
   }
 
@@ -279,6 +305,26 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      variant={isChatOpen ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "gap-1 sm:gap-2 transition-all",
+                        isChatOpen ? "bg-blue-600 hover:bg-blue-700" : ""
+                      )}
+                      onClick={() => setIsChatOpen(!isChatOpen)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="hidden sm:inline">Chat</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Toggle AI Architect Chat
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
                       variant="outline"
                       size="icon"
                       className="border-border hover:bg-accent hover:text-accent-foreground"
@@ -369,10 +415,10 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* Main Content Area */}
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
-            <div className="flex-1 w-full min-w-0">
-              <Tabs defaultValue="view" className="space-y-4">
-                <TabsList>
+          <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+            <div className="flex-1 w-full min-w-0 min-h-0">
+              <Tabs defaultValue="view" className="space-y-4 flex flex-col h-full min-h-0">
+                <TabsList className="shrink-0">
                   <TabsTrigger value="view" className="gap-2">
                     <Maximize2 className="h-4 w-4" />
                     View
@@ -387,9 +433,9 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="view" className="space-y-4">
-                  <Card className="border-border bg-card/80 backdrop-blur-sm overflow-hidden">
-                    <CardContent className="p-0 h-[70vh] min-h-[600px] max-h-[1000px]">
+                <TabsContent value="view" className="space-y-4 flex-1 min-h-0">
+                  <Card className="border-border bg-card/80 backdrop-blur-sm overflow-hidden h-full">
+                    <CardContent className="p-0 h-full min-h-[600px] max-h-[1000px]">
                       <div className="w-full h-full">
                         {diagram.metadata?.metasop_artifacts ? (
                           <ArtifactsPanel
@@ -461,11 +507,12 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
             {/* Desktop Chat Panel */}
              {diagram.metadata?.metasop_artifacts && isChatOpen && (
-               <div className="hidden lg:block w-96 shrink-0 h-[calc(70vh+48px)] min-h-[648px] max-h-[1048px] sticky top-8">
+               <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
                 <ProjectChatPanel
                   diagramId={diagram.id}
                   artifacts={diagram.metadata.metasop_artifacts}
                   activeTab={activeArtifactTab}
+                  onRefineComplete={handleRefineComplete}
                 />
               </div>
             )}
@@ -485,6 +532,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     diagramId={diagram.id}
                     artifacts={diagram.metadata.metasop_artifacts}
                     activeTab={activeArtifactTab}
+                    onRefineComplete={handleRefineComplete}
                   />
                 </SheetContent>
               </Sheet>

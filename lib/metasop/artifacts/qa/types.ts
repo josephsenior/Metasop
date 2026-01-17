@@ -40,6 +40,8 @@ export interface QABackendArtifact {
     }>;
     summary?: string;
     description?: string;
+    accessibility_plan?: string;
+    manual_uat_plan?: string;
     coverage?: {
         percentage?: number;
         threshold?: number;

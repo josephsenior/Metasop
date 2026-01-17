@@ -8,7 +8,7 @@ import { uiDesignerAgent } from "./agents/ui-designer";
 import { qaAgent } from "./agents/qa";
 import { logger } from "./utils/logger";
 import { getConfig } from "./config";
-import { createCacheWithLLM } from "./utils/llm-helper";
+import { generateWithLLM, createCacheWithLLM } from "./utils/llm-helper";
 import { ExecutionService } from "./services/execution-service";
 import { RetryService, RetryPolicy } from "./services/retry-service";
 import { FailureHandler } from "./services/failure-handler";
@@ -252,9 +252,10 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     stepId: string,
     instruction: string,
     onProgress?: (event: MetaSOPEvent) => void,
-    depth: number = 0
+    depth: number = 0,
+    isAtomicAction: boolean = false
   ): Promise<MetaSOPResult> {
-    logger.info("Starting artifact refinement", { stepId, instruction, depth });
+    logger.info("Starting artifact refinement", { stepId, instruction, depth, isAtomicAction });
 
     if (depth > this.config.performance.maxRefinementDepth) {
       logger.warn(`Refinement depth limit reached (${depth}), stopping recursion.`);
@@ -279,6 +280,7 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         instruction,
         target_step_id: stepId,
         previous_artifact_content: currentArtifact.content,
+        isAtomicAction,
       }
     };
 
@@ -312,6 +314,121 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
   }
 
   /**
+   * Determine which downstream agents actually need to be refined based on the changes.
+   * This improves efficiency by skipping agents whose artifacts wouldn't be affected.
+   */
+  private async determineDownstreamImpact(
+    upstreamStepId: string,
+    instruction: string,
+    downstreamSteps: string[]
+  ): Promise<string[]> {
+    if (downstreamSteps.length === 0) return [];
+
+    logger.info(`Analyzing downstream impact of ${upstreamStepId} refinement...`);
+
+    // 1. RULE-BASED PRE-SCREENING (Fast path for common cases)
+    const lowerInstruction = instruction.toLowerCase();
+    
+    // If the instruction is very specific to documentation or minor tweaks that don't change logic/structure
+    const isMinorTweak = /typo|grammar|wording|color|padding|margin|font|icon|text only|spelling/i.test(lowerInstruction);
+    
+    if (isMinorTweak && upstreamStepId !== "pm_spec") {
+      logger.info("Impact analysis: Minor tweak detected, skipping downstream refinement.");
+      return [];
+    }
+
+    // 2. LLM-BASED ANALYSIS
+    try {
+      const prompt = `
+You are a Senior System Architect analyzing a change in a multi-agent development pipeline.
+
+UPSTREAM STEP MODIFIED: ${upstreamStepId}
+CHANGE INSTRUCTION: "${instruction}"
+
+POTENTIAL DOWNSTREAM STEPS:
+${downstreamSteps.map(step => `- ${step}`).join("\n")}
+
+TASK:
+Identify which downstream steps MUST be refined to maintain technical consistency with this change.
+Only include a step if the change in '${upstreamStepId}' likely impacts its output.
+
+REFINEMENT GUIDELINES:
+- Changes to 'pm_spec' usually impact EVERYTHING downstream.
+- Changes to 'arch_design' impact 'engineer_impl', 'qa_verification', and often 'devops_infrastructure' or 'security_architecture'.
+- Changes to 'ui_design' usually only impact 'engineer_impl' (frontend) and 'qa_verification'.
+- Changes to 'security_architecture' or 'devops_infrastructure' impact 'engineer_impl' and 'qa_verification'.
+
+RESPONSE FORMAT:
+Return ONLY a comma-separated list of the step IDs that need refinement. 
+If none need refinement, return "none".
+Do not provide any explanation, just the IDs.
+`.trim();
+
+      const response = await generateWithLLM(prompt, {
+        temperature: 0.1,
+        role: "Impact Analyzer"
+      });
+
+      const cleanedResponse = response.toLowerCase().trim();
+      
+      if (cleanedResponse === "none") {
+        logger.info("Impact analysis: No downstream steps affected (LLM).");
+        return [];
+      }
+
+      const impactedSteps = cleanedResponse
+        .split(",")
+        .map(s => s.trim())
+        .filter(s => downstreamSteps.includes(s));
+
+      if (impactedSteps.length > 0) {
+        logger.info(`Impact analysis complete (LLM). Impacted steps: ${impactedSteps.join(", ")}`);
+        return impactedSteps;
+      }
+    } catch (e: any) {
+      logger.warn(`Impact analysis LLM failed, falling back to rule-based: ${e.message}`);
+    }
+
+    // 3. RULE-BASED FALLBACK (Enhanced path)
+    logger.info("Using enhanced rule-based fallback for impact analysis.");
+    
+    const dependencyMap: Record<string, string[]> = {
+      "pm_spec": ["arch_design", "devops_infrastructure", "security_architecture", "ui_design", "engineer_impl", "qa_verification"],
+      "arch_design": ["devops_infrastructure", "security_architecture", "engineer_impl", "qa_verification"],
+      "devops_infrastructure": ["engineer_impl", "qa_verification"],
+      "security_architecture": ["engineer_impl", "qa_verification"],
+      "ui_design": ["engineer_impl", "qa_verification"],
+      "engineer_impl": ["qa_verification"],
+      "qa_verification": []
+    };
+
+    // Keyword-based refinement for the rule-based fallback
+    let ruleImpacted = dependencyMap[upstreamStepId] || [];
+    
+    if (upstreamStepId !== "pm_spec") {
+      const hasUI = /ui|ux|color|font|theme|style|button|layout|screen|page|view|component|css|frontend/i.test(lowerInstruction);
+      const hasBackend = /api|endpoint|database|schema|backend|server|logic|auth|security|performance|logic/i.test(lowerInstruction);
+      const hasInfra = /deploy|docker|k8s|cloud|aws|infrastructure|ci|cd|pipeline|environment/i.test(lowerInstruction);
+
+      if (hasUI && !hasBackend && !hasInfra) {
+        // UI-only changes mostly impact UI Design, Engineering, and QA
+        ruleImpacted = ruleImpacted.filter(step => ["ui_design", "engineer_impl", "qa_verification"].includes(step));
+      } else if (!hasUI && hasBackend && !hasInfra) {
+        // Backend-only changes mostly impact Architecture, Engineering, and QA
+        ruleImpacted = ruleImpacted.filter(step => ["arch_design", "engineer_impl", "qa_verification"].includes(step));
+      } else if (!hasUI && !hasBackend && hasInfra) {
+        // Infra-only changes mostly impact DevOps and QA
+        ruleImpacted = ruleImpacted.filter(step => ["devops_infrastructure", "qa_verification"].includes(step));
+      }
+    }
+
+    const filteredImpacted = ruleImpacted.filter(step => downstreamSteps.includes(step));
+    
+    logger.info(`Impact analysis complete (Rule-based). Impacted steps: ${filteredImpacted.join(", ") || "none"}`);
+    return filteredImpacted;
+  }
+
+  /**
    * Refine an artifact and then propagate changes to all downstream dependencies.
    * This ensures system-wide consistency after an update.
    */
@@ -319,15 +436,16 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     stepId: string,
     instruction: string,
     onProgress?: (event: MetaSOPEvent) => void,
-    depth: number = 0
+    depth: number = 0,
+    isAtomicAction: boolean = false
   ): Promise<MetaSOPResult> {
-    logger.info("Starting cascading refinement", { stepId, instruction, depth });
+    logger.info("Starting cascading refinement", { stepId, instruction, depth, isAtomicAction });
 
     // 1. Refine the initial target
-    const result = await this.refineArtifact(stepId, instruction, onProgress, depth);
+    const result = await this.refineArtifact(stepId, instruction, onProgress, depth, isAtomicAction);
     if (!result.success) return result;
 
-    // 2. Identify downstream agents based on the standard MetaSOP pipeline order
+    // 2. Identify all steps for bidirectional sync
     const pipelineOrder = [
       "pm_spec",
       "arch_design",
@@ -343,35 +461,66 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       throw new Error(`Unknown step ID: ${stepId}`);
     }
 
-    const downstreamSteps = pipelineOrder.slice(startIndex + 1);
+    // --- PHASE 1: UPSTREAM SYNC (Maintain Source of Truth) ---
+    // If we refine a downstream artifact, check if we need to update the "Foundational" artifacts
+    const upstreamSteps = pipelineOrder.slice(0, startIndex);
+    if (upstreamSteps.length > 0) {
+        logger.info(`Checking if upstream sync is needed for ${stepId} refinement...`);
+        
+        // We only sync upstream if the change is significant (not a minor tweak)
+        const isMinor = /typo|grammar|color|padding|margin|font/i.test(instruction.toLowerCase());
+        
+        if (!isMinor) {
+            for (const upstreamId of upstreamSteps.reverse()) { // Update PM Spec first, then Arch
+                const syncInstruction = `The downstream artifact '${stepId}' has been refined with: "${instruction}". 
+Please update this upstream specification to reflect this change, ensuring the "Universal Source of Truth" remains consistent with the latest implementation decisions.`;
+                
+                logger.info(`Syncing upstream: Updating ${upstreamId} to align with ${stepId}...`);
+                await this.refineArtifact(upstreamId, syncInstruction, onProgress, depth + 1, isAtomicAction);
+            }
+        }
+    }
+
+    // --- PHASE 2: DOWNSTREAM CASCADE ---
+    const allDownstream = pipelineOrder.slice(startIndex + 1);
+    
+    // 3. Filter downstream steps that are enabled and exist
+    const enabledDownstream = allDownstream.filter(id => {
+      return this.config.agents.enabled.includes(id) && this.artifacts[id];
+    });
+
+    if (enabledDownstream.length === 0) {
+      logger.info("No downstream artifacts to refine.");
+      return result;
+    }
+
+    // 4. SMART CASCADE: Determine actual impact
+    const downstreamSteps = await this.determineDownstreamImpact(stepId, instruction, enabledDownstream);
+
+    if (downstreamSteps.length === 0) {
+      return result;
+    }
+
     let rippleCount = 0;
 
-    // 3. Ripple the changes through downstream dependents
+    // 5. Ripple the changes through downstream dependents sequentially
+    // We maintain a strict linear sequence to ensure total logical alignment.
+    // Each agent receives the cumulative context of all previous updates.
     for (const downstreamId of downstreamSteps) {
       if (rippleCount >= this.config.performance.maxCascadeRipples) {
         logger.warn(`Cascade ripple limit reached (${rippleCount}), stopping.`);
         break;
       }
-      // Skip if agent is disabled in config
-      if (!this.config.agents.enabled.includes(downstreamId)) {
-        logger.debug(`Skipping disabled downstream agent during cascade: ${downstreamId}`);
-        continue;
-      }
 
-      // Check if artifact even exists yet (might be a partial generation)
-      if (!this.artifacts[downstreamId]) {
-        logger.debug(`Skipping missing downstream artifact during cascade: ${downstreamId}`);
-        continue;
-      }
+      const alignmentInstruction = `The upstream artifact '${stepId}' has been updated with the following changes: "${instruction}". 
+Please synchronize this artifact to maintain technical alignment, structural consistency, and cross-functional coherence with the updated upstream state. 
+Ensure all references, dependencies, and shared logic are correctly updated while preserving existing high-quality implementation details.`;
 
-      const alignmentInstruction = `The upstream artifact '${stepId}' has been refined with the following changes: "${instruction}". 
-Please refine this artifact to ensure full technical alignment and consistency with these updates. 
-Maintain all existing high-quality elements while incorporating necessary adjustments.`;
-
-      logger.info(`Cascading ripple update to ${downstreamId}...`);
+      logger.info(`Cascading sequential ripple update to ${downstreamId}...`);
 
       try {
-        const cascadeResult = await this.refineArtifact(downstreamId, alignmentInstruction, onProgress, depth + 1);
+        // We use await here to ensure strict sequence
+        const cascadeResult = await this.refineArtifact(downstreamId, alignmentInstruction, onProgress, depth + 1, isAtomicAction);
 
         if (!cascadeResult.success) {
           logger.error(`Cascading refinement failed at ${downstreamId}`);
@@ -380,8 +529,6 @@ Maintain all existing high-quality elements while incorporating necessary adjust
         rippleCount++;
       } catch (error: any) {
         logger.error(`Error during cascading refinement for ${downstreamId}: ${error.message}`);
-        // For cascade, we can decide if we want to fail hard or just log a warning
-        // Given the goal of "useful system", we should probably stop if consistency is broken
         throw error;
       }
     }
@@ -733,7 +880,8 @@ export async function refineMetaSOPArtifact(
   instruction: string,
   previousArtifacts: Record<string, any>,
   onProgress?: (event: MetaSOPEvent) => void,
-  cascade: boolean = false
+  cascade: boolean = false,
+  isAtomicAction: boolean = false
 ): Promise<MetaSOPResult> {
   const orchestrator = new MetaSOPOrchestrator();
   // Hydrate orchestrator with previous state
@@ -747,9 +895,9 @@ export async function refineMetaSOPArtifact(
   }));
 
   if (cascade) {
-    return orchestrator.cascadeRefinement(stepId, instruction, onProgress);
+    return orchestrator.cascadeRefinement(stepId, instruction, onProgress, 0, isAtomicAction);
   } else {
-    return orchestrator.refineArtifact(stepId, instruction, onProgress);
+    return orchestrator.refineArtifact(stepId, instruction, onProgress, 0, isAtomicAction);
   }
 }
 

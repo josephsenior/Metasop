@@ -4,7 +4,7 @@ import type { ArchitectBackendArtifact } from "../artifacts/architect/types";
 import { qaSchema } from "../artifacts/qa/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
+import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 
 /**
  * QA Agent
@@ -22,24 +22,26 @@ export async function qaAgent(
   logger.info("QA agent starting", { user_request: user_request.substring(0, 100) });
 
   try {
-    let qaPrompt: string;
+    let content: QABackendArtifact;
 
     if (shouldUseRefinement(context)) {
-      logger.info("QA agent in REFINEMENT mode");
-      const previousQAContent = context.previous_artifacts?.qa_verification?.content as QABackendArtifact | undefined;
-      const guidelines = `
-1. **Test Strategy**: Update testing approach based on new implementation details
-2. **Test Cases**: Add test cases for newly added features or edge cases
-3. **Coverage Metrics**: Refine coverage targets (${previousQAContent?.coverage?.threshold || '80'}%) and thresholds
-4. **Performance Testing**: Update benchmark scenarios based on the scalability approach`;
-      qaPrompt = buildRefinementPrompt(context, "QA", guidelines);
+      logger.info("QA agent in ATOMIC REFINEMENT mode");
+      content = await refineWithAtomicActions<QABackendArtifact>(
+        context,
+        "QA",
+        qaSchema,
+        { 
+          cacheId: context.cacheId,
+          temperature: 0.2 
+        }
+      );
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as ArchitectBackendArtifact | undefined;
       const projectTitle = pmArtifact?.title || "Project";
       const techStackString = archArtifact?.technology_stack ? Object.values(archArtifact.technology_stack).flat().slice(0, 5).join(", ") : "Modern Stack";
 
-      qaPrompt = `As a Lead Quality Assurance Engineer, design a verification strategy for '${projectTitle}'.
+      const qaPrompt = `As a Lead Quality Assurance Engineer, design a verification strategy for '${projectTitle}'.
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize essential test cases, basic security checks, and straightforward manual verification. Focus on core functional stability.
@@ -59,51 +61,48 @@ MISSION OBJECTIVES:
 7. **Accessibility**: Design a verification plan for accessibility compliance (WCAG).
 
 Focus on technical rigor and actionable verification value. Match the complexity of your verification strategy to the inherent needs of the project. Respond with ONLY the JSON object.`;
-    }
 
-    let llmQA: QABackendArtifact | null = null;
+      let llmQA: QABackendArtifact | null = null;
 
-    try {
-      llmQA = await generateStreamingStructuredWithLLM<QABackendArtifact>(
-        qaPrompt,
-        qaSchema,
-        (partialEvent) => {
-          if (onProgress) {
-            onProgress(partialEvent);
+      try {
+        llmQA = await generateStreamingStructuredWithLLM<QABackendArtifact>(
+          qaPrompt,
+          qaSchema,
+          (partialEvent) => {
+            if (onProgress) {
+              onProgress(partialEvent);
+            }
+          },
+          {
+            reasoning: context.options?.reasoning ?? false,
+            temperature: 0.2, 
+            cacheId: context.cacheId,
+            role: "QA"
           }
-        },
-        {
-          reasoning: context.options?.reasoning ?? false,
-          temperature: 0.2, 
-          cacheId: context.cacheId,
-          role: "QA"
-        }
-      );
-    } catch (error: any) {
-      logger.error("QA agent LLM call failed", { error: error.message });
-      throw error;
-    }
+        );
+      } catch (error: any) {
+        logger.error("QA agent LLM call failed", { error: error.message });
+        throw error;
+      }
 
-    if (!llmQA) {
-      throw new Error("QA agent failed: No structured data received from LLM");
-    }
+      if (!llmQA) {
+        throw new Error("QA agent failed: No structured data received from LLM");
+      }
 
-    const content: QABackendArtifact = {
-      ok: llmQA.ok,
-      test_strategy: llmQA.test_strategy,
-      test_cases: llmQA.test_cases,
-      security_plan: llmQA.security_plan,
-      manual_verification_steps: llmQA.manual_verification_steps,
-      risk_analysis: llmQA.risk_analysis,
-      summary: llmQA.summary,
-      coverage: llmQA.coverage,
-      performance_metrics: llmQA.performance_metrics,
-    };
-
-
-    // Validation check
-    if (!content.test_strategy || !content.test_cases) {
-      throw new Error("QA agent failed: Test strategy or test cases are missing");
+      content = {
+        ok: llmQA.ok ?? true,
+        test_strategy: llmQA.test_strategy,
+        test_cases: llmQA.test_cases,
+        security_plan: llmQA.security_plan,
+        manual_verification_steps: llmQA.manual_verification_steps,
+        risk_analysis: llmQA.risk_analysis,
+        summary: llmQA.summary,
+        description: llmQA.description,
+        coverage: llmQA.coverage,
+        performance_metrics: llmQA.performance_metrics,
+        accessibility_plan: llmQA.accessibility_plan || (llmQA as any).accessibility,
+        manual_uat_plan: llmQA.manual_uat_plan
+      };
     }
 
     logger.info("QA agent completed");

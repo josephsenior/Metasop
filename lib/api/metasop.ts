@@ -106,5 +106,23 @@ export const metasopApi = {
     }>("/diagrams/refine", data);
     return response.data.data;
   },
+
+  /**
+   * Ask a question about the project artifacts (RAG)
+   */
+  async askQuestion(data: {
+    diagramId: string;
+    question: string;
+    contextMarkdown: string;
+    activeTab?: string;
+    cacheId?: string;
+  }): Promise<{ answer: string; cacheId?: string }> {
+    const response = await apiClient.post<{
+      status: string;
+      data: { answer: string; cacheId?: string };
+      message: string;
+    }>("/diagrams/ask", data);
+    return response.data.data;
+  },
 };
 

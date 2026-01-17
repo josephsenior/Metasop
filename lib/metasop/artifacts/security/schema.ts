@@ -346,5 +346,9 @@ export const securitySchema = {
                 },
             },
         },
+        operations: { type: "string", description: "Security operations and DevSecOps plan." },
+        network_security: { type: "string", description: "Network isolation and secure provisioning policies." },
+        encryption_strategy: { type: "string", description: "Detailed data encryption strategy." },
+        secrets_management: { type: "string", description: "Secrets management policy and tools." }
     },
 };

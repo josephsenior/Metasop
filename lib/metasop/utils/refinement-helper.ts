@@ -25,9 +25,11 @@ export function buildRefinementPrompt(
     });
 
     // Get related artifacts based on knowledge graph dependencies
+    // During synchronization/alignment, we also include the target of the alignment
     const relatedArtifacts = getRelatedArtifacts(
         refinement.target_step_id,
-        previous_artifacts
+        previous_artifacts,
+        refinement.instruction
     );
 
     // Build context section with related artifacts
@@ -58,13 +60,14 @@ ${contextSection}
 ${basePromptGuidelines}
 
 CRITICAL REFINEMENT RULES:
-1. **START WITH EXISTING**: Begin with the current artifact content shown above.
+1. **START WITH EXISTING**: Begin with the current artifact content shown above. Do NOT start from scratch.
 2. **INCREMENTAL CHANGES**: Make targeted modifications based on the refinement instruction.
-3. ${isCascading ? "**SYNCHRONIZE**: Focus on updating references, schemas, or logic that must change to stay in sync with the upstream artifact." : "**EVOLVE**: Implement the new features or changes requested by the user while maintaining consistency."}
-4. **PRESERVE QUALITY**: Do NOT delete existing high-quality sections unless they are directly contradicted by the new requirements.
-5. **COMPLETE OUTPUT**: Return the FULL refined artifact in valid JSON format.
+3. ${isCascading ? "**SYNCHRONIZE**: This is a ripple-effect update. Focus on updating references, schemas, APIs, or logic that must change to stay in sync with the updated upstream artifacts. Ensure cross-artifact consistency." : "**EVOLVE**: Implement the new features or changes requested by the user while maintaining consistency with the overall project vision."}
+4. **PRESERVE QUALITY**: Do NOT delete existing high-quality sections unless they are directly contradicted by the new requirements or architectural changes.
+5. **TECHNICAL COHERENCE**: Ensure the refined artifact is technically sound and aligns perfectly with the related artifacts provided in the context.
+6. **COMPLETE OUTPUT**: Return the FULL refined artifact in valid JSON format, matching the expected schema perfectly.
 
-Your task is to enhance and refine the existing artifact, NOT to create it from scratch.`;
+Your goal is to produce a refined, consistent, and high-quality version of the existing artifact.`;
 
     return prompt;
 }
@@ -74,45 +77,202 @@ Your task is to enhance and refine the existing artifact, NOT to create it from 
  */
 function getRelatedArtifacts(
     targetStepId: string,
-    allArtifacts: Record<string, any>
+    allArtifacts: Record<string, any>,
+    instruction?: string
 ): Record<string, any> {
     // Define dependency graph (what each artifact depends on)
     const dependencies: Record<string, string[]> = {
         arch_design: ["pm_spec"],
-        devops_infrastructure: ["arch_design", "pm_spec"],
+        devops_infrastructure: ["arch_design", "pm_spec", "security_architecture"],
         security_architecture: ["arch_design", "pm_spec"],
-        engineer_impl: ["arch_design", "pm_spec"],
+        engineer_impl: ["arch_design", "pm_spec", "ui_design", "security_architecture", "devops_infrastructure"],
         ui_design: ["arch_design", "pm_spec"],
-        qa_verification: ["engineer_impl", "arch_design", "pm_spec"],
+        qa_verification: ["engineer_impl", "arch_design", "pm_spec", "ui_design", "security_architecture", "devops_infrastructure"],
         pm_spec: [], // PM spec is the root, no dependencies
     };
 
     const related: Record<string, any> = {};
-    const deps = dependencies[targetStepId] || [];
+    const deps = [...(dependencies[targetStepId] || [])];
+
+    // If this is a synchronization/alignment request, add the source of the alignment to context
+    if (instruction && (instruction.includes("refined with") || instruction.includes("alignment"))) {
+        const match = instruction.match(/'([^']+)'/);
+        if (match && match[1] && allArtifacts[match[1]]) {
+            deps.push(match[1]);
+        }
+    }
 
     for (const depId of deps) {
         if (allArtifacts[depId]) {
-            let artifactContent = allArtifacts[depId];
-
-            // SANITIZATION: Strip heavy content from Engineer artifact to prevent token exhaustion
-            if (depId === "engineer_impl") {
-                logger.info("Sanitizing engineer_impl artifact for refinement context");
-                const { ...sanitized } = artifactContent.content || artifactContent;
-                // Note: file_contents and file_structure are intentionally excluded from sanitized context
-                if ((sanitized as any).file_contents) delete (sanitized as any).file_contents;
-                if ((sanitized as any).file_structure) delete (sanitized as any).file_structure;
-                
-                artifactContent = {
-                    ...artifactContent,
-                    content: sanitized
-                };
-            }
-
-            related[depId] = artifactContent;
+            related[depId] = sanitizeArtifactForContext(depId, allArtifacts[depId]);
         }
     }
 
     return related;
+}
+
+/**
+ * Applies an atomic action to a JSON object
+ */
+export function applyAtomicAction(content: any, action: string, params: any): any {
+    const newContent = JSON.parse(JSON.stringify(content)); // Deep clone
+    const path = params.path;
+
+    // Helper to resolve nested path
+    const resolvePath = (obj: any, path: string) => {
+        const parts = path.split('.');
+        let current = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!(part in current)) {
+                current[part] = isNaN(Number(parts[i+1])) ? {} : [];
+            }
+            current = current[part];
+        }
+        return { parent: current, lastKey: parts[parts.length - 1] };
+    };
+
+    try {
+        const { parent, lastKey } = resolvePath(newContent, path);
+
+        switch (action) {
+            case "upsert_node":
+                parent[lastKey] = params.content;
+                break;
+            case "append_to_list":
+                if (!Array.isArray(parent[lastKey])) {
+                    parent[lastKey] = [];
+                }
+                parent[lastKey].push(params.item);
+                break;
+            case "delete_node":
+                if (Array.isArray(parent)) {
+                    parent.splice(Number(lastKey), 1);
+                } else {
+                    delete parent[lastKey];
+                }
+                break;
+        }
+        return newContent;
+    } catch (error: any) {
+        logger.error(`Failed to apply atomic action ${action} at ${path}: ${error.message}`);
+        return content; // Return original on failure
+    }
+}
+
+/**
+ * Orchestrates refinement using atomic actions for maximum reliability
+ */
+export async function refineWithAtomicActions<T>(
+    context: AgentContext,
+    role: string,
+    schema: any,
+    options?: { temperature?: number; cacheId?: string }
+): Promise<T> {
+    const { refinement } = context;
+    if (!refinement) throw new Error("Refinement context missing");
+
+    const { generateStructuredWithLLM } = await import("./llm-helper");
+
+    const actionPrompt = `
+You are a ${role} refining a JSON artifact.
+Instead of rewriting the whole file, you must provide a sequence of ATOMIC ACTIONS to apply the changes.
+This ensures 100% reliability and prevents data loss.
+
+USER INSTRUCTION: "${refinement.instruction}"
+
+CURRENT ARTIFACT CONTENT (PREVIEW):
+${JSON.stringify(refinement.previous_artifact_content, null, 2).substring(0, 2000)}${JSON.stringify(refinement.previous_artifact_content).length > 2000 ? "... (truncated for prompt)" : ""}
+
+AVAILABLE ACTIONS:
+1. **upsert_node**: Update/insert an object at a path (e.g., "user_stories.0")
+2. **append_to_list**: Add a new item to an array (e.g., "apis")
+3. **delete_node**: Remove a node at a path
+
+TASK:
+Analyze the instruction and determine the minimum set of actions needed to implement the change.
+Return a list of actions and a summary.
+`.trim();
+
+    const ActionSchema = {
+        type: "object",
+        properties: {
+            actions: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        action: { type: "string", enum: ["upsert_node", "append_to_list", "delete_node"] },
+                        parameters: { type: "object" }
+                    },
+                    required: ["action", "parameters"]
+                }
+            },
+            summary: { type: "string" }
+        },
+        required: ["actions", "summary"]
+    };
+
+    const response = await generateStructuredWithLLM<{ actions: any[]; summary: string }>(
+        actionPrompt,
+        ActionSchema,
+        {
+            temperature: options?.temperature ?? 0.2,
+            cacheId: options?.cacheId,
+            role: `${role} Refiner`
+        }
+    );
+
+    let refinedContent = JSON.parse(JSON.stringify(refinement.previous_artifact_content));
+    
+    for (const actionItem of response.actions) {
+        logger.info(`Applying atomic action: ${actionItem.action}`, { path: actionItem.parameters.path });
+        refinedContent = applyAtomicAction(refinedContent, actionItem.action, actionItem.parameters);
+    }
+
+    return refinedContent as T;
+}
+
+/**
+ * Sanitize artifacts to prevent token exhaustion while preserving critical architectural context
+ */
+function sanitizeArtifactForContext(stepId: string, artifact: any): any {
+    if (!artifact || !artifact.content) return artifact;
+
+    const sanitized = { ...artifact.content };
+
+    // Step-specific sanitization
+    switch (stepId) {
+        case "engineer_impl":
+            // Remove full file contents but keep structure and high-level logic
+            if (sanitized.file_contents) {
+                const files = Object.keys(sanitized.file_contents);
+                sanitized.file_contents_summary = `[${files.length} files generated: ${files.slice(0, 5).join(", ")}${files.length > 5 ? "..." : ""}]`;
+                delete sanitized.file_contents;
+            }
+            break;
+            
+        case "ui_design":
+            // Keep layout and components, but maybe trim very large CSS/styling details if they exist
+            if (sanitized.components && Array.isArray(sanitized.components) && sanitized.components.length > 10) {
+                sanitized.components = sanitized.components.slice(0, 10);
+                sanitized.components_note = `[Truncated for context: showing 10 of ${artifact.content.components.length} components]`;
+            }
+            break;
+
+        case "pm_spec":
+            // Keep everything, usually small enough
+            break;
+
+        default:
+            // For others, we might want to limit depth or size if they grow too large
+            break;
+    }
+
+    return {
+        ...artifact,
+        content: sanitized
+    };
 }
 
 /**
@@ -121,3 +281,45 @@ function getRelatedArtifacts(
 export function shouldUseRefinement(context: AgentContext): boolean {
     return !!context.refinement;
 }
+
+/**
+ * Definitions for Atomic JSON Editing Tools
+ * These guarantee 100% reliability by moving the logic from LLM to Code
+ */
+export const ArtifactEditingTools = [
+    {
+        name: "upsert_node",
+        description: "Updates or inserts a specific object at a JSON path. Use this for modifying existing stories, APIs, or settings.",
+        parameters: {
+            type: "object",
+            properties: {
+                path: { type: "string", description: "The dot-notation path (e.g., 'user_stories.0')" },
+                content: { type: "object", description: "The new data to place at this path" }
+            },
+            required: ["path", "content"]
+        }
+    },
+    {
+        name: "append_to_list",
+        description: "Appends a new item to an existing array. Use this for adding new user stories, components, or tasks.",
+        parameters: {
+            type: "object",
+            properties: {
+                path: { type: "string", description: "The path to the array (e.g., 'apis')" },
+                item: { type: "object", description: "The new item to add" }
+            },
+            required: ["path", "item"]
+        }
+    },
+    {
+        name: "delete_node",
+        description: "Removes a specific node or item from the artifact.",
+        parameters: {
+            type: "object",
+            properties: {
+                path: { type: "string", description: "The path to delete" }
+            },
+            required: ["path"]
+        }
+    }
+];

@@ -33,8 +33,21 @@ export const RefineDiagramSchema = z.object({
     instruction: z.string().min(1, "Instruction is required"),
     previousArtifacts: z.record(z.any()),
     cascade: z.boolean().optional(),
+    isAtomicAction: z.boolean().optional(),
 });
 
 export function validateRefineDiagramRequest(data: any) {
     return RefineDiagramSchema.parse(data);
+}
+
+export const AskQuestionSchema = z.object({
+    diagramId: z.string(),
+    question: z.string().min(1, "Question is required"),
+    contextMarkdown: z.string(),
+    activeTab: z.string().optional(),
+    cacheId: z.string().optional(),
+});
+
+export function validateAskQuestionRequest(data: any) {
+    return AskQuestionSchema.parse(data);
 }

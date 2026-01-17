@@ -106,6 +106,7 @@ export interface AgentContext {
     instruction: string;
     target_step_id: string;
     previous_artifact_content: any;
+    isAtomicAction?: boolean;
   };
 }
 

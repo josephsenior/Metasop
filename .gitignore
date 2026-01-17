@@ -40,6 +40,7 @@ prisma/migrations
 
 # test results and logs
 /test_results/
+*_raw_response.json
 *.txt
 *.log
 .debug/

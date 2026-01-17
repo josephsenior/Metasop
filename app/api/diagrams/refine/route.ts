@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
             body.instruction,
             body.previousArtifacts,
             undefined, // onProgress
-            body.cascade // Pass cascade flag
+            body.cascade, // Pass cascade flag
+            body.isAtomicAction // Pass atomic action flag
         );
 
         return createSuccessResponse(

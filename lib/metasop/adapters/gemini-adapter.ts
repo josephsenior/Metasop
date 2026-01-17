@@ -219,10 +219,7 @@ ${prompt}`
       : prompt;
 
     // For Gemini 3, we rely primarily on responseSchema to minimize prompt noise
-    // For other models, we keep the schema in the prompt as a fallback
-    const structuredPrompt = model.includes('gemini-3')
-      ? finalPrompt
-      : `${finalPrompt}
+    const structuredPrompt = `${finalPrompt}
 
         === JSON SCHEMA ===
         ${JSON.stringify(schema, null, 2)}

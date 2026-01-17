@@ -85,4 +85,12 @@ export interface UIDesignerBackendArtifact {
             sections: string[];
         }>;
     };
+    primary_feature_manifest?: {
+        root: any;
+    };
+    layout_strategy?: string;
+    visual_philosophy?: string;
+    information_architecture?: string;
+    responsive_strategy?: string;
+    component_blueprint?: any;
 }

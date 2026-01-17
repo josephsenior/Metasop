@@ -213,6 +213,20 @@ export const uiDesignerSchema = {
                 }
             },
             description: "Information architecture/Sitemap for the application."
-        }
+        },
+        primary_feature_manifest: {
+            type: "object",
+            description: "A2UI Manifest (v0.8) for critical user workflows.",
+            properties: {
+                root: {
+                    type: "object",
+                    description: "Root node of the UI manifest"
+                }
+            }
+        },
+        layout_strategy: { type: "string" },
+        visual_philosophy: { type: "string" },
+        information_architecture: { type: "string" },
+        responsive_strategy: { type: "string" }
     },
 };

@@ -181,3 +181,41 @@
 .react-flow__handle-right {
   right: -6px;
 }
+
+/* Native-feel Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.9 0.002 90 / 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.9 0.002 90 / 0.5);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.25 0 0 / 0.3);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.25 0 0 / 0.5);
+}
+
+/* Smooth native scrolling for iOS */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.9 0.002 90 / 0.3) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: oklch(0.25 0 0 / 0.3) transparent;
+}

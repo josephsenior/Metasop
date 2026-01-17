@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -49,12 +49,12 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
-import { Share2, MessageSquare, Keyboard } from "lucide-react"
+import { MessageSquare } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export const dynamic = 'force-dynamic'
 
-export default function CreateDiagramPage() {
+function CreateDiagramContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -85,7 +85,7 @@ export default function CreateDiagramPage() {
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
-  const [isChatOpen, setIsChatOpen] = useState(true)
+  const [isChatOpen] = useState(true)
   const [currentDiagram, setCurrentDiagram] = useState<{
     nodes: DiagramNode[]
     edges: DiagramEdge[]
@@ -907,9 +907,9 @@ export default function CreateDiagramPage() {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
               <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-                <div className="flex-1 overflow-hidden" style={{ paddingBottom: currentDiagram ? '0' : '100px' }}>
+                <div className="flex-1 overflow-hidden" style={{ paddingTop: isGenerating && generationSteps.length > 0 ? '180px' : '0' }}>
                   {currentDiagram && currentDiagram.metadata?.metasop_artifacts ? (
-                    <div className="h-full" style={{ marginTop: isGenerating && generationSteps.length > 0 ? '180px' : '0' }}>
+                    <div className="h-full">
                       <ArtifactsPanel
                         diagramId={currentDiagram.id || ""}
                         artifacts={currentDiagram.metadata.metasop_artifacts}
@@ -1121,5 +1121,17 @@ export default function CreateDiagramPage() {
         </div>
       </div>
     </AuthGuard >
+  )
+}
+
+export default function CreateDiagramPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    }>
+      <CreateDiagramContent />
+    </Suspense>
   )
 }

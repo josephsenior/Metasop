@@ -99,6 +99,10 @@ export interface SecurityBackendArtifact {
         log_retention?: string;
         incident_response_plan?: string;
     };
+    operations?: string;
+    network_security?: string;
+    encryption_strategy?: string;
+    secrets_management?: string;
     summary?: string;
     description?: string;
     nodes?: any[];

@@ -3,7 +3,7 @@ import type { EngineerBackendArtifact } from "../artifacts/engineer/types";
 import { engineerSchema } from "../artifacts/engineer/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { buildRefinementPrompt, shouldUseRefinement } from "../utils/refinement-helper";
+import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 
 /**
  * Engineer Agent
@@ -22,24 +22,26 @@ export async function engineerAgent(
   logger.info("Engineer agent starting", { user_request: user_request.substring(0, 100) });
 
   try {
-    let engineerPrompt: string;
+    let content: EngineerBackendArtifact;
 
     if (shouldUseRefinement(context)) {
-      logger.info("Engineer agent in REFINEMENT mode");
-      const previousEngineerContent = context.previous_artifacts?.engineer_impl?.content as EngineerBackendArtifact | undefined;
-      const guidelines = `
-1. **Implementation Plan**: Update phases or tasks based on new requirements
-2. **File Structure**: Add new files or directories as needed
-3. **Dependencies**: Add or update package dependencies (${previousEngineerContent?.dependencies?.length || 0} existing)
-4. **Technical Decisions**: Document new patterns or architectural choices`;
-      engineerPrompt = buildRefinementPrompt(context, "Engineer", guidelines);
+      logger.info("Engineer agent in ATOMIC REFINEMENT mode");
+      content = await refineWithAtomicActions<EngineerBackendArtifact>(
+        context,
+        "Engineer",
+        engineerSchema,
+        { 
+          cacheId: context.cacheId,
+          temperature: 0.2 
+        }
+      );
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
       const uiArtifact = uiDesign?.content as any;
       const projectTitle = pmArtifact?.title || "Project";
 
-      engineerPrompt = `As an expert Software Engineer, design a high-fidelity technical implementation blueprint for '${projectTitle}'.
+      const engineerPrompt = `As an expert Software Engineer, design a high-fidelity technical implementation blueprint for '${projectTitle}'.
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize a flat, efficient file structure and straightforward state management. Focus on "getting it running" with standard best practices.
@@ -66,49 +68,46 @@ Important Guidelines:
 - Ensure all fields in the schema are populated with meaningful data.
 
 RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
-    }
 
-    let llmEngineerImpl: EngineerBackendArtifact | null = null;
+      let llmEngineerImpl: EngineerBackendArtifact | null = null;
 
-    try {
-      llmEngineerImpl = await generateStreamingStructuredWithLLM<EngineerBackendArtifact>(
-        engineerPrompt,
-        engineerSchema,
-        (partialEvent) => {
-          if (onProgress) {
-            onProgress(partialEvent);
+      try {
+        llmEngineerImpl = await generateStreamingStructuredWithLLM<EngineerBackendArtifact>(
+          engineerPrompt,
+          engineerSchema,
+          (partialEvent) => {
+            if (onProgress) {
+              onProgress(partialEvent);
+            }
+          },
+          {
+            reasoning: context.options?.reasoning ?? false,
+            temperature: 0.3, // Increased to avoid deterministic loops/recitation
+            cacheId: context.cacheId,
+            role: "Engineer",
           }
-        },
-        {
-          reasoning: context.options?.reasoning ?? false,
-          temperature: 0.3, // Increased to avoid deterministic loops/recitation
-          cacheId: context.cacheId,
-          role: "Engineer",
-        }
-      );
-    } catch (error: any) {
-      logger.error("Engineer agent LLM call failed", { error: error.message });
-      throw error;
-    }
+        );
+      } catch (error: any) {
+        logger.error("Engineer agent LLM call failed", { error: error.message });
+        throw error;
+      }
 
-    if (!llmEngineerImpl) {
-      throw new Error("Engineer agent failed: No structured data received from LLM");
-    }
+      if (!llmEngineerImpl) {
+        throw new Error("Engineer agent failed: No structured data received from LLM");
+      }
 
-    const content: EngineerBackendArtifact = {
-      summary: llmEngineerImpl.summary,
-      description: llmEngineerImpl.description,
-      artifact_path: llmEngineerImpl.artifact_path,
-      file_structure: llmEngineerImpl.file_structure,
-      implementation_plan: llmEngineerImpl.implementation_plan,
-      phases: llmEngineerImpl.phases,
-      dependencies: llmEngineerImpl.dependencies,
-      technical_decisions: llmEngineerImpl.technical_decisions,
-      environment_variables: llmEngineerImpl.environment_variables,
-      technical_patterns: llmEngineerImpl.technical_patterns,
-      state_management: llmEngineerImpl.state_management,
-      run_results: llmEngineerImpl.run_results,
-    };
+      content = {
+        summary: llmEngineerImpl.summary,
+        description: llmEngineerImpl.description,
+        artifact_path: llmEngineerImpl.artifact_path,
+        implementation_plan: llmEngineerImpl.implementation_plan,
+        state_management: llmEngineerImpl.state_management,
+        file_structure: llmEngineerImpl.file_structure,
+        technical_patterns: llmEngineerImpl.technical_patterns,
+        dependencies: llmEngineerImpl.dependencies,
+        phases: llmEngineerImpl.phases
+      };
+    }
 
 
     // Validation check

@@ -97,6 +97,8 @@ export const qaSchema = {
                 time_to_interactive: { type: "string" },
                 largest_contentful_paint: { type: "string" }
             }
-        }
+        },
+        accessibility_plan: { type: "string", description: "Verification plan for accessibility compliance (WCAG)." },
+        manual_uat_plan: { type: "string", description: "Manual user acceptance testing plan." }
     }
 };

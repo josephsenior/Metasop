@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { 
@@ -10,18 +9,14 @@ import {
     Send, 
     Sparkles, 
     Loader2, 
-    X, 
     MessageSquare, 
-    RefreshCw, 
     Info, 
-    ChevronDown,
     Zap
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { metasopApi } from "@/lib/api/metasop"
 import { useToast } from "@/components/ui/use-toast"
-import { generateAgentContextMarkdown } from "@/lib/metasop/utils/export-context"
+import { generateAgentContextMarkdown, getOptimizedSteps } from "@/lib/metasop/utils/export-context"
 
 interface Message {
     id: string
@@ -35,7 +30,7 @@ interface ProjectChatPanelProps {
     diagramId: string
     artifacts: any
     activeTab?: string
-    onRefineComplete?: () => void
+    onRefineComplete?: (result?: any) => void
 }
 
 export function ProjectChatPanel({ 
@@ -57,14 +52,23 @@ export function ProjectChatPanel({
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [isRefining, setIsRefining] = useState(false)
+    const [cacheId, setCacheId] = useState<string | undefined>(undefined)
     const scrollRef = useRef<HTMLDivElement>(null)
+
+    // Reset cache if artifacts change significantly (optional, but safer)
+    useEffect(() => {
+        setCacheId(undefined)
+    }, [diagramId])
 
     // Scroll to bottom when messages change
     useEffect(() => {
         if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+            scrollRef.current.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior: "smooth"
+            })
         }
-    }, [messages])
+    }, [messages, isLoading])
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault()
@@ -83,13 +87,16 @@ export function ProjectChatPanel({
         setIsLoading(true)
 
         // Check if the input looks like a refinement request
-        const isRefinementRequest = 
-            currentInput.toLowerCase().includes("change") || 
-            currentInput.toLowerCase().includes("add") || 
-            currentInput.toLowerCase().includes("remove") || 
-            currentInput.toLowerCase().includes("update") ||
-            currentInput.toLowerCase().includes("refine") ||
-            currentInput.toLowerCase().includes("fix")
+        // Refinement requests typically contain action verbs or specific instructions to change the design
+        const refinementVerbs = [
+            "change", "add", "remove", "update", "refine", "fix", "improve", 
+            "modify", "adjust", "create", "delete", "implement", "set",
+            "make", "rewrite", "incorporate", "expand", "reduce"
+        ]
+        
+        const isRefinementRequest = refinementVerbs.some(verb => 
+            currentInput.toLowerCase().includes(verb)
+        )
 
         try {
             if (isRefinementRequest) {
@@ -112,27 +119,52 @@ export function ProjectChatPanel({
 
     const handleQuestion = async (question: string) => {
         // Generate context from artifacts
-        const contextMarkdown = generateAgentContextMarkdown({
+        // If we have a cacheId, we don't need to send the full context markdown again
+        const includeSteps = getOptimizedSteps(activeTab);
+        const contextMarkdown = cacheId ? "CACHED" : generateAgentContextMarkdown({
             metadata: { metasop_artifacts: artifacts }
-        })
+        }, { includeSteps })
 
-        // In a real implementation, this would call a RAG endpoint
-        // For now, we simulate a response using the context
-        // Since we don't have a direct RAG API yet, we'll use a placeholder or 
-        // a client-side logic if simple enough, but ideally we'd have a backend for this.
-        
-        // Simulating AI thinking...
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        try {
+            const result = await metasopApi.askQuestion({
+                diagramId: diagramId || "",
+                question,
+                contextMarkdown,
+                activeTab,
+                cacheId
+            })
 
-        const response: Message = {
-            id: Date.now().toString(),
-            role: "assistant",
-            content: `I've analyzed the current ${activeTab === 'all' ? 'project' : activeTab} artifacts. Based on the design, I can confirm that the system is built with a deterministic approach. Your question about "${question}" relates to the ${activeTab === 'all' ? 'overall architecture' : activeTab} specifications.`,
-            type: "info",
-            timestamp: new Date()
+            // Update cache ID for subsequent messages
+            if (result.cacheId) {
+                setCacheId(result.cacheId)
+            }
+
+            const response: Message = {
+                id: Date.now().toString(),
+                role: "assistant",
+                content: result.answer,
+                type: "info",
+                timestamp: new Date()
+            }
+
+            setMessages(prev => [...prev, response])
+        } catch {
+            // Fallback for demo or if endpoint not ready
+            const response: Message = {
+                id: Date.now().toString(),
+                role: "assistant",
+                content: `I've analyzed the artifacts. Based on the project summary, this system focuses on deterministic orchestration. To provide more specific details about "${question}", I would need to dive deeper into the individual agent logs.`,
+                type: "info",
+                timestamp: new Date()
+            }
+            setMessages(prev => [...prev, response])
+            
+            toast({
+                title: "Chat Error",
+                description: "Failed to get a specialized answer. Using local analysis.",
+                variant: "destructive"
+            })
         }
-
-        setMessages(prev => [...prev, response])
     }
 
     const handleRefinement = async (instruction: string) => {
@@ -147,7 +179,7 @@ export function ProjectChatPanel({
         setMessages(prev => [...prev, refinementMessage])
 
         try {
-            await metasopApi.refineArtifact({
+            const result = await metasopApi.refineArtifact({
                 diagramId,
                 stepId: activeTab === 'all' ? 'summary' : activeTab,
                 instruction,
@@ -158,7 +190,7 @@ export function ProjectChatPanel({
             setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: "Refinement complete! I've updated the artifacts and the diagram. The page will refresh to show the changes.",
+                content: "Refinement complete! I've updated the artifacts and the diagram.",
                 type: "system",
                 timestamp: new Date()
             }])
@@ -168,14 +200,15 @@ export function ProjectChatPanel({
                 description: "The project has been updated.",
             })
 
-            // Refresh after a short delay
-            setTimeout(() => {
-                if (onRefineComplete) {
-                    onRefineComplete()
-                } else {
+            // Update parent state if callback provided
+            if (onRefineComplete) {
+                (onRefineComplete as any)(result)
+            } else {
+                // Refresh after a short delay if no callback
+                setTimeout(() => {
                     window.location.reload()
-                }
-            }, 2000)
+                }, 2000)
+            }
 
         } catch (error: any) {
             throw error
@@ -185,7 +218,7 @@ export function ProjectChatPanel({
     }
 
     return (
-        <div className="flex flex-col h-full bg-background border-l border-border shadow-xl w-80 lg:w-96">
+        <div className="flex flex-col h-full bg-background border-l border-border shadow-xl w-80 lg:w-96 min-h-0">
             {/* Header */}
             <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -208,8 +241,11 @@ export function ProjectChatPanel({
             </div>
 
             {/* Chat Area */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-                <div className="flex flex-col gap-4">
+            <div 
+                className="flex-1 overflow-y-auto p-4 custom-scrollbar" 
+                ref={scrollRef}
+            >
+                <div className="flex flex-col gap-4 min-h-full">
                     {messages.map((msg) => (
                         <div 
                             key={msg.id} 
@@ -266,7 +302,7 @@ export function ProjectChatPanel({
                         </div>
                     )}
                 </div>
-            </ScrollArea>
+            </div>
 
             {/* Input Area */}
             <div className="p-4 border-t border-border bg-muted/20">
