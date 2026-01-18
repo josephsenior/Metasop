@@ -92,7 +92,6 @@ export const qaSchema = {
                 api_response_time_p95: { type: "string" },
                 page_load_time: { type: "string" },
                 database_query_time: { type: "string" },
-                recommendations: { type: "array", items: { type: "string" } },
                 first_contentful_paint: { type: "string" },
                 time_to_interactive: { type: "string" },
                 largest_contentful_paint: { type: "string" }

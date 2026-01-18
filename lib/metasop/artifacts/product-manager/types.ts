@@ -56,6 +56,16 @@ export interface ProductManagerBackendArtifact {
     }>;
     summary?: string;
     description?: string;
+    gaps?: Array<{
+        gap: string;
+        impact: string;
+        priority: "high" | "medium" | "low";
+    }>;
+    opportunities?: Array<{
+        opportunity: string;
+        value: string;
+        feasibility: "high" | "medium" | "low";
+    }>;
     nodes?: any[];
     edges?: any[];
 }

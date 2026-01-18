@@ -101,7 +101,7 @@ Focus on technical rigor and actionable verification value. Match the complexity
         coverage: llmQA.coverage,
         performance_metrics: llmQA.performance_metrics,
         accessibility_plan: llmQA.accessibility_plan || (llmQA as any).accessibility,
-        manual_uat_plan: llmQA.manual_uat_plan
+        manual_uat_plan: llmQA.manual_uat_plan,
       };
     }
 

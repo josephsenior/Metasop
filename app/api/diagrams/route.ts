@@ -10,7 +10,7 @@ import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     const rawBody = await request.json();
 
     // Validate request using schema
@@ -69,4 +69,5 @@ export async function POST(request: NextRequest) {
     return createErrorResponse(error.message || "Failed to create diagram", 500);
   }
 }
+
 

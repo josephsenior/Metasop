@@ -54,9 +54,9 @@ MISSION OBJECTIVES:
 3. **Encryption & Secrets**: Specify encryption-at-rest and in-transit strategies. Detail a secrets management policy.
 4. **Security Controls & Compliance**: Map security controls and relevant compliance benchmarks (GDPR, etc.) with implementation details.
 5. **Vulnerability & Monitoring**: Define a security operations plan (DevSecOps) including scanning and incident response at an appropriate level.
-6. **Network Security**: Specify network isolation and secure provisioning policies.
-
-Focus on technical rigor and secure-by-default logic. Match the complexity of your security design to the inherent needs of the project. Respond with ONLY the JSON object.`;
+57→6. **Network Security**: Specify network isolation and secure provisioning policies.
+58→
+59→Focus on technical rigor and secure-by-default logic. Match the complexity of your security design to the inherent needs of the project. Respond with ONLY the JSON object.`;
 
       let llmSecurity: SecurityBackendArtifact | null = null;
 
@@ -107,7 +107,7 @@ Focus on technical rigor and secure-by-default logic. Match the complexity of yo
         compliance: llmSecurity.compliance,
         vulnerability_management: llmSecurity.vulnerability_management,
         security_monitoring: llmSecurity.security_monitoring,
-        network_security: llmSecurity.network_security
+        network_security: llmSecurity.network_security,
       };
     }
 

@@ -119,7 +119,8 @@ export class MetaSOPOrchestrator {
       includeDatabase?: boolean;
       reasoning?: boolean;
     },
-    onProgress?: (event: MetaSOPEvent) => void
+    onProgress?: (event: MetaSOPEvent) => void,
+    documents?: any[]
   ): Promise<MetaSOPResult> {
     const startTime = Date.now();
     logger.info("Starting MetaSOP Orchestration", {
@@ -136,6 +137,7 @@ export class MetaSOPOrchestrator {
       user_request,
       previous_artifacts: {},
       options,
+      documents,
     };
 
     try {
@@ -148,9 +150,15 @@ export class MetaSOPOrchestrator {
       // START CONTEXT CACHING: Create base cache after PM spec is ready
       if (this.config.llm.provider === "gemini" && this.config.performance.cacheEnabled) {
         try {
+          // Format documents for context if they exist
+          const documentsSection = documents && documents.length > 0
+            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
+            : '';
+
           const cacheContent = `
 === SHARED CONTEXT: USER REQUEST ===
 ${user_request}
+${documentsSection}
 
 === SHARED CONTEXT: PRODUCT SPECIFICATION ===
 ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
@@ -179,9 +187,15 @@ ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
       // UPDATE CACHE: After Architect, the context grows significantly. 
       if (this.config.llm.provider === "gemini" && this.config.performance.cacheEnabled) {
         try {
+          // Format documents for context if they exist
+          const documentsSection = documents && documents.length > 0
+            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
+            : '';
+
           const deepCacheContent = `
 === SHARED CONTEXT: USER REQUEST ===
 ${user_request}
+${documentsSection}
 
 === SHARED CONTEXT: PRODUCT SPECIFICATION ===
 ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
@@ -866,10 +880,11 @@ export async function runMetaSOPOrchestration(
     includeAPIs?: boolean;
     includeDatabase?: boolean;
   },
-  onProgress?: (event: MetaSOPEvent) => void
+  onProgress?: (event: MetaSOPEvent) => void,
+  documents?: any[]
 ): Promise<MetaSOPResult> {
   const orchestrator = new MetaSOPOrchestrator();
-  return orchestrator.run(user_request, options, onProgress);
+  return orchestrator.run(user_request, options, onProgress, documents);
 }
 
 /**

@@ -29,15 +29,9 @@ export function AuthGuard({
   const router = useRouter();
   const pathname = usePathname();
   
-  // In dev mode, bypass all auth checks
-  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === "true";
-
   useEffect(() => {
     if (isLoading) return;
     
-    // Skip all checks in dev mode
-    if (isDevMode) return;
-
     // Check authentication requirement
     if (requireAuth && !isAuthenticated) {
       // Save current location for redirect after login
@@ -59,21 +53,15 @@ export function AuthGuard({
     router,
     pathname,
     redirectTo,
-    isDevMode,
   ]);
 
-  // Show loading state while checking auth (skip in dev mode)
-  if (!isDevMode && isLoading) {
+  // Show loading state while checking auth
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400" />
       </div>
     );
-  }
-
-  // In dev mode, always render children
-  if (isDevMode) {
-    return <>{children}</>;
   }
 
   // Don't render children if auth requirements not met

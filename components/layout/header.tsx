@@ -37,8 +37,8 @@ export function Header() {
   }
 
   const userInitials = user
-    ? user.full_name
-      ? user.full_name
+    ? user.name
+      ? user.name
           .split(" ")
           .map((n) => n[0])
           .join("")
@@ -83,12 +83,12 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-9 w-9 border border-border">
                       <AvatarImage 
-                        src={user.email ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}` : undefined} 
+                        src={user.image || (user.email ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}` : undefined)} 
                         alt={user.username || "User"} 
                       />
-                      <AvatarFallback className="bg-blue-600/10 text-blue-700 dark:text-blue-400 text-xs">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
@@ -97,8 +97,8 @@ export function Header() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {user.full_name && (
-                        <p className="font-medium text-foreground">{user.full_name}</p>
+                      {user.name && (
+                        <p className="font-medium text-foreground">{user.name}</p>
                       )}
                       {user.username && (
                         <p className="text-sm text-muted-foreground">@{user.username}</p>

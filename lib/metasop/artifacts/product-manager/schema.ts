@@ -1,8 +1,34 @@
 
 export const pmSchema = {
     type: "object",
-    required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
+    required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
     properties: {
+        gaps: {
+            type: "array",
+            description: "Identified product gaps, missing features, or user pain points.",
+            items: {
+                type: "object",
+                required: ["gap", "impact", "priority"],
+                properties: {
+                    gap: { type: "string" },
+                    impact: { type: "string" },
+                    priority: { type: "string", enum: ["high", "medium", "low"] }
+                }
+            }
+        },
+        opportunities: {
+            type: "array",
+            description: "Product opportunities and growth areas.",
+            items: {
+                type: "object",
+                required: ["opportunity", "value", "feasibility"],
+                properties: {
+                    opportunity: { type: "string" },
+                    value: { type: "string" },
+                    feasibility: { type: "string", enum: ["high", "medium", "low"] }
+                }
+            }
+        },
         user_stories: {
             type: "array",
             maxItems: 10,

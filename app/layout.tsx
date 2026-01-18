@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
+import { NextAuthProvider } from "@/components/providers/next-auth-provider"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -34,11 +35,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <div suppressHydrationWarning>
-              {children}
-            </div>
-          </AuthProvider>
+          <NextAuthProvider>
+            <AuthProvider>
+              <div suppressHydrationWarning>
+                {children}
+              </div>
+            </AuthProvider>
+          </NextAuthProvider>
         </ThemeProvider>
         <Toaster />
         <Analytics />

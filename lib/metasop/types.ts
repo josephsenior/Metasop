@@ -49,13 +49,15 @@ export interface MetaSOPStep {
 }
 
 export interface MetaSOPEvent {
-  type: "step_start" | "step_thought" | "step_partial_artifact" | "step_complete" | "step_failed" | "orchestration_complete" | "orchestration_failed";
+  type: "step_start" | "step_thought" | "step_partial_artifact" | "step_complete" | "step_failed" | "orchestration_complete" | "orchestration_failed" | "agent_progress";
   step_id?: string;
   role?: string;
   artifact?: MetaSOPArtifact;
   thought?: string;
   partial_content?: any;
   error?: string;
+  status?: string;
+  message?: string;
   timestamp: string;
 }
 
@@ -95,6 +97,7 @@ export interface AgentContext {
   user_request: string;
   previous_artifacts: Record<string, MetaSOPArtifact>;
   cacheId?: string; // Optional Gemini Context Cache ID
+  documents?: any[]; // Additional context documents
   options?: {
     includeStateManagement?: boolean;
     includeAPIs?: boolean;

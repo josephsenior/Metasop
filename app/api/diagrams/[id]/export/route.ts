@@ -22,7 +22,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getAuthenticatedUser(request)
+    const user = await getAuthenticatedUser(request)
     const resolvedParams = await params
     const { searchParams } = new URL(request.url)
     const format = searchParams.get("format") || "markdown"
@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // Check if user has access (or if it's a guest diagram)
-    if (diagram.user_id !== user.userId && !diagram.id.startsWith("guest_")) {
+    if (diagram.userId !== user.userId && !diagram.id.startsWith("guest_")) {
       return createErrorResponse("Unauthorized", 403)
     }
 
@@ -178,21 +178,12 @@ export async function GET(
     }
 
     // Return file
-    if (content instanceof Blob) {
-      return new NextResponse(content, {
-        headers: {
-          "Content-Type": contentType,
-          "Content-Disposition": `attachment; filename="${filename}"`,
-        },
-      })
-    } else {
-      return new NextResponse(content, {
-        headers: {
-          "Content-Type": contentType,
-          "Content-Disposition": `attachment; filename="${filename}"`,
-        },
-      })
-    }
+    return new NextResponse(content, {
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    })
   } catch (error: any) {
     if (error.message === "Unauthorized") {
       return createErrorResponse("Unauthorized", 401)
@@ -210,7 +201,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getAuthenticatedUser(request)
+    const user = await getAuthenticatedUser(request)
     const resolvedParams = await params
     const body = await request.json()
     const artifact = body.artifact || "scaffold"
@@ -221,7 +212,7 @@ export async function POST(
       return createErrorResponse("Diagram not found", 404)
     }
 
-    if (diagram.user_id !== user.userId && !diagram.id.startsWith("guest_")) {
+    if (diagram.userId !== user.userId && !diagram.id.startsWith("guest_")) {
       return createErrorResponse("Unauthorized", 403)
     }
 

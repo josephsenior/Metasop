@@ -38,14 +38,16 @@ function prismaUserToUser(prismaUser: any): User {
     id: prismaUser.id,
     email: prismaUser.email,
     username: prismaUser.username,
-    full_name: prismaUser.full_name || undefined,
+    name: prismaUser.name || undefined,
+    image: prismaUser.image || undefined,
     role: prismaUser.role as "admin" | "user",
-    email_verified: prismaUser.email_verified,
-    is_active: prismaUser.is_active,
-    created_at: toISOString(prismaUser.created_at) || new Date().toISOString(),
-    updated_at: toISOString(prismaUser.updated_at) || new Date().toISOString(),
-    last_login: toISOString(prismaUser.last_login),
-    subscription_plan: prismaUser.subscription_plan as "free" | "pro" | "teams" | "enterprise" | undefined,
+    emailVerified: !!prismaUser.emailVerified,
+    isActive: prismaUser.isActive,
+    createdAt: toISOString(prismaUser.createdAt) || new Date().toISOString(),
+    updatedAt: toISOString(prismaUser.updatedAt) || new Date().toISOString(),
+    lastLogin: toISOString(prismaUser.lastLogin),
+    subscriptionPlan: prismaUser.subscriptionPlan as "free" | "pro" | "teams" | "enterprise" | undefined,
+    hasPassword: !!prismaUser.passwordHash,
   };
 }
 
@@ -54,7 +56,8 @@ export const db = {
   async createUser(data: {
     email: string;
     username: string;
-    full_name?: string;
+    name?: string;
+    image?: string;
     password: string;
   }): Promise<User> {
     const dbAvailable = await checkDatabaseConnection();
@@ -75,20 +78,21 @@ export const db = {
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
       // Create user in memory
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       const user: any = {
         id: userId,
         email: data.email,
         username: data.username,
-        full_name: data.full_name || null,
-        password_hash: hashedPassword,
+        name: data.name || null,
+        image: data.image || null,
+        passwordHash: hashedPassword,
         role: "user",
-        email_verified: false,
-        is_active: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        last_login: null,
-        subscription_plan: null,
+        emailVerified: false,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastLogin: null,
+        subscriptionPlan: null,
       };
 
       inMemoryUsers.set(userId, user);
@@ -126,11 +130,11 @@ export const db = {
       data: {
         email: data.email,
         username: data.username,
-        full_name: data.full_name,
-        password_hash: hashedPassword,
+        name: data.name,
+        image: data.image,
+        passwordHash: hashedPassword,
         role: "user",
-        email_verified: false,
-        is_active: true,
+        isActive: true,
       },
     });
 
@@ -191,18 +195,18 @@ export const db = {
     if (!dbAvailable) {
       // In-memory fallback
       const storedUser = inMemoryUsers.get(user.id);
-      if (!storedUser) return false;
-      return bcrypt.compare(password, storedUser.password_hash);
+      if (!storedUser || !storedUser.passwordHash) return false;
+      return await bcrypt.compare(password, storedUser.passwordHash);
     }
 
     const prismaUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { password_hash: true },
+      select: { passwordHash: true },
     });
 
-    if (!prismaUser) return false;
+    if (!prismaUser || !prismaUser.passwordHash) return false;
 
-    return bcrypt.compare(password, prismaUser.password_hash);
+    return await bcrypt.compare(password, prismaUser.passwordHash);
   },
 
   async updateUserLastLogin(userId: string): Promise<void> {
@@ -212,15 +216,15 @@ export const db = {
       // In-memory fallback
       const user = inMemoryUsers.get(userId);
       if (user) {
-        user.last_login = new Date();
-        user.updated_at = new Date();
+        user.lastLogin = new Date();
+        user.updatedAt = new Date();
       }
       return;
     }
 
     await prisma.user.update({
       where: { id: userId },
-      data: { last_login: new Date() },
+      data: { lastLogin: new Date() },
     });
   },
 
@@ -234,12 +238,13 @@ export const db = {
 
       if (data.email !== undefined) user.email = data.email;
       if (data.username !== undefined) user.username = data.username;
-      if (data.full_name !== undefined) user.full_name = data.full_name;
+      if (data.name !== undefined) user.name = data.name;
+      if (data.image !== undefined) user.image = data.image;
       if (data.role !== undefined) user.role = data.role;
-      if (data.email_verified !== undefined) user.email_verified = data.email_verified;
-      if (data.is_active !== undefined) user.is_active = data.is_active;
-      if (data.subscription_plan !== undefined) user.subscription_plan = data.subscription_plan;
-      user.updated_at = new Date();
+      if (data.emailVerified !== undefined) user.emailVerified = data.emailVerified;
+      if (data.isActive !== undefined) user.isActive = data.isActive;
+      if (data.subscriptionPlan !== undefined) user.subscriptionPlan = data.subscriptionPlan;
+      user.updatedAt = new Date();
 
       return prismaUserToUser(user);
     }
@@ -248,11 +253,14 @@ export const db = {
 
     if (data.email !== undefined) updateData.email = data.email;
     if (data.username !== undefined) updateData.username = data.username;
-    if (data.full_name !== undefined) updateData.full_name = data.full_name;
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.image !== undefined) updateData.image = data.image;
     if (data.role !== undefined) updateData.role = data.role;
-    if (data.email_verified !== undefined) updateData.email_verified = data.email_verified;
-    if (data.is_active !== undefined) updateData.is_active = data.is_active;
-    if (data.subscription_plan !== undefined) updateData.subscription_plan = data.subscription_plan;
+    if (data.emailVerified !== undefined) {
+      updateData.emailVerified = data.emailVerified ? new Date() : null;
+    }
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.subscriptionPlan !== undefined) updateData.subscriptionPlan = data.subscriptionPlan;
 
     const prismaUser = await prisma.user.update({
       where: { id: userId },
@@ -265,7 +273,7 @@ export const db = {
   // Password reset operations
   async createResetToken(email: string): Promise<string> {
     const dbAvailable = await checkDatabaseConnection();
-    const token = `reset_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+    const token = `reset_${Date.now()}_${Math.random().toString(36).substring(2, 18)}`;
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     if (!dbAvailable) {
@@ -357,22 +365,22 @@ export const db = {
       // In-memory fallback
       const user = inMemoryUsers.get(email);
       if (user) {
-        user.password_hash = hashedPassword;
-        user.updated_at = new Date();
+        user.passwordHash = hashedPassword;
+        user.updatedAt = new Date();
       }
       return;
     }
 
     await prisma.user.update({
       where: { email },
-      data: { password_hash: hashedPassword },
+      data: { passwordHash: hashedPassword },
     });
   },
 };
 
 // Helper to hash passwords
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
+  return await bcrypt.hash(password, 10);
 }
 
 // Helper to compare passwords
@@ -380,5 +388,5 @@ export async function comparePassword(
   plainPassword: string,
   hashedPassword: string
 ): Promise<boolean> {
-  return bcrypt.compare(plainPassword, hashedPassword);
+  return await bcrypt.compare(plainPassword, hashedPassword);
 }

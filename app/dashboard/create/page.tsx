@@ -22,7 +22,8 @@ import {
   Play,
   Save,
   Download,
-  FileText
+  FileText,
+  Paperclip
 } from "lucide-react"
 import { generateAgentContextMarkdown } from "@/lib/metasop/utils/export-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -31,7 +32,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Kbd } from "@/components/ui/kbd"
 import { GenerationProgress } from "@/components/ui/GenerationProgress"
 import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
-import { exampleDiagram } from "@/lib/data/example-diagram"
 import type { DiagramNode, DiagramEdge } from "@/types/diagram"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -83,6 +83,11 @@ function CreateDiagramContent() {
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Document upload state
+  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
@@ -133,21 +138,37 @@ function CreateDiagramContent() {
   // Export functions
   // Export functions removed - unused
 
-  // Load example diagram for prototyping (dev mode)
-  const loadExampleDiagram = () => {
-    setCurrentDiagram({
-      nodes: exampleDiagram.nodes,
-      edges: exampleDiagram.edges,
-      title: exampleDiagram.title,
-      description: exampleDiagram.description,
-      isGuest: false,
-    })
-    setPrompt(exampleDiagram.description)
-    toast({
-      title: "Example diagram loaded!",
-      description: "This is a full example diagram with all agent outputs for UI prototyping.",
-      duration: 4000,
-    })
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        const content = event.target?.result as string
+        const newDoc = {
+          name: file.name,
+          type: file.name.split('.').pop() || 'txt',
+          content: content,
+        }
+        
+        setUploadedDocuments(prev => [...prev, newDoc])
+        toast({
+          title: "Document Added",
+          description: `${file.name} will be used as context for generation.`,
+        })
+        setIsUploading(false)
+      }
+      reader.readAsText(file)
+    } catch (error: any) {
+      setIsUploading(false)
+      toast({
+        title: "File Error",
+        description: "Failed to read the file.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleGenerate = async () => {
@@ -199,6 +220,7 @@ function CreateDiagramContent() {
             model: selectedModel,
             reasoning: isReasoningEnabled,
           },
+          documents: uploadedDocuments,
         }),
       })
 
@@ -725,46 +747,6 @@ function CreateDiagramContent() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                  {/* Dev Mode - Load Example Diagram */}
-                  {(process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") && (
-                    <Alert className="border-purple-600/30 bg-purple-600/10">
-                      <Sparkles className="h-4 w-4 text-purple-700 dark:text-purple-400" />
-                      <AlertDescription className="text-xs">
-                        <span className="font-medium">Dev Mode:</span> Load example diagram for UI prototyping without API calls.{" "}
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={loadExampleDiagram}
-                          className="h-auto p-0 text-xs underline"
-                        >
-                          Load Example
-                        </Button>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {/* Dev Mode - Load Example Diagram */}
-                  {(process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_DEV_MODE === "true") && (
-                    <Alert className="border-purple-600/30 bg-purple-600/10 mb-4">
-                      <Sparkles className="h-4 w-4 text-purple-700 dark:text-purple-400" />
-                      <AlertDescription className="text-xs">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="font-medium">Dev Mode:</span> Load example diagram for UI prototyping without API calls.
-                          </div>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={loadExampleDiagram}
-                            className="h-auto p-0 text-xs underline shrink-0"
-                          >
-                            Load Example
-                          </Button>
-                        </div>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
                   {/* Guest user notice */}
                   {!isAuthenticated && (
                     <Alert className="border-blue-600/30 bg-blue-600/10">
@@ -1059,6 +1041,41 @@ function CreateDiagramContent() {
                         </div>
 
                         <div className="absolute bottom-2 right-2 flex items-center gap-3">
+                          {uploadedDocuments.length > 0 && (
+                            <div className="flex items-center gap-1.5 mr-2">
+                              <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] py-0 h-6">
+                                {uploadedDocuments.length} docs
+                              </Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                onClick={() => setUploadedDocuments([])}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/10"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isGenerating || isUploading}
+                          >
+                            {isUploading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Paperclip className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".txt,.md,.json,.csv,.pdf"
+                            onChange={handleFileChange}
+                          />
                           <VoiceInputButton 
                             onTranscription={(text) => setPrompt(prev => prev + (prev ? " " : "") + text)}
                             disabled={isGenerating}

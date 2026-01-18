@@ -248,34 +248,14 @@ const CoverageDeltaSchema = z
   .nullable()
   .optional();
 
-const SecurityFindingSchema = z.object({
-  severity: z.enum(["critical", "high", "medium", "low", "info"]),
-  vulnerability: z.string().min(1, "Vulnerability name is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  affected_endpoints: z.array(z.string()).optional(),
-  remediation: z.string().optional(),
-  cve: z.string().regex(/^CVE-[0-9]{4}-[0-9]{4,}$/, "CVE must match pattern CVE-YYYY-NNNN+").optional(),
-});
-
 const PerformanceMetricsSchema = z.object({
   api_response_time_p95: z.string().optional(),
   page_load_time: z.string().optional(),
   database_query_time: z.string().optional(),
-  recommendations: z.array(z.string()).optional(),
   first_contentful_paint: z.string().optional(),
   time_to_interactive: z.string().optional(),
   largest_contentful_paint: z.string().optional(),
 });
-
-const ReportSchema = z.array(
-  z.object({
-    category: z.enum(["authentication", "api", "ui", "security", "performance", "database", "integration"]).optional(),
-    title: z.string().optional(),
-    status: z.enum(["pass", "fail", "warning"]).optional(),
-    details: z.string().optional(),
-    recommendations: z.array(z.string()).optional(),
-  })
-);
 
 export const QAArtifactSchema = z.object({
   ok: z.boolean(),
@@ -311,10 +291,8 @@ export const QAArtifactSchema = z.object({
     )
     .optional(),
   summary: z.string().optional(),
-  report: ReportSchema.optional(),
   coverage: CoverageSchema.optional(),
   coverage_delta: CoverageDeltaSchema.optional(),
-  security_findings: z.array(SecurityFindingSchema).optional(),
   performance_metrics: PerformanceMetricsSchema.optional(),
   description: z.string().optional(),
 });

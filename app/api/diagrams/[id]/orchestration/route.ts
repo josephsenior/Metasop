@@ -3,14 +3,14 @@ import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from
 import { diagramDb } from "@/lib/diagrams/db";
 
 /**
- * GET /api/diagrams/[id]/orchestration - Get orchestration status for a diagram
+ * GET /api/diagrams/[id]/orchestration - Get orchestration status for a diagram generation
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     const { id } = await params;
     const diagram = await diagramDb.findById(id, user.userId);
 

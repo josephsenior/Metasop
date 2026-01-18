@@ -63,9 +63,9 @@ MISSION OBJECTIVES:
 6. **Responsive Strategy**: Define a responsive layout strategy with specific breakpoints and fluid rules.
 7. **UI Patterns**: List the fundamental patterns used (e.g., Error States, Empty States).
 8. **Information Architecture**: Define the website layout structure (pages, routes, layout sections).
-9. **Visual Design Philosophy**: Define the core aesthetic principles and brand alignment.
-
-Focus on architectural clarity and production-ready detail. Match the complexity of your UI architecture to the inherent needs of the project. Respond with ONLY the JSON object.`;
+66→9. **Visual Design Philosophy**: Define the core aesthetic principles and brand alignment.
+67→
+68→Focus on architectural clarity and production-ready detail. Match the complexity of your UI architecture to the inherent needs of the project. Respond with ONLY the JSON object.`;
 
       let llmUIDesign: any = null;
 
@@ -108,7 +108,10 @@ Focus on architectural clarity and production-ready detail. Match the complexity
         information_architecture: llmUIDesign.information_architecture,
         responsive_strategy: llmUIDesign.responsive_strategy,
         ui_patterns: llmUIDesign.ui_patterns,
-        component_hierarchy: llmUIDesign.component_hierarchy
+        component_hierarchy: llmUIDesign.component_hierarchy,
+        website_layout: llmUIDesign.website_layout,
+        component_specs: llmUIDesign.component_specs,
+        layout_breakpoints: llmUIDesign.layout_breakpoints
       };
     }
 

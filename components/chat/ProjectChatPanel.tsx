@@ -12,7 +12,8 @@ import {
     Loader2, 
     MessageSquare, 
     Info, 
-    Zap
+    Zap,
+    Paperclip
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { metasopApi } from "@/lib/api/metasop"
@@ -30,7 +31,6 @@ interface Message {
 interface ProjectChatPanelProps {
     diagramId: string
     artifacts: any
-    documents?: any[]
     activeTab?: string
     onRefineComplete?: (result?: any) => void
 }
@@ -38,9 +38,8 @@ interface ProjectChatPanelProps {
 export function ProjectChatPanel({ 
     diagramId, 
     artifacts, 
-    documents = [],
     activeTab = "all",
-    onRefineComplete 
+    onRefineComplete
 }: ProjectChatPanelProps) {
     const { toast } = useToast()
     const [messages, setMessages] = useState<Message[]>([
@@ -55,8 +54,11 @@ export function ProjectChatPanel({
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [isRefining, setIsRefining] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
+    const [transientDocuments, setTransientDocuments] = useState<any[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
     const scrollRef = useRef<HTMLDivElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Reset cache if artifacts change significantly (optional, but safer)
     useEffect(() => {
@@ -72,6 +74,43 @@ export function ProjectChatPanel({
             })
         }
     }, [messages, isLoading])
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        try {
+            // Read file content
+            const reader = new FileReader()
+            reader.onload = async (event) => {
+                const content = event.target?.result as string
+                
+                const newDoc = {
+                    name: file.name,
+                    type: file.name.split('.').pop() || 'txt',
+                    content: content
+                }
+
+                setTransientDocuments(prev => [...prev, newDoc])
+                
+                toast({
+                    title: "Context Added",
+                    description: `${file.name} added to current chat context.`,
+                })
+                
+                setIsUploading(false)
+            }
+            reader.readAsText(file)
+        } catch (error: any) {
+            setIsUploading(false)
+            toast({
+                title: "File Error",
+                description: "Failed to read the file.",
+                variant: "destructive",
+            })
+        }
+    }
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault()
@@ -126,7 +165,7 @@ export function ProjectChatPanel({
         const includeSteps = getOptimizedSteps(activeTab);
         const contextMarkdown = cacheId ? "CACHED" : generateAgentContextMarkdown({
             metadata: { metasop_artifacts: artifacts },
-            documents: documents
+            documents: transientDocuments
         }, { includeSteps })
 
         try {
@@ -319,15 +358,36 @@ export function ProjectChatPanel({
                         disabled={isLoading || isRefining}
                     />
                     <div className="absolute right-1 top-1 flex items-center gap-1">
+                        <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-9 w-9 text-muted-foreground hover:text-blue-500"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isLoading || isRefining || isUploading}
+                        >
+                            {isUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Paperclip className="h-4 w-4" />
+                            )}
+                        </Button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".txt,.md,.json,.csv,.pdf"
+                            onChange={handleFileChange}
+                        />
                         <VoiceInputButton 
                             onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
-                            disabled={isLoading || isRefining}
+                            disabled={isLoading || isRefining || isUploading}
                             className="h-9 w-9"
                         />
                         <Button 
                             type="submit" 
                             size="icon" 
-                            disabled={!input.trim() || isLoading || isRefining}
+                            disabled={!input.trim() || isLoading || isRefining || isUploading}
                             className="h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md"
                         >
                             {isLoading || isRefining ? (

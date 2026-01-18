@@ -38,14 +38,14 @@ import { PDFGenerator } from "@/lib/artifacts/pdf-generator";
 
 const mockDiagram: Diagram = {
   id: "test-1",
-  user_id: "user-1",
+  userId: "user-1",
   title: "Test Document",
   description: "A test document",
   nodes: [],
   edges: [],
   status: "completed",
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   metadata: {
     metasop_artifacts: {
       pm_spec: { content: { user_stories: [] } },

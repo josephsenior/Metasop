@@ -4,6 +4,8 @@
 // ============================================================================
 
 export interface DevOpsBackendArtifact {
+    summary?: string;
+    description?: string;
     cloud_provider?: string; // UI convenience field
     infra_components?: number; // UI convenience field
     infrastructure: {
@@ -102,8 +104,6 @@ export interface DevOpsBackendArtifact {
         backup_strategy: string;
         failover_plan?: string;
     };
-    summary?: string;
-    description?: string;
     nodes?: any[];
     edges?: any[];
 }

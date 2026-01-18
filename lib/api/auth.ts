@@ -84,6 +84,18 @@ export const authApi = {
   },
 
   /**
+   * Update user profile
+   */
+  async updateProfile(data: { name?: string; image?: string }): Promise<User> {
+    const response = await apiClient.patch<{
+      status: string;
+      data: { user: User };
+      message: string;
+    }>("/auth/profile", data);
+    return response.data.data.user;
+  },
+
+  /**
    * Get OAuth authorization URL
    */
   async getOAuthUrl(

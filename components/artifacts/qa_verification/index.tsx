@@ -334,22 +334,6 @@ export default function QAVerificationPanel({
                         </CardHeader>
                         <CardContent className="space-y-4">
                           {Object.entries(performanceMetrics).map(([key, value]: [string, any], i) => {
-                            if (key === 'recommendations' && Array.isArray(value)) {
-                              return (
-                                <div key={i} className="pt-2 border-t border-border/40 mt-2">
-                                  <div className="text-[10px] uppercase text-muted-foreground font-bold mb-2">Recommendations</div>
-                                  <div className="space-y-1.5">
-                                    {value.map((rec, idx) => (
-                                      <div key={idx} className="text-xs bg-amber-500/5 text-amber-700 dark:text-amber-400 p-2 rounded border border-amber-500/10 flex gap-2">
-                                        <Zap className="h-3 w-3 mt-0.5 shrink-0" />
-                                        <span>{rec}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )
-                            }
-
                             return (
                               <div key={i} className="space-y-1.5">
                                 <div className="flex justify-between text-xs">

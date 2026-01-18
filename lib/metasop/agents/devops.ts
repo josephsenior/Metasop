@@ -98,7 +98,9 @@ Focus on technical depth and production-ready rigor. Match the complexity of you
         cicd: llmDevOps.cicd,
         containerization: llmDevOps.containerization,
         monitoring: llmDevOps.monitoring,
-        deployment: llmDevOps.deployment
+        deployment: llmDevOps.deployment,
+        scaling: llmDevOps.scaling,
+        disaster_recovery: llmDevOps.disaster_recovery,
       };
     }
 

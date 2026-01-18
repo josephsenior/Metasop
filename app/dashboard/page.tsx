@@ -52,7 +52,7 @@ export default function DashboardPage() {
       const now = new Date()
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       const thisMonthDiagrams = result.diagrams.filter(
-        (d) => new Date(d.created_at) >= startOfMonth
+        (d) => new Date(d.createdAt) >= startOfMonth
       )
 
       setStats({
@@ -71,7 +71,7 @@ export default function DashboardPage() {
     }
   }
 
-  const userName = user?.full_name || user?.username || "there"
+  const userName = user?.name || user?.username || "there"
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
@@ -104,11 +104,11 @@ export default function DashboardPage() {
               <h1 className="text-3xl font-bold text-foreground mb-1">
                 {greeting}, {userName.split(" ")[0]}! 👋
               </h1>
-              <p className="text-muted-foreground">Create and manage your architecture diagrams</p>
+              <p className="text-muted-foreground">Create and manage your architectural diagrams</p>
             </div>
-            {user?.subscription_plan && (
+            {user?.subscriptionPlan && (
               <Badge variant="outline" className="text-sm px-3 py-1.5 border-blue-600/20 bg-blue-600/10 text-blue-700 dark:text-blue-400">
-                {user.subscription_plan.charAt(0).toUpperCase() + user.subscription_plan.slice(1)} Plan
+                {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1).toLowerCase()} Plan
               </Badge>
             )}
           </div>
@@ -195,7 +195,10 @@ export default function DashboardPage() {
                             </h3>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{diagram.description}</p>
                             <div className="flex items-center gap-4 mt-2">
-                              <span className="text-xs text-muted-foreground">{formatTimeAgo(diagram.updated_at)}</span>
+                              <span className="text-xs text-muted-foreground flex items-center">
+                                <Clock className="mr-1 h-3 w-3" />
+                                {formatTimeAgo(diagram.updatedAt)}
+                              </span>
                               <StatusBadge status={diagram.status as "completed" | "processing" | "failed" | "pending"} />
                             </div>
                           </div>

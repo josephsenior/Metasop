@@ -441,11 +441,9 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                           <ArtifactsPanel
                             diagramId={diagram.id}
                             artifacts={diagram.metadata.metasop_artifacts}
-                            documents={(diagram as any).documents}
                             className="h-full"
                             activeTab={activeArtifactTab}
                             onTabChange={setActiveArtifactTab}
-                            onDocumentAdded={loadDiagram}
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
@@ -480,11 +478,11 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground mb-1">Created</p>
-                          <p className="text-sm text-muted-foreground">{new Date(diagram.created_at).toLocaleDateString()}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(diagram.createdAt).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground mb-1">Last Updated</p>
-                          <p className="text-sm text-muted-foreground">{new Date(diagram.updated_at).toLocaleDateString()}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(diagram.updatedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -513,7 +511,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                 <ProjectChatPanel
                   diagramId={diagram.id}
                   artifacts={diagram.metadata.metasop_artifacts}
-                  documents={(diagram as any).documents}
                   activeTab={activeArtifactTab}
                   onRefineComplete={handleRefineComplete}
                 />
@@ -534,7 +531,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                   <ProjectChatPanel
                     diagramId={diagram.id}
                     artifacts={diagram.metadata.metasop_artifacts}
-                    documents={(diagram as any).documents}
                     activeTab={activeArtifactTab}
                     onRefineComplete={handleRefineComplete}
                   />

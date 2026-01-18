@@ -98,8 +98,8 @@ export default function MyDiagramsPage() {
 
     filtered.sort((a, b) => {
       if (sortBy === "date") {
-        const dateA = new Date(a.created_at).getTime()
-        const dateB = new Date(b.created_at).getTime()
+        const dateA = new Date(a.createdAt).getTime()
+        const dateB = new Date(b.createdAt).getTime()
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA
       } else {
         return sortOrder === "asc"
@@ -251,7 +251,7 @@ export default function MyDiagramsPage() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>{formatTimeAgo(diagram.updated_at)}</span>
+                        <span>{formatTimeAgo(diagram.createdAt)}</span>
                       </div>
                       <StatusBadge status={diagram.status as "completed" | "processing" | "failed" | "pending"} />
                     </div>

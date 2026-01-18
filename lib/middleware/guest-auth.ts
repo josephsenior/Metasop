@@ -109,11 +109,6 @@ export async function handleGuestAuth(
 export async function checkGuestDiagramLimit(
   request: NextRequest
 ): Promise<{ allowed: boolean; reason?: string; sessionId?: string }> {
-  // In dev mode, always allow
-  if (process.env.DEV_MODE === "true") {
-    return { allowed: true, sessionId: "dev-session" };
-  }
-
   const authResult = await handleGuestAuth(request, false);
 
   if (!authResult.isGuest) {

@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const lastStepId = searchParams.get("last_step_id") || undefined;

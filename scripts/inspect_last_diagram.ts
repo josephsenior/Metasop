@@ -4,7 +4,7 @@ async function inspect() {
     console.log("🔍 Inspecting latest diagram artifacts...");
 
     const lastDiagram = await prisma.diagram.findFirst({
-        orderBy: { created_at: "desc" },
+        orderBy: { createdAt: "desc" },
     });
 
     if (!lastDiagram) {

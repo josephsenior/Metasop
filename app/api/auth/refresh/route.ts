@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user still exists and is active
     const user = await db.findUserById(payload.userId);
-    if (!user || !user.is_active) {
+    if (!user || !user.isActive) {
       return NextResponse.json(
         {
           status: "error",

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const user = await db.createUser({
       email: body.email,
       username: body.username,
-      full_name: body.full_name,
+      name: body.name,
       password: body.password, // Will be hashed in createUser
     });
 

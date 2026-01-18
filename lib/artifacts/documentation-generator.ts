@@ -36,7 +36,7 @@ export class DocumentationGenerator {
     const qaArtifact = artifacts.qa_verification?.content || {}
 
     let markdown = `# ${this.diagram.title}\n\n`
-    markdown += `**Generated:** ${new Date(this.diagram.created_at).toLocaleString()}\n\n`
+    markdown += `**Generated:** ${new Date(this.diagram.createdAt).toLocaleString()}\n\n`
     markdown += `## Overview\n\n${this.diagram.description}\n\n`
     markdown += `---\n\n`
 

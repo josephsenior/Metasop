@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
 
         // Authentication: Use user if authenticated, otherwise allow refinement for guests if diagram allows
         try {
-            getAuthenticatedUser(request);
+            await getAuthenticatedUser(request);
         } catch {
-            // For now, allow guest refinement if diagramId starts with guest_
-            if (!body.diagramId.startsWith("guest_")) {
+            // For now, allow guest refinement if diagramId starts with guest_ or diagram_
+            if (!body.diagramId.startsWith("guest_") && !body.diagramId.startsWith("diagram_")) {
                 return createErrorResponse("Unauthorized", 401);
             }
         }

@@ -48,7 +48,7 @@ export class PDFGenerator {
     // Date
     doc.setFontSize(10)
     doc.setFont("helvetica", "normal")
-    doc.text(`Generated: ${new Date(this.diagram.created_at).toLocaleString()}`, margin, yPosition)
+    doc.text(`Generated: ${new Date(this.diagram.createdAt).toLocaleString()}`, margin, yPosition)
     yPosition += 10
 
     // Description

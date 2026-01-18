@@ -23,7 +23,6 @@ import SecurityArtifact from "@/components/artifacts/security_architecture"
 import EngineerArtifact from "@/components/artifacts/engineer_impl"
 import UIDesignArtifact from "@/components/artifacts/ui_design"
 import QAArtifact from "@/components/artifacts/qa_verification"
-import DocumentsArtifact from "@/components/artifacts/DocumentsArtifact"
 
 interface ArtifactsPanelProps {
     diagramId?: string
@@ -36,19 +35,16 @@ interface ArtifactsPanelProps {
         ui_design?: any
         qa_verification?: any
     }
-    documents?: any[]
     steps?: any[]
     className?: string
     activeTab?: string
     onTabChange?: (tab: string) => void
-    onDocumentAdded?: () => void
 }
 
 const agentTabs = [
     { id: "summary", label: "Summary", icon: LayoutDashboard, color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { id: "pm_spec", label: "PM", icon: User, color: "text-purple-600", bgColor: "bg-purple-500/10" },
+    { id: "pm_spec", label: "PM Spec", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
     { id: "arch_design", label: "Architect", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
-    { id: "documents", label: "Documents", icon: Archive, color: "text-amber-600", bgColor: "bg-amber-500/10" },
     { id: "devops_infrastructure", label: "DevOps", icon: Server, color: "text-green-600", bgColor: "bg-green-500/10" },
     { id: "security_architecture", label: "Security", icon: Shield, color: "text-red-600", bgColor: "bg-red-500/10" },
     { id: "ui_design", label: "UI Designer", icon: Palette, color: "text-pink-600", bgColor: "bg-pink-500/10" },
@@ -59,12 +55,10 @@ const agentTabs = [
 export function ArtifactsPanel({ 
     diagramId, 
     artifacts, 
-    documents = [],
     steps, 
     className = "",
     activeTab: externalActiveTab,
-    onTabChange,
-    onDocumentAdded
+    onTabChange
 }: ArtifactsPanelProps) {
     const { toast } = useToast()
     const [internalActiveTab, setInternalActiveTab] = useState("summary")
@@ -191,13 +185,6 @@ export function ArtifactsPanel({
                                     {(() => {
                                         const artifact = artifacts[activeTab as keyof typeof artifacts]
                                         if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} />
-                                        if (activeTab === "documents") return (
-                                            <DocumentsArtifact 
-                                                diagramId={diagramId || ""} 
-                                                documents={documents || []} 
-                                                onDocumentAdded={onDocumentAdded}
-                                            />
-                                        )
                                         if (!artifact) return <div className="text-xs text-muted-foreground p-4">No artifact data available</div>
 
                                         switch (activeTab) {

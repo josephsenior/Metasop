@@ -12,9 +12,9 @@ export interface GuestSession {
 }
 
 export const GUEST_LIMITS = {
-  maxDiagrams: process.env.DEV_MODE === "true" ? Infinity : 2, // Unlimited in dev mode
-  saveEnabled: process.env.DEV_MODE === "true", // Enabled in dev mode
-  exportEnabled: process.env.DEV_MODE === "true", // Enabled in dev mode
+  maxDiagrams: 2, // Limit for guests
+  saveEnabled: false, // Guests cannot save to DB permanently
+  exportEnabled: true, // Guests can export
   sessionTimeout: 30 * 60 * 1000, // 30 minutes of inactivity
   maxSessionAge: 24 * 60 * 60 * 1000, // 24 hours total session age
 } as const;
@@ -76,11 +76,6 @@ export function canGuestCreateDiagram(session: GuestSession): {
   allowed: boolean;
   reason?: string;
 } {
-  // In dev mode, always allow
-  if (process.env.DEV_MODE === "true") {
-    return { allowed: true };
-  }
-
   if (session.diagramsCreated >= GUEST_LIMITS.maxDiagrams) {
     return {
       allowed: false,

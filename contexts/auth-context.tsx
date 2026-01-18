@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import type { User, LoginRequest, RegisterRequest } from "@/types/auth";
 import { authApi } from "@/lib/api/auth";
 import { tokenStorage } from "@/lib/auth/token-storage";
@@ -26,88 +27,93 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   clearError: () => void;
+  loginWithProvider: (provider: "google" | "github") => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status, update: updateSession } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // In dev mode, consider user as authenticated
-  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === "true";
-
-  // Initialize auth state from storage
+  // Sync with NextAuth session
   useEffect(() => {
-    const initAuth = async () => {
-      // In dev mode, skip auth initialization and set as authenticated
-      if (isDevMode) {
-        setUser({
-          id: "dev_user_id",
-          email: "dev@example.com",
-          username: "dev_user",
-          full_name: "Dev User",
-          role: "admin",
-          email_verified: true,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          subscription_plan: "free",
-        } as User);
+    if (status === "loading") {
+      setIsLoading(true);
+      return;
+    }
+
+    if (session?.user) {
+      // Bridge NextAuth user to our User type
+      const nextUser = session.user as any;
+      const bridgedUser: User = {
+        id: nextUser.id || "",
+        email: nextUser.email || "",
+        username: nextUser.name || nextUser.email?.split("@")[0] || "user",
+        name: nextUser.name || "",
+        role: nextUser.role || "user",
+        emailVerified: true, // Assuming OAuth or successful credential login verifies email
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        image: nextUser.image,
+      } as any;
+
+      setUser(bridgedUser);
+      setIsAuthenticated(true);
+    } else {
+      // Fallback to existing token storage for backward compatibility if needed
+      const token = tokenStorage.getToken();
+      const storedUser = tokenStorage.getUser();
+
+      if (token && storedUser) {
+        setUser(storedUser as unknown as User);
         setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
-
-      try {
-        const token = tokenStorage.getToken();
-        const storedUser = tokenStorage.getUser();
-
-        if (token && storedUser) {
-          // Verify token is still valid by fetching current user
-          try {
-            const currentUser = await authApi.getCurrentUser();
-            setUser(currentUser as User);
-            setIsAuthenticated(true);
-            tokenStorage.setUser(
-              currentUser as unknown as Record<string, unknown>,
-            );
-          } catch {
-            // Token invalid, clear storage
-            tokenStorage.clear();
-            setUser(null);
-            setIsAuthenticated(false);
-          }
-        }
-      } catch (err) {
-        console.error("Auth initialization error:", err);
-        tokenStorage.clear();
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-  }, [isDevMode]);
+    }
+    setIsLoading(false);
+  }, [session, status]);
 
   const login = useCallback(async (credentials: LoginRequest) => {
     try {
       setError(null);
       setIsLoading(true);
-      const response = await authApi.login(credentials);
+      
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-      tokenStorage.setToken(response.token);
-      tokenStorage.setUser(response.user as unknown as Record<string, unknown>);
-      setUser(response.user);
-      setIsAuthenticated(true);
+      if (result?.error) {
+        throw new Error(result.error);
+      }
 
-      // Setup automatic token refresh
-      setupTokenRefresh(response.expires_in);
+      // If we still use the old API for some reason, we can call it here
+      // But for now, NextAuth handles it.
     } catch (err: unknown) {
-      const errorMessage =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Login failed. Please check your credentials.";
+      const errorMessage = (err as Error)?.message || "Login failed. Please check your credentials.";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loginWithProvider = useCallback(async (provider: "google" | "github") => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await signIn(provider, { callbackUrl: "/dashboard" });
+    } catch (err: unknown) {
+      const errorMessage = (err as Error)?.message || `Login with ${provider} failed.`;
       setError(errorMessage);
       throw err;
     } finally {
@@ -119,14 +125,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
       setIsLoading(true);
+      // For registration, we might still want to use the authApi
       const response = await authApi.register(data);
+
+      // After registration, log in with credentials
+      await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
 
       tokenStorage.setToken(response.token);
       tokenStorage.setUser(response.user as unknown as Record<string, unknown>);
       setUser(response.user);
       setIsAuthenticated(true);
-
-      // Setup automatic token refresh
       setupTokenRefresh(response.expires_in);
     } catch (err: unknown) {
       const errorMessage =
@@ -141,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      await signOut({ redirect: false });
       await authApi.logout();
     } catch (err) {
       console.error("Logout error:", err);
@@ -157,6 +170,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await authApi.getCurrentUser();
       setUser(currentUser);
       tokenStorage.setUser(currentUser as unknown as Record<string, unknown>);
+      
+      // Also update NextAuth session if it exists
+      if (session) {
+        await updateSession({
+          ...session,
+          user: {
+            ...session.user,
+            name: currentUser.name,
+            image: currentUser.image,
+          }
+        });
+      }
     } catch (err) {
       console.error("Failed to refresh user:", err);
       // If refresh fails, user might be logged out
@@ -181,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshUser,
       clearError,
+      loginWithProvider,
     }),
     [
       user,
@@ -192,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshUser,
       clearError,
+      loginWithProvider,
     ],
   );
 

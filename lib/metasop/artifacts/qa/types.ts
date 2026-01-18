@@ -50,19 +50,10 @@ export interface QABackendArtifact {
         functions?: number;
         branches?: number;
     } | null;
-    security_findings?: Array<{
-        severity: "critical" | "high" | "medium" | "low" | "info";
-        vulnerability: string;
-        description: string;
-        affected_endpoints?: string[];
-        remediation?: string;
-        cve?: string;
-    }>;
     performance_metrics?: {
         api_response_time_p95?: string;
         page_load_time?: string;
         database_query_time?: string;
-        recommendations?: string[];
         first_contentful_paint?: string;
         time_to_interactive?: string;
         largest_contentful_paint?: string;

@@ -19,14 +19,14 @@ export interface DiagramEdge {
 
 export interface Diagram {
   id: string;
-  user_id: string;
+  userId: string;
   title: string;
   description: string;
   nodes: DiagramNode[];
   edges: DiagramEdge[];
   status: "processing" | "completed" | "failed" | "pending";
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   metadata?: {
     prompt?: string;
     options?: {
@@ -40,7 +40,6 @@ export interface Diagram {
     is_guest?: boolean;
     update_error?: string;
   };
-  documents?: any[];
 }
 
 export interface CreateDiagramRequest {
@@ -49,7 +48,10 @@ export interface CreateDiagramRequest {
     includeStateManagement?: boolean;
     includeAPIs?: boolean;
     includeDatabase?: boolean;
+    model?: string;
+    reasoning?: boolean;
   };
+  documents?: any[];
 }
 
 export interface CreateDiagramResponse {
@@ -71,4 +73,3 @@ export interface DiagramListResponse {
   page?: number;
   limit?: number;
 }
-

@@ -14,7 +14,7 @@ export async function productManagerAgent(
   context: AgentContext,
   onProgress?: (event: Partial<MetaSOPEvent>) => void
 ): Promise<MetaSOPArtifact> {
-  const { user_request } = context;
+  const { user_request, documents } = context;
 
   logger.info("Product Manager agent starting", { user_request: user_request.substring(0, 100) });
 
@@ -34,8 +34,13 @@ export async function productManagerAgent(
         }
       );
     } else {
+      // Format documents for context if they exist
+      const documentsContext = documents && documents.length > 0
+        ? `\n\n=== SUPPLEMENTAL CONTEXT DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}\n\n`
+        : '';
+
       // Original generation logic
-      const pmPrompt = `As a Principal Product Manager, create a high-fidelity product specification for '${user_request}'.
+      const pmPrompt = `As a Principal Product Manager, create a high-fidelity product specification for '${user_request}'.${documentsContext}
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize clarity, essential functionality, and speed. Keep descriptions concise and focused on the core value proposition.
@@ -51,6 +56,7 @@ CRITICAL GOALS:
 7. **Assumptions & Boundaries**: Explicitly list project Assumptions, Constraints, and Out-of-Scope items to prevent scope creep.
 8. **Navigation & Information Architecture**: Define the core navigation strategy and information architecture.
 9. **Success Metrics (KPIs)**: Define the core success metrics and KPIs for the product.
+      10. **Market Gaps & Opportunities**: Identify product gaps ('gaps') and strategic opportunities ('opportunities') for the product.
 
 Your specifications must provide the definitive "Source of Truth" for the architecture and engineering teams. Match the granularity of your response to the inherent complexity of the user's request. Respond with ONLY the JSON object.`;
 
@@ -105,6 +111,8 @@ Your specifications must provide the definitive "Source of Truth" for the archit
           swot: llmPMSpec.swot,
           stakeholders: llmPMSpec.stakeholders,
           invest_analysis: llmPMSpec.invest_analysis,
+          gaps: llmPMSpec.gaps,
+          opportunities: llmPMSpec.opportunities,
         };
       } else {
         throw new Error("Product Manager agent failed: No structured data received from LLM");

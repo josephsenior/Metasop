@@ -32,16 +32,16 @@ export class GeminiLLMProvider implements LLMProvider {
     const pricing: Record<string, { input: number; output: number; cached: number }> = {
       'gemini-3-pro-preview': { input: 1.25, output: 5.0, cached: 0.3125 },
       'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
-      'gemini-2.5-flash-native-audio': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
     };
 
     // Extract base model name
     const isPro = model.toLowerCase().includes('pro');
-    const isNativeAudio = model.toLowerCase().includes('native-audio');
+    const isFlash2 = model.toLowerCase().includes('gemini-2.0-flash');
     
     let rates = pricing['gemini-3-flash-preview'];
     if (isPro) rates = pricing['gemini-3-pro-preview'];
-    else if (isNativeAudio) rates = pricing['gemini-2.5-flash-native-audio'];
+    else if (isFlash2) rates = pricing['gemini-2.0-flash'];
     else if (model.includes('gemini-3')) rates = pricing['gemini-3-flash-preview'];
 
     // Live prompt tokens = Total prompt - Cached
@@ -154,13 +154,13 @@ ${prompt}`
   }
 
   /**
-   * Transcribe audio using Gemini 2.5 Flash Native Audio - the dedicated model
-   * for high-fidelity native audio processing.
+   * Transcribe audio using Gemini 2.0 Flash - highly efficient for
+   * high-fidelity native audio processing via standard generation.
    */
   async transcribe(audioBase64: string, mimeType: string = "audio/webm"): Promise<string> {
     const startTime = Date.now();
-    // Using dedicated native audio model for best transcription performance
-    const model = "gemini-2.5-flash-native-audio"; 
+    // Using Gemini 2.0 Flash for best transcription performance via generateContent
+    const model = "gemini-2.0-flash"; 
 
     try {
       const requestBody = {
@@ -373,20 +373,30 @@ ${prompt}`
       }
 
       // Use non-streaming endpoint for structured generation to avoid truncation issues
-      const response = await fetch(`${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const controller = new AbortController();
+      const timeoutMs = (options?.maxTokens ?? 64000) > 30000 ? 600000 : 300000; // 10m or 5m
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
-      }
+      let data: any;
+      try {
+          const response = await fetch(`${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal,
+          });
 
-      const data = await response.json();
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
+            throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
+          }
+
+          data = await response.json();
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
       // Extract JSON content from response
       const parts = data.candidates?.[0]?.content?.parts || [];
@@ -443,8 +453,8 @@ ${prompt}`
           try {
             const debugFilePath = path.join(process.cwd(), "engineer_raw_response.json");
             fs.writeFileSync(debugFilePath, jsonText);
-            console.error(`\n[DIAGNOSTIC] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
-            console.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters\n`);
+            console.error(`\n[DEBUG] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
+            console.error(`[DEBUG] Size: ${jsonText.length} characters\n`);
           } catch (dumpErr) {
             logger.error("Failed to dump engineer debug response", { error: (dumpErr as Error).message });
           }
@@ -545,8 +555,8 @@ ${prompt}`
               const debugFileName = `${options.role.toLowerCase().replace(/\s+/g, '_')}_error_response_${Date.now()}.json`;
               const debugFilePath = path.join(process.cwd(), debugFileName);
               fs.writeFileSync(debugFilePath, jsonText);
-              logger.error(`\n[DIAGNOSTIC] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
-              logger.error(`[DIAGNOSTIC] Size: ${jsonText.length} characters`);
+              logger.error(`\n[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
+              logger.error(`[DEBUG] Size: ${jsonText.length} characters`);
             } catch (dumpErr) {
               logger.error("Failed to dump error response", { error: (dumpErr as Error).message });
             }
@@ -588,14 +598,52 @@ ${prompt}`
     onProgress: (event: Partial<MetaSOPEvent>) => void,
     options?: LLMOptions
   ): Promise<T> {
-    // Call standard structured generation with onProgress injected into options
-    const result = await this.generateStructured<T>(prompt, schema, { ...options, onProgress });
+    // For Gemini, we use a combined approach:
+    // 1. Start a heartbeat to keep the connection alive and show progress
+    // 2. Use the standard structured generation which is more reliable for JSON
+    
+    let progressInterval: NodeJS.Timeout | undefined;
+    let progressCount = 0;
+    
+    if (onProgress) {
+      onProgress({
+        type: "agent_progress",
+        status: "in_progress",
+        message: `Agent ${options?.role || "LLM"} is thinking...`,
+        timestamp: new Date().toISOString()
+      });
 
-    // For now, true real-time streaming of Gemini thoughts via raw fetch is complex.
-    // However, we now capture "thinking" from the completed response and emit it via onProgress
-    // inside generateStructured.
+      // Emit progress updates every 5 seconds to prevent "hanging" perception
+      progressInterval = setInterval(() => {
+        progressCount++;
+        const messages = [
+          "Analyzing requirements...",
+          "Structuring response...",
+          "Validating architectural consistency...",
+          "Generating detailed artifacts...",
+          "Finalizing structured output...",
+          "Applying technical constraints...",
+          "Reviewing generated plan..."
+        ];
+        const message = messages[Math.min(progressCount - 1, messages.length - 1)];
+        
+        onProgress({
+          type: "agent_progress",
+          status: "in_progress",
+          message: `${options?.role || "Agent"}: ${message}`,
+          timestamp: new Date().toISOString()
+        });
+      }, 5000);
+    }
 
-    return result;
+    try {
+      const result = await this.generateStructured<T>(prompt, schema, { ...options, onProgress });
+      return result;
+    } finally {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    }
   }
 
   /**

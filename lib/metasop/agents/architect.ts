@@ -13,7 +13,7 @@ export async function architectAgent(
   context: AgentContext,
   onProgress?: (event: Partial<MetaSOPEvent>) => void
 ): Promise<MetaSOPArtifact> {
-  const { user_request, previous_artifacts } = context;
+  const { user_request, previous_artifacts, documents } = context;
   const pmSpec = previous_artifacts.pm_spec;
 
   logger.info("Architect agent starting", { user_request: user_request.substring(0, 100) });
@@ -35,7 +35,12 @@ export async function architectAgent(
     } else {
       const projectTitle = (pmSpec?.content as any)?.title || "Project";
 
-      const architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.
+      // Format documents for context if they exist
+      const documentsContext = documents && documents.length > 0
+        ? `\n\n=== SUPPLEMENTAL CONTEXT DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}\n\n`
+        : '';
+
+      const architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.${documentsContext}
 
 ADAPTIVE DEPTH GUIDELINE:
 - For **simple web apps/utilities**: Prioritize a clean, standard stack, and straightforward data flow. Keep justifications brief and focused on implementation speed.

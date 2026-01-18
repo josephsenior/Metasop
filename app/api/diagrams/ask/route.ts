@@ -12,20 +12,20 @@ export async function POST(request: NextRequest) {
 
         // Authentication: Optional for Q&A, but check if diagram exists/is guest
         try {
-            getAuthenticatedUser(request);
+            await getAuthenticatedUser(request);
         } catch {
-            if (!body.diagramId.startsWith("guest_")) {
+            if (!body.diagramId.startsWith("guest_") && !body.diagramId.startsWith("diagram_")) {
                 return createErrorResponse("Unauthorized", 401);
             }
         }
 
         const systemInstruction = `
-You are an expert Software Architect and Project Manager assistant. 
-You have full context of a project's technical artifacts including PM specifications, architecture design, DevOps infrastructure, security protocols, and engineering implementation.
+You are an expert Diagram Architect and Project Manager assistant. 
+You have full context of a diagram's technical artifacts including PM specifications, architecture design, DevOps infrastructure, security protocols, and engineering implementation.
 Additionally, you have access to user-uploaded research papers and supplemental documents.
 
 INSTRUCTIONS:
-1. Provide detailed, accurate answers based ONLY on the provided project context and uploaded documents.
+1. Provide detailed, accurate answers based ONLY on the provided diagram context and uploaded documents.
 2. If the answer comes from an uploaded document, explicitly identify the document name.
 3. If the answer is not in the context, be honest and say you don't have that specific information yet.
 4. Use a professional, helpful tone. Keep the response informative and well-structured.

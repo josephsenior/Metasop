@@ -23,7 +23,7 @@ Crée un nouveau compte utilisateur.
 {
   "email": "user@example.com",
   "username": "johndoe",
-  "full_name": "John Doe",
+  "name": "John Doe",
   "password": "password123",
   "confirm_password": "password123"
 }
@@ -39,7 +39,7 @@ Crée un nouveau compte utilisateur.
       "id": "user_123",
       "email": "user@example.com",
       "username": "johndoe",
-      "full_name": "John Doe",
+      "name": "John Doe",
       "role": "user",
       "email_verified": false,
       "is_active": true,

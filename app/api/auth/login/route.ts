@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is active
-    if (!user.is_active) {
+    if (!user.isActive) {
       return NextResponse.json(
         {
           status: "error",
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       token,
       user,
       expires_in: expiresIn,
-    };
+    } as any;
 
     return NextResponse.json({
       status: "success",

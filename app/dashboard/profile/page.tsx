@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { AuthGuard } from "@/components/auth/auth-guard"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { useAuth } from "@/contexts/auth-context"
 import { authApi } from "@/lib/api/auth"
-import { ArrowLeft, Lock, Bell, Save, Loader2 } from "lucide-react"
+import { ArrowLeft, Lock, Bell, Save, Loader2, Upload, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -25,6 +25,20 @@ export default function ProfilePage() {
   const [notifications, setNotifications] = useState(true)
   const [marketing, setMarketing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const PREDEFINED_AVATARS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sasha",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Toby",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe",
+  ]
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("")
@@ -34,14 +48,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setName(user.full_name || "")
+      setName(user.name || "")
       setEmail(user.email || "")
+      setSelectedAvatar(user.image || null)
     }
   }, [user])
 
   const userInitials = user
-    ? user.full_name
-      ? user.full_name
+    ? user.name
+      ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -52,17 +67,86 @@ export default function ProfilePage() {
         : user.email.slice(0, 2).toUpperCase()
     : "U"
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 2MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG or GIF)",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    try {
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64String = reader.result as string
+        try {
+          await authApi.updateProfile({ image: base64String })
+          setSelectedAvatar(base64String)
+          await refreshUser()
+          toast({
+            title: "Avatar updated",
+            description: "Your profile picture has been updated successfully.",
+          })
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.response?.data?.message || "Failed to update avatar",
+            variant: "destructive",
+          })
+        } finally {
+          setIsUploadingAvatar(false)
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to process image",
+        variant: "destructive",
+      })
+      setIsUploadingAvatar(false)
+    }
+  }
+
   const handleSaveProfile = async () => {
     setIsSaving(true)
     try {
-      // TODO: Implement API call to update profile
-      // await authApi.updateProfile({ full_name: name, email })
+      const updatedUser = await authApi.updateProfile({ 
+        name,
+        image: selectedAvatar || undefined
+      })
+      
+      // Update local state immediately
       await refreshUser()
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       })
     } catch (error: any) {
+      console.error("Profile update error:", error)
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to update profile",
@@ -71,6 +155,10 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handleSelectPredefinedAvatar = (url: string) => {
+    setSelectedAvatar(url)
   }
 
   const handleChangePassword = async () => {
@@ -117,7 +205,10 @@ export default function ProfilePage() {
     }
   }
 
-  const hasProfileChanges = user && (name !== (user.full_name || "") || email !== user.email)
+  const hasProfileChanges = user && (
+     name !== (user.name || "") || 
+     selectedAvatar !== (user.image || null)
+   )
 
   return (
     <AuthGuard>
@@ -153,24 +244,90 @@ export default function ProfilePage() {
                   <CardTitle>Profile Information</CardTitle>
                   <CardDescription>Update your personal information</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center gap-6">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage
-                        src={user?.email ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}` : undefined}
-                        alt={user?.username || "User"}
-                      />
-                      <AvatarFallback className="text-lg bg-blue-600/10 text-blue-700 dark:text-blue-400">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <Button variant="outline" size="sm" className="border-border hover:bg-accent hover:text-accent-foreground">
-                        Change Avatar
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">JPG, PNG or GIF. Max size 2MB</p>
+                <CardContent className="space-y-8">
+                  <div className="space-y-4">
+                    <Label>Profile Picture</Label>
+                    <div className="flex flex-col gap-6">
+                      <div className="flex items-center gap-6">
+                        <Avatar className="h-24 w-24 ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
+                          <AvatarImage
+                            src={selectedAvatar || (user?.email ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}` : undefined)}
+                            alt={user?.username || "User"}
+                          />
+                          <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                            {userInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-border hover:bg-accent hover:text-accent-foreground"
+                              onClick={handleAvatarClick}
+                              disabled={isUploadingAvatar}
+                            >
+                              {isUploadingAvatar ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Upload Custom
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            JPG, PNG or GIF. Max size 2MB. Or choose from the gallery below.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Avatar Gallery</Label>
+                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
+                          {PREDEFINED_AVATARS.map((avatarUrl, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSelectPredefinedAvatar(avatarUrl)}
+                              className={`relative group rounded-full overflow-hidden aspect-square border-2 transition-all hover:scale-105 ${
+                                selectedAvatar === avatarUrl 
+                                  ? "border-primary ring-2 ring-primary/20 ring-offset-1" 
+                                  : "border-transparent hover:border-primary/50"
+                              }`}
+                            >
+                              <img 
+                                src={avatarUrl} 
+                                alt={`Avatar option ${index + 1}`} 
+                                className="w-full h-full object-cover"
+                              />
+                              {selectedAvatar === avatarUrl && (
+                                <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                                  <div className="bg-primary text-primary-foreground rounded-full p-0.5">
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
+
+                  <Separator />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -189,10 +346,12 @@ export default function ProfilePage() {
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="border-border"
+                        readOnly
+                        disabled
+                        className="border-border bg-muted/50 cursor-not-allowed"
                         placeholder="Enter your email"
                       />
+                      <p className="text-[10px] text-muted-foreground">Email cannot be changed directly.</p>
                     </div>
                   </div>
 
@@ -223,61 +382,93 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lock className="h-5 w-5" />
-                    Change Password
+                    Security Settings
                   </CardTitle>
-                  <CardDescription>Update your password to keep your account secure</CardDescription>
+                  <CardDescription>
+                    {user?.hasPassword 
+                      ? "Update your password to keep your account secure" 
+                      : "Manage your account security and authentication methods"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input
-                      id="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="border-border"
-                      placeholder="Enter current password"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="border-border"
-                      placeholder="Enter new password (min. 8 characters)"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="border-border"
-                      placeholder="Confirm new password"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={!currentPassword || !newPassword || !confirmPassword || isChangingPassword}
-                    variant="gradient"
-                  >
-                    {isChangingPassword ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Changing Password...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4" />
-                        Change Password
-                      </>
-                    )}
-                  </Button>
+                  {user?.hasPassword ? (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="border-border"
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="border-border"
+                          placeholder="Enter new password (min. 8 characters)"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="border-border"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                      <Button
+                        onClick={handleChangePassword}
+                        disabled={!currentPassword || !newPassword || !confirmPassword || isChangingPassword}
+                        variant="gradient"
+                      >
+                        {isChangingPassword ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Changing Password...
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-4 w-4 mr-2" />
+                            Change Password
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-6 text-center space-y-4">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ExternalLink className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-lg">Social Account Linked</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto">
+                          Your account is authenticated via a third-party provider. 
+                          Password management is handled directly through your social account settings.
+                        </p>
+                      </div>
+                      <div className="pt-2">
+                        <Button variant="outline" className="border-primary/20 hover:bg-primary/10" asChild>
+                          <a 
+                            href={user?.email?.includes('google') ? "https://myaccount.google.com/security" : "https://github.com/settings/security"} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            Go to {user?.email?.includes('google') ? "Google" : "GitHub"} Security Settings
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

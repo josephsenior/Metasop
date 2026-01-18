@@ -10,6 +10,7 @@ export const CreateDiagramSchema = z.object({
         model: z.string().optional(),
         reasoning: z.boolean().optional(),
     }).optional(),
+    documents: z.array(z.any()).optional(),
 });
 
 export const UpdateDiagramSchema = z.object({
@@ -27,6 +28,7 @@ export function validateCreateDiagramRequest(data: any): CreateDiagramRequest {
 export function validateUpdateDiagramRequest(data: any): UpdateDiagramRequest {
     return UpdateDiagramSchema.parse(data) as UpdateDiagramRequest;
 }
+
 export const RefineDiagramSchema = z.object({
     diagramId: z.string(),
     stepId: z.string(),
@@ -50,15 +52,4 @@ export const AskQuestionSchema = z.object({
 
 export function validateAskQuestionRequest(data: any) {
     return AskQuestionSchema.parse(data);
-}
-
-export const CreateDocumentSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    type: z.string(),
-    content: z.string().min(1, "Content is required"),
-    url: z.string().optional(),
-});
-
-export function validateCreateDocumentRequest(data: any) {
-    return CreateDocumentSchema.parse(data);
 }

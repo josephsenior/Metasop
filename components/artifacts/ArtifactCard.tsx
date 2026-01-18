@@ -24,7 +24,7 @@ import * as ArtifactPanels from './index';
 export default function ArtifactCard({ artifact, children }: { artifact: any; children?: React.ReactNode }) {
   const title = artifact?.role || artifact?.step_id || 'Artifact';
   const summary = artifact?.content?.summary || artifact?.content?.description || '';
-  const timestamp = artifact?.timestamp || artifact?.created_at;
+  const timestamp = artifact?.timestamp || artifact?.createdAt;
   const confidence = artifact?.confidence || artifact?.score || null;
 
   const handleCopy = () => {
