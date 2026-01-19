@@ -5,8 +5,8 @@ export const devopsSchema = {
     properties: {
         cloud_provider: { type: "string", maxLength: 20 },
         infra_components: { type: "number" },
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the DevOps strategy. No conversational filler. Max 150 chars." },
-        description: { type: "string", maxLength: 300, description: "Detailed infrastructure philosophy and SRE approach. Max 3 sentences, 300 chars." },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the DevOps strategy." },
+        description: { type: "string", maxLength: 300, description: "Detailed infrastructure philosophy and SRE approach." },
         infrastructure: {
             type: "object",
             required: ["cloud_provider", "services"],
@@ -82,17 +82,16 @@ export const devopsSchema = {
                             name: {
                                 type: "string",
                                 maxLength: 20,
-                                description: "Stage name (e.g., 'Build'). Max 20 chars.",
+                                description: "Stage name (e.g., 'Build').",
                             },
                             steps: {
                                 type: "array",
                                 items: { type: "string", maxLength: 50 },
-                                description: "Steps in this stage.",
                             },
-                            description: {
+                            goal: {
                                 type: "string",
                                 maxLength: 100,
-                                description: "Technical goal of this stage. Max 100 chars.",
+                                description: "Technical goal of this stage.",
                             },
                         },
                     },
@@ -114,11 +113,11 @@ export const devopsSchema = {
                                 enum: ["push", "pull_request", "schedule", "manual"],
                                 description: "Trigger type",
                             },
-                            branch: { type: "string", maxLength: 20, description: "Branch name. Max 20 chars." },
+                            branch: { type: "string", maxLength: 20, description: "Branch name." },
                             description: {
                                 type: "string",
                                 maxLength: 50,
-                                description: "Trigger description. Max 50 chars.",
+                                description: "Trigger description.",
                             },
                         },
                     },

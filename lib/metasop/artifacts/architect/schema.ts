@@ -6,10 +6,10 @@ export const architectSchema = {
         design_doc: {
             type: "string",
             maxLength: 3000,
-            description: "Comprehensive architecture design document in markdown format. Aim for ~2000 characters for complex systems. Max 3000 chars.",
+            description: "Comprehensive architecture design document in markdown format. Aim for ~2000 characters for complex systems.",
         },
-        summary: { type: "string", maxLength: 150, description: "Technical executive summary of the architecture. Max 150 chars." },
-        description: { type: "string", maxLength: 300, description: "Brief overview of the system architecture. Max 300 chars." },
+        summary: { type: "string", maxLength: 150, description: "Technical executive summary of the architecture." },
+        description: { type: "string", maxLength: 300, description: "Brief overview of the system architecture." },
     apis: {
             type: "array",
             description: "CRUD-focused API specification. Technical and concise.",
@@ -20,7 +20,7 @@ export const architectSchema = {
                     path: { type: "string", pattern: "^/.*", maxLength: 50, description: "API path (e.g., '/api/users')" },
                     method: { type: "string", enum: ["GET", "POST", "PUT", "DELETE", "PATCH"] },
                     endpoint: { type: "string", maxLength: 100, description: "Specific endpoint identifier or base URL." },
-                    description: { type: "string", maxLength: 100, description: "Concise purpose. Max 100 chars." },
+                    description: { type: "string", maxLength: 100, description: "Concise purpose." },
                     request_schema: { type: "object", description: "Request mapping (field: type). No descriptions." },
                     response_schema: { type: "object", description: "Response mapping (field: type). No descriptions." },
                     auth_required: { type: "boolean" },
@@ -30,14 +30,14 @@ export const architectSchema = {
         },
         decisions: {
             type: "array",
-            description: "Core architectural decisions. Technical focus. Max 10.",
+            description: "Core architectural decisions. Technical focus.",
             items: {
                 type: "object",
                 required: ["decision", "status", "reason", "tradeoffs", "consequences"],
                 properties: {
                     decision: { type: "string", maxLength: 60 },
                     status: { type: "string", enum: ["accepted", "proposed", "superseded"] },
-                    reason: { type: "string", maxLength: 150, description: "Technical reasoning. Max 150 chars." },
+                    reason: { type: "string", maxLength: 150, description: "Technical reasoning." },
                     rationale: { type: "string", maxLength: 80, description: "One-sentence rationale." },
                     tradeoffs: { type: "string", maxLength: 150 },
                     consequences: { type: "string", maxLength: 150 },
@@ -89,7 +89,6 @@ export const architectSchema = {
                             },
                             relationships: {
                                 type: "array",
-                                maxItems: 10,
                                 items: {
                                     type: "object",
                                     required: ["type", "from", "to"],

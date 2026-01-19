@@ -51,51 +51,51 @@ export interface MetaSOPConfig {
 export const defaultConfig: MetaSOPConfig = {
   agents: {
     enabled: ["pm_spec", "arch_design", "devops_infrastructure", "security_architecture", "engineer_impl", "ui_design", "qa_verification"],
-    defaultTimeout: 180000, // 180 seconds (3 minutes)
-    defaultRetries: 2,
+    defaultTimeout: 300000, // 300 seconds (5 minutes)
+    defaultRetries: 0,
     agentConfigs: {
       // Per-agent timeouts (can override defaults)
       // Increased timeouts for LLM calls which can take longer
       pm_spec: {
         stepId: "pm_spec",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       arch_design: {
         stepId: "arch_design",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       security_architecture: {
         stepId: "security_architecture",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 180000, // 180 seconds (3 minutes)
-        retries: 2,
+        timeout: 300000, // 300 seconds (5 minutes)
+        retries: 0,
       },
     },
   },
   llm: {
     provider: process.env.NODE_ENV === "test" ? "mock" : "gemini",
-    model: "gemini-3-flash-preview", // Use Gemini 3 Flash Preview for fast, high-quality orchestration
+    model: "gemini-3-pro-preview", // Use Gemini 3 Pro Preview as requested
     temperature: 0.3,
     maxTokens: 64000,
   },

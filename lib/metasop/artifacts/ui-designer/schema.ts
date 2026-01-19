@@ -4,23 +4,23 @@ export const uiDesignerSchema = {
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
         summary: { type: "string", description: "A technical, 1-sentence summary of the UI strategy. No conversational filler." },
-        description: { type: "string", description: "Detailed visual design philosophy and brand alignment. Max 3 sentences." },
+        description: { type: "string", description: "Detailed visual design philosophy and brand alignment." },
         component_hierarchy: {
             type: "object",
             required: ["root"],
             properties: {
-                root: { type: "string", description: "Root component name (e.g., 'App'). Max 20 chars." },
+                root: { type: "string", description: "Root component name (e.g., 'App')." },
                 children: {
                     type: "array",
                     items: {
                         type: "object",
                         required: ["name"],
                         properties: {
-                            name: { type: "string", description: "Component name. Max 20 chars." },
+                            name: { type: "string", description: "Component name." },
                             props: {
                                 type: "array",
                                 items: { type: "string", maxLength: 30 },
-                                description: "Key component props (e.g., 'title: string'). Max 30 chars per prop.",
+                                description: "Key component props (e.g., 'title: string').",
                             },
                             children: {
                                 type: "array",
@@ -85,11 +85,11 @@ export const uiDesignerSchema = {
                     type: "object",
                     description: "Typography system. Use raw CSS values only.",
                     properties: {
-                        fontFamily: { type: "string", description: "Primary font family (e.g., 'Inter'). Max 30 chars." },
-                        headingFont: { type: "string", description: "Heading font family. Max 30 chars." },
+                        fontFamily: { type: "string", description: "Primary font family (e.g., 'Inter')." },
+                        headingFont: { type: "string", description: "Heading font family." },
                         fontSize: {
                             type: "object",
-                            description: "Font size scale (e.g., '0.875rem'). No descriptions.",
+                            description: "Font size scale (e.g., '0.875rem').",
                             properties: {
                                 xs: { type: "string", maxLength: 10 },
                                 sm: { type: "string", maxLength: 10 },

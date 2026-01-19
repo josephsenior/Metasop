@@ -68,7 +68,7 @@ export const qaSchema = {
             },
             description: "Quality risks and mitigations."
         },
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the QA strategy. No conversational filler." },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the QA strategy." },
         description: { type: "string", maxLength: 300, description: "Detailed verification philosophy and test plan. Max 3 sentences." },
         coverage: {
             type: "object",
@@ -84,12 +84,12 @@ export const qaSchema = {
         performance_metrics: {
             type: "object",
             properties: {
-                api_response_time_p95: { type: "string", maxLength: 15, description: "Max 15 chars." },
-                page_load_time: { type: "string", maxLength: 15, description: "Max 15 chars." },
-                database_query_time: { type: "string", maxLength: 15, description: "Max 15 chars." },
-                first_contentful_paint: { type: "string", maxLength: 15, description: "Max 15 chars." },
-                time_to_interactive: { type: "string", maxLength: 15, description: "Max 15 chars." },
-                largest_contentful_paint: { type: "string", maxLength: 15, description: "Max 15 chars." }
+                api_response_time_p95: { type: "string", maxLength: 15 },
+                page_load_time: { type: "string", maxLength: 15 },
+                database_query_time: { type: "string", maxLength: 15 },
+                first_contentful_paint: { type: "string", maxLength: 15 },
+                time_to_interactive: { type: "string", maxLength: 15 },
+                largest_contentful_paint: { type: "string", maxLength: 15 }
             }
         },
         accessibility_plan: { type: "string", maxLength: 150, description: "Verification plan for accessibility compliance (WCAG)." },

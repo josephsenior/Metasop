@@ -13,8 +13,8 @@ export const securitySchema = {
         "security_monitoring"
     ],
     properties: {
-        summary: { type: "string", maxLength: 200, description: "A technical, 1-sentence summary of the security architecture. No conversational filler. Max 200 chars." },
-        description: { type: "string", maxLength: 500, description: "Detailed security specifications and threat mitigations. Max 5 sentences, 500 chars." },
+        summary: { type: "string", maxLength: 200, description: "A technical, 1-sentence summary of the security architecture. No conversational filler." },
+        description: { type: "string", maxLength: 500, description: "Detailed security specifications and threat mitigations." },
         security_architecture: {
             type: "object",
             required: ["authentication", "authorization"],
@@ -44,7 +44,7 @@ export const securitySchema = {
                         token_expiry: {
                             type: "string",
                             maxLength: 10,
-                            description: "Token TTL (e.g., '1h'). Max 10 chars.",
+                            description: "Token TTL (e.g., '1h').",
                         },
                         refresh_tokens: {
                             type: "boolean",
@@ -69,7 +69,7 @@ export const securitySchema = {
                     type: "object",
                     properties: {
                         strategy: { type: "string", enum: ["stateless", "stateful", "hybrid"] },
-                        session_timeout: { type: "string", maxLength: 10, description: "e.g., '30m'. Max 10 chars." },
+                        session_timeout: { type: "string", maxLength: 10, description: "e.g., '30m'." },
                         secure_cookies: { type: "boolean" },
                         http_only_cookies: { type: "boolean" },
                         same_site_policy: { type: "string", enum: ["Strict", "Lax", "None"] },
@@ -98,7 +98,7 @@ export const securitySchema = {
                                     resource: {
                                         type: "string",
                                         maxLength: 30,
-                                        description: "Resource name. Max 30 chars.",
+                                        description: "Resource name.",
                                     },
                                     permissions: {
                                         type: "array",
@@ -150,17 +150,17 @@ export const securitySchema = {
                         method: {
                             type: "string",
                             maxLength: 50,
-                            description: "Encryption method (e.g., AES-256). Max 50 chars.",
+                            description: "Encryption method (e.g., AES-256).",
                         },
                         key_management: {
                             type: "string",
                             maxLength: 100,
-                            description: "Key management solution. Max 100 chars.",
+                            description: "Key management solution.",
                         },
                         description: {
                             type: "string",
                             maxLength: 150,
-                            description: "Data at rest encryption description. Max 150 chars.",
+                            description: "Data at rest encryption description.",
                         },
                     },
                 },
@@ -265,22 +265,22 @@ export const securitySchema = {
                     control: {
                         type: "string",
                         maxLength: 50,
-                        description: "Security control name. Max 50 chars.",
+                        description: "Security control name.",
                     },
                     id: {
                         type: "string",
                         maxLength: 15,
-                        description: "Unique control identifier (e.g., CTRL-001). Max 15 chars.",
+                        description: "Unique control identifier (e.g., CTRL-001).",
                     },
                     type: {
                         type: "string",
                         maxLength: 30,
-                        description: "Control type (e.g., Technical, Administrative). Max 30 chars.",
+                        description: "Control type (e.g., Technical, Administrative).",
                     },
                     description: {
                         type: "string",
                         maxLength: 100,
-                        description: "Detailed description of the control. Max 100 chars.",
+                        description: "Detailed description of the control.",
                     },
                     category: {
                         type: "string",

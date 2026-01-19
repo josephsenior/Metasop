@@ -3,12 +3,12 @@ export const engineerSchema = {
     type: "object",
     required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the implementation strategy. No conversational filler. Max 150 chars." },
-        description: { type: "string", maxLength: 300, description: "Detailed implementation philosophy and technical roadmap. Max 3 sentences, 300 chars." },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the implementation strategy." },
+        description: { type: "string", maxLength: 300, description: "Detailed implementation philosophy and technical roadmap." },
         artifact_path: {
             type: "string",
             maxLength: 30,
-            description: "Base directory (e.g., 'src/app'). Max 30 chars.",
+            description: "Base directory (e.g., 'src/app').",
         },
         run_results: {
             type: "object",
@@ -37,7 +37,6 @@ export const engineerSchema = {
                             type: { type: "string", enum: ["file", "directory"] },
                             children: {
                                 type: "array",
-                                maxItems: 10,
                                 items: {
                                     type: "object",
                                     required: ["name", "type"],
@@ -46,7 +45,6 @@ export const engineerSchema = {
                                         type: { type: "string", enum: ["file", "directory"] },
                                         children: {
                                             type: "array",
-                                            maxItems: 5,
                                             items: {
                                                 type: "object",
                                                 required: ["name", "type"],
@@ -67,12 +65,13 @@ export const engineerSchema = {
         implementation_plan: {
             type: "string",
             maxLength: 3000,
-            description: "Technical step-by-step guide in Markdown. Focused and concise. Max 3000 chars.",
+            description: "Technical step-by-step guide in Markdown. Focused and concise.",
         },
         dependencies: {
             type: "array",
-            items: { type: "string", maxLength: 40, description: "Dep (e.g., 'next@14.1.0'). Max 40 chars." },
-            description: "Essential build dependencies. Max 25.",
+            items: { type: "string", maxLength: 40, description: "Dep (e.g., 'next@14.1.0')." },
+        },
+            description: "Essential build dependencies.",
         },
         technical_decisions: {
             type: "array",
@@ -109,8 +108,8 @@ export const engineerSchema = {
             type: "object",
             required: ["tool", "strategy"],
             properties: {
-                tool: { type: "string", maxLength: 30, description: "The state management tool or pattern. Max 30 chars." },
-                strategy: { type: "string", maxLength: 150, description: "Implementation strategy. Max 150 chars." },
+                tool: { type: "string", maxLength: 30, description: "The state management tool or pattern." },
+                strategy: { type: "string", maxLength: 150, description: "Implementation strategy." },
             },
         },
     },

@@ -3,8 +3,8 @@ export const pmSchema = {
     type: "object",
     required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
     properties: {
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the product. No conversational filler. Max 150 chars." },
-        description: { type: "string", maxLength: 300, description: "Detailed product vision and description. Max 3 sentences, 300 chars." },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the product. No conversational filler." },
+        description: { type: "string", maxLength: 300, description: "Detailed product vision and description." },
         gaps: {
             type: "array",
             description: "Identified product gaps or user pain points.",
@@ -46,17 +46,17 @@ export const pmSchema = {
                     title: {
                         type: "string",
                         maxLength: 50,
-                        description: "Concise user story title. Max 50 chars.",
+                        description: "Concise user story title.",
                     },
                     story: {
                         type: "string",
                         maxLength: 150,
-                        description: "Story in 'As a... I want... so that...' format. Max 150 chars.",
+                        description: "Story in 'As a... I want... so that...' format.",
                     },
                     description: {
                         type: "string",
                         maxLength: 200,
-                        description: "Brief technical description. Max 200 chars.",
+                        description: "Brief technical description.",
                     },
                     priority: {
                         type: "string",
@@ -109,17 +109,17 @@ export const pmSchema = {
                     title: {
                         type: "string",
                         maxLength: 50,
-                        description: "Acceptance criterion title. Max 50 chars.",
+                        description: "Acceptance criterion title.",
                     },
                     description: {
                         type: "string",
                         maxLength: 200,
-                        description: "Detailed description. Max 200 chars.",
+                        description: "Detailed description.",
                     },
-                    criteria: {
+                    criterion: {
                         type: "string",
                         maxLength: 200,
-                        description: "The actual acceptance criterion. Max 200 chars.",
+                        description: "The actual acceptance criterion.",
                     },
                     priority: {
                         type: "string",

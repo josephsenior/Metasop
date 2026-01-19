@@ -14,11 +14,11 @@ if (fs.existsSync(".env.local")) {
 async function runTest() {
   console.log("Starting full MetaSOP orchestration test...");
   console.log("Provider: Gemini");
-  console.log("Model: gemini-3-flash-preview");
+  console.log("Model: gemini-3-pro-preview");
   console.log("--------------------------------------------------");
 
   const orchestrator = new MetaSOPOrchestrator();
-  const prompt = "Create a modern fitness tracking application with workout plans, social features, and progress analytics.";
+  const prompt = "Create a simple Todo list application with basic CRUD and local storage."; // Simpler prompt for faster test
 
   try {
     const result = await orchestrator.run(prompt, {
