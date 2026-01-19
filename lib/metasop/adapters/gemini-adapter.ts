@@ -5,6 +5,7 @@
  * Updated: Implements Schema Injection for Thinking Visibility
  */
 
+import axios from "axios";
 import type { LLMProvider, LLMOptions } from "./llm-adapter";
 import { logger } from "../utils/logger";
 import { MetaSOPEvent } from "../types";
@@ -13,7 +14,7 @@ import * as path from "path";
 
 export class GeminiLLMProvider implements LLMProvider {
   private apiKey: string;
-  private baseUrl: string = "https://generativelanguage.googleapis.com/v1alpha";
+  private baseUrl: string = "https://generativelanguage.googleapis.com/v1beta";
   private defaultModel: string = "gemini-3-flash-preview";
 
   /**
@@ -33,15 +34,18 @@ export class GeminiLLMProvider implements LLMProvider {
       'gemini-3-pro-preview': { input: 1.25, output: 5.0, cached: 0.3125 },
       'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
       'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
+      'gemini-2.5-flash-native-audio-dialog': { input: 0.1, output: 0.4, cached: 0.025 },
     };
 
     // Extract base model name
     const isPro = model.toLowerCase().includes('pro');
     const isFlash2 = model.toLowerCase().includes('gemini-2.0-flash');
+    const isNativeAudio = model.toLowerCase().includes('native-audio');
     
     let rates = pricing['gemini-3-flash-preview'];
     if (isPro) rates = pricing['gemini-3-pro-preview'];
     else if (isFlash2) rates = pricing['gemini-2.0-flash'];
+    else if (isNativeAudio) rates = pricing['gemini-2.5-flash-native-audio-dialog'];
     else if (model.includes('gemini-3')) rates = pricing['gemini-3-flash-preview'];
 
     // Live prompt tokens = Total prompt - Cached
@@ -55,7 +59,7 @@ export class GeminiLLMProvider implements LLMProvider {
   }
 
   constructor(apiKey: string, model?: string) {
-    this.apiKey = apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+    this.apiKey = (apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "").trim();
     this.defaultModel = model ?? "gemini-3-flash-preview";
   }
 
@@ -93,23 +97,17 @@ ${prompt}`
         requestBody.cachedContent = options.cacheId;
       }
 
-      const response = await fetch(
+      const response = await axios.post(
         `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`,
+        requestBody,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(requestBody),
         }
       );
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       const content = data.candidates?.[0]?.content?.parts?.find((p: any) => p.text)?.text;
       const thoughts = data.candidates?.[0]?.content?.parts?.find((p: any) => p.thought)?.thought;
 
@@ -159,8 +157,8 @@ ${prompt}`
    */
   async transcribe(audioBase64: string, mimeType: string = "audio/webm"): Promise<string> {
     const startTime = Date.now();
-    // Using Gemini 2.0 Flash for best transcription performance via generateContent
-    const model = "gemini-2.0-flash"; 
+    // Using Gemini 2.5 Flash Native Audio Dialog for best transcription performance
+    const model = "gemini-2.5-flash-native-audio-dialog"; 
 
     try {
       const requestBody = {
@@ -194,23 +192,17 @@ ${prompt}`
         }
       };
 
-      const response = await fetch(
+      const response = await axios.post(
         `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`,
+        requestBody,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(requestBody),
         }
       );
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`Gemini Transcription error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (data.usageMetadata) {
@@ -256,23 +248,17 @@ ${prompt}`
         }
       ];
 
-      const response = await fetch(
+      const response = await axios.post(
         `${this.baseUrl}/cachedContents?key=${this.apiKey}`,
+        body,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(body),
         }
       );
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-        throw new Error(`Gemini Cache creation error: ${error.error?.message || response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
       const cacheName = data.name;
 
       if (!cacheName) {
@@ -378,22 +364,36 @@ ${prompt}`
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       let data: any;
+      const apiUrl = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
+      
       try {
-          const response = await fetch(`${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`, {
-            method: "POST",
+          const response = await axios.post(apiUrl, requestBody, {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(requestBody),
             signal: controller.signal,
+            timeout: timeoutMs,
           });
 
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-            throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
+          data = response.data;
+        } catch (axiosErr: any) {
+          if (axios.isCancel(axiosErr)) {
+            throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
+          }
+          
+          if (axiosErr.response) {
+            const errorData = axiosErr.response.data;
+            throw new Error(`Gemini API error (${axiosErr.response.status}): ${errorData.error?.message || axiosErr.response.statusText}`);
           }
 
-          data = await response.json();
+          logger.error("Low-level Axios failure", { 
+            message: axiosErr.message, 
+            name: axiosErr.name,
+            code: axiosErr.code,
+            url: apiUrl.replace(/key=.*$/, "key=REDACTED"),
+            stack: axiosErr.stack
+          });
+          throw axiosErr;
         } finally {
           clearTimeout(timeoutId);
         }
@@ -405,6 +405,20 @@ ${prompt}`
       for (const part of parts) {
         if (part.text) {
           jsonText += part.text;
+        }
+      }
+
+      if (!jsonText && data) {
+        // If we have data but no text, dump the whole data object for debugging
+        if (options?.role) {
+          try {
+            const debugFileName = `raw_data_${options.role.toLowerCase().replace(/\s+/g, '_')}.json`;
+            const debugFilePath = path.join(process.cwd(), debugFileName);
+            fs.writeFileSync(debugFilePath, JSON.stringify(data, null, 2));
+            console.error(`\n[DEBUG] ${options.role} EMPTY TEXT BUT DATA FOUND. DUMPED DATA TO: ${debugFilePath}\n`);
+          } catch (dumpErr) {
+            logger.error(`Failed to dump ${options?.role} empty text data`, { error: (dumpErr as Error).message });
+          }
         }
       }
 
@@ -446,18 +460,16 @@ ${prompt}`
         throw new Error("No JSON response from Gemini API");
       }
 
-      // DUMP TO FILE FOR USER INSPECTION (Generic for all agents on error or request)
+      // ALWAYS DUMP TO FILE FOR DEBUGGING (as requested by user)
       if (options?.role) {
-        // We dump here for Engineer specifically as requested, but also if we encounter errors later
-        if (options.role === "Engineer") {
-          try {
-            const debugFilePath = path.join(process.cwd(), "engineer_raw_response.json");
-            fs.writeFileSync(debugFilePath, jsonText);
-            console.error(`\n[DEBUG] ENGINEER RAW RESPONSE DUMPED TO: ${debugFilePath}`);
-            console.error(`[DEBUG] Size: ${jsonText.length} characters\n`);
-          } catch (dumpErr) {
-            logger.error("Failed to dump engineer debug response", { error: (dumpErr as Error).message });
-          }
+        try {
+          const debugFileName = `raw_${options.role.toLowerCase().replace(/\s+/g, '_')}.json`;
+          const debugFilePath = path.join(process.cwd(), debugFileName);
+          fs.writeFileSync(debugFilePath, jsonText);
+          console.log(`\n[DEBUG] ${options.role} RAW RESPONSE DUMPED TO: ${debugFilePath}`);
+          console.log(`[DEBUG] Size: ${jsonText.length} characters\n`);
+        } catch (dumpErr) {
+          logger.error(`Failed to dump ${options?.role} debug response`, { error: (dumpErr as Error).message });
         }
       }
 

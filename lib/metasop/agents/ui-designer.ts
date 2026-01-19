@@ -48,24 +48,22 @@ Key APIs: ${archArtifact.apis?.slice(0, 3).map((a: any) => a.path).join(", ")}`
       const uiPrompt = `As a Principal UI/UX Designer, create a high-impact design system and UI architecture for '${user_request}'.
 
 ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize a clean, minimal design system and straightforward component hierarchy. Focus on core usability and fast implementation.
-- For **complex/enterprise systems**: Provide exhaustive design tokens, a deep atomic hierarchy, and production-ready design rigor.
+- For **simple web apps/utilities**: Prioritize a clean, minimal design system and straightforward component hierarchy.
+- For **complex/enterprise systems**: Provide exhaustive design tokens and deep atomic hierarchy.
 
 ${projectContext}
 ${techContext}
 
 MISSION OBJECTIVES:
-1. **Design Language**: Establish a set of Design Tokens (Colors, Spacing, Typography, etc.) proportional to the project's scale.
-2. **Atomic Structure**: Map the application real estate into an atomic hierarchy: Atoms, Molecules, Organisms, Templates, and Pages.
-3. **Primary Feature Manifest**: Generate an **A2UI Manifest** (v0.8) for the critical user workflows.
-4. **Accessibility**: Design for inclusivity (WCAG 2.1). Map out ARIA strategies and keyboard navigation at an appropriate level.
-5. **Component Blueprint**: Detail key components proportional to the project's complexity with technical specs: Props, Variants, States, etc.
-6. **Responsive Strategy**: Define a responsive layout strategy with specific breakpoints and fluid rules.
-7. **UI Patterns**: List the fundamental patterns used (e.g., Error States, Empty States).
-8. **Information Architecture**: Define the website layout structure (pages, routes, layout sections).
-66→9. **Visual Design Philosophy**: Define the core aesthetic principles and brand alignment.
-67→
-68→Focus on architectural clarity and production-ready detail. Match the complexity of your UI architecture to the inherent needs of the project. Respond with ONLY the JSON object.`;
+1. **Design Language**: Establish Design Tokens (Colors, Spacing, Typography) as defined in the schema.
+2. **Atomic Structure**: Map application real estate: Atoms, Molecules, Organisms.
+3. **Primary Feature Manifest**: Generate an **A2UI Manifest** (v0.8) for critical workflows.
+4. **Accessibility**: Design for inclusivity (WCAG 2.1) including ARIA and keyboard navigation.
+5. **Component Blueprint**: Detail key components with technical specs: Props, Variants, States.
+6. **Information Architecture**: Define website layout structure (pages, routes, layout sections).
+7. **Visual Design Philosophy**: Define core aesthetic principles and brand alignment.
+
+Respond with ONLY the structured JSON object.`;
 
       let llmUIDesign: any = null;
 
@@ -80,7 +78,7 @@ MISSION OBJECTIVES:
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.4, // Higher for design and layout creativity
+            temperature: 0.2, // Lowered for precision and strict schema compliance
             cacheId: context.cacheId,
             role: "UI Designer",
           }

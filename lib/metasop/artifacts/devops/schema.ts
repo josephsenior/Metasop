@@ -3,10 +3,10 @@ export const devopsSchema = {
     type: "object",
     required: ["infrastructure", "cicd", "deployment", "monitoring", "containerization", "scaling", "disaster_recovery", "summary", "description"],
     properties: {
-        cloud_provider: { type: "string" },
+        cloud_provider: { type: "string", maxLength: 20 },
         infra_components: { type: "number" },
-        description: { type: "string" },
-        summary: { type: "string" },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the DevOps strategy. No conversational filler. Max 150 chars." },
+        description: { type: "string", maxLength: 300, description: "Detailed infrastructure philosophy and SRE approach. Max 3 sentences, 300 chars." },
         infrastructure: {
             type: "object",
             required: ["cloud_provider", "services"],
@@ -14,25 +14,25 @@ export const devopsSchema = {
                 cloud_provider: {
                     type: "string",
                     enum: ["AWS", "GCP", "Azure", "self-hosted", "hybrid"],
-                    description: "Cloud provider or deployment model",
+                    description: "Primary cloud provider. Must match project scale.",
                 },
                 iac: {
                     type: "string",
                     enum: ["Terraform", "CloudFormation", "Crossplane", "Ansible", "Pulumi"],
-                    description: "Infrastructure as Code tool",
+                    description: "Infrastructure as Code tool for automation.",
                 },
                 services: {
                     type: "array",
                     description:
-                        "Array of infrastructure services needed (compute, database, storage, etc.)",
+                        "Infrastructure services (compute, DB, storage).",
                     items: {
                         type: "object",
                         required: ["name", "type"],
                         properties: {
                             name: {
                                 type: "string",
-                                minLength: 1,
-                                description: "Service name",
+                                maxLength: 30,
+                                description: "Service name (e.g., 'prod-db').",
                             },
                             type: {
                                 type: "string",
@@ -50,23 +50,20 @@ export const devopsSchema = {
                             },
                             configuration: {
                                 type: "object",
-                                properties: {
-                                    key: { type: "string" },
-                                    value: { type: "string" },
-                                },
-                                description: "Service configuration details",
+                                description: "Technical config (e.g., 'instance_type: t3.medium').",
                             },
                             description: {
                                 type: "string",
-                                description: "Service description",
+                                maxLength: 100,
+                                description: "Technical role of this service.",
                             },
                         },
                     },
                 },
                 regions: {
                     type: "array",
-                    items: { type: "string" },
-                    description: "Deployment regions",
+                    items: { type: "string", maxLength: 20 },
+                    description: "Deployment regions (e.g., 'us-east-1').",
                 },
             },
         },
@@ -76,42 +73,35 @@ export const devopsSchema = {
             properties: {
                 pipeline_stages: {
                     type: "array",
-
                     description:
-                        "CI/CD pipeline stages (build, test, deploy, etc.)",
+                        "CI/CD pipeline stages.",
                     items: {
                         type: "object",
                         required: ["name", "steps"],
                         properties: {
                             name: {
                                 type: "string",
-                                minLength: 1,
-                                description: "Stage name",
+                                maxLength: 20,
+                                description: "Stage name (e.g., 'Build'). Max 20 chars.",
                             },
                             steps: {
                                 type: "array",
-
-                                items: { type: "string" },
-                                description: "Steps in this stage",
+                                items: { type: "string", maxLength: 50 },
+                                description: "Steps in this stage.",
                             },
                             description: {
                                 type: "string",
-                                description: "Stage description",
-                            },
-                            status: {
-                                type: "string",
-                                enum: ["active", "planned", "deprecated"],
-                                description: "Current status of this stage",
+                                maxLength: 100,
+                                description: "Technical goal of this stage. Max 100 chars.",
                             },
                         },
                     },
                 },
                 tools: {
                     type: "array",
-
-                    items: { type: "string" },
+                    items: { type: "string", maxLength: 20 },
                     description:
-                        "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.)",
+                        "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.).",
                 },
                 triggers: {
                     type: "array",
@@ -124,14 +114,15 @@ export const devopsSchema = {
                                 enum: ["push", "pull_request", "schedule", "manual"],
                                 description: "Trigger type",
                             },
-                            branch: { type: "string", description: "Branch name" },
+                            branch: { type: "string", maxLength: 20, description: "Branch name. Max 20 chars." },
                             description: {
                                 type: "string",
-                                description: "Trigger description",
+                                maxLength: 50,
+                                description: "Trigger description. Max 50 chars.",
                             },
                         },
                     },
-                    description: "Pipeline triggers",
+                    description: "Pipeline triggers.",
                 },
             },
         },
@@ -258,17 +249,13 @@ export const devopsSchema = {
             properties: {
                 tools: {
                     type: "array",
-
-                    items: { type: "string" },
-                    description:
-                        "Monitoring tools (Prometheus, Grafana, Datadog, etc.)",
+                    items: { type: "string", maxLength: 20 },
+                    description: "Monitoring tools.",
                 },
                 metrics: {
                     type: "array",
-
-                    items: { type: "string" },
-                    description:
-                        "Key metrics to monitor (CPU, memory, response time, error rate, etc.)",
+                    items: { type: "string", maxLength: 30 },
+                    description: "Key performance metrics.",
                 },
                 alerts: {
                     type: "array",
@@ -276,30 +263,22 @@ export const devopsSchema = {
                         type: "object",
                         required: ["name", "condition"],
                         properties: {
-                            name: { type: "string", minLength: 1, description: "Alert name" },
-                            condition: {
-                                type: "string",
-                                minLength: 1,
-                                description: "Alert condition",
-                            },
-                            severity: {
-                                type: "string",
-                                enum: ["critical", "warning", "info"],
-                                description: "Alert severity",
-                            },
+                            name: { type: "string", maxLength: 30, description: "Alert name." },
+                        condition: { type: "string", maxLength: 100, description: "Threshold/condition." },
+                            severity: { type: "string", enum: ["critical", "warning", "info"] },
                         },
                     },
-                    description: "Alert configurations",
+                    description: "Infrastructure alerts.",
                 },
                 logging: {
                     type: "object",
                     properties: {
                         tools: {
                             type: "array",
-                            items: { type: "string" },
-                            description: "Logging tools (ELK, Splunk, CloudWatch, etc.)",
+                            items: { type: "string", maxLength: 20 },
+                            description: "Logging tools.",
                         },
-                        retention: { type: "string", description: "Log retention period" },
+                        retention: { type: "string", maxLength: 10, description: "e.g., '30d'." },
                     },
                 },
             },

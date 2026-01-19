@@ -10,14 +10,14 @@ export const qaSchema = {
             type: "object",
             required: ["unit", "integration", "e2e"],
             properties: {
-                unit: { type: "string", description: "Methodology for unit testing (e.g. Jest, isolated functionality)." },
-                integration: { type: "string", description: "Strategy for testing component interactions and API flows." },
-                e2e: { type: "string", description: "Plan for end-to-end critical path verification (e.g. Playwright)." },
-                approach: { type: "string", description: "High-level testing methodology/philosophy." },
-                types: { type: "array", items: { type: "string" }, description: "Categories of tests included (e.g. Functional, Security, UX)." },
-                tools: { type: "array", items: { type: "string" }, description: "Testing frameworks and tools used." }
+                unit: { type: "string", maxLength: 100, description: "Unit testing approach." },
+                integration: { type: "string", maxLength: 100, description: "Integration testing approach." },
+                e2e: { type: "string", maxLength: 100, description: "E2E testing approach." },
+                approach: { type: "string", maxLength: 150, description: "General QA philosophy." },
+                types: { type: "array", items: { type: "string", maxLength: 20 }, description: "Test types." },
+                tools: { type: "array", items: { type: "string", maxLength: 20 }, description: "Frameworks/tools." }
             },
-            description: "High-level quality assurance strategy by testing layer."
+            description: "Layered QA strategy."
         },
         test_cases: {
             type: "array",
@@ -25,33 +25,34 @@ export const qaSchema = {
                 type: "object",
                 required: ["name", "priority", "type"],
                 properties: {
-                    name: { type: "string", description: "Concise name of the test case" },
-                    description: { type: "string", description: "What this test verifies" },
-                    priority: { type: "string", enum: ["critical", "high", "medium", "low"], description: "Business impact" },
-                    type: { type: "string", enum: ["unit", "integration", "e2e", "performance", "security"], description: "Test layer" },
-                    gherkin: { type: "string", description: "BDD steps: Given/When/Then" },
-                    expected_result: { type: "string", description: "Success criteria" }
+                    name: { type: "string", maxLength: 50, description: "Test case name." },
+                    description: { type: "string", maxLength: 150, description: "What is verified." },
+                    priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                    type: { type: "string", enum: ["unit", "integration", "e2e", "performance", "security"] },
+                    gherkin: { type: "string", maxLength: 300, description: "Given/When/Then steps." },
+                    expected_result: { type: "string", maxLength: 100, description: "Success criteria." }
                 }
             },
-            description: "Detailed list of planned test cases for critical business flows."
+            description: "Critical business flow test cases."
         },
         security_plan: {
             type: "object",
             properties: {
                 auth_verification_steps: {
                     type: "array",
-                    items: { type: "string" },
+                    items: { type: "string", maxLength: 100 },
                     description: "Steps to verify authentication and authorization mechanisms."
                 },
                 vulnerability_scan_strategy: {
                     type: "string",
+                    maxLength: 150,
                     description: "Tools and frequency for security scanning (e.g. OWASP ZAP)."
                 }
             }
         },
         manual_verification_steps: {
             type: "array",
-            items: { type: "string" },
+            items: { type: "string", maxLength: 100 },
             description: "Checklist for manual UAT or visual inspection."
         },
         risk_analysis: {
@@ -60,21 +61,15 @@ export const qaSchema = {
                 type: "object",
                 required: ["risk", "impact", "mitigation"],
                 properties: {
-                    risk: { type: "string", description: "Potential failure mode or quality risk" },
+                    risk: { type: "string", maxLength: 50, description: "Failure mode." },
                     impact: { type: "string", enum: ["high", "medium", "low"] },
-                    mitigation: { type: "string", description: "Strategy to prevent or minimize this risk" }
+                    mitigation: { type: "string", maxLength: 150, description: "Mitigation strategy." }
                 }
             },
-            description: "Analysis of potential quality risks and mitigation strategies."
+            description: "Quality risks and mitigations."
         },
-        summary: {
-            type: "string",
-            description: "Executive summary of the Quality Assurance Plan."
-        },
-        description: {
-            type: "string",
-            description: "Detailed quality assurance strategy and verification steps."
-        },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the QA strategy. No conversational filler." },
+        description: { type: "string", maxLength: 300, description: "Detailed verification philosophy and test plan. Max 3 sentences." },
         coverage: {
             type: "object",
             properties: {
@@ -89,15 +84,15 @@ export const qaSchema = {
         performance_metrics: {
             type: "object",
             properties: {
-                api_response_time_p95: { type: "string" },
-                page_load_time: { type: "string" },
-                database_query_time: { type: "string" },
-                first_contentful_paint: { type: "string" },
-                time_to_interactive: { type: "string" },
-                largest_contentful_paint: { type: "string" }
+                api_response_time_p95: { type: "string", maxLength: 15, description: "Max 15 chars." },
+                page_load_time: { type: "string", maxLength: 15, description: "Max 15 chars." },
+                database_query_time: { type: "string", maxLength: 15, description: "Max 15 chars." },
+                first_contentful_paint: { type: "string", maxLength: 15, description: "Max 15 chars." },
+                time_to_interactive: { type: "string", maxLength: 15, description: "Max 15 chars." },
+                largest_contentful_paint: { type: "string", maxLength: 15, description: "Max 15 chars." }
             }
         },
-        accessibility_plan: { type: "string", description: "Verification plan for accessibility compliance (WCAG)." },
-        manual_uat_plan: { type: "string", description: "Manual user acceptance testing plan." }
+        accessibility_plan: { type: "string", maxLength: 150, description: "Verification plan for accessibility compliance (WCAG)." },
+        manual_uat_plan: { type: "string", maxLength: 150, description: "Manual user acceptance testing plan." }
     }
 };

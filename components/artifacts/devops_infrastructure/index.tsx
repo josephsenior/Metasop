@@ -112,7 +112,9 @@ export default function DevOpsInfrastructurePanel({
     containerization,
     scaling,
     disaster_recovery,
-    summary
+    summary,
+    description,
+    infra_components
   } = data
 
   const services = infrastructure?.services || []
@@ -140,8 +142,15 @@ export default function DevOpsInfrastructurePanel({
             {summary || "Infrastructure design and deployment strategy."}
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
+          {description && (
+            <p className="text-[11px] text-muted-foreground italic leading-tight max-w-3xl border-l-2 border-primary/20 pl-3 py-1">
+              {description}
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mt-2">
             <StatsCard icon={Box} label="Services" value={services.length} color="text-sky-500" bg="bg-sky-500/10" />
+            <StatsCard icon={Zap} label="Components" value={infra_components || 0} color="text-yellow-500" bg="bg-yellow-500/10" />
             <StatsCard icon={GitBranch} label="Pipelines" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
             <StatsCard icon={Globe} label="Envs" value={environments.length} color="text-emerald-500" bg="bg-emerald-500/10" />
             <StatsCard icon={Bell} label="Alerts" value={monitoring?.alerts?.length || 0} color="text-rose-500" bg="bg-rose-500/10" />
@@ -555,19 +564,34 @@ export default function DevOpsInfrastructurePanel({
                       <Card className="p-4 bg-zinc-950 text-zinc-300 border-zinc-800 h-full">
                         <div className="flex items-center gap-2 mb-4 text-zinc-100 font-mono text-sm">
                           <Terminal className="h-4 w-4" />
-                          <span>Log Aggregation</span>
+                          <span>Observability & Logs</span>
                         </div>
-                        <div className="space-y-2 font-mono text-xs">
-                          <div className="flex justify-between p-2 rounded bg-zinc-900/50 border border-zinc-800">
-                            <span className="text-zinc-500">Retention</span>
-                            <span className="text-zinc-300">{monitoring?.logging?.retention || '30 days'}</span>
-                          </div>
-                          <div className="flex justify-between p-2 rounded bg-zinc-900/50 border border-zinc-800">
-                            <span className="text-zinc-500">Tools</span>
-                            <div className="flex gap-1">
-                              {monitoring?.logging?.tools?.map((t: string, i: number) => (
-                                <span key={i} className="text-emerald-400">{t}{i < (monitoring?.logging?.tools?.length || 0) - 1 ? ',' : ''}</span>
-                              ))}
+                        <div className="space-y-4 font-mono text-xs">
+                          {monitoring?.metrics && monitoring.metrics.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Key Metrics</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {monitoring.metrics.map((m: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="bg-zinc-900 border-zinc-800 text-blue-400 text-[9px] h-5">
+                                    {m}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1 p-2 rounded bg-zinc-900/50 border border-zinc-800">
+                              <span className="text-zinc-500 text-[9px] uppercase font-bold">Retention</span>
+                              <span className="text-zinc-300">{monitoring?.logging?.retention || '30 days'}</span>
+                            </div>
+                            <div className="flex flex-col gap-1 p-2 rounded bg-zinc-900/50 border border-zinc-800">
+                              <span className="text-zinc-500 text-[9px] uppercase font-bold">Logging Tools</span>
+                              <div className="flex gap-1 flex-wrap">
+                                {monitoring?.logging?.tools?.map((t: string, i: number) => (
+                                  <span key={i} className="text-emerald-400">{t}{i < (monitoring?.logging?.tools?.length || 0) - 1 ? ',' : ''}</span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>

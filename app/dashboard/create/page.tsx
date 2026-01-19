@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Brain, Cpu, Zap, Search, Tag, Palette } from "lucide-react"
+import { Brain, Cpu, Zap, Search, Tag, Palette, Mic } from "lucide-react"
 import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
@@ -1015,6 +1015,12 @@ function CreateDiagramContent() {
                                 <div className="flex items-center gap-2">
                                   <Cpu className="h-3 w-3 text-purple-500" />
                                   <span>Gemini 3 Pro</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="gemini-2.5-flash-native-audio-dialog" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
+                                <div className="flex items-center gap-2">
+                                  <Mic className="h-3 w-3 text-blue-500" />
+                                  <span>Gemini 2.5 Audio</span>
                                 </div>
                               </SelectItem>
                             </SelectContent>

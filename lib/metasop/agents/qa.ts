@@ -43,24 +43,20 @@ export async function qaAgent(
 
       const qaPrompt = `As a Lead Quality Assurance Engineer, design a verification strategy for '${projectTitle}'.
 
-ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize essential test cases, basic security checks, and straightforward manual verification. Focus on core functional stability.
-- For **complex/enterprise systems**: Provide exhaustive BDD scenario mapping, deep risk analysis, and production-ready verification rigor.
-
 ${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}` : `User Request: ${user_request}`}
 ${archDesign?.content ? `Tech Stack: ${techStackString}` : ""}
 ${engineerImpl?.content ? `Implementation Patterns: ${(engineerImpl.content as any).technical_patterns?.join(", ")}` : ""}
 
 MISSION OBJECTIVES:
-1. **Verification Strategy**: Define a test strategy covering Unit, Integration, and E2E layers proportional to the project's scale.
-2. **BDD Scenario Mapping**: Map a comprehensive set of test scenarios DIRECTLY to user stories. The volume of scenarios should be proportional to the project's complexity. For each test case, include a **Gherkin (Given/When/Then)** specification.
-3. **Quality Gates & Coverage**: Define code coverage thresholds (Line, Branch, Function) suitable for the project's requirements.
-4. **Risk Analysis**: Conduct a simple but concise risk analysis of the architecture, identifying key risks proportional to the system's complexity. **For each risk, you MUST provide a specific mitigation strategy.** Keep descriptions to a maximum of 2 sentences.
-5. **Benchmarking**: Specify target performance metrics (latency, throughput) as needed.
+1. **Verification Strategy**: Define a test strategy covering Unit, Integration, and E2E layers.
+2. **BDD Scenario Mapping**: Map test scenarios to user stories using Gherkin (Given/When/Then).
+3. **Quality Gates & Coverage**: Define code coverage thresholds.
+4. **Risk Analysis**: Conduct a concise risk analysis identifying key risks and mitigations.
+5. **Benchmarking**: Specify target performance metrics (latency, throughput).
 6. **Security & Manual Audits**: Define an authentication verification plan and manual UAT steps.
 7. **Accessibility**: Design a verification plan for accessibility compliance (WCAG).
 
-Focus on technical rigor and actionable verification value. Match the complexity of your verification strategy to the inherent needs of the project. Respond with ONLY the JSON object.`;
+Respond with ONLY the structured JSON object.`;
 
       let llmQA: QABackendArtifact | null = null;
 

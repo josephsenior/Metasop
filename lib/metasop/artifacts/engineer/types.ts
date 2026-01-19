@@ -25,6 +25,11 @@ export interface EngineerBackendArtifact {
         description: string;
         tasks: string[];
     }>; // Structured plan to prevent truncation issues
+    implementation_plan_phases?: Array<{
+        name: string;
+        description: string;
+        tasks: string[];
+    }>; // Alias for phases
     plan?: string; // Alias for implementation_plan
     dependencies?: string[]; // REQUIRED: Array of strings like "package@version" (NOT objects!)
     technical_decisions?: Array<{

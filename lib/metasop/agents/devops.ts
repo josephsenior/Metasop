@@ -40,25 +40,21 @@ export async function devopsAgent(
 
       const devopsPrompt = `As a Principal Site Reliability Engineer (SRE), design a modern infrastructure strategy for '${projectTitle}'.
 
-ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize a simple, cost-effective deployment (e.g., Vercel, Netlify, single-region VPS). Focus on ease of setup and basic CI/CD.
-- For **complex/enterprise systems**: Provide exhaustive technical depth, multi-region high availability, and production-ready SRE rigor.
-
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
 ${archArtifact ? `Architecture Target: ${archArtifact.summary}
 Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 5).join(", ")}` : ""}
 
 MISSION OBJECTIVES:
-1. **Infrastructure as Code (IaC)**: Architect an IaC layer (Terraform/Pulumi). Specify cloud provider, regions, and infrastructure components (VPC, Compute, DB, etc.) proportional to the project's scale.
-2. **Environment Tiering**: Define an environment strategy (e.g., Dev/Prod or Dev/Staging/Prod). Provide scaling rules and access controls.
-3. **CI/CD Pipeline Architecture**: Design a pipeline with essential stages (Build, Test, Deploy). Include additional stages (Security Scan, UAT) for complex projects.
-4. **Containerization & Orchestration**: Provide a container strategy (Docker/K8s) if applicable. Include resource limits and basic policies.
-5. **Deployment Model**: Select a deployment model (e.g., Simple, Blue-Green, or Canary) based on the project's criticality.
-6. **Observability**: Design a monitoring and logging system. Focus on essential signals for simple apps and exhaustive "Golden Signals" for complex ones.
-7. **DR & Resilience**: Define RPO/RTO targets and backup strategies suitable for the project's needs.
-8. **Security & Compliance**: Integrate security into the DevOps lifecycle (DevSecOps) at an appropriate level.
+1. **Infrastructure as Code (IaC)**: Architect an IaC layer proportional to the project's scale.
+2. **Environment Tiering**: Define an environment strategy and access controls.
+3. **CI/CD Pipeline Architecture**: Design a pipeline with essential stages (Build, Test, Deploy).
+4. **Containerization & Orchestration**: Provide a container strategy (Docker/K8s) if applicable.
+5. **Deployment Model**: Select a deployment model based on the project's criticality.
+6. **Observability**: Design a monitoring and logging system focusing on essential signals.
+7. **DR & Resilience**: Define RPO/RTO targets and backup strategies.
+8. **Security & Compliance**: Integrate security into the DevOps lifecycle (DevSecOps).
 
-Focus on technical depth and production-ready rigor. Match the complexity of your infrastructure design to the inherent needs of the project. Respond with ONLY the JSON object.`;
+Respond with ONLY the structured JSON object.`;
 
       let llmDevOps: DevOpsBackendArtifact | null = null;
 

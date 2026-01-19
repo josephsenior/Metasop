@@ -3,15 +3,17 @@ export const pmSchema = {
     type: "object",
     required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
     properties: {
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the product. No conversational filler. Max 150 chars." },
+        description: { type: "string", maxLength: 300, description: "Detailed product vision and description. Max 3 sentences, 300 chars." },
         gaps: {
             type: "array",
-            description: "Identified product gaps, missing features, or user pain points.",
+            description: "Identified product gaps or user pain points.",
             items: {
                 type: "object",
                 required: ["gap", "impact", "priority"],
                 properties: {
-                    gap: { type: "string" },
-                    impact: { type: "string" },
+                    gap: { type: "string", maxLength: 50 },
+                    impact: { type: "string", maxLength: 100 },
                     priority: { type: "string", enum: ["high", "medium", "low"] }
                 }
             }
@@ -23,16 +25,15 @@ export const pmSchema = {
                 type: "object",
                 required: ["opportunity", "value", "feasibility"],
                 properties: {
-                    opportunity: { type: "string" },
-                    value: { type: "string" },
+                    opportunity: { type: "string", maxLength: 50 },
+                    value: { type: "string", maxLength: 100 },
                     feasibility: { type: "string", enum: ["high", "medium", "low"] }
                 }
             }
         },
         user_stories: {
             type: "array",
-            maxItems: 10,
-            description: "Array of user stories. Aim for 5-10 detailed stories.",
+            description: "Array of INVEST-compliant user stories.",
             items: {
                 type: "object",
                 required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
@@ -44,15 +45,18 @@ export const pmSchema = {
                     },
                     title: {
                         type: "string",
-                        description: "User story title",
+                        maxLength: 50,
+                        description: "Concise user story title. Max 50 chars.",
                     },
                     story: {
                         type: "string",
-                        description: "User story in 'As a... I want... so that...' format",
+                        maxLength: 150,
+                        description: "Story in 'As a... I want... so that...' format. Max 150 chars.",
                     },
                     description: {
                         type: "string",
-                        description: "Detailed description of the user story",
+                        maxLength: 200,
+                        description: "Brief technical description. Max 200 chars.",
                     },
                     priority: {
                         type: "string",
@@ -67,37 +71,32 @@ export const pmSchema = {
                     },
                     acceptance_criteria: {
                         type: "array",
-                        maxItems: 5,
                         items: {
                             type: "string",
+                            maxLength: 100,
                         },
-                        description: "Acceptance criteria for this user story",
+                        description: "Specific ACs for this story.",
                     },
                     dependencies: {
                         type: "array",
-                        maxItems: 3,
                         items: {
                             type: "string",
                             pattern: "^US-[0-9]+$",
                         },
-                        description: "Array of user story IDs this story depends on",
+                        description: "Story IDs this depends on.",
                     },
                     estimated_complexity: {
                         type: "string",
                         enum: ["small", "medium", "large"],
                         description: "Estimated complexity",
                     },
-                    user_value: {
-                        type: "string",
-                        description: "Value this story provides to users",
-                    },
+                    user_value: { type: "string", maxLength: 100 },
                 },
             },
         },
         acceptance_criteria: {
             type: "array",
-            maxItems: 12,
-            description: "Array of acceptance criteria. Aim for 8-12 comprehensive criteria.",
+            description: "Array of acceptance criteria.",
             items: {
                 type: "object",
                 required: ["criteria"],
@@ -109,15 +108,18 @@ export const pmSchema = {
                     },
                     title: {
                         type: "string",
-                        description: "Acceptance criterion title",
+                        maxLength: 50,
+                        description: "Acceptance criterion title. Max 50 chars.",
                     },
                     description: {
                         type: "string",
-                        description: "Detailed description",
+                        maxLength: 200,
+                        description: "Detailed description. Max 200 chars.",
                     },
                     criteria: {
                         type: "string",
-                        description: "The actual acceptance criterion",
+                        maxLength: 200,
+                        description: "The actual acceptance criterion. Max 200 chars.",
                     },
                     priority: {
                         type: "string",
@@ -136,24 +138,26 @@ export const pmSchema = {
             type: "array",
             items: {
                 type: "string",
+                maxLength: 100,
             },
-            description: "Array of assumptions about the project",
+            description: "Array of assumptions about the project.",
         },
         out_of_scope: {
             type: "array",
             items: {
                 type: "string",
+                maxLength: 100,
             },
-            description: "Array of items explicitly out of scope",
+            description: "Array of items explicitly out of scope.",
         },
         swot: {
             type: "object",
             required: ["strengths", "weaknesses", "opportunities", "threats"],
             properties: {
-                strengths: { type: "array", items: { type: "string" } },
-                weaknesses: { type: "array", items: { type: "string" } },
-                opportunities: { type: "array", items: { type: "string" } },
-                threats: { type: "array", items: { type: "string" } },
+                strengths: { type: "array", items: { type: "string", maxLength: 50 } },
+                weaknesses: { type: "array", items: { type: "string", maxLength: 50 } },
+                opportunities: { type: "array", items: { type: "string", maxLength: 50 } },
+                threats: { type: "array", items: { type: "string", maxLength: 50 } },
             },
             description: "SWOT analysis of the product",
         },
@@ -163,12 +167,12 @@ export const pmSchema = {
                 type: "object",
                 required: ["role", "interest", "influence"],
                 properties: {
-                    role: { type: "string", description: "Stakeholder role" },
-                    interest: { type: "string", description: "Stakeholder interest/concern" },
+                    role: { type: "string", maxLength: 30, description: "Stakeholder role" },
+                    interest: { type: "string", maxLength: 100, description: "Stakeholder interest/concern" },
                     influence: { type: "string", enum: ["high", "medium", "low"], description: "Level of influence" },
                 },
             },
-            description: "Key project stakeholders",
+            description: "Key project stakeholders.",
         },
         invest_analysis: {
             type: "array",
@@ -177,19 +181,17 @@ export const pmSchema = {
                 required: ["user_story_id", "independent", "negotiable", "valuable", "estimatable", "small", "testable", "score"],
                 properties: {
                     user_story_id: { type: "string", description: "ID of the user story" },
-                    independent: { type: "boolean", description: "Is the story independent?" },
-                    negotiable: { type: "boolean", description: "Is it negotiable?" },
-                    valuable: { type: "boolean", description: "Does it provide value?" },
-                    estimatable: { type: "boolean", description: "Is it estimatable?" },
-                    small: { type: "boolean", description: "Is it small enough?" },
-                    testable: { type: "boolean", description: "Is it testable?" },
-                    score: { type: "number", description: "Overall INVEST score (0-10)" },
-                    comments: { type: "string", description: "Specific comments on the INVEST evaluation" },
+                    independent: { type: "boolean" },
+                    negotiable: { type: "boolean" },
+                    valuable: { type: "boolean" },
+                    estimatable: { type: "boolean" },
+                    small: { type: "boolean" },
+                    testable: { type: "boolean" },
+                    score: { type: "number", minimum: 0, maximum: 10 },
+                    comments: { type: "string", maxLength: 100 },
                 },
             },
-            description: "INVEST analysis for user stories",
+            description: "INVEST analysis for user stories.",
         },
-        summary: { type: "string", description: "Executive summary of the product specification" },
-        description: { type: "string", description: "Detailed description of the product and its vision" },
     },
 };

@@ -40,25 +40,19 @@ export async function productManagerAgent(
         : '';
 
       // Original generation logic
-      const pmPrompt = `As a Principal Product Manager, create a high-fidelity product specification for '${user_request}'.${documentsContext}
+      const pmPrompt = `As a Senior Product Manager, create a comprehensive product specification for '${user_request}'.
 
-ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize clarity, essential functionality, and speed. Keep descriptions concise and focused on the core value proposition.
-- For **complex/enterprise systems**: Provide exhaustive technical depth, battle-hardened specs, and detailed strategic alignment.
+${(context as any).previous_artifacts ? `Review the initial request and ensure all aspects are covered in the spec.` : ""}
 
-CRITICAL GOALS:
-1. **Vision & Scope**: Define a crystal-clear product vision and description. Explain the core "Why" and the strategic value.
-2. **INVEST User Stories**: Develop a comprehensive set of user stories following the INVEST framework. The number of stories should be proportional to the project's complexity. Include IDs (US-1...), titles, detailed stories, priorities, and story points.
-3. **Acceptance Criteria**: Generate global acceptance criteria (AC-1...) and specific criteria for user stories.
-4. **INVEST Analysis**: For every user story, provide an INVEST quality analysis and a technical score (0-10).
-5. **Strategic SWOT Analysis**: Conduct a thorough evaluation of the product's Strengths, Weaknesses, Opportunities, and Threats.
-6. **Stakeholder Mapping**: Identify key roles, their interests, and communication requirements.
-7. **Assumptions & Boundaries**: Explicitly list project Assumptions, Constraints, and Out-of-Scope items to prevent scope creep.
-8. **Navigation & Information Architecture**: Define the core navigation strategy and information architecture.
-9. **Success Metrics (KPIs)**: Define the core success metrics and KPIs for the product.
-      10. **Market Gaps & Opportunities**: Identify product gaps ('gaps') and strategic opportunities ('opportunities') for the product.
+MISSION OBJECTIVES:
+1. **Product Strategy**: Define a clear summary and description as specified in the schema.
+2. **Feature Gaps & Opportunities**: Identify technical gaps and growth areas.
+3. **User Stories**: Generate INVEST-compliant user stories (Independent, Negotiable, Valuable, Estimable, Small, Testable).
+4. **Acceptance Criteria**: Detail comprehensive ACs for the overall product.
+5. **SWOT & Analysis**: Provide a strategic SWOT analysis and stakeholder map.
+6. **Project Scope**: Define explicit assumptions and out-of-scope items to prevent scope creep.
 
-Your specifications must provide the definitive "Source of Truth" for the architecture and engineering teams. Match the granularity of your response to the inherent complexity of the user's request. Respond with ONLY the JSON object.`;
+Respond with ONLY the structured JSON object.`;
 
       let llmPMSpec: ProductManagerBackendArtifact | null = null;
 
@@ -74,7 +68,7 @@ Your specifications must provide the definitive "Source of Truth" for the archit
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.4, // Slightly higher for strategic creativity
+            temperature: 0.2, // Lowered for precise specification output
             cacheId: context.cacheId,
             role: "Product Manager"
           }

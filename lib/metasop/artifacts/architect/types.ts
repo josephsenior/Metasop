@@ -26,13 +26,6 @@ export interface ArchitectBackendArtifact {
         consequences: string; // REQUIRED: minLength: 20
         alternatives?: string[]; // Array of strings (minLength: 5)
     }>; // REQUIRED: minItems: 1
-    next_tasks: Array<{
-        role: "Engineer" | "DevOps" | "QA" | "Designer" | "Product Manager"; // REQUIRED
-        task: string; // REQUIRED: minLength: 20
-        title?: string; // UI expected field
-        description?: string;
-        priority?: "high" | "medium" | "low"; // UI expected field
-    }>; // REQUIRED: minItems: 1
     database_schema?: {
         tables?: Array<{
             name: string; // REQUIRED: pattern "^[a-z_][a-z0-9_]*$"
@@ -93,7 +86,6 @@ export function isArchitectBackendArtifact(
         artifact &&
         typeof artifact.design_doc === "string" &&
         Array.isArray(artifact.apis) &&
-        Array.isArray(artifact.decisions) &&
-        Array.isArray(artifact.next_tasks)
+        Array.isArray(artifact.decisions)
     );
 }

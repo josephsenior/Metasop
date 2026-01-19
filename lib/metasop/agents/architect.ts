@@ -33,34 +33,23 @@ export async function architectAgent(
         }
       );
     } else {
-      const projectTitle = (pmSpec?.content as any)?.title || "Project";
+      const projectContext = pmSpec?.content 
+        ? `Project Goals: ${(pmSpec.content as any).summary}\nTarget Audience: ${(pmSpec.content as any).description}`
+        : `User Request: ${user_request}`;
 
-      // Format documents for context if they exist
-      const documentsContext = documents && documents.length > 0
-        ? `\n\n=== SUPPLEMENTAL CONTEXT DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}\n\n`
-        : '';
+      const architectPrompt = `As a Principal Software Architect, design a robust system architecture for '${user_request}'.
 
-      const architectPrompt = `As a Principal Software Architect, design a high-fidelity system architecture for '${projectTitle}'.${documentsContext}
-
-ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize a clean, standard stack, and straightforward data flow. Keep justifications brief and focused on implementation speed.
-- For **complex/enterprise systems**: Provide exhaustive technical rigor, systemic clarity, and production-ready depth.
-
-${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}
-Target Audience: ${(pmSpec.content as any).description}` : `User Request: ${user_request}`}
+${projectContext}
 
 MISSION OBJECTIVES:
-1. **System Pattern Selection**: Define the authoritative architecture pattern in 'design_doc'.
-2. **Database Intelligence**: Architect a relational schema in 'database_schema'. Specify table structures, data types, indexing strategies, and relationships.
-3. **API Design**: Define a type-safe API contract in 'apis'. Include CRUD coverage, error handling, and authentication flows.
-4. **Technology Stack**: Specify the complete tech stack in 'technology_stack' with justifications.
-5. **Integration Points**: Identify critical external services in 'integration_points'.
-6. **Scalability & Security Philosophy**: Detail a security strategy in 'security_considerations' and a scalability plan in 'scalability_approach'.
-7. **Design Doc**: Provide a definitive Blueprint in 'design_doc' covering system overview and data flow.
-8. **Actionable Roadmap**: Provide a prioritized list of technical tasks in 'next_tasks'.
-9. **Executive Summary**: Provide a high-level 'summary' and 'description' of the architecture.
+1. **Design Documentation**: Create a high-fidelity Markdown design document as specified in the schema.
+2. **API Specification**: Design a clean RESTful API surface with full CRUD coverage for core entities.
+3. **Database Architecture**: Design a normalized relational schema with clear table/column naming.
+4. **Architectural Decisions**: Document key ADRs (Architectural Decision Records) including rationale and tradeoffs.
+5. **Technical Roadmap**: Define specific, actionable next tasks for the engineering and DevOps teams.
+6. **System Quality**: Address security, scalability, and integration points in detail.
 
-Ensure all fields in the schema are populated with high-quality, actionable technical content. Respond with ONLY the JSON object.`;
+Respond with ONLY the structured JSON object.`;
 
       let llmArchitecture: ArchitectBackendArtifact | null = null;
 
@@ -75,7 +64,7 @@ Ensure all fields in the schema are populated with high-quality, actionable tech
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.3,
+            temperature: 0.2, // Lowered for technical precision
             cacheId: context.cacheId,
             role: "Architect"
           }

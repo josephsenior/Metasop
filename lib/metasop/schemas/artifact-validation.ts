@@ -164,7 +164,6 @@ export const ArchitectArtifactSchema = z.object({
   design_doc: z.string().min(100, "Design document must be at least 100 characters"),
   apis: z.array(APISchema).min(1, "At least one API is required"),
   decisions: z.array(DecisionSchema).min(1, "At least one decision is required"),
-  next_tasks: z.array(NextTaskSchema).min(1, "At least one next task is required"),
   database_schema: DatabaseSchemaSchema.optional(),
   technology_stack: TechnologyStackSchema.optional(),
   integration_points: z.array(IntegrationPointSchema).optional(),

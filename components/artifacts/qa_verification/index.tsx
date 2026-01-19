@@ -27,7 +27,8 @@ import {
   Info,
   Map,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from "lucide-react"
 
 import { QABackendArtifact } from "@/lib/metasop/artifacts/qa/types"
@@ -144,6 +145,9 @@ export default function QAVerificationPanel({
   const riskAnalysis = data.risk_analysis || []
   const securityPlan = data.security_plan
   const manualVerification = data.manual_verification_steps || []
+  const accessibilityPlan = data.accessibility_plan || (data as any).accessibilityPlan
+  const manualUatPlan = data.manual_uat_plan || (data as any).manualUatPlan
+  const ok = data.ok
   const coveragePercent =
     (coverage as any).total ??
     (coverage as any).overall ??
@@ -162,6 +166,14 @@ export default function QAVerificationPanel({
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <h2 className={styles.typography.h2}>QA Verification</h2>
+              {ok !== undefined && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px] px-1.5 h-5 uppercase font-bold",
+                  ok ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/5" : "text-rose-600 border-rose-500/30 bg-rose-500/5"
+                )}>
+                  {ok ? "Ready for Release" : "Verification Pending"}
+                </Badge>
+              )}
               <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 text-[10px] px-1.5 h-5">
                 Quality Assurance
               </Badge>
@@ -216,6 +228,8 @@ export default function QAVerificationPanel({
                 <TabTrigger value="risks" icon={AlertTriangle} label="Risk Analysis" count={riskAnalysis.length} />
                 {securityPlan && <TabTrigger value="security" icon={Shield} label="Security Plan" />}
                 {manualVerification.length > 0 && <TabTrigger value="manual" icon={UserCheck} label="Manual Audit" count={manualVerification.length} />}
+                {accessibilityPlan && <TabTrigger value="accessibility" icon={Globe} label="Accessibility" />}
+                {manualUatPlan && <TabTrigger value="uat" icon={UserCheck} label="UAT Plan" />}
               </TabsList>
             </ScrollArea>
           </div>
@@ -552,6 +566,62 @@ export default function QAVerificationPanel({
                   </motion.div>
                 </TabsContent>
 
+                <TabsContent key="accessibility" value="accessibility" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show">
+                    <Card className={cn("border-emerald-500/20 bg-emerald-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                      <CardHeader className="pb-2 border-b border-emerald-500/10 px-4 pt-4">
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-emerald-500" />
+                          WCAG Compliance & Accessibility Plan
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-600">
+                            <Activity className="h-6 w-6" />
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-sm text-foreground/80 leading-relaxed">
+                              {accessibilityPlan || "No specific accessibility plan defined."}
+                            </p>
+                            <div className="flex gap-2 mt-4">
+                              <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5">WCAG 2.1 AA</Badge>
+                              <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5">ARIA COMPLIANT</Badge>
+                              <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5">SEMANTIC HTML</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </TabsContent>
+
+                {manualUatPlan && (
+                  <TabsContent key="uat" value="uat" className="m-0 outline-none">
+                    <motion.div variants={container} initial="hidden" animate="show">
+                      <Card className={cn("border-blue-500/20 bg-blue-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                        <CardHeader className="pb-2 border-b border-blue-500/10 px-4 pt-4">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-blue-500" />
+                            User Acceptance Testing (UAT) Plan
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-600">
+                              <Target className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-sm text-foreground/80 leading-relaxed">
+                                {manualUatPlan}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
+                )}
               </div>
             </ScrollArea>
           </div>

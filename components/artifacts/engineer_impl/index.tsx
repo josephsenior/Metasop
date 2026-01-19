@@ -146,12 +146,13 @@ export default function EngineerImplPanel({
   const fileStructure = data.file_structure || data.files || data.file_changes || data.components
   const technicalDecisions = data.technical_decisions || []
   const envVars = data.environment_variables || []
-  const phases = data.phases || []
+  const phases = data.implementation_plan_phases || data.phases || []
+  const implementationPlan = data.implementation_plan
 
   // Count phases in markdown if array is empty
   const roadmapCount = phases.length > 0
     ? phases.length
-    : (data.implementation_plan?.match(/## Phase /g)?.length || (data.implementation_plan ? 1 : 0))
+    : (implementationPlan?.match(/## Phase /g)?.length || (implementationPlan ? 1 : 0))
 
   const technicalPatterns = data.technical_patterns || []
   const stateManagement = data.state_management
@@ -218,6 +219,13 @@ export default function EngineerImplPanel({
             bg="bg-indigo-500/10"
           />
           <StatsCard
+            icon={Database}
+            label="State"
+            value={stateManagement?.tool || "N/A"}
+            color="text-pink-600 dark:text-pink-400"
+            bg="bg-pink-500/10"
+          />
+          <StatsCard
             icon={Settings}
             label="Decisions"
             value={technicalDecisions.length}
@@ -250,7 +258,7 @@ export default function EngineerImplPanel({
                     {/* Using Phases cards as the primary Roadmap view */}
                     {phases.length > 0 ? (
                       <div className="space-y-4">
-                        {phases.map((phase, i) => (
+                        {phases.map((phase: any, i: number) => (
                           <Card key={i} className="border-border/50 shadow-sm overflow-hidden">
                             <div className="bg-muted/30 p-3 border-b border-border/50 flex items-center gap-3">
                               <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-xs font-bold font-mono border border-emerald-500/20">
@@ -266,7 +274,7 @@ export default function EngineerImplPanel({
                             </div>
                             <div className="p-3 bg-card">
                               <ul className="space-y-1.5">
-                                {phase.tasks.map((task, j) => (
+                                {phase.tasks.map((task: string, j: number) => (
                                   <li key={j} className="flex items-start gap-2.5 text-xs text-muted-foreground/90 leading-relaxed group">
                                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500/40 mt-0.5 shrink-0 group-hover:text-emerald-500 transition-colors" />
                                     <span className="group-hover:text-foreground transition-colors">{task}</span>
@@ -277,10 +285,10 @@ export default function EngineerImplPanel({
                           </Card>
                         ))}
                       </div>
-                    ) : (data.implementation_plan ? (
+                    ) : (implementationPlan ? (
                       <div className="prose prose-sm dark:prose-invert max-w-none prose-emerald bg-card border border-border/50 p-6 rounded-xl">
                         <div className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{
-                          __html: data.implementation_plan
+                          __html: implementationPlan
                             .replace(/\\n/g, '\n')
                             .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
                         }} />
@@ -509,6 +517,24 @@ export default function EngineerImplPanel({
                                       {pattern}
                                     </Badge>
                                   ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {stateManagement && (
+                              <div className="space-y-1.5 mt-4 pt-4 border-t border-border/40">
+                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                  State Management
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[10px] font-mono bg-pink-500/5 text-pink-700 border-pink-200/50">
+                                      {stateManagement.tool}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    {stateManagement.strategy}
+                                  </p>
                                 </div>
                               </div>
                             )}

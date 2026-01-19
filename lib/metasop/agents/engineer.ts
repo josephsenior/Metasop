@@ -43,31 +43,21 @@ export async function engineerAgent(
 
       const engineerPrompt = `As an expert Software Engineer, design a high-fidelity technical implementation blueprint for '${projectTitle}'.
 
-ADAPTIVE DEPTH GUIDELINE:
-- For **simple web apps/utilities**: Prioritize a flat, efficient file structure and straightforward state management. Focus on "getting it running" with standard best practices.
-- For **complex/enterprise systems**: Provide exhaustive technical depth, a deep modular architecture, and production-ready rigor.
-
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
 ${archArtifact ? `Architecture Target: ${archArtifact.summary}
 Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 5).join(", ")}` : ""}
 ${uiArtifact ? `Visual Strategy: ${uiArtifact.summary}
 Design Tokens: primary=${uiArtifact.design_tokens?.colors?.primary}, background=${uiArtifact.design_tokens?.colors?.background}` : ""}
 
-Please provide a comprehensive technical roadmap:
-1. **Implementation Plan**: A detailed step-by-step technical implementation guide (Markdown). Match the detail level to the project's scale.
-2. **State Management**: Your specific strategy for managing application state, including tool choices and data flow.
-3. **File Structure**: An organized directory tree that mirrors a professional architecture. Propose a depth proportional to the project's complexity. Note: Only include metadata (names), DO NOT include any file source code.
-4. **Technical Decisions**: Critical architectural choices, rationales, and considered alternatives.
-5. **Dependencies**: Essential libraries and tools required for the build.
-6. **Phases**: Essential implementation phases with granular technical tasks and milestones.
+MISSION OBJECTIVES:
+1. **Implementation Plan**: A detailed technical implementation guide in Markdown.
+2. **State Management**: Specific strategy for managing application state.
+3. **File Structure**: An organized directory tree mirroring professional architecture. (No file content).
+4. **Technical Decisions**: Critical architectural choices and rationales.
+5. **Dependencies**: Essential libraries and tools required.
+6. **Phases**: Implementation phases with granular technical tasks.
 
-Important Guidelines:
-- Focus on architectural clarity and actionable technical value.
-- Match the folder hierarchy depth to the project's inherent complexity.
-- Avoid being overly brief, but prioritize essential patterns for simple apps.
-- Ensure all fields in the schema are populated with meaningful data.
-
-RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
+Respond with ONLY the structured JSON object.`;
 
       let llmEngineerImpl: EngineerBackendArtifact | null = null;
 

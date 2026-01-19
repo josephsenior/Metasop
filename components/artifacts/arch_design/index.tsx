@@ -231,10 +231,17 @@ function DecisionCard({ decision, index }: { decision: any, index: number }) {
             </h4>
           </div>
           <p className={cn("mb-3", styles.typography.bodySmall, styles.colors.textMuted)}>
-            {decision.reason || decision.rationale}
+            {decision.reason}
           </p>
 
           <div className="space-y-3">
+            {decision.rationale && (
+              <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-2.5">
+                <div className="text-[9px] font-bold text-blue-600 uppercase mb-1">Rationale</div>
+                <p className="text-[10px] text-blue-700 dark:text-blue-400 leading-relaxed italic">{decision.rationale}</p>
+              </div>
+            )}
+
             {decision.tradeoffs && (
               <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-2.5">
                 <div className="text-[9px] font-bold text-amber-600 uppercase mb-1">Tradeoffs</div>

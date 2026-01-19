@@ -51,44 +51,44 @@ export interface MetaSOPConfig {
 export const defaultConfig: MetaSOPConfig = {
   agents: {
     enabled: ["pm_spec", "arch_design", "devops_infrastructure", "security_architecture", "engineer_impl", "ui_design", "qa_verification"],
-    defaultTimeout: 120000, // 120 seconds (2 minutes) - default used in tests
+    defaultTimeout: 180000, // 180 seconds (3 minutes)
     defaultRetries: 2,
     agentConfigs: {
       // Per-agent timeouts (can override defaults)
       // Increased timeouts for LLM calls which can take longer
       pm_spec: {
         stepId: "pm_spec",
-        timeout: 300000, // 300 seconds (5 minutes) - Free models can be very slow with structured output
-        retries: 2, // Increased for rate limit handling
+        timeout: 180000, // 180 seconds (3 minutes)
+        retries: 2,
       },
       arch_design: {
         stepId: "arch_design",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 180 seconds (3 minutes)
         retries: 2,
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 180 seconds (3 minutes)
         retries: 2,
       },
       security_architecture: {
         stepId: "security_architecture",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 180 seconds (3 minutes)
         retries: 2,
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 600000, // 600 seconds (10 minutes) - increased for large artifact generation
-        retries: 2, // Increased retries for rate limit scenarios
+        timeout: 180000, // 180 seconds (3 minutes)
+        retries: 2,
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 300000, // 300 seconds (5 minutes)
+        timeout: 180000, // 180 seconds (3 minutes)
         retries: 2,
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 420000, // 420 seconds (7 minutes)
+        timeout: 180000, // 180 seconds (3 minutes)
         retries: 2,
       },
     },

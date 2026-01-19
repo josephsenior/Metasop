@@ -21,7 +21,11 @@ import {
   Smartphone,
   Tablet,
   Laptop,
-  Monitor
+  Monitor,
+  Zap,
+  FileJson,
+  Target,
+  Search
 } from "lucide-react"
 
 import { UIDesignerBackendArtifact } from "@/lib/metasop/artifacts/ui-designer/types"
@@ -73,6 +77,11 @@ export default function UIDesignPanel({
   const layoutBreakpoints = data.layout_breakpoints
   const uiPatterns = data.ui_patterns || []
   const websiteLayout = data.website_layout
+  const layoutStrategy = data.layout_strategy
+  const visualPhilosophy = data.visual_philosophy
+  const informationArchitecture = data.information_architecture
+  const responsiveStrategy = data.responsive_strategy
+  const primaryFeatureManifest = data.primary_feature_manifest
 
   const hierarchyNodes: any[] = Array.isArray(componentHierarchy)
     ? componentHierarchy
@@ -197,9 +206,11 @@ export default function UIDesignPanel({
             <ScrollArea className="w-full whitespace-nowrap pb-2">
               <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
                 <TabTrigger value="tokens" icon={Palette} label="Tokens" count={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)} />
+                <TabTrigger value="strategy" icon={Zap} label="Strategy" />
                 <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
                 <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
                 <TabTrigger value="arch" icon={Layout} label="Blueprint" count={componentSpecs.length} />
+                <TabTrigger value="manifest" icon={FileJson} label="Manifest" />
                 <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
               </TabsList>
             </ScrollArea>
@@ -209,6 +220,76 @@ export default function UIDesignPanel({
             <ScrollArea className="h-full">
               <div className="p-4">
 
+
+                <TabsContent key="strategy" value="strategy" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {visualPhilosophy && (
+                        <Card className={cn("border-indigo-500/20 bg-indigo-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-indigo-500/10 px-4 pt-4">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <Target className="h-4 w-4 text-indigo-500" />
+                              Visual Philosophy
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-foreground/80 leading-relaxed italic">
+                              "{visualPhilosophy}"
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {layoutStrategy && (
+                        <Card className={cn("border-blue-500/20 bg-blue-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-blue-500/10 px-4 pt-4">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <Layout className="h-4 w-4 text-blue-500" />
+                              Layout Strategy
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-foreground/80 leading-relaxed">
+                              {layoutStrategy}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {informationArchitecture && (
+                        <Card className={cn("border-emerald-500/20 bg-emerald-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-emerald-500/10 px-4 pt-4">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <Search className="h-4 w-4 text-emerald-500" />
+                              Information Architecture
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-foreground/80 leading-relaxed">
+                              {informationArchitecture}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {responsiveStrategy && (
+                        <Card className={cn("border-purple-500/20 bg-purple-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                          <CardHeader className="pb-2 border-b border-purple-500/10 px-4 pt-4">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <Smartphone className="h-4 w-4 text-purple-500" />
+                              Responsive Strategy
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <p className="text-xs text-foreground/80 leading-relaxed">
+                              {responsiveStrategy}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </motion.div>
+                </TabsContent>
 
                 <TabsContent key="sitemap" value="sitemap" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
@@ -515,6 +596,32 @@ export default function UIDesignPanel({
                         </div>
                       </motion.div>
                     ))}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="manifest" value="manifest" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show">
+                    <Card className={cn("border-border/50", styles.colors.bgCard)}>
+                      <CardHeader className="pb-2 border-b border-border/50 px-4 pt-4">
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                          <FileJson className="h-4 w-4 text-orange-500" />
+                          A2UI Manifest (v0.8)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        {primaryFeatureManifest ? (
+                          <div className="bg-muted/30 rounded-lg border border-border/40 p-4 overflow-x-auto">
+                            <pre className="text-[10px] font-mono text-foreground/80 leading-relaxed">
+                              {JSON.stringify(primaryFeatureManifest, null, 2)}
+                            </pre>
+                          </div>
+                        ) : (
+                          <div className="py-8 text-center text-muted-foreground italic text-xs">
+                            No feature manifest defined.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 </TabsContent>
 

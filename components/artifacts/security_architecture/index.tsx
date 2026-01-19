@@ -243,11 +243,23 @@ export default function SecurityArchitecturePanel({
                             <Badge variant="secondary" className="text-[9px] uppercase">{control.type}</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">{control.description}</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                              {control.id || `CTRL-${i + 1}`}
-                            </span>
-                          </div>
+                  
+                  {control.implementation && (
+                    <div className="mt-2 p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                      <div className="text-[9px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
+                        <CheckCircle className="h-2.5 w-2.5" /> Implementation Detail
+                      </div>
+                      <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+                        {control.implementation}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                      {control.id || `CTRL-${i + 1}`}
+                    </span>
+                  </div>
                         </div>
                       </motion.div>
                     ))}

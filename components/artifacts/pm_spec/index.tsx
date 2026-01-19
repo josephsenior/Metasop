@@ -199,6 +199,8 @@ export default function PMSpecPanel({
   const swot = data.swot
   const stakeholders = data.stakeholders
   const investAnalysis = data.invest_analysis || []
+  const gaps = data.gaps || []
+  const opportunities = data.opportunities || []
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
@@ -274,6 +276,20 @@ export default function PMSpecPanel({
             color="text-blue-600 dark:text-blue-400"
             bg="bg-blue-500/10"
           />
+          <StatsCard
+            icon={AlertTriangle}
+            label="Gaps"
+            value={gaps.length}
+            color="text-red-600 dark:text-red-400"
+            bg="bg-red-500/10"
+          />
+          <StatsCard
+            icon={TrendingUp}
+            label="Opportunities"
+            value={opportunities.length}
+            color="text-emerald-600 dark:text-emerald-400"
+            bg="bg-emerald-500/10"
+          />
         </div>
       </div>
 
@@ -290,6 +306,8 @@ export default function PMSpecPanel({
                 <TabTrigger value="assumptions" icon={Lightbulb} label="Assumptions" count={assumptions.length} />
                 <TabTrigger value="outofscope" icon={Ban} label="Out of Scope" count={out_of_scope.length} />
                 <TabTrigger value="swot" icon={TrendingUp} label="SWOT" />
+                <TabTrigger value="gaps" icon={AlertTriangle} label="Gaps" count={gaps.length} />
+                <TabTrigger value="opportunities" icon={TrendingUp} label="Opportunities" count={opportunities.length} />
                 <TabTrigger value="stakeholders" icon={Users} label="Stakeholders" count={stakeholders?.length || 0} />
               </TabsList>
             </ScrollArea>
@@ -533,6 +551,52 @@ export default function PMSpecPanel({
                               </ul>
                             </CardContent>
                           </Card>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </TabsContent>
+                )}
+
+                {gaps && gaps.length > 0 && (
+                  <TabsContent key="gaps" value="gaps" className="m-0 outline-none">
+                    <motion.div variants={container} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2">
+                      {gaps.map((gap: any, i: number) => (
+                        <motion.div key={i} variants={item} className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 transition-colors">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-bold text-red-700 dark:text-red-400">{gap.gap}</h4>
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] uppercase",
+                              gap.priority === 'high' ? "text-red-600 border-red-500/30 bg-red-500/10" :
+                                gap.priority === 'low' ? "text-blue-600 border-blue-500/30 bg-blue-500/10" :
+                                  "text-amber-600 border-amber-500/30 bg-amber-500/10"
+                            )}>
+                              {gap.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{gap.impact}</p>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </TabsContent>
+                )}
+
+                {opportunities && opportunities.length > 0 && (
+                  <TabsContent key="opportunities" value="opportunities" className="m-0 outline-none">
+                    <motion.div variants={container} initial="hidden" animate="show" className="grid gap-4 md:grid-cols-2">
+                      {opportunities.map((opp: any, i: number) => (
+                        <motion.div key={i} variants={item} className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{opp.opportunity}</h4>
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] uppercase",
+                              opp.feasibility === 'high' ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10" :
+                                opp.feasibility === 'low' ? "text-red-600 border-red-500/30 bg-red-500/10" :
+                                  "text-blue-600 border-blue-500/30 bg-blue-500/10"
+                            )}>
+                              {opp.feasibility} Feasibility
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{opp.value}</p>
                         </motion.div>
                       ))}
                     </motion.div>

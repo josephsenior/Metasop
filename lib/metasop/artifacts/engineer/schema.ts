@@ -3,96 +3,76 @@ export const engineerSchema = {
     type: "object",
     required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
-        summary: { type: "string" },
-        description: { type: "string" },
+        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the implementation strategy. No conversational filler. Max 150 chars." },
+        description: { type: "string", maxLength: 300, description: "Detailed implementation philosophy and technical roadmap. Max 3 sentences, 300 chars." },
         artifact_path: {
             type: "string",
-            description: "Base implementation directory (e.g., 'src', 'app').",
+            maxLength: 30,
+            description: "Base directory (e.g., 'src/app'). Max 30 chars.",
         },
         run_results: {
             type: "object",
             required: ["setup_commands", "test_commands", "dev_commands"],
-            description: "Standard commands for the project.",
+            description: "Essential CLI commands.",
             properties: {
-                setup_commands: { type: "array", items: { type: "string" }, description: "Commands to set up the environment" },
-                test_commands: { type: "array", items: { type: "string" }, description: "Commands to run tests" },
-                dev_commands: { type: "array", items: { type: "string" }, description: "Commands to start dev server" },
+                setup_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Setup (e.g., 'npm install')." },
+                test_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Tests (e.g., 'npm test')." },
+                dev_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Dev (e.g., 'npm run dev')." },
             }
         },
         file_structure: {
             type: "object",
             required: ["name", "type", "children"],
-            description: "High-level project file structure. Focus on metadata only. DO NOT include 'content', 'code', or 'source' fields.",
+            description: "High-level directory tree. Focus on metadata. DO NOT include file content.",
             properties: {
-                name: { type: "string", description: "File or folder name" },
-                type: { type: "string", enum: ["file", "directory"], description: "Node type" },
+                name: { type: "string", maxLength: 30, description: "Root name." },
+                type: { type: "string", enum: ["file", "directory"] },
                 children: {
                     type: "array",
-                    minItems: 0,
-                    description: "Contents of the directory. Limit to essential files. DO NOT include file content.",
                     items: {
                         type: "object",
+                        required: ["name", "type"],
                         properties: {
-                            name: { type: "string" },
+                            name: { type: "string", maxLength: 30 },
                             type: { type: "string", enum: ["file", "directory"] },
                             children: {
                                 type: "array",
-                                minItems: 0,
+                                maxItems: 10,
                                 items: {
                                     type: "object",
+                                    required: ["name", "type"],
                                     properties: {
-                                        name: { type: "string" },
+                                        name: { type: "string", maxLength: 30 },
                                         type: { type: "string", enum: ["file", "directory"] },
                                         children: {
                                             type: "array",
-                                            minItems: 0,
+                                            maxItems: 5,
                                             items: {
                                                 type: "object",
+                                                required: ["name", "type"],
                                                 properties: {
-                                                    name: { type: "string" },
+                                                    name: { type: "string", maxLength: 30 },
                                                     type: { type: "string", enum: ["file", "directory"] },
-                                                    children: {
-                                                        type: "array",
-                                                        minItems: 0,
-                                                        items: {
-                                                            type: "object",
-                                                            properties: {
-                                                                name: { type: "string" },
-                                                                type: { type: "string", enum: ["file", "directory"] },
-                                                                children: {
-                                                                    type: "array",
-                                                                    minItems: 0,
-                                                                    items: {
-                                                                        type: "object",
-                                                                        properties: {
-                                                                            name: { type: "string" },
-                                                                            type: { type: "string", enum: ["file", "directory"] },
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
                                                 }
                                             }
                                         }
                                     }
-                                },
-                                description: "Nested files and folders. Provide a deep, production-ready structure."
-                            },
-                        },
-                    },
-                },
-            },
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         implementation_plan: {
             type: "string",
-            description: "Detailed step-by-step technical implementation guide in Markdown.",
+            maxLength: 3000,
+            description: "Technical step-by-step guide in Markdown. Focused and concise. Max 3000 chars.",
         },
         dependencies: {
             type: "array",
-            items: { type: "string", description: "Dependency name and version (e.g., 'package@version', 'package==version', or 'package v1.0')" },
-            description: "Generate all essential dependencies required for the project based on the chosen technology stack.",
+            items: { type: "string", maxLength: 40, description: "Dep (e.g., 'next@14.1.0'). Max 40 chars." },
+            description: "Essential build dependencies. Max 25.",
         },
         technical_decisions: {
             type: "array",
@@ -100,9 +80,9 @@ export const engineerSchema = {
                 type: "object",
                 required: ["decision", "rationale"],
                 properties: {
-                    decision: { type: "string" },
-                    rationale: { type: "string" },
-                    alternatives: { type: "string" },
+                    decision: { type: "string", maxLength: 60 },
+                    rationale: { type: "string", maxLength: 150 },
+                    alternatives: { type: "string", maxLength: 100 },
                 },
             },
             description: "Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection).",
@@ -113,23 +93,24 @@ export const engineerSchema = {
                 type: "object",
                 required: ["name", "description"],
                 properties: {
-                    name: { type: "string" },
-                    description: { type: "string" },
-                    example: { type: "string" },
+                    name: { type: "string", maxLength: 40 },
+                    description: { type: "string", maxLength: 100 },
+                    example: { type: "string", maxLength: 100 },
                 },
             },
+            description: "Environment variables.",
         },
         technical_patterns: {
             type: "array",
-            items: { type: "string" },
-            description: "Industry patterns used (e.g., SOLID, Repository, Factory)",
+            items: { type: "string", maxLength: 30 },
+            description: "Industry patterns used (e.g., SOLID, Repository, Factory).",
         },
         state_management: {
             type: "object",
             required: ["tool", "strategy"],
             properties: {
-                tool: { type: "string", description: "The state management tool or pattern (e.g., 'Zustand', 'Context API', 'Vuex', 'Redux', 'Signals', or server-side session management)" },
-                strategy: { type: "string", description: "Implementation strategy (e.g., 'Slice pattern', 'Hydration', 'Server-side state')" },
+                tool: { type: "string", maxLength: 30, description: "The state management tool or pattern. Max 30 chars." },
+                strategy: { type: "string", maxLength: 150, description: "Implementation strategy. Max 150 chars." },
             },
         },
     },

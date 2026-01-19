@@ -43,10 +43,11 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true)
-      const result = await diagramsApi.getAll({ limit: 3 })
+      // Fetch more diagrams for accurate stats calculation
+      const result = await diagramsApi.getAll({ limit: 50 })
       
-      // Get recent diagrams
-      setRecentDiagrams(result.diagrams)
+      // Get recent diagrams (just take the first 3)
+      setRecentDiagrams(result.diagrams.slice(0, 3))
 
       // Calculate stats
       const now = new Date()
@@ -55,10 +56,24 @@ export default function DashboardPage() {
         (d) => new Date(d.createdAt) >= startOfMonth
       )
 
+      // Calculate Average Generation Time
+      const completedDiagrams = result.diagrams.filter(d => d.status === "completed")
+      let avgTime = 0
+      if (completedDiagrams.length > 0) {
+        const totalTime = completedDiagrams.reduce((acc, d) => {
+          const start = new Date(d.createdAt).getTime()
+          const end = new Date(d.updatedAt).getTime()
+          // Ensure we don't have negative time or outliers (e.g. diagrams that took days)
+          const diff = Math.max(0, end - start)
+          return acc + diff
+        }, 0)
+        avgTime = totalTime / completedDiagrams.length / 1000 // Convert to seconds
+      }
+
       setStats({
         total: result.total,
         thisMonth: thisMonthDiagrams.length,
-        avgGeneration: "8.5s", // TODO: Calculate from actual generation times
+        avgGeneration: avgTime > 0 ? `${avgTime.toFixed(1)}s` : "0s",
       })
     } catch (error: any) {
       toast({
@@ -85,10 +100,19 @@ export default function DashboardPage() {
     return date.toLocaleDateString()
   }
 
+  const avgGenTimeValue = parseFloat(stats.avgGeneration)
+  const isFasterThanAverage = avgGenTimeValue > 0 && avgGenTimeValue < 10
+
   const statsData = [
     { label: "Total Diagrams", value: stats.total.toString(), icon: FileText, change: `+${stats.thisMonth} this month`, trend: "up" as const },
     { label: "This Month", value: stats.thisMonth.toString(), icon: TrendingUp, change: "Keep creating!", trend: "up" as const },
-    { label: "Avg. Generation", value: stats.avgGeneration, icon: Clock, change: "Faster than average", trend: "down" as const },
+    { 
+      label: "Avg. Generation", 
+      value: stats.avgGeneration, 
+      icon: Clock, 
+      change: avgGenTimeValue === 0 ? "No data yet" : isFasterThanAverage ? "Faster than average" : "On par with average", 
+      trend: isFasterThanAverage ? "down" as const : "up" as const 
+    },
   ]
 
   return (

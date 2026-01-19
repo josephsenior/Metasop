@@ -3,44 +3,40 @@ export const uiDesignerSchema = {
     type: "object",
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
-        summary: { type: "string" },
-        description: { type: "string" },
+        summary: { type: "string", description: "A technical, 1-sentence summary of the UI strategy. No conversational filler." },
+        description: { type: "string", description: "Detailed visual design philosophy and brand alignment. Max 3 sentences." },
         component_hierarchy: {
             type: "object",
             required: ["root"],
             properties: {
-                root: { type: "string", description: "Root component name (e.g., 'App', 'Application')" },
+                root: { type: "string", description: "Root component name (e.g., 'App'). Max 20 chars." },
                 children: {
                     type: "array",
-                    maxItems: 10,
                     items: {
                         type: "object",
                         required: ["name"],
                         properties: {
-                            name: { type: "string", description: "Component name" },
+                            name: { type: "string", description: "Component name. Max 20 chars." },
                             props: {
                                 type: "array",
-                                items: { type: "string" },
-                                maxItems: 10,
-                                description: "Key component props (max 10)",
+                                items: { type: "string", maxLength: 30 },
+                                description: "Key component props (e.g., 'title: string'). Max 30 chars per prop.",
                             },
                             children: {
                                 type: "array",
-                                maxItems: 5,
-                                description: "Child components (recursive - can contain same structure)",
+                                description: "Child components (recursive).",
                                 items: {
                                     type: "object",
                                     properties: {
-                                        name: { type: "string" },
-                                        props: { type: "array", items: { type: "string" }, maxItems: 10 },
+                                        name: { type: "string", maxLength: 20 },
+                                        props: { type: "array", items: { type: "string", maxLength: 30 } },
                                         children: {
                                             type: "array",
-                                            maxItems: 3,
-                                            description: "Nested children (recursive)",
+                                            description: "Child components (recursive)",
                                             items: {
                                                 type: "object",
                                                 properties: {
-                                                    name: { type: "string" },
+                                                    name: { type: "string", maxLength: 20 },
                                                 }
                                             },
                                         },
@@ -60,54 +56,58 @@ export const uiDesignerSchema = {
             properties: {
                 colors: {
                     type: "object",
-                    description: "Color palette",
+                    description: "Color palette. Use ONLY 6-digit hex codes.",
                     properties: {
-                        primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        background: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        text: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        error: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        success: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        warning: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-                        surface: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Surface/Card background color" },
+                        primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary brand color (hex only)" },
+                        secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Secondary brand color (hex only)" },
+                        background: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Main background color (hex only)" },
+                        text: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary text color (hex only)" },
+                        accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Accent/Call-to-action color (hex only)" },
+                        error: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Error state color (hex only)" },
+                        success: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Success state color (hex only)" },
+                        warning: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Warning state color (hex only)" },
+                        surface: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Surface/Card color (hex only)" },
                     },
                 },
                 spacing: {
                     type: "object",
+                    description: "Spacing scale. Use ONLY raw CSS values (e.g., '0.5rem'). No descriptions.",
                     properties: {
-                        xs: { type: "string" },
-                        sm: { type: "string" },
-                        md: { type: "string" },
-                        lg: { type: "string" },
-                        xl: { type: "string" },
-                        "2xl": { type: "string" },
+                        xs: { type: "string", maxLength: 10 },
+                        sm: { type: "string", maxLength: 10 },
+                        md: { type: "string", maxLength: 10 },
+                        lg: { type: "string", maxLength: 10 },
+                        xl: { type: "string", maxLength: 10 },
+                        "2xl": { type: "string", maxLength: 10 },
                     },
                 },
                 typography: {
                     type: "object",
+                    description: "Typography system. Use raw CSS values only.",
                     properties: {
-                        fontFamily: { type: "string" },
-                        headingFont: { type: "string" },
+                        fontFamily: { type: "string", description: "Primary font family (e.g., 'Inter'). Max 30 chars." },
+                        headingFont: { type: "string", description: "Heading font family. Max 30 chars." },
                         fontSize: {
                             type: "object",
+                            description: "Font size scale (e.g., '0.875rem'). No descriptions.",
                             properties: {
-                                xs: { type: "string" },
-                                sm: { type: "string" },
-                                base: { type: "string" },
-                                lg: { type: "string" },
-                                xl: { type: "string" },
-                                "2xl": { type: "string" },
+                                xs: { type: "string", maxLength: 10 },
+                                sm: { type: "string", maxLength: 10 },
+                                base: { type: "string", maxLength: 10 },
+                                lg: { type: "string", maxLength: 10 },
+                                xl: { type: "string", maxLength: 10 },
+                                "2xl": { type: "string", maxLength: 10 },
                             },
                         },
                         fontWeight: {
                             type: "object",
+                            description: "Font weights (e.g., '400').",
                             properties: {
-                                light: { type: "string" },
-                                normal: { type: "string" },
-                                medium: { type: "string" },
-                                semibold: { type: "string" },
-                                bold: { type: "string" },
+                                light: { type: "string", maxLength: 5 },
+                                normal: { type: "string", maxLength: 5 },
+                                medium: { type: "string", maxLength: 5 },
+                                semibold: { type: "string", maxLength: 5 },
+                                bold: { type: "string", maxLength: 5 },
                             }
                         }
                     },
@@ -135,12 +135,10 @@ export const uiDesignerSchema = {
         },
         ui_patterns: {
             type: "array",
-            maxItems: 8,
             items: { type: "string" },
         },
         component_specs: {
             type: "array",
-            maxItems: 10,
             items: {
                 type: "object",
                 required: ["name", "description"],

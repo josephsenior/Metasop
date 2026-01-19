@@ -4,8 +4,12 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 
-// Load environment variables from .env.local
-dotenv.config({ path: ".env.local" });
+// Load environment variables
+if (fs.existsSync(".env.local")) {
+  dotenv.config({ path: ".env.local" });
+} else {
+  dotenv.config({ path: ".env" });
+}
 
 async function runTest() {
   console.log("Starting full MetaSOP orchestration test...");
