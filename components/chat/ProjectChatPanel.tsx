@@ -102,7 +102,7 @@ export function ProjectChatPanel({
                 setIsUploading(false)
             }
             reader.readAsText(file)
-        } catch (error: any) {
+        } catch {
             setIsUploading(false)
             toast({
                 title: "File Error",

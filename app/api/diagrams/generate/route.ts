@@ -4,7 +4,7 @@ import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from
 import { checkGuestDiagramLimit, recordGuestDiagramCreation } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 import { runMetaSOPOrchestration } from "@/lib/metasop/orchestrator";
-import type { CreateDiagramRequest, DiagramNode, DiagramEdge, Diagram } from "@/types/diagram";
+import type { CreateDiagramRequest, DiagramNode, DiagramEdge } from "@/types/diagram";
 import type { ArchitectBackendArtifact } from "@/lib/metasop/types";
 import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
 import { ensureUniqueNodeIds, ensureEdgeIds, validateEdgeReferences } from "@/lib/diagrams/validation";
@@ -334,21 +334,9 @@ export async function POST(request: NextRequest) {
           metasop_steps: metasopResult.steps,
         },
       });
-    } catch (updateError: any) {
-      diagramWithMetadata = {
-        ...diagram,
-        nodes: transformedDiagram.nodes,
-        edges: transformedDiagram.edges,
-        status: "completed" as const,
-        metadata: {
-          prompt: body.prompt,
-          options: body.options,
-          metasop_artifacts: metasopResult.artifacts,
-          metasop_report: metasopResult.report,
-          metasop_steps: metasopResult.steps,
-          update_error: "Failed to update metadata",
-        },
-      };
+    } catch (dbError: any) {
+      console.error("Database error creating diagram:", dbError);
+      return createErrorResponse(dbError.message || "Failed to create diagram", 500);
     }
 
     return createSuccessResponse(
@@ -448,17 +436,5 @@ function transformMetaSOPToDiagram(
   }
 
   return { nodes, edges };
-}
-
-function flattenFiles(structure: any): any[] {
-  const files: any[] = [];
-  if (!structure) return files;
-  function traverse(item: any) {
-    if (item.type === 'file') files.push(item);
-    else if (item.children) item.children.forEach(traverse);
-  }
-  if (Array.isArray(structure)) structure.forEach(traverse);
-  else traverse(structure);
-  return files;
 }
 

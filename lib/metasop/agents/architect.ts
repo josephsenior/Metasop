@@ -13,7 +13,7 @@ export async function architectAgent(
   context: AgentContext,
   onProgress?: (event: Partial<MetaSOPEvent>) => void
 ): Promise<MetaSOPArtifact> {
-  const { user_request, previous_artifacts, documents } = context;
+  const { user_request, previous_artifacts } = context;
   const pmSpec = previous_artifacts.pm_spec;
 
   logger.info("Architect agent starting", { user_request: user_request.substring(0, 100) });

@@ -89,7 +89,7 @@ export default function UIDesignPanel({
       ? (componentHierarchy as any).children
       : []
 
-
+  const rootNode = (!Array.isArray(componentHierarchy) && componentHierarchy?.root) ? componentHierarchy.root : null
 
   const renderHierarchyNodes = (nodes: any[], depth = 0, keyPath = "h"): React.ReactNode => {
     if (!Array.isArray(nodes) || nodes.length === 0) return null
@@ -140,9 +140,14 @@ export default function UIDesignPanel({
                 Visual Design
               </Badge>
             </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).summary || (data as any).description || "Visual design specifications and component library."}
+            <p className={cn(styles.typography.bodySmall, "text-indigo-600 dark:text-indigo-400 font-medium")}>
+              {(data as any).summary || "Visual design specifications and component library."}
             </p>
+            {data.description && (
+              <p className={cn("text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl")}>
+                {data.description}
+              </p>
+            )}
           </div>
         </div>
 
@@ -209,6 +214,7 @@ export default function UIDesignPanel({
                 <TabTrigger value="strategy" icon={Zap} label="Strategy" />
                 <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
                 <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
+                <TabTrigger value="atomic" icon={Box} label="Atomic" count={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0} />
                 <TabTrigger value="arch" icon={Layout} label="Blueprint" count={componentSpecs.length} />
                 <TabTrigger value="manifest" icon={FileJson} label="Manifest" />
                 <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
@@ -460,50 +466,35 @@ export default function UIDesignPanel({
                 <TabsContent key="library" value="library" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div className="lg:col-span-2 space-y-4">
-                      {hierarchyNodes.length > 0 ? (
+                      {rootNode && (
+                        <div className="mb-4">
+                          <div className={cn("bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl shadow-sm", styles.colors.bgCard)}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                                <Zap className="h-4 w-4" />
+                                Root: {rootNode}
+                              </span>
+                              <Badge className="bg-indigo-500/10 text-indigo-600 border-indigo-500/20 text-[10px] uppercase">Entry Point</Badge>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground italic">Primary application entry point and container component.</p>
+                          </div>
+                          {hierarchyNodes.length > 0 && (
+                            <div className="mt-4 ml-4 pl-4 border-l-2 border-dashed border-indigo-500/20">
+                              {renderHierarchyNodes(hierarchyNodes)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!rootNode && hierarchyNodes.length > 0 ? (
                         renderHierarchyNodes(hierarchyNodes)
-                      ) : (
+                      ) : !rootNode && hierarchyNodes.length === 0 ? (
                         <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/5">
                           <Layers className="h-8 w-8 mx-auto mb-3 opacity-20" />
                           <p className="text-sm">No component hierarchy defined.</p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     <div className="space-y-4">
-                      {atomicStructure && (
-                        <Card className={cn("border-border/50", styles.colors.bgCard)}>
-                          <CardHeader className="pb-2 border-b border-border/50 px-4 pt-4">
-                            <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Atomic Structure</CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-4 space-y-4">
-                            <div>
-                              <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><Box className="h-3 w-3 text-blue-500" /> Atoms</h4>
-                              <div className="flex flex-wrap gap-1">
-                                {atomicStructure.atoms?.map((a: string, i: number) => (
-                                  <Badge key={i} variant="secondary" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-600 border-blue-500/10">{a}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><Grid className="h-3 w-3 text-purple-500" /> Molecules</h4>
-                              <div className="flex flex-wrap gap-1">
-                                {atomicStructure.molecules?.map((a: string, i: number) => (
-                                  <Badge key={i} variant="secondary" className="text-[9px] px-1.5 py-0 bg-purple-500/5 text-purple-600 border-purple-500/10">{a}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><Layout className="h-3 w-3 text-orange-500" /> Organisms</h4>
-                              <div className="flex flex-wrap gap-1">
-                                {atomicStructure.organisms?.map((a: string, i: number) => (
-                                  <Badge key={i} variant="secondary" className="text-[9px] px-1.5 py-0 bg-orange-500/5 text-orange-600 border-orange-500/10">{a}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
                       {uiPatterns.length > 0 && (
                         <Card className={cn("border-border/50", styles.colors.bgCard)}>
                           <CardHeader className="pb-2 border-b border-border/50 px-4 pt-4">
@@ -524,6 +515,64 @@ export default function UIDesignPanel({
                           </CardContent>
                         </Card>
                       )}
+                    </div>
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="atomic" value="atomic" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Atoms */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
+                          <Box className="h-4 w-4" />
+                        </div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider">Atoms</h3>
+                        <Badge variant="outline" className="ml-auto text-[10px] font-mono">{atomicStructure?.atoms?.length || 0}</Badge>
+                      </div>
+                      <div className="grid gap-2">
+                        {atomicStructure?.atoms?.map((atom: string, i: number) => (
+                          <motion.div key={i} variants={item} className="p-3 bg-card border border-border/50 rounded-xl hover:border-blue-500/30 transition-all shadow-sm">
+                            <span className="text-xs font-medium text-foreground/80">{atom}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Molecules */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
+                          <Grid className="h-4 w-4" />
+                        </div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider">Molecules</h3>
+                        <Badge variant="outline" className="ml-auto text-[10px] font-mono">{atomicStructure?.molecules?.length || 0}</Badge>
+                      </div>
+                      <div className="grid gap-2">
+                        {atomicStructure?.molecules?.map((mol: string, i: number) => (
+                          <motion.div key={i} variants={item} className="p-3 bg-card border border-border/50 rounded-xl hover:border-purple-500/30 transition-all shadow-sm">
+                            <span className="text-xs font-medium text-foreground/80">{mol}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Organisms */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                          <Layout className="h-4 w-4" />
+                        </div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider">Organisms</h3>
+                        <Badge variant="outline" className="ml-auto text-[10px] font-mono">{atomicStructure?.organisms?.length || 0}</Badge>
+                      </div>
+                      <div className="grid gap-2">
+                        {atomicStructure?.organisms?.map((org: string, i: number) => (
+                          <motion.div key={i} variants={item} className="p-3 bg-card border border-border/50 rounded-xl hover:border-orange-500/30 transition-all shadow-sm">
+                            <span className="text-xs font-medium text-foreground/80">{org}</span>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 </TabsContent>

@@ -1,7 +1,7 @@
 
 export const architectSchema = {
     type: "object",
-    required: ["design_doc", "apis", "decisions", "technology_stack", "database_schema", "integration_points", "security_considerations", "scalability_approach", "summary", "description"],
+    required: ["design_doc", "apis", "decisions", "technology_stack", "database_schema", "integration_points", "security_considerations", "scalability_approach", "summary", "description", "next_tasks"],
     properties: {
         design_doc: {
             type: "string",
@@ -145,6 +145,20 @@ export const architectSchema = {
                 caching_strategy: { type: "string", maxLength: 150 },
                 performance_targets: { type: "string", maxLength: 150 },
             },
+        },
+        next_tasks: {
+            type: "array",
+            description: "A list of concrete, actionable next steps for development and operations teams.",
+            items: {
+                type: "object",
+                required: ["task", "priority", "assignee"],
+                properties: {
+                    task: { type: "string", maxLength: 100 },
+                    priority: { type: "string", enum: ["high", "medium", "low"] },
+                    assignee: { type: "string", enum: ["engineer", "devops", "qa"] },
+                    description: { type: "string", maxLength: 200 }
+                }
+            }
         },
 
     },

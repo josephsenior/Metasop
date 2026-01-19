@@ -65,6 +65,15 @@ export const securitySchema = {
                         },
                     },
                 },
+                audit_logging: {
+                    type: "object",
+                    properties: {
+                        enabled: { type: "boolean" },
+                        retention: { type: "string", maxLength: 20 },
+                        storage_location: { type: "string", maxLength: 100 },
+                        events: { type: "array", items: { type: "string", maxLength: 30 } }
+                    }
+                },
                 session_management: {
                     type: "object",
                     properties: {
@@ -217,128 +226,60 @@ export const securitySchema = {
                 },
             },
         },
+        vulnerability_management: {
+            type: "object",
+            required: ["scanning_frequency", "tools", "remediation_sla"],
+            properties: {
+                scanning_frequency: { type: "string", maxLength: 50 },
+                tools: { type: "array", items: { type: "string", maxLength: 30 } },
+                remediation_sla: { type: "string", maxLength: 50 }
+            }
+        },
+        security_monitoring: {
+            type: "object",
+            required: ["logging_strategy", "siem_solution", "alerting_thresholds"],
+            properties: {
+                logging_strategy: { type: "string", maxLength: 200 },
+                siem_solution: { type: "string", maxLength: 50 },
+                alerting_thresholds: { type: "string", maxLength: 200 }
+            }
+        },
         compliance: {
             type: "array",
             items: {
                 type: "object",
-                required: ["standard", "requirements"],
+                required: ["standard", "requirements", "implementation_status"],
                 properties: {
                     standard: {
                         type: "string",
-                        enum: [
-                            "GDPR",
-                            "HIPAA",
-                            "SOC2",
-                            "PCI-DSS",
-                            "ISO27001",
-                            "CCPA",
-                            "other",
-                        ],
-                        description: "Compliance standard",
+                        enum: ["GDPR", "HIPAA", "SOC2", "PCI-DSS", "ISO27001", "CCPA", "other"]
                     },
                     requirements: {
                         type: "array",
-                        items: { type: "string", maxLength: 100 },
-                        description: "Compliance requirements.",
+                        items: { type: "string", maxLength: 100 }
                     },
                     implementation_status: {
                         type: "string",
-                        enum: ["planned", "in-progress", "compliant"],
-                        description: "Implementation status",
+                        enum: ["planned", "in-progress", "compliant"]
                     },
-                    description: {
-                        type: "string",
-                        maxLength: 200,
-                        description: "Compliance description.",
-                    },
-                },
-            },
-            description: "Compliance standards and requirements.",
+                    description: { type: "string", maxLength: 200 }
+                }
+            }
         },
         security_controls: {
             type: "array",
-            description: "Security controls and implementations.",
             items: {
                 type: "object",
-                required: ["id", "control", "description", "category", "implementation"],
+                required: ["id", "control", "category", "implementation", "priority"],
                 properties: {
-                    control: {
-                        type: "string",
-                        maxLength: 50,
-                        description: "Security control name.",
-                    },
-                    id: {
-                        type: "string",
-                        maxLength: 15,
-                        description: "Unique control identifier (e.g., CTRL-001).",
-                    },
-                    type: {
-                        type: "string",
-                        maxLength: 30,
-                        description: "Control type (e.g., Technical, Administrative).",
-                    },
-                    description: {
-                        type: "string",
-                        maxLength: 100,
-                        description: "Detailed description of the control.",
-                    },
-                    category: {
-                        type: "string",
-                        enum: ["preventive", "detective", "corrective", "compensating"],
-                        description: "Control category",
-                    },
-                    implementation: {
-                        type: "string",
-                        maxLength: 150,
-                        description: "Technical implementation details.",
-                    },
-                    priority: {
-                        type: "string",
-                        enum: ["critical", "high", "medium", "low"],
-                        description: "Control priority",
-                    },
-                },
-            },
-        },
-        vulnerability_management: {
-            type: "object",
-            properties: {
-                scanning_frequency: {
-                    type: "string",
-                    maxLength: 30,
-                    description: "Vulnerability scanning frequency.",
-                },
-                tools: {
-                    type: "array",
-                    items: { type: "string", maxLength: 30 },
-                    description: "Scanning tools.",
-                },
-                remediation_sla: {
-                    type: "string",
-                    maxLength: 100,
-                    description: "Remediation SLAs by severity.",
-                },
-            },
-        },
-        security_monitoring: {
-            type: "object",
-            properties: {
-                logging_strategy: {
-                    type: "string",
-                    maxLength: 150,
-                    description: "Strategy for security logging.",
-                },
-                siem_solution: {
-                    type: "string",
-                    maxLength: 50,
-                    description: "SIEM or log aggregation tool.",
-                },
-                alerting_thresholds: {
-                    type: "string",
-                    maxLength: 150,
-                    description: "Critical alert thresholds.",
-                },
-            },
-        },
-    },
+                    id: { type: "string", maxLength: 10 },
+                    control: { type: "string", maxLength: 100 },
+                    category: { type: "string", enum: ["preventive", "detective", "corrective", "compensating"] },
+                    implementation: { type: "string", maxLength: 200 },
+                    priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                    description: { type: "string", maxLength: 200 }
+                }
+            }
+        }
+    }
 };

@@ -17,7 +17,7 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<TokenP
     const token = authHeader.substring(7);
     try {
       return verifyToken(token);
-    } catch (error) {
+    } catch {
       // If token is invalid, don't immediately fail, try session
       console.warn("Invalid Bearer token, trying session...");
     }

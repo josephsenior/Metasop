@@ -38,14 +38,14 @@ import {
 } from "../shared-components"
 
 function UserStoryCard({ story, index }: { story: any, index: number }) {
-  const storyText = typeof story === 'string'
-    ? story
-    : story.story || story.description || story.title
-  const storyTitle = typeof story === 'object' ? story.title : undefined
-  const storyId = typeof story === 'object' ? (story.id || `US-${index + 1}`) : `US-${index + 1}`
-  const priority = typeof story === 'object' ? story.priority : undefined
-  const points = typeof story === 'object' ? story.story_points : undefined
-  const acceptance = typeof story === 'object' ? story.acceptance_criteria : []
+  const isObject = typeof story === 'object' && story !== null;
+  const storyId = isObject ? (story.id || `US-${index + 1}`) : `US-${index + 1}`;
+  const storyTitle = isObject ? story.title : undefined;
+  const storyText = isObject ? story.story : story;
+  const storyDesc = isObject ? story.description : undefined;
+  const priority = isObject ? story.priority : undefined;
+  const points = isObject ? story.story_points : undefined;
+  const acceptance = isObject ? story.acceptance_criteria : [];
 
   return (
     <motion.div variants={item} className="group relative">
@@ -58,7 +58,7 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
         "ml-1 p-4 rounded-r-xl border hover:shadow-md transition-all",
         styles.colors.bgCard, styles.colors.borderMuted
       )}>
-        <CopyButton text={storyText} />
+        <CopyButton text={storyText || storyTitle || ""} />
 
         <div className="flex justify-between items-start mb-3 pr-6">
           <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
               <span className="text-[10px] font-bold text-primary">{points} pts</span>
             </div>
           )}
-          {typeof story === 'object' && story.estimated_complexity && (
+          {isObject && story.estimated_complexity && (
             <Badge variant="secondary" className="text-[9px] h-5 uppercase">
               {story.estimated_complexity}
             </Badge>
@@ -87,11 +87,18 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
 
         <div className="space-y-3">
           {storyTitle && <h4 className={styles.typography.h4}>{storyTitle}</h4>}
-          <div className={cn("p-3 rounded-lg bg-muted/30 border border-border/20 italic", styles.typography.body)}>
-            {storyText}
-          </div>
+          {storyText && (
+            <div className={cn("p-3 rounded-lg bg-muted/30 border border-border/20 italic", styles.typography.body)}>
+              {storyText}
+            </div>
+          )}
+          {storyDesc && storyDesc !== storyText && (
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              {storyDesc}
+            </p>
+          )}
 
-          {typeof story === 'object' && story.dependencies && story.dependencies.length > 0 && (
+          {isObject && story.dependencies && story.dependencies.length > 0 && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="font-semibold uppercase tracking-wider">Depends on:</span>
               <div className="flex gap-1">
@@ -134,10 +141,11 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
 }
 
 function CriteriaCard({ criteria, index }: { criteria: any, index: number }) {
-  const criteriaText = typeof criteria === 'string'
-    ? criteria
-    : criteria.criteria || criteria.description || criteria.title
-  const criteriaId = typeof criteria === 'object' ? criteria.id : undefined
+  const isObject = typeof criteria === 'object' && criteria !== null;
+  const criteriaText = isObject ? criteria.criteria : criteria;
+  const criteriaDesc = isObject ? criteria.description : undefined;
+  const criteriaTitle = isObject ? criteria.title : undefined;
+  const criteriaId = isObject ? criteria.id : undefined;
 
   return (
     <motion.div variants={item} className={cn(
@@ -149,10 +157,15 @@ function CriteriaCard({ criteria, index }: { criteria: any, index: number }) {
       </div>
       <div className="flex-1 min-w-0 pt-0.5 relative">
         <div className="flex justify-between items-start mb-1">
-          {criteriaId && (
-            <div className="text-[10px] font-mono text-muted-foreground/60 font-bold uppercase tracking-tighter">{criteriaId}</div>
-          )}
-          {typeof criteria === 'object' && criteria.priority && (
+          <div className="flex flex-col gap-0.5">
+            {criteriaId && (
+              <div className="text-[10px] font-mono text-muted-foreground/60 font-bold uppercase tracking-tighter">{criteriaId}</div>
+            )}
+            {criteriaTitle && (
+              <h5 className="text-xs font-bold text-foreground">{criteriaTitle}</h5>
+            )}
+          </div>
+          {isObject && criteria.priority && (
             <Badge variant="outline" className={cn(
               "text-[8px] h-4 uppercase px-1",
               criteria.priority === 'must' ? "text-red-600 border-red-200 bg-red-50" :
@@ -163,8 +176,13 @@ function CriteriaCard({ criteria, index }: { criteria: any, index: number }) {
             </Badge>
           )}
         </div>
-        <CopyButton text={criteriaText} />
+        <CopyButton text={criteriaText || criteriaTitle || ""} />
         <span className={cn("pr-6 block mt-1", styles.typography.body)}>{criteriaText}</span>
+        {criteriaDesc && criteriaDesc !== criteriaText && (
+          <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
+            {criteriaDesc}
+          </p>
+        )}
       </div>
     </motion.div>
   )
@@ -201,6 +219,8 @@ export default function PMSpecPanel({
   const investAnalysis = data.invest_analysis || []
   const gaps = data.gaps || []
   const opportunities = data.opportunities || []
+  const summary = data.summary || ""
+  const description = data.description || ""
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
@@ -220,9 +240,14 @@ export default function PMSpecPanel({
                 {data.ui_multi_section ? "Nav: Multi-Section" : "Nav: Single-View"}
               </Badge>
             </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).summary || (data as any).description || "Detailed product requirements and specifications."}
+            <p className={cn(styles.typography.bodySmall, "text-indigo-600 dark:text-indigo-400 font-medium")}>
+              {summary || "Detailed product requirements and specifications."}
             </p>
+            {description && (
+              <p className="text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl">
+                {description}
+              </p>
+            )}
           </div>
         </div>
 
@@ -318,6 +343,22 @@ export default function PMSpecPanel({
               <div className="p-4">
                 <TabsContent key="overview" value="overview" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+                    {summary && (
+                      <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
+                        <CardHeader>
+                          <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Info className="h-4 w-4 text-blue-500" />
+                            Strategic Summary
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className={cn("leading-relaxed text-muted-foreground text-xs")}>
+                            {summary}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     <Card className={cn("border-none shadow-sm", styles.colors.bgCard)}>
                       <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -354,27 +395,25 @@ export default function PMSpecPanel({
                             </Badge>
                           </div>
 
+                          {swot && (
+                            <div className="grid grid-cols-2 gap-2 mt-4">
+                              <div className="p-2 rounded bg-emerald-500/5 border border-emerald-500/10">
+                                <div className="text-[9px] font-bold text-emerald-600 uppercase">Strengths</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{swot.strengths?.length || 0} items</div>
+                              </div>
+                              <div className="p-2 rounded bg-red-500/5 border border-red-500/10">
+                                <div className="text-[9px] font-bold text-red-600 uppercase">Weaknesses</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{swot.weaknesses?.length || 0} items</div>
+                              </div>
+                            </div>
+                          )}
+
                           <p className="text-[11px] text-muted-foreground italic leading-relaxed">
                             This strategy was determined by the PM to best serve the identified core workflows and user experience requirements.
                           </p>
                         </CardContent>
                       </Card>
 
-                      {data.summary && (
-                        <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
-                          <CardHeader>
-                            <CardTitle className="text-sm font-bold flex items-center gap-2">
-                              <Info className="h-4 w-4 text-blue-500" />
-                              Strategic Summary
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className={cn("text-xs leading-relaxed text-muted-foreground")}>
-                              {data.summary}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      )}
                     </div>
                   </motion.div>
                 </TabsContent>

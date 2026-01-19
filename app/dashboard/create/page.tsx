@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Brain, Cpu, Zap, Search, Tag, Palette, Mic } from "lucide-react"
+import { Brain, Cpu, Zap, Search, Tag, Palette } from "lucide-react"
 import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
@@ -80,6 +80,30 @@ function CreateDiagramContent() {
   const [includeDatabase] = useState(true)
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview")
   const [isReasoningEnabled, setIsReasoningEnabled] = useState(false)
+
+  // Load persisted state on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedModel = localStorage.getItem("metasop_selected_model")
+      if (savedModel) setSelectedModel(savedModel)
+
+      const savedReasoning = localStorage.getItem("metasop_reasoning_enabled")
+      if (savedReasoning !== null) setIsReasoningEnabled(savedReasoning === "true")
+    }
+  }, [])
+
+  // Persist state changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("metasop_selected_model", selectedModel)
+    }
+  }, [selectedModel])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("metasop_reasoning_enabled", String(isReasoningEnabled))
+    }
+  }, [isReasoningEnabled])
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -161,8 +185,8 @@ function CreateDiagramContent() {
         setIsUploading(false)
       }
       reader.readAsText(file)
-    } catch (error: any) {
-      setIsUploading(false)
+      } catch {
+        setIsUploading(false)
       toast({
         title: "File Error",
         description: "Failed to read the file.",
@@ -731,20 +755,6 @@ function CreateDiagramContent() {
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className="w-full sm:w-80 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col shrink-0 z-40 shadow-lg"
               >
-                <div className="p-4 border-b border-border flex items-center justify-between bg-linear-to-r from-blue-600/5 to-purple-600/5">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <h2 className="text-sm font-semibold text-foreground">Create Diagram</h2>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsLeftPanelOpen(false)}
-                    className="h-7 w-7 p-0 hover:bg-accent"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                   {/* Guest user notice */}
@@ -1015,12 +1025,6 @@ function CreateDiagramContent() {
                                 <div className="flex items-center gap-2">
                                   <Cpu className="h-3 w-3 text-purple-500" />
                                   <span>Gemini 3 Pro</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="gemini-2.5-flash-native-audio-dialog" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
-                                <div className="flex items-center gap-2">
-                                  <Mic className="h-3 w-3 text-blue-500" />
-                                  <span>Gemini 2.5 Audio</span>
                                 </div>
                               </SelectItem>
                             </SelectContent>

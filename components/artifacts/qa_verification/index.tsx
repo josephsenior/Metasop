@@ -28,7 +28,8 @@ import {
   Map,
   Layers,
   ChevronRight,
-  Globe
+  Globe,
+  Database
 } from "lucide-react"
 
 import { QABackendArtifact } from "@/lib/metasop/artifacts/qa/types"
@@ -186,6 +187,11 @@ export default function QAVerificationPanel({
             <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
               {(data as any).summary || "Quality assurance strategy, test plans, and risk analysis."}
             </p>
+            {data.description && (
+              <p className={cn("text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl")}>
+                {data.description}
+              </p>
+            )}
           </div>
         </div>
 
@@ -347,22 +353,34 @@ export default function QAVerificationPanel({
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          {Object.entries(performanceMetrics).map(([key, value]: [string, any], i) => {
-                            return (
-                              <div key={i} className="space-y-1.5">
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                  <span className="font-mono font-medium">{String(value)}</span>
+                          <div className="grid grid-cols-1 gap-2">
+                            {[
+                              { label: 'API Response (P95)', val: performanceMetrics.api_response_time_p95, icon: Activity },
+                              { label: 'Page Load', val: performanceMetrics.page_load_time, icon: Gauge },
+                              { label: 'DB Query', val: performanceMetrics.database_query_time, icon: Database },
+                              { label: 'FCP', val: performanceMetrics.first_contentful_paint, icon: Zap },
+                              { label: 'TTI', val: performanceMetrics.time_to_interactive, icon: Activity },
+                              { label: 'LCP', val: performanceMetrics.largest_contentful_paint, icon: Gauge },
+                            ].filter(m => m.val).map((m, i) => (
+                              <div key={i} className="bg-muted/30 p-2.5 rounded-lg border border-border/40 flex items-center justify-between group hover:bg-emerald-500/5 transition-colors">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="p-1.5 rounded-md bg-background border border-border/50">
+                                    <m.icon className="h-3 w-3 text-emerald-500" />
+                                  </div>
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[9px] uppercase font-bold text-muted-foreground">{m.label}</span>
+                                    <span className="text-xs font-semibold text-foreground">{m.val}</span>
+                                  </div>
                                 </div>
-                                <Progress value={75} className="h-1.5 bg-muted" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500/20 group-hover:bg-emerald-500 animate-pulse" />
                               </div>
-                            )
-                          })}
-                          {Object.keys(performanceMetrics).length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground text-xs italic">
-                              No performance metrics defined.
-                            </div>
-                          )}
+                            ))}
+                            {Object.keys(performanceMetrics).length === 0 && (
+                              <div className="text-center py-8 text-muted-foreground text-xs italic">
+                                No performance metrics defined.
+                              </div>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     </div>
@@ -383,20 +401,9 @@ export default function QAVerificationPanel({
                                   <FileText className="h-3.5 w-3.5" />
                                   <span>Lines</span>
                                 </div>
-                                <span className="font-mono font-bold">{coverage.lines ?? coverage.percentage ?? 0}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).lines ?? 'N/A'}%</span>
                               </div>
-                              <Progress value={coverage.lines ?? coverage.percentage ?? 0} className="h-1.5 bg-muted" />
-                            </div>
-
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-xs">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                  <FunctionSquare className="h-3.5 w-3.5" />
-                                  <span>Functions</span>
-                                </div>
-                                <span className="font-mono font-bold">{coverage.functions ?? 0}%</span>
-                              </div>
-                              <Progress value={coverage.functions ?? 0} className="h-1.5 bg-muted" />
+                              <Progress value={(coverage as any).lines ?? 0} className="h-1.5" />
                             </div>
 
                             <div className="space-y-2">
@@ -405,9 +412,20 @@ export default function QAVerificationPanel({
                                   <Code2 className="h-3.5 w-3.5" />
                                   <span>Statements</span>
                                 </div>
-                                <span className="font-mono font-bold">{coverage.statements ?? 0}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).statements ?? 'N/A'}%</span>
                               </div>
-                              <Progress value={coverage.statements ?? 0} className="h-1.5 bg-muted" />
+                              <Progress value={(coverage as any).statements ?? 0} className="h-1.5" />
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <FunctionSquare className="h-3.5 w-3.5" />
+                                  <span>Functions</span>
+                                </div>
+                                <span className="font-mono font-bold">{(coverage as any).functions ?? 'N/A'}%</span>
+                              </div>
+                              <Progress value={(coverage as any).functions ?? 0} className="h-1.5" />
                             </div>
 
                             <div className="space-y-2">
@@ -416,9 +434,9 @@ export default function QAVerificationPanel({
                                   <GitBranch className="h-3.5 w-3.5" />
                                   <span>Branches</span>
                                 </div>
-                                <span className="font-mono font-bold">{coverage.branches ?? 0}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).branches ?? 'N/A'}%</span>
                               </div>
-                              <Progress value={coverage.branches ?? 0} className="h-1.5 bg-muted" />
+                              <Progress value={(coverage as any).branches ?? 0} className="h-1.5" />
                             </div>
                           </div>
                         </CardContent>

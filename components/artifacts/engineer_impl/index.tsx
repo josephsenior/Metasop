@@ -147,7 +147,7 @@ export default function EngineerImplPanel({
   const technicalDecisions = data.technical_decisions || []
   const envVars = data.environment_variables || []
   const phases = data.implementation_plan_phases || data.phases || []
-  const implementationPlan = data.implementation_plan
+  const implementationPlan = data.implementation_plan || data.plan
 
   // Count phases in markdown if array is empty
   const roadmapCount = phases.length > 0
@@ -157,6 +157,8 @@ export default function EngineerImplPanel({
   const technicalPatterns = data.technical_patterns || []
   const stateManagement = data.state_management
   const artifactPath = data.artifact_path
+
+  const technicalCount = (envVars?.length || 0) + (technicalDecisions?.length || 0) + (technicalPatterns?.length || 0) + (stateManagement ? 1 : 0)
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
@@ -169,12 +171,9 @@ export default function EngineerImplPanel({
               <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 text-[10px] px-1.5 h-5">
                 Implementation
               </Badge>
-              {data.tests_added !== undefined && (
-                <Badge variant="outline" className={cn(
-                  "text-[10px] px-1.5 h-5",
-                  data.tests_added ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/5" : "text-amber-600 border-amber-500/30 bg-amber-500/5"
-                )}>
-                  {data.tests_added ? "Tests Included" : "No Tests"}
+              {artifactPath && (
+                <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-mono text-muted-foreground">
+                  {artifactPath}
                 </Badge>
               )}
               {runResults.test_commands && runResults.test_commands.length > 0 && (
@@ -183,9 +182,21 @@ export default function EngineerImplPanel({
                 </Badge>
               )}
             </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).summary || (data as any).description || (artifactPath ? `PATH: ${artifactPath}` : "Implementation details and technical specifications.")}
-            </p>
+            {data.summary && (
+              <p className={cn("text-xs font-semibold text-foreground leading-tight")}>
+                {data.summary}
+              </p>
+            )}
+            {data.description && (
+              <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
+                {data.description}
+              </p>
+            )}
+            {!data.summary && !data.description && (
+              <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
+                Implementation details and technical specifications.
+              </p>
+            )}
           </div>
         </div>
 
@@ -242,6 +253,7 @@ export default function EngineerImplPanel({
             <ScrollArea className="w-full whitespace-nowrap pb-2">
               <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
                 <TabTrigger value="plan" icon={ListTodo} label="Roadmap" count={roadmapCount} />
+                <TabTrigger value="tech" icon={Layers} label="Technical" count={technicalCount} />
                 <TabTrigger value="scripts" icon={Terminal} label="CLI Scripts" count={(runResults.setup_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.dev_commands?.length || 0)} />
                 <TabTrigger value="deps" icon={Package} label="Registry" count={dependencies.length} />
                 <TabTrigger value="struct" icon={Files} label="FS Tree" />
@@ -302,6 +314,120 @@ export default function EngineerImplPanel({
                   </motion.div>
                 </TabsContent>
 
+                <TabsContent key="tech" value="tech" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {envVars.length > 0 && (
+                      <Card className="border-border/50 shadow-sm">
+                        <CardHeader className="pb-2 px-4 pt-4">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                            <Braces className="h-4 w-4 text-blue-500" />
+                            Environment
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 px-4 pb-4">
+                          {envVars.map((env: any, i: number) => (
+                            <motion.div
+                              key={i}
+                              variants={item}
+                              className="group bg-muted/20 border border-border/50 p-2.5 rounded-lg hover:border-blue-500/30 transition-all"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{env.name}</span>
+                                <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase bg-background">System</Badge>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground line-clamp-2">{env.description}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="text-[10px] bg-muted px-1 py-0.5 rounded border border-border/50 text-foreground/80 font-mono break-all">
+                                  {env.value}
+                                </code>
+                                {env.example && (
+                                  <span className="text-[10px] text-muted-foreground italic border-l border-border/50 pl-2">
+                                    ex: {env.example}
+                                  </span>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {technicalDecisions.length > 0 && (
+                      <Card className="border-border/50 shadow-sm">
+                        <CardHeader className="pb-2 px-4 pt-4">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-amber-600 dark:text-amber-500">
+                            <Layers className="h-4 w-4" />
+                            Tech Decisions
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 px-4 pb-4">
+                          {technicalDecisions.map((decision: any, i: number) => (
+                            <motion.div
+                              key={i}
+                              variants={item}
+                              className="p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 flex gap-2"
+                            >
+                              <ChevronRight className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-none" />
+                              <div>
+                                <div className="font-semibold text-xs text-foreground mb-0.5">{decision.decision}</div>
+                                <p className="text-[10px] text-muted-foreground leading-relaxed">{decision.rationale}</p>
+                                {decision.alternatives && (
+                                  <div className="mt-1.5 pt-1.5 border-t border-amber-500/10">
+                                    <span className="text-[9px] font-bold text-amber-600/70 uppercase tracking-wider mr-1.5">Alternatives:</span>
+                                    <span className="text-[9px] text-amber-700/60 italic">{decision.alternatives}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {(technicalPatterns.length > 0 || stateManagement) && (
+                      <Card className="border-border/50 shadow-sm md:col-span-2">
+                        <CardHeader className="pb-2 px-4 pt-4">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                            <Puzzle className="h-4 w-4" />
+                            Architecture
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-4">
+                          {stateManagement && (
+                            <div className="space-y-1.5">
+                              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                <Database className="h-3 w-3" />
+                                State Management
+                              </div>
+                              <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-2.5">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{stateManagement.tool}</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground/80">{stateManagement.strategy}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {technicalPatterns.length > 0 && (
+                            <div className="space-y-1.5">
+                              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                Patterns
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {technicalPatterns.map((pattern: string, i: number) => (
+                                  <Badge key={i} variant="secondary" className="text-[10px] font-mono px-1.5 py-0 h-5 bg-indigo-500/5 text-indigo-700 hover:bg-indigo-500/10 border-indigo-200/50 dark:border-indigo-800/50">
+                                    {pattern}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </motion.div>
+                </TabsContent>
+
                 <TabsContent key="scripts" value="scripts" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show" className="grid gap-6">
                     <ScriptCard
@@ -325,7 +451,29 @@ export default function EngineerImplPanel({
                       color="text-amber-500"
                       bg="bg-amber-500/10"
                     />
-                    {(!runResults.setup_commands?.length && !runResults.dev_commands?.length && !runResults.test_commands?.length) && (
+                    <ScriptCard
+                      label="Build & Bundle"
+                      cmds={runResults.build_commands}
+                      icon={Layers}
+                      color="text-purple-500"
+                      bg="bg-purple-500/10"
+                    />
+                    {runResults.notes && (
+                      <Card className="border-border/50 shadow-sm bg-muted/20">
+                        <CardHeader className="p-4 border-b border-border/40">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <FileCode className="h-4 w-4 text-muted-foreground" />
+                            Operational Notes
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap italic">
+                            {runResults.notes}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {(!runResults.setup_commands?.length && !runResults.dev_commands?.length && !runResults.test_commands?.length && !runResults.build_commands?.length && !runResults.notes) && (
                       <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">
                         <Terminal className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">No scripts defined.</p>
@@ -370,178 +518,46 @@ export default function EngineerImplPanel({
                 </TabsContent>
 
                 <TabsContent key="struct" value="struct" className="m-0 outline-none">
-                  <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div className="lg:col-span-2">
-                      <Card className="h-full border-border/50 shadow-sm overflow-hidden">
-                        <div className="p-3 bg-muted/30 border-b border-border/50 flex items-center justify-between">
-                          <span className="text-xs font-mono font-semibold text-muted-foreground uppercase tracking-wider">File System Tree</span>
-                          <div className="flex items-center gap-3">
-                            {fileStructure && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
-                                onClick={async () => {
-                                  const zip = new JSZip();
-                                  generateProjectZip(fileStructure, zip);
-                                  const content = await zip.generateAsync({ type: "blob" });
-                                  downloadFile(content as any, `project-structure.zip`, "application/zip");
-                                }}
-                              >
-                                <Download className="h-3.5 w-3.5" />
-                                Export Project ZIP
-                              </Button>
-                            )}
-                            <div className="flex gap-1.5">
-                              <div className="h-2 w-2 rounded-full bg-border" />
-                              <div className="h-2 w-2 rounded-full bg-border" />
-                              <div className="h-2 w-2 rounded-full bg-border" />
-                            </div>
+                  <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 gap-4">
+                    <Card className="h-full border-border/50 shadow-sm overflow-hidden">
+                      <div className="p-3 bg-muted/30 border-b border-border/50 flex items-center justify-between">
+                        <span className="text-xs font-mono font-semibold text-muted-foreground uppercase tracking-wider">File System Tree</span>
+                        <div className="flex items-center gap-3">
+                          {fileStructure && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                              onClick={async () => {
+                                const zip = new JSZip();
+                                generateProjectZip(fileStructure, zip);
+                                const content = await zip.generateAsync({ type: "blob" });
+                                downloadFile(content as any, `project-structure.zip`, "application/zip");
+                              }}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              Export Project ZIP
+                            </Button>
+                          )}
+                          <div className="flex gap-1.5">
+                            <div className="h-2 w-2 rounded-full bg-border" />
+                            <div className="h-2 w-2 rounded-full bg-border" />
+                            <div className="h-2 w-2 rounded-full bg-border" />
                           </div>
                         </div>
-                        <CardContent className="p-0">
-                          {fileStructure ? (
-                            <ScrollArea className="h-[500px] w-full p-4">
-                              <FileSystemNode node={fileStructure} />
-                            </ScrollArea>
-                          ) : (
-                            <div className="h-64 flex items-center justify-center text-xs text-muted-foreground italic">
-                              No structure metadata available.
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <div className="space-y-4">
-                      {envVars.length > 0 && (
-                        <Card className="border-border/50 shadow-sm">
-                          <CardHeader className="pb-2 px-4 pt-4">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                              <Braces className="h-4 w-4 text-blue-500" />
-                              Environment
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2 px-4 pb-4">
-                            {envVars.map((env: any, i: number) => (
-                              <motion.div
-                                key={i}
-                                variants={item}
-                                className="group bg-muted/20 border border-border/50 p-2.5 rounded-lg hover:border-blue-500/30 transition-all"
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{env.name}</span>
-                                  <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase bg-background">System</Badge>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground line-clamp-2">{env.description}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <code className="text-[10px] bg-muted px-1 py-0.5 rounded border border-border/50 text-foreground/80 font-mono break-all">
-                                    {env.value}
-                                  </code>
-                                  {env.example && (
-                                    <span className="text-[10px] text-muted-foreground italic border-l border-border/50 pl-2">
-                                      ex: {env.example}
-                                    </span>
-                                  )}
-                                </div>
-                              </motion.div>
-                            ))}
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {technicalDecisions.length > 0 && (
-                        <Card className="border-border/50 shadow-sm">
-                          <CardHeader className="pb-2 px-4 pt-4">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-amber-600 dark:text-amber-500">
-                              <Layers className="h-4 w-4" />
-                              Tech Decisions
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-2 px-4 pb-4">
-                            {technicalDecisions.map((decision: any, i: number) => (
-                              <motion.div
-                                key={i}
-                                variants={item}
-                                className="p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 flex gap-2"
-                              >
-                                <ChevronRight className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-none" />
-                                <div>
-                                  <div className="font-semibold text-xs text-foreground mb-0.5">{decision.decision}</div>
-                                  <p className="text-[10px] text-muted-foreground leading-relaxed">{decision.rationale}</p>
-                                  {decision.alternatives && (
-                                    <div className="mt-1.5 pt-1.5 border-t border-amber-500/10">
-                                      <span className="text-[9px] font-bold text-amber-600/70 uppercase tracking-wider mr-1.5">Alternatives:</span>
-                                      <span className="text-[9px] text-amber-700/60 italic">{decision.alternatives}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </motion.div>
-                            ))}
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {(technicalPatterns.length > 0 || stateManagement) && (
-                        <Card className="border-border/50 shadow-sm">
-                          <CardHeader className="pb-2 px-4 pt-4">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-                              <Puzzle className="h-4 w-4" />
-                              Architecture
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3 px-4 pb-4">
-                            {stateManagement && (
-                              <div className="space-y-1.5">
-                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                                  <Database className="h-3 w-3" />
-                                  State Management
-                                </div>
-                                <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-2.5">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{stateManagement.tool}</span>
-                                  </div>
-                                  <p className="text-[10px] text-muted-foreground/80">{stateManagement.strategy}</p>
-                                </div>
-                              </div>
-                            )}
-
-                            {technicalPatterns.length > 0 && (
-                              <div className="space-y-1.5">
-                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                  Patterns
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {technicalPatterns.map((pattern, i) => (
-                                    <Badge key={i} variant="secondary" className="text-[10px] font-mono px-1.5 py-0 h-5 bg-indigo-500/5 text-indigo-700 hover:bg-indigo-500/10 border-indigo-200/50 dark:border-indigo-800/50">
-                                      {pattern}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {stateManagement && (
-                              <div className="space-y-1.5 mt-4 pt-4 border-t border-border/40">
-                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                  State Management
-                                </div>
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-[10px] font-mono bg-pink-500/5 text-pink-700 border-pink-200/50">
-                                      {stateManagement.tool}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                    {stateManagement.strategy}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
+                      </div>
+                      <CardContent className="p-0">
+                        {fileStructure ? (
+                          <ScrollArea className="h-[500px] w-full p-4">
+                            <FileSystemNode node={fileStructure} />
+                          </ScrollArea>
+                        ) : (
+                          <div className="h-64 flex items-center justify-center text-xs text-muted-foreground italic">
+                            No structure metadata available.
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 </TabsContent>
               </div>

@@ -280,8 +280,13 @@ export default function SecurityArchitecturePanel({
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
                           <div className="text-[10px] uppercase text-muted-foreground font-bold mb-1">Method</div>
                           <div className="text-sm font-medium">{auth?.method || "Not specified"}</div>
+                          {auth?.description && (
+                            <p className="text-[10px] text-muted-foreground mt-2 italic">
+                              {auth.description}
+                            </p>
+                          )}
                         </div>
-                        {auth?.mfa_enabled && (
+                        {(auth?.mfa_enabled || auth?.multi_factor_auth) && (
                           <div className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-500/5 p-2 rounded border border-emerald-500/10">
                             <CheckCircle className="h-3.5 w-3.5" />
                             Multi-Factor Authentication Enabled
@@ -334,11 +339,38 @@ export default function SecurityArchitecturePanel({
                           </div>
                           {security_architecture.session_management.session_timeout && (
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-muted-foreground">Timeout</span>
-                              <span className="font-mono">{security_architecture.session_management.session_timeout}</span>
+                            <span className="text-muted-foreground">Timeout</span>
+                            <span className="font-mono">{security_architecture.session_management.session_timeout}</span>
+                          </div>
+                        )}
+                          {security_architecture.audit_logging && (
+                            <div className="space-y-2 pt-2 border-t border-border/40">
+                              <div className="text-[10px] uppercase text-muted-foreground font-bold flex justify-between">
+                                <span>Audit Logging</span>
+                                {security_architecture.audit_logging.enabled === false && (
+                                  <span className="text-red-500">DISABLED</span>
+                                )}
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-muted-foreground">Retention</span>
+                                <span className="font-mono">{security_architecture.audit_logging.retention || "90 days"}</span>
+                              </div>
+                              {security_architecture.audit_logging.storage_location && (
+                                <div className="flex justify-between items-center text-[10px]">
+                                  <span className="text-muted-foreground">Storage</span>
+                                  <span className="font-mono text-[9px] truncate ml-2">{security_architecture.audit_logging.storage_location}</span>
+                                </div>
+                              )}
+                              <div className="flex flex-wrap gap-1">
+                                {security_architecture.audit_logging.events?.map((event: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-[8px] h-4 bg-muted/50">
+                                    {event}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          <div className="grid grid-cols-2 gap-2 pt-2">
+                        <div className="grid grid-cols-2 gap-2 pt-2">
                             {security_architecture.session_management.secure_cookies && (
                               <Badge variant="secondary" className="text-[8px] bg-emerald-500/5 text-emerald-600 border-emerald-500/10">SECURE_COOKIE</Badge>
                             )}
@@ -452,6 +484,11 @@ export default function SecurityArchitecturePanel({
                                 KMS: {encryption.data_at_rest.key_management}
                               </div>
                             )}
+                            {encryption?.data_at_rest?.description && (
+                              <div className="mt-2 text-[10px] text-muted-foreground/70 leading-relaxed border-t border-border/20 pt-1">
+                                {encryption.data_at_rest.description}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -465,6 +502,11 @@ export default function SecurityArchitecturePanel({
                             {encryption?.data_in_transit?.certificate_management && (
                               <div className="mt-1 text-[10px] text-muted-foreground truncate">
                                 Certs: {encryption.data_in_transit.certificate_management}
+                              </div>
+                            )}
+                            {encryption?.data_in_transit?.description && (
+                              <div className="mt-2 text-[10px] text-muted-foreground/70 leading-relaxed border-t border-border/20 pt-1">
+                                {encryption.data_in_transit.description}
                               </div>
                             )}
                           </div>
@@ -481,6 +523,11 @@ export default function SecurityArchitecturePanel({
                                     <div className="font-medium text-foreground">{encryption.key_management.strategy}</div>
                                     {encryption.key_management.rotation_policy && (
                                       <div className="text-[9px] text-muted-foreground mt-1">Rotation: {encryption.key_management.rotation_policy}</div>
+                                    )}
+                                    {encryption.key_management.description && (
+                                      <div className="text-[9px] text-muted-foreground/80 mt-1 italic border-t border-border/10 pt-1">
+                                        {encryption.key_management.description}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -599,12 +646,14 @@ export default function SecurityArchitecturePanel({
                               <span className="text-muted-foreground">Scan Frequency</span>
                               <span className="font-medium">{vulnerability_management.scanning_frequency || "Weekly"}</span>
                             </div>
-                            <div className="flex justify-between items-center text-sm border-b border-border/40 pb-2">
-                              <span className="text-muted-foreground">Patch Management</span>
-                              <Badge variant="outline" className="text-amber-600 border-amber-500/30 bg-amber-500/5">
-                                {vulnerability_management.patch_management || "Manual"}
-                              </Badge>
-                            </div>
+                            {vulnerability_management.remediation_sla && (
+                              <div className="flex justify-between items-center text-sm border-b border-border/40 pb-2">
+                                <span className="text-muted-foreground">Remediation SLA</span>
+                                <Badge variant="outline" className="text-amber-600 border-amber-500/30 bg-amber-500/5">
+                                  {vulnerability_management.remediation_sla}
+                                </Badge>
+                              </div>
+                            )}
                             {vulnerability_management.tools && vulnerability_management.tools.length > 0 && (
                               <div className="space-y-1 pt-2">
                                 <div className="text-[10px] uppercase text-muted-foreground font-bold">Tools</div>
@@ -628,25 +677,29 @@ export default function SecurityArchitecturePanel({
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-3">
-                            {security_monitoring.log_retention && (
+                            {security_monitoring.siem_solution && (
                               <div className="flex justify-between items-center text-sm border-b border-border/40 pb-2">
-                                <span className="text-muted-foreground">Log Retention</span>
-                                <span className="font-medium">{security_monitoring.log_retention}</span>
+                                <span className="text-muted-foreground">SIEM Solution</span>
+                                <span className="font-medium">{security_monitoring.siem_solution}</span>
                               </div>
                             )}
-                            {Array.isArray(security_monitoring.tools) && security_monitoring.tools.length > 0 && (
+                            {security_monitoring.logging_strategy && (
                               <div className="space-y-1">
-                                <div className="text-[10px] uppercase text-muted-foreground font-bold">Tools</div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {security_monitoring.tools.map((t: string, i: number) => (
-                                    <Badge key={i} variant="secondary" className="text-[10px]">{t}</Badge>
-                                  ))}
-                                </div>
+                                <div className="text-[10px] uppercase text-muted-foreground font-bold">Logging Strategy</div>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed bg-muted/20 border border-border/30 rounded-lg p-2 italic">
+                                  {security_monitoring.logging_strategy}
+                                </p>
                               </div>
                             )}
-                            {security_monitoring.incident_response_plan && (
-                              <div className="text-xs text-muted-foreground leading-relaxed bg-muted/20 border border-border/30 rounded-lg p-3">
-                                {security_monitoring.incident_response_plan}
+                            {security_monitoring.alerting_thresholds && (
+                              <div className="space-y-1 pt-2 border-t border-border/40">
+                                <div className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 text-orange-500" />
+                                  Alert Thresholds
+                                </div>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                  {security_monitoring.alerting_thresholds}
+                                </p>
                               </div>
                             )}
                           </CardContent>

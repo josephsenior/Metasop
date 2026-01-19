@@ -26,47 +26,55 @@ const UserStorySchema = z.union([
   }),
 ]);
 
-const AcceptanceCriterionSchema = z.union([
-  z.string().min(10, "Acceptance criterion must be at least 10 characters"),
-  z.object({
-    id: z.string().regex(/^AC-[0-9]+$/, "Acceptance criterion ID must match pattern AC-{number}").optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    criteria: z.string().min(10, "Criteria must be at least 10 characters"),
-  }),
-]);
+const AcceptanceCriterionSchema = z.object({
+  id: z.string().regex(/^AC-[0-9]+$/, "Acceptance criterion ID must match pattern AC-{number}").optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  criteria: z.string().min(10, "Criteria must be at least 10 characters"),
+  priority: z.enum(["must", "should", "could"]).optional(),
+});
 
 export const ProductManagerArtifactSchema = z.object({
   user_stories: z.array(UserStorySchema).min(1, "At least one user story is required"),
   acceptance_criteria: z.array(AcceptanceCriterionSchema).min(1, "At least one acceptance criterion is required"),
+  gaps: z.array(z.object({
+    gap: z.string().min(5, "Gap must be at least 5 characters"),
+    impact: z.string().min(5, "Impact must be at least 5 characters"),
+    priority: z.enum(["high", "medium", "low"]),
+  })),
+  opportunities: z.array(z.object({
+    opportunity: z.string().min(5, "Opportunity must be at least 5 characters"),
+    value: z.string().min(5, "Value must be at least 5 characters"),
+    feasibility: z.enum(["high", "medium", "low"]),
+  })),
   ui_multi_section: z.boolean().optional().default(false),
   ui_sections: z.number().int().min(0).max(20).optional().default(1),
-  assumptions: z.array(z.string()).optional(),
-  out_of_scope: z.array(z.string()).optional(),
+  assumptions: z.array(z.string()),
+  out_of_scope: z.array(z.string()),
   swot: z.object({
-    strengths: z.array(z.string()).optional(),
-    weaknesses: z.array(z.string()).optional(),
-    opportunities: z.array(z.string()).optional(),
-    threats: z.array(z.string()).optional(),
-  }).optional(),
+    strengths: z.array(z.string()),
+    weaknesses: z.array(z.string()),
+    opportunities: z.array(z.string()),
+    threats: z.array(z.string()),
+  }),
   stakeholders: z.array(z.object({
-    role: z.string().optional(),
-    interest: z.string().optional(),
-    influence: z.enum(["high", "medium", "low"]).optional(),
-  })).optional(),
+    role: z.string(),
+    interest: z.string(),
+    influence: z.enum(["high", "medium", "low"]),
+  })),
   invest_analysis: z.array(z.object({
-    user_story_id: z.string().optional(),
-    independent: z.boolean().optional(),
-    negotiable: z.boolean().optional(),
-    valuable: z.boolean().optional(),
-    estimatable: z.boolean().optional(),
-    small: z.boolean().optional(),
-    testable: z.boolean().optional(),
-    score: z.number().optional(),
+    user_story_id: z.string(),
+    independent: z.boolean(),
+    negotiable: z.boolean(),
+    valuable: z.boolean(),
+    estimatable: z.boolean(),
+    small: z.boolean(),
+    testable: z.boolean(),
+    score: z.number(),
     comments: z.string().optional(),
-  })).optional(),
-  summary: z.string().optional(),
-  description: z.string().optional(),
+  })),
+  summary: z.string(),
+  description: z.string(),
 });
 
 // ============================================================================
@@ -76,8 +84,8 @@ export const ProductManagerArtifactSchema = z.object({
 const APISchema = z.object({
   path: z.string().regex(/^\/.*/, "API path must start with /"),
   method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
+  endpoint: z.string().optional(),
   description: z.string().min(10, "API description must be at least 10 characters"),
-  // endpoint removed as it is not in JSON schema
   request_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
   response_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
   auth_required: z.boolean().optional(),
@@ -86,20 +94,12 @@ const APISchema = z.object({
 
 const DecisionSchema = z.object({
   decision: z.string().min(5, "Decision must be at least 5 characters"),
+  status: z.enum(["accepted", "proposed", "superseded"]),
   reason: z.string().min(10, "Reason must be at least 10 characters"),
-  tradeoffs: z.string().min(5, "Tradeoffs must be at least 5 characters"),
-  alternatives: z.array(z.string()).optional(),
-  status: z.string().optional(),
   rationale: z.string().optional(),
-  consequences: z.string().optional(),
-});
-
-const NextTaskSchema = z.object({
-  role: z.enum(["Engineer", "DevOps", "QA", "Designer", "Product Manager"]),
-  task: z.string().min(10, "Task must be at least 10 characters"),
-  title: z.string().optional(),
-  priority: z.enum(["high", "medium", "low"]).optional(),
-  description: z.string().optional(),
+  tradeoffs: z.string().min(5, "Tradeoffs must be at least 5 characters"),
+  consequences: z.string().min(5, "Consequences must be at least 5 characters"),
+  alternatives: z.array(z.string()).optional(),
 });
 
 const TableColumnSchema = z.object({
@@ -160,15 +160,25 @@ const ScalabilityApproachSchema = z.object({
   performance_targets: z.string().optional(),
 });
 
+const NextTaskSchema = z.object({
+  task: z.string().min(5, "Task must be at least 5 characters"),
+  priority: z.enum(["high", "medium", "low"]),
+  assignee: z.enum(["engineer", "devops", "qa"]),
+  description: z.string().optional(),
+});
+
 export const ArchitectArtifactSchema = z.object({
   design_doc: z.string().min(100, "Design document must be at least 100 characters"),
   apis: z.array(APISchema).min(1, "At least one API is required"),
   decisions: z.array(DecisionSchema).min(1, "At least one decision is required"),
-  database_schema: DatabaseSchemaSchema.optional(),
-  technology_stack: TechnologyStackSchema.optional(),
-  integration_points: z.array(IntegrationPointSchema).optional(),
-  security_considerations: z.array(z.string().min(10, "Security consideration must be at least 10 characters")).optional(),
-  scalability_approach: ScalabilityApproachSchema.optional(),
+  database_schema: DatabaseSchemaSchema,
+  technology_stack: TechnologyStackSchema,
+  integration_points: z.array(IntegrationPointSchema),
+  security_considerations: z.array(z.string().min(10, "Security consideration must be at least 10 characters")),
+  scalability_approach: ScalabilityApproachSchema,
+  next_tasks: z.array(NextTaskSchema),
+  summary: z.string(),
+  description: z.string(),
 });
 
 // ============================================================================
@@ -211,15 +221,19 @@ export const EngineerArtifactSchema = z.object({
   files: z.array(FileNodeSchema).optional(),
   file_changes: z.array(FileNodeSchema).optional(),
   components: z.array(FileNodeSchema).optional(),
-  file_structure: FileNodeSchema.optional(),
-  implementation_plan: z.string().min(50, "Implementation plan must be at least 50 characters").optional(),
+  file_structure: FileNodeSchema,
+  implementation_plan: z.string().min(50, "Implementation plan must be at least 50 characters"),
   plan: z.string().min(50, "Plan must be at least 50 characters").optional(),
   dependencies: z.array(z.string().min(1, "Dependency must not be empty")),
-  technical_decisions: z.array(TechnicalDecisionSchema).optional(),
-  environment_variables: z.array(EnvironmentVariableSchema).optional(),
-}).refine(data => data.implementation_plan || data.plan || data.file_structure, {
-  message: "Either implementation_plan, plan, or file_structure must be present",
-  path: ["implementation_plan"]
+  technical_decisions: z.array(TechnicalDecisionSchema),
+  environment_variables: z.array(EnvironmentVariableSchema),
+  technical_patterns: z.array(z.string()),
+  state_management: z.object({
+    tool: z.string(),
+    strategy: z.string(),
+  }),
+  summary: z.string(),
+  description: z.string(),
 });
 
 // ============================================================================
@@ -229,20 +243,11 @@ export const EngineerArtifactSchema = z.object({
 const CoverageSchema = z
   .object({
     percentage: z.number().min(0).max(100).optional(),
+    threshold: z.number().min(0).max(100).optional(),
     lines: z.number().min(0).max(100).optional(),
     statements: z.number().min(0).max(100).optional(),
     functions: z.number().min(0).max(100).optional(),
     branches: z.number().min(0).max(100).optional(),
-  })
-  .nullable()
-  .optional();
-
-const CoverageDeltaSchema = z
-  .object({
-    lines: z.string().regex(/^[+-]?[0-9]+\.?[0-9]*%$/, "Coverage delta must match pattern +/-number%").optional(),
-    statements: z.string().regex(/^[+-]?[0-9]+\.?[0-9]*%$/, "Coverage delta must match pattern +/-number%").optional(),
-    functions: z.string().regex(/^[+-]?[0-9]+\.?[0-9]*%$/, "Coverage delta must match pattern +/-number%").optional(),
-    branches: z.string().regex(/^[+-]?[0-9]+\.?[0-9]*%$/, "Coverage delta must match pattern +/-number%").optional(),
   })
   .nullable()
   .optional();
@@ -262,6 +267,9 @@ export const QAArtifactSchema = z.object({
     unit: z.string().min(10, "Unit test strategy must be descriptive"),
     integration: z.string().min(10, "Integration test strategy must be descriptive"),
     e2e: z.string().min(10, "E2E test strategy must be descriptive"),
+    approach: z.string().optional(),
+    types: z.array(z.string()).optional(),
+    tools: z.array(z.string()).optional(),
   }),
   test_cases: z.array(
     z.object({
@@ -273,27 +281,24 @@ export const QAArtifactSchema = z.object({
       expected_result: z.string().optional(),
     })
   ).min(1, "At least one test case is required"),
-  security_plan: z
-    .object({
-      auth_verification_steps: z.array(z.string()).optional(),
-      vulnerability_scan_strategy: z.string().optional(),
+  security_plan: z.object({
+    auth_verification_steps: z.array(z.string()).optional(),
+    vulnerability_scan_strategy: z.string().optional(),
+  }),
+  manual_verification_steps: z.array(z.string()),
+  risk_analysis: z.array(
+    z.object({
+      risk: z.string(),
+      impact: z.enum(["high", "medium", "low"]),
+      mitigation: z.string(),
     })
-    .optional(),
-  manual_verification_steps: z.array(z.string()).optional(),
-  risk_analysis: z
-    .array(
-      z.object({
-        risk: z.string().optional(),
-        impact: z.enum(["high", "medium", "low"]).optional(),
-        mitigation: z.string().optional(),
-      })
-    )
-    .optional(),
-  summary: z.string().optional(),
-  coverage: CoverageSchema.optional(),
-  coverage_delta: CoverageDeltaSchema.optional(),
-  performance_metrics: PerformanceMetricsSchema.optional(),
-  description: z.string().optional(),
+  ),
+  summary: z.string(),
+  description: z.string(),
+  coverage: CoverageSchema,
+  performance_metrics: PerformanceMetricsSchema,
+  accessibility_plan: z.string().optional(),
+  manual_uat_plan: z.string().optional(),
 });
 
 // ============================================================================
@@ -346,6 +351,7 @@ const InfrastructureServiceSchema = z.object({
 
 const InfrastructureSchema = z.object({
   cloud_provider: z.enum(["AWS", "GCP", "Azure", "self-hosted", "hybrid"]),
+  iac: z.enum(["Terraform", "CloudFormation", "Crossplane", "Ansible", "Pulumi"]).optional(),
   services: z.array(InfrastructureServiceSchema).min(1, "At least one service is required"),
   regions: z.array(z.string()).optional(),
 });
@@ -359,7 +365,7 @@ const CICDTriggerSchema = z.object({
 const CICDPipelineStageSchema = z.object({
   name: z.string().min(1, "Stage name is required"),
   steps: z.array(z.string()).min(1, "At least one step is required"),
-  description: z.string().optional(),
+  goal: z.string().optional(),
 });
 
 const CICDSchema = z.object({
@@ -454,10 +460,10 @@ const ScalingSchema = z.object({
 export const DevOpsArtifactSchema = z.object({
   infrastructure: InfrastructureSchema,
   cicd: CICDSchema,
-  containerization: ContainerizationSchema.optional(),
+  containerization: ContainerizationSchema,
   deployment: DeploymentSchema,
   monitoring: MonitoringSchema,
-  scaling: ScalingSchema.optional(),
+  scaling: ScalingSchema,
   disaster_recovery: z.object({
     rpo: z.string(),
     rto: z.string(),
@@ -501,6 +507,7 @@ const AuthorizationPolicySchema = z.object({
 
 const AuthorizationSchema = z.object({
   model: z.enum(["RBAC", "ABAC", "PBAC", "ACL", "none"]),
+  roles: z.array(z.string()).optional(),
   policies: z.array(AuthorizationPolicySchema).optional(),
   description: z.string().optional(),
 });
@@ -510,7 +517,7 @@ const SessionManagementSchema = z.object({
   session_timeout: z.string().optional(),
   secure_cookies: z.boolean().optional(),
   http_only_cookies: z.boolean().optional(),
-  same_site_policy: z.enum(["strict", "lax", "none"]).optional(),
+  same_site_policy: z.enum(["Strict", "Lax", "None"]).optional(),
 });
 
 const SecurityArchitectureSchema = z.object({
@@ -524,6 +531,7 @@ const ThreatModelSchema = z.object({
   severity: z.enum(["critical", "high", "medium", "low"]),
   likelihood: z.enum(["high", "medium", "low"]).optional(),
   impact: z.string().optional(),
+  description: z.string().optional(),
   mitigation: z.string().min(10, "Mitigation must be at least 10 characters"),
   affected_components: z.array(z.string()).optional(),
 });
@@ -562,7 +570,10 @@ const ComplianceSchema = z.object({
 });
 
 const SecurityControlSchema = z.object({
+  id: z.string().optional(),
   control: z.string().min(10, "Control name must be at least 10 characters"),
+  type: z.string().optional(),
+  description: z.string().optional(),
   category: z.enum(["preventive", "detective", "corrective", "compensating"]).optional(),
   implementation: z.string().min(10, "Implementation must be at least 10 characters"),
   priority: z.enum(["critical", "high", "medium", "low"]).optional(),
@@ -571,23 +582,25 @@ const SecurityControlSchema = z.object({
 const VulnerabilityManagementSchema = z.object({
   scanning_frequency: z.string().optional(),
   tools: z.array(z.string()).optional(),
-  patch_management: z.string().optional(),
+  remediation_sla: z.string().optional(),
 });
 
 const SecurityMonitoringSchema = z.object({
-  tools: z.array(z.string()).optional(),
-  log_retention: z.string().optional(),
-  incident_response_plan: z.string().optional(),
+  logging_strategy: z.string().optional(),
+  siem_solution: z.string().optional(),
+  alerting_thresholds: z.string().optional(),
 });
 
 export const SecurityArtifactSchema = z.object({
   security_architecture: SecurityArchitectureSchema,
   threat_model: z.array(ThreatModelSchema).min(2, "At least 2 threats are required"),
   encryption: EncryptionSchema,
-  compliance: z.array(ComplianceSchema).optional(),
+  compliance: z.array(ComplianceSchema),
   security_controls: z.array(SecurityControlSchema).min(3, "At least 3 security controls are required"),
-  vulnerability_management: VulnerabilityManagementSchema.optional(),
-  security_monitoring: SecurityMonitoringSchema.optional(),
+  vulnerability_management: VulnerabilityManagementSchema,
+  security_monitoring: SecurityMonitoringSchema,
+  summary: z.string(),
+  description: z.string(),
 });
 
 export function validateSecurityArtifact(data: unknown) {

@@ -47,7 +47,6 @@ export interface EngineerBackendArtifact {
         tool: "Zustand" | "Redux" | "React Query" | "Context API" | "none";
         strategy: string;
     };
-    tests_added?: boolean;
     run_results?: {
         setup_commands?: string[];
         dev_commands?: string[];

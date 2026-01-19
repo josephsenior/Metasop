@@ -93,6 +93,11 @@ export interface DevOpsBackendArtifact {
             max_replicas?: number; // minimum: 1
             target_cpu?: number; // 0-100
             target_memory?: number; // 0-100
+            metrics?: Record<string, string | number>;
+            triggers?: Array<{
+                type: string;
+                threshold: string;
+            }>;
         };
         manual_scaling?: {
             replicas?: number; // minimum: 1

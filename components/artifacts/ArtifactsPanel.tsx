@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, User, Download, Archive, LayoutDashboard } from "lucide-react"
+import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, Download, Archive, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { downloadFile } from "@/lib/utils"

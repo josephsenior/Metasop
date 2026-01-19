@@ -253,8 +253,16 @@ export const devopsSchema = {
                 },
                 metrics: {
                     type: "array",
-                    items: { type: "string", maxLength: 30 },
-                    description: "Key performance metrics.",
+                    items: {
+                        type: "object",
+                        required: ["name", "threshold"],
+                        properties: {
+                            name: { type: "string", maxLength: 30 },
+                            threshold: { type: "string", maxLength: 30 },
+                            action: { type: "string", maxLength: 50 },
+                        }
+                    },
+                    description: "Key performance metrics and SLOs.",
                 },
                 alerts: {
                     type: "array",
@@ -314,6 +322,21 @@ export const devopsSchema = {
                             maximum: 100,
                             description: "Target memory percentage",
                         },
+                        metrics: {
+                            type: "object",
+                            description: "Custom scaling metrics (e.g., requests_per_second: 1000)",
+                        },
+                        triggers: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                required: ["type", "threshold"],
+                                properties: {
+                                    type: { type: "string", maxLength: 20 },
+                                    threshold: { type: "string", maxLength: 20 },
+                                }
+                            }
+                        }
                     },
                 },
                 manual_scaling: {

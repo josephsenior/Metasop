@@ -116,7 +116,7 @@ export const pmSchema = {
                         maxLength: 200,
                         description: "Detailed description.",
                     },
-                    criterion: {
+                    criteria: {
                         type: "string",
                         maxLength: 200,
                         description: "The actual acceptance criterion.",

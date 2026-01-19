@@ -447,22 +447,58 @@ export default function DevOpsInfrastructurePanel({
                           <h4 className="text-sm font-semibold">Scaling Policies</h4>
                         </div>
                         {scaling.auto_scaling ? (
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="p-2 bg-muted rounded border text-center">
-                              <div className="text-muted-foreground text-[10px] uppercase">Min Replicas</div>
-                              <div className="font-bold text-lg">{scaling.auto_scaling.min_replicas || 1}</div>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between px-2 py-1 bg-blue-500/5 rounded border border-blue-500/10">
+                              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Status</span>
+                              <Badge variant="outline" className={cn(
+                                "text-[8px] h-4 px-1 uppercase",
+                                scaling.auto_scaling.enabled !== false ? "text-emerald-500 border-emerald-500/30 bg-emerald-500/5" : "text-muted-foreground border-border bg-muted/20"
+                              )}>
+                                {scaling.auto_scaling.enabled !== false ? 'Enabled' : 'Disabled'}
+                              </Badge>
                             </div>
-                            <div className="p-2 bg-muted rounded border text-center">
-                              <div className="text-muted-foreground text-[10px] uppercase">Max Replicas</div>
-                              <div className="font-bold text-lg">{scaling.auto_scaling.max_replicas || 5}</div>
-                            </div>
-                            <div className="col-span-1 p-2 bg-muted/30 rounded border flex flex-col justify-center items-center">
-                              <span className="text-muted-foreground text-[8px] uppercase">CPU Target</span>
-                              <span className="font-bold font-mono text-blue-600">{scaling.auto_scaling.target_cpu || 80}%</span>
-                            </div>
-                            <div className="col-span-1 p-2 bg-muted/30 rounded border flex flex-col justify-center items-center">
-                              <span className="text-muted-foreground text-[8px] uppercase">Mem Target</span>
-                              <span className="font-bold font-mono text-purple-600">{scaling.auto_scaling.target_memory || 75}%</span>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="p-2 bg-muted rounded border text-center">
+                                <div className="text-muted-foreground text-[10px] uppercase">Min Replicas</div>
+                                <div className="font-bold text-lg">{scaling.auto_scaling.min_replicas || 1}</div>
+                              </div>
+                              <div className="p-2 bg-muted rounded border text-center">
+                                <div className="text-muted-foreground text-[10px] uppercase">Max Replicas</div>
+                                <div className="font-bold text-lg">{scaling.auto_scaling.max_replicas || 5}</div>
+                              </div>
+                              <div className="col-span-1 p-2 bg-muted/30 rounded border flex flex-col justify-center items-center">
+                                <span className="text-muted-foreground text-[8px] uppercase">CPU Target</span>
+                                <span className="font-bold font-mono text-blue-600">{scaling.auto_scaling.target_cpu || 80}%</span>
+                              </div>
+                              <div className="col-span-1 p-2 bg-muted/30 rounded border flex flex-col justify-center items-center">
+                                <span className="text-muted-foreground text-[8px] uppercase">Mem Target</span>
+                                <span className="font-bold font-mono text-purple-600">{scaling.auto_scaling.target_memory || 75}%</span>
+                              </div>
+                              {scaling.auto_scaling.triggers && scaling.auto_scaling.triggers.length > 0 && (
+                                <div className="col-span-2 mt-2 pt-2 border-t border-border/40">
+                                  <div className="text-[8px] uppercase font-bold text-muted-foreground mb-2">Scaling Triggers</div>
+                                  <div className="grid gap-1.5">
+                                    {scaling.auto_scaling.triggers.map((trigger: any, idx: number) => (
+                                      <div key={idx} className="flex items-center justify-between text-[10px] bg-yellow-500/5 border border-yellow-500/10 p-1.5 rounded">
+                                        <div className="flex items-center gap-1.5">
+                                          <div className={cn(
+                                            "w-1 h-1 rounded-full",
+                                            trigger.action === 'scale-up' ? 'bg-red-500' : 'bg-blue-500'
+                                          )} />
+                                          <span className="font-bold text-yellow-700 dark:text-yellow-500 uppercase text-[9px]">{trigger.metric}</span>
+                                          <span className="text-muted-foreground">{trigger.threshold}</span>
+                                        </div>
+                                        <Badge variant="outline" className={cn(
+                                          "text-[8px] h-3.5 px-1 uppercase border-0",
+                                          trigger.action === 'scale-up' ? 'bg-red-500/10 text-red-600' : 'bg-blue-500/10 text-blue-600'
+                                        )}>
+                                          {trigger.action}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ) : scaling.manual_scaling ? (
@@ -561,40 +597,117 @@ export default function DevOpsInfrastructurePanel({
                     </Card>
 
                     <div className="space-y-4 h-full">
-                      <Card className="p-4 bg-zinc-950 text-zinc-300 border-zinc-800 h-full">
-                        <div className="flex items-center gap-2 mb-4 text-zinc-100 font-mono text-sm">
-                          <Terminal className="h-4 w-4" />
-                          <span>Observability & Logs</span>
+                      <Card className="h-full border-border/60 shadow-sm overflow-hidden">
+                        <div className="p-3 border-b border-border/40 bg-zinc-950 flex items-center gap-2">
+                          <Terminal className="h-4 w-4 text-emerald-500" />
+                          <h3 className="text-sm font-semibold text-zinc-100 font-mono">Observability Stack</h3>
                         </div>
-                        <div className="space-y-4 font-mono text-xs">
+                        <div className="p-4 bg-zinc-950 min-h-[300px] font-mono text-xs space-y-6">
                           {monitoring?.metrics && monitoring.metrics.length > 0 && (
-                            <div className="space-y-2">
-                              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Key Metrics</span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {monitoring.metrics.map((m: string, i: number) => (
-                                  <Badge key={i} variant="outline" className="bg-zinc-900 border-zinc-800 text-blue-400 text-[9px] h-5">
-                                    {m}
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                                <Activity className="h-3 w-3" />
+                                SLOs & Metrics
+                              </div>
+                              <div className="grid gap-2">
+                                {monitoring.metrics.map((m: any, i: number) => (
+                                  <div key={i} className="group flex items-center justify-between bg-zinc-900/50 p-2.5 rounded border border-zinc-800 hover:border-emerald-500/30 transition-colors">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-emerald-400 font-bold uppercase text-[9px]">{m.name}</span>
+                                      <span className="text-zinc-400 text-[10px]">{m.threshold}</span>
+                                    </div>
+                                    <div className="text-zinc-500 text-[9px] italic text-right">
+                                      {m.action}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {monitoring?.tools && monitoring.tools.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                                <Server className="h-3 w-3" />
+                                Monitoring Stack
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {monitoring.tools.map((tool: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="bg-zinc-900/50 border-zinc-800 text-zinc-400 font-mono text-[10px]">
+                                    {tool}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col gap-1 p-2 rounded bg-zinc-900/50 border border-zinc-800">
-                              <span className="text-zinc-500 text-[9px] uppercase font-bold">Retention</span>
-                              <span className="text-zinc-300">{monitoring?.logging?.retention || '30 days'}</span>
-                            </div>
-                            <div className="flex flex-col gap-1 p-2 rounded bg-zinc-900/50 border border-zinc-800">
-                              <span className="text-zinc-500 text-[9px] uppercase font-bold">Logging Tools</span>
-                              <div className="flex gap-1 flex-wrap">
-                                {monitoring?.logging?.tools?.map((t: string, i: number) => (
-                                  <span key={i} className="text-emerald-400">{t}{i < (monitoring?.logging?.tools?.length || 0) - 1 ? ',' : ''}</span>
-                                ))}
+                          <div className="grid grid-cols-1 gap-4 pt-2">
+                            <div className="space-y-2">
+                              <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Logging Pipeline</div>
+                              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-zinc-500 text-[9px] uppercase font-bold">Retention</span>
+                                  <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-300 font-mono">
+                                    {monitoring?.logging?.retention || '30 days'}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1.5">
+                                  <span className="text-zinc-500 text-[9px] uppercase font-bold block">Log Stack</span>
+                                  <div className="flex gap-1.5 flex-wrap">
+                                    {monitoring?.logging?.tools?.map((t: string, i: number) => (
+                                      <span key={i} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
+                                        {t}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
+
+                        {scaling?.auto_scaling && (
+                          <div className="lg:col-span-5 border-t border-zinc-800 p-4 bg-zinc-900/20">
+                            <div className="flex items-center gap-2 mb-4">
+                              <Zap className="h-4 w-4 text-amber-500" />
+                              <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Auto-Scaling Configuration</h4>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-2">
+                                <div className="text-[10px] text-zinc-500 uppercase font-bold">Replicas</div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-zinc-400">Min/Max</span>
+                                  <span className="text-sm font-mono text-zinc-100">{scaling.auto_scaling.min_replicas} - {scaling.auto_scaling.max_replicas}</span>
+                                </div>
+                              </div>
+                              {scaling.auto_scaling.metrics && (
+                                <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-2">
+                                  <div className="text-[10px] text-zinc-500 uppercase font-bold">Metrics</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {Object.entries(scaling.auto_scaling.metrics).map(([k, v]: [string, any]) => (
+                                      <Badge key={k} variant="outline" className="text-[9px] border-zinc-700 text-zinc-400 font-mono">
+                                        {k}: {v}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {scaling.auto_scaling.triggers && scaling.auto_scaling.triggers.length > 0 && (
+                                <div className="bg-zinc-950 p-3 rounded border border-zinc-800 space-y-2 md:col-span-1">
+                                  <div className="text-[10px] text-zinc-500 uppercase font-bold">Triggers</div>
+                                  <div className="space-y-1.5">
+                                    {scaling.auto_scaling.triggers.map((t: any, i: number) => (
+                                      <div key={i} className="flex items-center justify-between text-[10px] text-zinc-400 bg-zinc-900/50 px-2 py-1 rounded">
+                                        <span className="font-bold text-amber-500/70">{t.type}</span>
+                                        <span>{t.threshold}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </Card>
                     </div>
                   </motion.div>

@@ -14,7 +14,7 @@ export async function productManagerAgent(
   context: AgentContext,
   onProgress?: (event: Partial<MetaSOPEvent>) => void
 ): Promise<MetaSOPArtifact> {
-  const { user_request, documents } = context;
+  const { user_request } = context;
 
   logger.info("Product Manager agent starting", { user_request: user_request.substring(0, 100) });
 
@@ -34,11 +34,6 @@ export async function productManagerAgent(
         }
       );
     } else {
-      // Format documents for context if they exist
-      const documentsContext = documents && documents.length > 0
-        ? `\n\n=== SUPPLEMENTAL CONTEXT DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}\n\n`
-        : '';
-
       // Original generation logic
       const pmPrompt = `As a Senior Product Manager, create a comprehensive product specification for '${user_request}'.
 

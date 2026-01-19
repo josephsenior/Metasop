@@ -120,7 +120,7 @@ export default function ProfilePage() {
         }
       }
       reader.readAsDataURL(file)
-    } catch (error: any) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to process image",
@@ -133,7 +133,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     setIsSaving(true)
     try {
-      const updatedUser = await authApi.updateProfile({ 
+      await authApi.updateProfile({ 
         name,
         image: selectedAvatar || undefined
       })

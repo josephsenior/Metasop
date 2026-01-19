@@ -157,9 +157,20 @@ function DatabaseTableCard({ table }: { table: any }) {
                 {col.constraints?.includes('PRIMARY KEY') && <Key className="h-2.5 w-2.5" />}
                 {col.name}
               </span>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground/40 italic">{col.description && `// ${col.description}`}</span>
-                <span className="text-muted-foreground/60">{col.type}</span>
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground/40 italic">{col.description && `// ${col.description}`}</span>
+                  <span className="text-muted-foreground/60">{col.type}</span>
+                </div>
+                {col.constraints && col.constraints.length > 0 && (
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {col.constraints.filter((c: string) => c !== 'PRIMARY KEY').map((c: string, idx: number) => (
+                      <span key={idx} className="text-[8px] px-1 py-0 rounded bg-purple-500/10 text-purple-600/70 border border-purple-500/10 uppercase font-bold">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -172,6 +183,7 @@ function DatabaseTableCard({ table }: { table: any }) {
               {table.indexes.map((idx: any, i: number) => (
                 <Badge key={i} variant="outline" className="text-[8px] font-mono opacity-70 bg-purple-500/5" title={idx.reason}>
                   {idx.type?.toUpperCase() || 'BTREE'}: {idx.columns.join(', ')}
+                  {idx.reason && <span className="ml-1 opacity-50 italic">- {idx.reason}</span>}
                 </Badge>
               ))}
             </div>
@@ -181,16 +193,23 @@ function DatabaseTableCard({ table }: { table: any }) {
         {table.relationships && table.relationships.length > 0 && (
           <div className="mt-3 pt-3 border-t border-border/20">
             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Relationships</span>
-            <div className="space-y-1.5 text-[10px]">
+            <div className="space-y-2 text-[10px]">
               {table.relationships.map((rel: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 text-muted-foreground">
-                  <ArrowRight className="h-2.5 w-2.5 text-purple-500" />
-                  <span className="font-mono">{rel.from}</span>
-                  <span className="text-[8px] opacity-40">➔</span>
-                  <span className="font-mono text-purple-500">{rel.to}</span>
-                  <span className="text-[8px] italic opacity-60">
-                    ({rel.type}{rel.through ? ` via ${rel.through}` : ''})
-                  </span>
+                <div key={idx} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ArrowRight className="h-2.5 w-2.5 text-purple-500" />
+                    <span className="font-mono">{rel.from}</span>
+                    <span className="text-[8px] opacity-40">➔</span>
+                    <span className="font-mono text-purple-500">{rel.to}</span>
+                    <span className="text-[8px] italic opacity-60">
+                      ({rel.type}{rel.through ? ` via ${rel.through}` : ''})
+                    </span>
+                  </div>
+                  {rel.description && (
+                    <div className="pl-4 text-[9px] text-muted-foreground/70 italic">
+                      {rel.description}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -419,10 +438,11 @@ export default function ArchDesignPanel({
                 <TabTrigger value="api" icon={Terminal} label="API Contract" count={apis.length} />
                 <TabTrigger value="db" icon={Database} label="Schema" count={databaseSchema?.tables?.length || 0} />
                 <TabTrigger value="decisions" icon={ScrollText} label="ADRs" count={decisions.length} />
+                <TabTrigger value="integrations" icon={Share2} label="Integrations" count={integrationPoints.length} />
                 {technologyStack && <TabTrigger value="stack" icon={Layers} label="Stack" count={Object.keys(technologyStack).length} />}
                 {nextTasks.length > 0 && <TabTrigger value="tasks" icon={ListTodo} label="Next Tasks" count={nextTasks.length} />}
-                {(integrationPoints.length > 0 || securityConsiderations.length > 0 || scalabilityApproach) && (
-                  <TabTrigger value="advanced" icon={Settings} label="Advanced" count={integrationPoints.length + securityConsiderations.length + (scalabilityApproach ? 1 : 0)} />
+                {(securityConsiderations.length > 0 || scalabilityApproach) && (
+                  <TabTrigger value="advanced" icon={Settings} label="Advanced" count={securityConsiderations.length + (scalabilityApproach ? 1 : 0)} />
                 )}
               </TabsList>
             </ScrollArea>
@@ -617,12 +637,12 @@ export default function ArchDesignPanel({
                             <Badge variant="outline" className="text-[10px] font-bold text-orange-600 border-orange-500/20 uppercase bg-orange-500/5">
                               Task {i + 1}
                             </Badge>
-                            {task.role && (
+                            {task.assignee && (
                               <Badge variant="secondary" className="text-[9px] bg-muted text-muted-foreground uppercase">
-                                {task.role}
+                                {task.assignee}
                               </Badge>
                             )}
-                            <h4 className="text-sm font-bold text-foreground">{task.title || "Pending Task"}</h4>
+                            <h4 className="text-sm font-bold text-foreground">{task.task || "Pending Task"}</h4>
                           </div>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {task.description || "No description provided."}
@@ -638,35 +658,77 @@ export default function ArchDesignPanel({
                   </motion.div>
                 </TabsContent>
 
-                <TabsContent key="advanced" value="advanced" className="m-0 outline-none">
-                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-                    {integrationPoints.length > 0 && (
-                      <div className="space-y-3">
-                        <h3 className="text-sm font-bold flex items-center gap-2">
-                          <Share2 className="h-4 w-4 text-purple-500" /> Integration Points
-                        </h3>
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {integrationPoints.map((point: any, i: number) => (
-                            <Card key={i} className="bg-card border-border/50">
-                              <CardContent className="p-3">
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="font-bold text-xs">{point.name || point.service || point.system}</div>
+                <TabsContent key="integrations" value="integrations" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+                    {integrationPoints.length > 0 ? (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {integrationPoints.map((point: any, i: number) => (
+                          <Card key={i} className="bg-card border-border/50 hover:border-purple-500/30 transition-all group overflow-hidden">
+                            <div className="h-1 w-full bg-purple-500/20 group-hover:bg-purple-500/40 transition-colors" />
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
+                                    <Share2 className="h-3.5 w-3.5" />
+                                  </div>
+                                  <div className="font-bold text-sm tracking-tight">{point.name || point.service || point.system}</div>
+                                </div>
+                                <div className="flex gap-1">
                                   {point.system && point.system !== point.name && (
-                                    <Badge variant="outline" className="text-[8px] uppercase">{point.system}</Badge>
+                                    <Badge variant="outline" className="text-[8px] uppercase font-bold text-muted-foreground/60">{point.system}</Badge>
+                                  )}
+                                  {point.service && point.service !== (point.name || point.system) && (
+                                    <Badge variant="outline" className="text-[8px] uppercase font-bold text-muted-foreground/60">{point.service}</Badge>
                                   )}
                                 </div>
-                                <div className="text-[10px] text-muted-foreground">{point.purpose || point.description}</div>
-                                {point.api_docs && (
-                                  <div className="mt-1 text-[9px] text-blue-500 font-mono italic truncate hover:underline cursor-pointer">
-                                    {point.api_docs}
+                              </div>
+                              
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-[2.5rem]">
+                                {point.purpose || point.description || "External system integration."}
+                              </p>
+
+                              <div className="space-y-2 pt-3 border-t border-border/20">
+                                {point.authentication && (
+                                  <div className="flex items-center justify-between text-[10px]">
+                                    <div className="flex items-center gap-1.5 text-amber-600 font-medium">
+                                      <Lock className="h-2.5 w-2.5" />
+                                      <span className="uppercase tracking-tight">Auth:</span>
+                                    </div>
+                                    <span className="text-muted-foreground font-medium">{point.authentication}</span>
                                   </div>
                                 )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
+                                {point.api_docs && (
+                                  <div className="flex items-center justify-between text-[10px]">
+                                    <div className="flex items-center gap-1.5 text-blue-500 font-medium">
+                                      <BookOpen className="h-2.5 w-2.5" />
+                                      <span className="uppercase tracking-tight">Docs:</span>
+                                    </div>
+                                    <a 
+                                      href={point.api_docs} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-500 hover:underline font-mono truncate max-w-[150px]"
+                                    >
+                                      {new URL(point.api_docs).hostname}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/30 rounded-xl bg-muted/5">
+                        <Share2 className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                        <p className="text-sm">No external integrations defined.</p>
                       </div>
                     )}
+                  </motion.div>
+                </TabsContent>
+
+                <TabsContent key="advanced" value="advanced" className="m-0 outline-none">
+                  <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
 
                     {securityConsiderations.length > 0 && (
                       <div className="space-y-3">
@@ -687,25 +749,47 @@ export default function ArchDesignPanel({
                     {scalabilityApproach && (
                       <div className="space-y-3">
                         <h3 className="text-sm font-bold flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-amber-500" /> Scalability Approach
+                          <Zap className="h-4 w-4 text-amber-500" /> Scalability & Performance
                         </h3>
-                        <div className="bg-amber-500/5 p-4 rounded-xl border border-amber-500/10 space-y-4">
-                          {typeof scalabilityApproach === "string" ? (
-                            <p className="text-xs text-muted-foreground leading-relaxed">{scalabilityApproach}</p>
-                          ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {Object.entries(scalabilityApproach || {}).map(([key, val]) => (
-                                <div key={key} className="space-y-1">
-                                  <div className="text-[10px] uppercase font-bold text-amber-600/60 tracking-wider">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {Object.entries(scalabilityApproach || {}).map(([key, val]) => {
+                            if (!val) return null;
+                            
+                            const icons: Record<string, any> = {
+                              horizontal_scaling: Layers,
+                              database_scaling: Database,
+                              caching_strategy: Zap,
+                              performance_targets: Cpu
+                            };
+                            const Icon = icons[key] || Settings;
+
+                            return (
+                              <div key={key} className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-5 w-5 rounded bg-amber-500/10 flex items-center justify-center">
+                                    <Icon className="h-3 w-3 text-amber-600" />
+                                  </div>
+                                  <div className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">
                                     {key.replace(/_/g, ' ')}
                                   </div>
-                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                </div>
+                                {typeof val === 'object' ? (
+                                  <div className="space-y-1.5 pl-7">
+                                    {Object.entries(val).map(([subKey, subVal]) => (
+                                      <div key={subKey} className="text-[11px] leading-relaxed">
+                                        <span className="text-amber-600/80 font-bold uppercase text-[9px] mr-1">{subKey.replace(/_/g, ' ')}:</span>
+                                        <span className="text-muted-foreground">{String(subVal)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground leading-relaxed pl-7">
                                     {String(val)}
                                   </p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

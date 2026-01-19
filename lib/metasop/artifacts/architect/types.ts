@@ -73,6 +73,12 @@ export interface ArchitectBackendArtifact {
         caching_strategy?: string;
         performance_targets?: string;
     };
+    next_tasks?: Array<{
+        task: string;
+        priority: "high" | "medium" | "low";
+        assignee: "engineer" | "devops" | "qa";
+        description?: string;
+    }>;
 }
 
 // ============================================================================
@@ -85,7 +91,15 @@ export function isArchitectBackendArtifact(
     return (
         artifact &&
         typeof artifact.design_doc === "string" &&
+        typeof artifact.summary === "string" &&
+        typeof artifact.description === "string" &&
         Array.isArray(artifact.apis) &&
-        Array.isArray(artifact.decisions)
+        Array.isArray(artifact.decisions) &&
+        typeof artifact.database_schema === "object" &&
+        typeof artifact.technology_stack === "object" &&
+        Array.isArray(artifact.integration_points) &&
+        Array.isArray(artifact.security_considerations) &&
+        typeof artifact.scalability_approach === "object" &&
+        Array.isArray(artifact.next_tasks)
     );
 }

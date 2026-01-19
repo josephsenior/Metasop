@@ -1,7 +1,7 @@
 
 export const engineerSchema = {
     type: "object",
-    required: ["artifact_path", "file_structure", "implementation_plan", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
+    required: ["artifact_path", "file_structure", "implementation_plan", "implementation_plan_phases", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
         summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the implementation strategy." },
         description: { type: "string", maxLength: 300, description: "Detailed implementation philosophy and technical roadmap." },
@@ -18,6 +18,8 @@ export const engineerSchema = {
                 setup_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Setup (e.g., 'npm install')." },
                 test_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Tests (e.g., 'npm test')." },
                 dev_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Dev (e.g., 'npm run dev')." },
+                build_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Build (e.g., 'npm run build')." },
+                notes: { type: "string", maxLength: 200, description: "Operational notes or context." },
             }
         },
         file_structure: {
@@ -66,6 +68,19 @@ export const engineerSchema = {
             type: "string",
             maxLength: 3000,
             description: "Technical step-by-step guide in Markdown. Focused and concise.",
+        },
+        implementation_plan_phases: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["name", "description", "tasks"],
+                properties: {
+                    name: { type: "string", maxLength: 50 },
+                    description: { type: "string", maxLength: 200 },
+                    tasks: { type: "array", items: { type: "string", maxLength: 100 } },
+                }
+            },
+            description: "Structured implementation phases for the roadmap view.",
         },
         dependencies: {
             type: "array",

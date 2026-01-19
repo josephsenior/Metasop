@@ -30,20 +30,20 @@ export interface ProductManagerBackendArtifact {
     >; // REQUIRED: minItems: 1
     ui_multi_section?: boolean; // Default: false
     ui_sections?: number; // Default: 1
-    assumptions?: string[]; // Array of strings (minLength: 10)
-    out_of_scope?: string[]; // Array of strings (minLength: 5)
-    swot?: {
+    assumptions: string[]; // Array of strings (minLength: 10)
+    out_of_scope: string[]; // Array of strings (minLength: 5)
+    swot: {
         strengths: string[];
         weaknesses: string[];
         opportunities: string[];
         threats: string[];
     };
-    stakeholders?: Array<{
+    stakeholders: Array<{
         role: string;
         interest: string;
         influence: "high" | "medium" | "low";
     }>;
-    invest_analysis?: Array<{
+    invest_analysis: Array<{
         user_story_id: string;
         independent: boolean;
         negotiable: boolean;
@@ -54,20 +54,18 @@ export interface ProductManagerBackendArtifact {
         score: number;
         comments: string;
     }>;
-    summary?: string;
-    description?: string;
-    gaps?: Array<{
+    summary: string;
+    description: string;
+    gaps: Array<{
         gap: string;
         impact: string;
         priority: "high" | "medium" | "low";
     }>;
-    opportunities?: Array<{
+    opportunities: Array<{
         opportunity: string;
         value: string;
         feasibility: "high" | "medium" | "low";
     }>;
-    nodes?: any[];
-    edges?: any[];
 }
 
 // ============================================================================
@@ -80,6 +78,15 @@ export function isProductManagerBackendArtifact(
     return (
         artifact &&
         Array.isArray(artifact.user_stories) &&
-        Array.isArray(artifact.acceptance_criteria)
+        Array.isArray(artifact.acceptance_criteria) &&
+        Array.isArray(artifact.assumptions) &&
+        Array.isArray(artifact.out_of_scope) &&
+        typeof artifact.swot === "object" &&
+        Array.isArray(artifact.stakeholders) &&
+        Array.isArray(artifact.invest_analysis) &&
+        typeof artifact.summary === "string" &&
+        typeof artifact.description === "string" &&
+        Array.isArray(artifact.gaps) &&
+        Array.isArray(artifact.opportunities)
     );
 }

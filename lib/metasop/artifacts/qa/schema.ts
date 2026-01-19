@@ -69,7 +69,7 @@ export const qaSchema = {
             description: "Quality risks and mitigations."
         },
         summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the QA strategy." },
-        description: { type: "string", maxLength: 300, description: "Detailed verification philosophy and test plan. Max 3 sentences." },
+        description: { type: "string", maxLength: 300, description: "Detailed verification philosophy and test plan." },
         coverage: {
             type: "object",
             properties: {
