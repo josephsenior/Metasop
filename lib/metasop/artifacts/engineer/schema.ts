@@ -23,7 +23,7 @@ export const engineerSchema = {
         file_structure: {
             type: "object",
             required: ["name", "type", "children"],
-            description: "High-level directory tree. Focus on metadata. DO NOT include file content.",
+            description: "Full project scaffold and boilerplate. Focus on metadata. DO NOT include file content.",
             properties: {
                 name: { type: "string", maxLength: 30, description: "Root name." },
                 type: { type: "string", enum: ["file", "directory"] },
