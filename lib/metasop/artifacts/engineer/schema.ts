@@ -70,7 +70,6 @@ export const engineerSchema = {
         dependencies: {
             type: "array",
             items: { type: "string", maxLength: 40, description: "Dep (e.g., 'next@14.1.0')." },
-        },
             description: "Essential build dependencies.",
         },
         technical_decisions: {
