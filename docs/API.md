@@ -177,7 +177,46 @@ Réinitialise le mot de passe avec un token valide.
 }
 ```
 
-## Notes de sécurité
+## Diagram Endpoints
+
+### POST /api/diagrams/generate
+
+Generates a system architecture diagram using the MetaSOP multi-agent orchestrator.
+
+**Authentication:** Optional (Supports Guest sessions)
+
+**Query Parameters:**
+- `stream` (boolean, optional): If `true`, enables SSE streaming of agent thoughts and progress.
+
+**Request Body:**
+```json
+{
+  "prompt": "Create a microservices architecture for an e-commerce platform",
+  "options": {
+    "model": "gemini-3-flash-preview",
+    "temperature": 0.2
+  }
+}
+```
+
+**Response (200 - Non-streaming):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "diag_123",
+    "title": "E-commerce Platform Architecture",
+    "nodes": [...],
+    "edges": [...],
+    "metadata": {
+      "agents_involved": ["PM", "Architect", "Engineer", "Security", "QA"],
+      "token_usage": 4500
+    }
+  }
+}
+```
+
+## Security Notes
 
 ⚠️ **IMPORTANT:** Cette implémentation utilise une base de données en mémoire pour le développement. Pour la production :
 

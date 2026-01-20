@@ -3,8 +3,8 @@ export const engineerSchema = {
     type: "object",
     required: ["artifact_path", "file_structure", "implementation_plan", "implementation_plan_phases", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
     properties: {
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the implementation strategy." },
-        description: { type: "string", maxLength: 300, description: "Detailed implementation philosophy and technical roadmap." },
+        summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the implementation strategy and architecture approach." },
+        description: { type: "string", maxLength: 600, description: "Detailed implementation philosophy, technical roadmap, and development approach." },
         artifact_path: {
             type: "string",
             maxLength: 30,
@@ -66,8 +66,8 @@ export const engineerSchema = {
         },
         implementation_plan: {
             type: "string",
-            maxLength: 3000,
-            description: "Technical step-by-step guide in Markdown. Focused and concise.",
+            maxLength: 5000,
+            description: "Comprehensive technical guide in Markdown. Include setup, development workflow, coding conventions, and quality standards.",
         },
         implementation_plan_phases: {
             type: "array",
@@ -89,31 +89,30 @@ export const engineerSchema = {
         },
         technical_decisions: {
             type: "array",
-            minItems: 3,
             items: {
                 type: "object",
                 required: ["decision", "rationale"],
                 properties: {
-                    decision: { type: "string", maxLength: 60 },
-                    rationale: { type: "string", maxLength: 150 },
-                    alternatives: { type: "string", maxLength: 100 },
+                    decision: { type: "string", maxLength: 100, description: "Clear decision statement (e.g., 'Use React Query for server state management')." },
+                    rationale: { type: "string", maxLength: 300, description: "Detailed reasoning with specific justification and benefits." },
+                    alternatives: { type: "string", maxLength: 200, description: "Alternatives considered with brief rejection reason." },
                 },
             },
-            description: "Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection).",
+            description: "Critical implementation decisions. Cover key choices proportional to project complexity.",
         },
         environment_variables: {
             type: "array",
-            minItems: 2,
             items: {
                 type: "object",
                 required: ["name", "description"],
                 properties: {
-                    name: { type: "string", maxLength: 40 },
-                    description: { type: "string", maxLength: 100 },
-                    example: { type: "string", maxLength: 100 },
+                    name: { type: "string", maxLength: 50, description: "Variable name in SCREAMING_SNAKE_CASE." },
+                    description: { type: "string", maxLength: 150, description: "What this variable configures and when it's needed." },
+                    example: { type: "string", maxLength: 150, description: "Example value (use placeholder for secrets)." },
+                    required: { type: "boolean", description: "Whether this variable is required for app to run." },
                 },
             },
-            description: "Environment variables.",
+            description: "Required environment variables. Include only what's needed for the specific project.",
         },
         technical_patterns: {
             type: "array",

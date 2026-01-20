@@ -5,6 +5,7 @@ import { qaSchema } from "../artifacts/qa/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
+import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 
 /**
  * QA Agent
@@ -38,25 +39,153 @@ export async function qaAgent(
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as ArchitectBackendArtifact | undefined;
-      const projectTitle = pmArtifact?.title || "Project";
-      const techStackString = archArtifact?.technology_stack ? Object.values(archArtifact.technology_stack).flat().slice(0, 5).join(", ") : "Modern Stack";
+      const engineerArtifact = engineerImpl?.content as any;
+      const securityArtifact = context.previous_artifacts?.security_architecture?.content as any;
+      const uiArtifact = context.previous_artifacts?.ui_design?.content as any;
+      const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
+      const techStackString = archArtifact?.technology_stack ? Object.values(archArtifact.technology_stack).flat().join(", ") : "Modern Stack";
 
-      const qaPrompt = `As a Lead Quality Assurance Engineer, design a verification strategy for '${projectTitle}'.
+      const domainContext = getDomainContext(user_request);
+      const qualityCheck = getQualityCheckPrompt("qa");
 
-${pmSpec?.content ? `Project Goals: ${(pmSpec.content as any).summary}` : `User Request: ${user_request}`}
-${archDesign?.content ? `Tech Stack: ${techStackString}` : ""}
-${engineerImpl?.content ? `Implementation Patterns: ${(engineerImpl.content as any).technical_patterns?.join(", ")}` : ""}
+      const qaPrompt = `You are a Lead QA Engineer and ISTQB-certified Test Architect with 10+ years of experience in test automation, quality strategy, and continuous testing. Design a comprehensive verification strategy for:
 
-MISSION OBJECTIVES:
-1. **Verification Strategy**: Define a test strategy covering Unit, Integration, and E2E layers.
-2. **BDD Scenario Mapping**: Map test scenarios to user stories using Gherkin (Given/When/Then).
-3. **Quality Gates & Coverage**: Define code coverage thresholds.
-4. **Risk Analysis**: Conduct a concise risk analysis identifying key risks and mitigations.
-5. **Benchmarking**: Specify target performance metrics (latency, throughput).
-6. **Security & Manual Audits**: Define an authentication verification plan and manual UAT steps.
-7. **Accessibility**: Design a verification plan for accessibility compliance (WCAG).
+"${projectTitle}"
 
-Respond with ONLY the structured JSON object.`;
+${pmArtifact ? `
+Project Context:
+- Summary: ${pmArtifact.summary}
+- User Stories: ${pmArtifact.user_stories?.length || 0} stories defined
+- Key Stories: ${pmArtifact.user_stories?.slice(0, 4).map((s: any) => s.title).join(", ") || "N/A"}
+- Acceptance Criteria: ${pmArtifact.acceptance_criteria?.length || 0} criteria defined` : `User Request: ${user_request}`}
+${archArtifact ? `
+Architecture Context:
+- Tech Stack: ${techStackString}
+- APIs: ${archArtifact.apis?.length || 0} endpoints defined
+- Database Tables: ${archArtifact.database_schema?.tables?.length || 0} tables` : ""}
+${engineerArtifact ? `
+Implementation Context:
+- Technical Patterns: ${engineerArtifact.technical_patterns?.join(", ") || "N/A"}
+- Test Commands: ${engineerArtifact.run_results?.test_commands?.join(", ") || "N/A"}` : ""}
+${securityArtifact ? `
+Security Context:
+- Auth Method: ${securityArtifact.security_architecture?.authentication?.method || "JWT"}
+- Threat Count: ${securityArtifact.threat_model?.length || 0} threats identified` : ""}
+${uiArtifact ? `
+UI Context:
+- Components: ${uiArtifact.component_hierarchy?.organisms?.length || 0} organisms
+- Accessibility: ${uiArtifact.accessibility?.wcag_level || "AA"} compliance target` : ""}
+${domainContext ? `\n${domainContext}\n` : ""}
+
+=== MISSION OBJECTIVES ===
+
+1. **Test Strategy (Testing Pyramid)**
+   - **Unit Tests (70%)**
+     * Scope: Individual functions, components, utilities
+     * Framework: Vitest/Jest for logic, React Testing Library for components
+     * Coverage target: 80%+ line coverage, 90%+ for critical paths
+     * Mocking strategy: Mock external dependencies, use MSW for API mocking
+   
+   - **Integration Tests (20%)**
+     * Scope: API endpoints, database operations, service interactions
+     * Framework: Supertest for APIs, Testcontainers for database
+     * Focus: Happy paths, error handling, edge cases
+     * Data management: Test fixtures, factory functions
+   
+   - **E2E Tests (10%)**
+     * Scope: Critical user journeys, cross-browser testing
+     * Framework: Playwright (preferred) or Cypress
+     * Focus: Smoke tests, regression tests, user flows
+     * Environment: Staging environment with production-like data
+
+2. **BDD Test Cases (Gherkin Format)**
+   - Map each user story to test scenarios
+   - Use Given/When/Then format consistently
+   - Include positive, negative, and edge case scenarios
+   - Link test cases to acceptance criteria
+
+3. **Coverage & Quality Gates**
+   - Define coverage thresholds:
+     * Statements: 80%
+     * Branches: 75%
+     * Functions: 85%
+     * Lines: 80%
+   - CI/CD quality gates:
+     * All tests pass
+     * Coverage thresholds met
+     * No critical security vulnerabilities
+     * Linting passes
+     * Type checking passes
+
+4. **Performance Testing**
+   - Define performance benchmarks:
+     * API response time: p50 < 100ms, p95 < 500ms, p99 < 1s
+     * Page load time: LCP < 2.5s, FID < 100ms, CLS < 0.1
+     * Throughput: Target requests/second under load
+   - Load testing strategy (k6, Artillery, Locust)
+   - Stress testing for breaking points
+   - Soak testing for memory leaks
+
+5. **Security Testing Plan**
+   - Authentication testing: Valid/invalid credentials, token expiration, session handling
+   - Authorization testing: Role-based access, privilege escalation attempts
+   - Input validation: SQL injection, XSS, CSRF
+   - API security: Rate limiting, authentication bypass, parameter tampering
+   - Dependency scanning: Known vulnerabilities in dependencies
+
+6. **Risk Analysis & Mitigation**
+   - Identify high-risk areas based on:
+     * Business impact
+     * Technical complexity
+     * Change frequency
+     * Integration points
+   - Define mitigation strategies for each risk
+   - Prioritize testing effort by risk level
+
+7. **Accessibility Testing (WCAG 2.1 AA)**
+   - Automated testing: axe-core, Lighthouse accessibility audit
+   - Manual testing checklist:
+     * Keyboard navigation
+     * Screen reader compatibility
+     * Color contrast
+     * Focus management
+     * Error identification
+   - Testing tools: NVDA, VoiceOver, JAWS
+
+8. **Manual UAT Plan**
+   - Define UAT scenarios for business stakeholders
+   - Create step-by-step test scripts
+   - Define acceptance criteria for sign-off
+   - Schedule and environment requirements
+
+9. **Test Data Management**
+   - Define test data strategy:
+     * Factory functions for generating test data
+     * Fixtures for static test data
+     * Database seeding scripts
+   - Data privacy considerations for non-production environments
+
+10. **Continuous Testing Integration**
+    - Pre-commit: Linting, type checking, unit tests
+    - PR/MR: Full test suite, coverage check
+    - Main branch: E2E tests, security scans
+    - Nightly: Performance tests, full regression
+
+=== EXAMPLE BDD TEST CASE (Follow this format) ===
+${FEW_SHOT_EXAMPLES.testCase}
+
+=== TESTING FRAMEWORK RECOMMENDATIONS ===
+- **Unit/Integration**: Vitest (fast, ESM-native) or Jest
+- **Component**: React Testing Library (user-centric)
+- **E2E**: Playwright (cross-browser, reliable) or Cypress
+- **API**: Supertest, Postman/Newman
+- **Performance**: k6, Artillery, Lighthouse
+- **Security**: OWASP ZAP, Snyk, npm audit
+- **Accessibility**: axe-core, Lighthouse, Pa11y
+
+${qualityCheck}
+
+Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmQA: QABackendArtifact | null = null;
 

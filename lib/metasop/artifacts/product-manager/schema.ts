@@ -3,8 +3,8 @@ export const pmSchema = {
     type: "object",
     required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
     properties: {
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the product. No conversational filler." },
-        description: { type: "string", maxLength: 300, description: "Detailed product vision and description." },
+        summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the product. No conversational filler." },
+        description: { type: "string", maxLength: 500, description: "Detailed product vision, target audience, and value proposition." },
         gaps: {
             type: "array",
             description: "Identified product gaps or user pain points.",
@@ -33,7 +33,7 @@ export const pmSchema = {
         },
         user_stories: {
             type: "array",
-            description: "Array of INVEST-compliant user stories.",
+            description: "Array of INVEST-compliant user stories. Aim for 5-10 well-defined stories for complex projects, fewer for simple ones.",
             items: {
                 type: "object",
                 required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
@@ -45,18 +45,18 @@ export const pmSchema = {
                     },
                     title: {
                         type: "string",
-                        maxLength: 50,
+                        maxLength: 80,
                         description: "Concise user story title.",
                     },
                     story: {
                         type: "string",
-                        maxLength: 150,
-                        description: "Story in 'As a... I want... so that...' format.",
+                        maxLength: 250,
+                        description: "Story in 'As a [role], I want [feature] so that [benefit]' format.",
                     },
                     description: {
                         type: "string",
-                        maxLength: 200,
-                        description: "Brief technical description.",
+                        maxLength: 350,
+                        description: "Brief technical description with implementation hints.",
                     },
                     priority: {
                         type: "string",
@@ -73,9 +73,9 @@ export const pmSchema = {
                         type: "array",
                         items: {
                             type: "string",
-                            maxLength: 100,
+                            maxLength: 200,
                         },
-                        description: "Specific ACs for this story.",
+                        description: "Specific, testable acceptance criteria for this story.",
                     },
                     dependencies: {
                         type: "array",
@@ -90,7 +90,7 @@ export const pmSchema = {
                         enum: ["small", "medium", "large"],
                         description: "Estimated complexity",
                     },
-                    user_value: { type: "string", maxLength: 100 },
+                    user_value: { type: "string", maxLength: 150, description: "Clear statement of value delivered to the user." },
                 },
             },
         },

@@ -5,11 +5,11 @@ export const architectSchema = {
     properties: {
         design_doc: {
             type: "string",
-            maxLength: 3000,
-            description: "Comprehensive architecture design document in markdown format. Aim for ~2000 characters for complex systems.",
+            maxLength: 5000,
+            description: "Comprehensive architecture design document in markdown format. Aim for ~2500-4000 characters for complex systems.",
         },
-        summary: { type: "string", maxLength: 150, description: "Technical executive summary of the architecture." },
-        description: { type: "string", maxLength: 300, description: "Brief overview of the system architecture." },
+        summary: { type: "string", maxLength: 250, description: "Technical executive summary of the architecture." },
+        description: { type: "string", maxLength: 500, description: "Brief overview of the system architecture." },
     apis: {
             type: "array",
             description: "CRUD-focused API specification. Technical and concise.",
@@ -30,20 +30,21 @@ export const architectSchema = {
         },
         decisions: {
             type: "array",
-            description: "Core architectural decisions. Technical focus.",
+            description: "Core architectural decisions (ADRs). Aim for 4-6 well-documented decisions with full context for complex projects.",
             items: {
                 type: "object",
                 required: ["decision", "status", "reason", "tradeoffs", "consequences"],
                 properties: {
-                    decision: { type: "string", maxLength: 60 },
+                    decision: { type: "string", maxLength: 100, description: "Clear decision statement (e.g., 'Use PostgreSQL as primary database')" },
                     status: { type: "string", enum: ["accepted", "proposed", "superseded"] },
-                    reason: { type: "string", maxLength: 150, description: "Technical reasoning." },
-                    rationale: { type: "string", maxLength: 80, description: "One-sentence rationale." },
-                    tradeoffs: { type: "string", maxLength: 150 },
-                    consequences: { type: "string", maxLength: 150 },
+                    reason: { type: "string", maxLength: 300, description: "Detailed technical reasoning with specific justification." },
+                    rationale: { type: "string", maxLength: 150, description: "One-sentence rationale for quick reference." },
+                    tradeoffs: { type: "string", maxLength: 250, description: "What we gain and what we sacrifice with this decision." },
+                    consequences: { type: "string", maxLength: 250, description: "What needs to change or be implemented as a result." },
                     alternatives: {
                         type: "array",
-                        items: { type: "string", maxLength: 50 },
+                        items: { type: "string", maxLength: 100 },
+                        description: "Alternatives considered with brief rejection reason (e.g., 'MongoDB - rejected due to eventual consistency')"
                     },
                 },
             },

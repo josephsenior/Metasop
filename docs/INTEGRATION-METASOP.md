@@ -18,7 +18,19 @@ The MetaSOP system consists of:
 
 ## Configuration
 
-No additional configuration is required! The MetaSOP system is fully integrated and ready to use.
+The system supports multiple LLM providers. Configure these in `.env.local`:
+
+```env
+# Primary Provider (Google Gemini)
+GOOGLE_AI_API_KEY=your_key_here
+METASOP_LLM_PROVIDER=gemini
+METASOP_LLM_MODEL=gemini-3-flash-preview
+
+# Alternative: Token Factory (Free Llama models)
+TOKEN_FACTORY_API_KEY=your_key_here
+TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
+# METASOP_LLM_PROVIDER=tokenfactory
+```
 
 ## How It Works
 

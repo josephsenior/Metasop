@@ -13,8 +13,8 @@ export const securitySchema = {
         "security_monitoring"
     ],
     properties: {
-        summary: { type: "string", maxLength: 200, description: "A technical, 1-sentence summary of the security architecture. No conversational filler." },
-        description: { type: "string", maxLength: 500, description: "Detailed security specifications and threat mitigations." },
+        summary: { type: "string", maxLength: 300, description: "A technical, 1-2 sentence summary of the security architecture. No conversational filler." },
+        description: { type: "string", maxLength: 800, description: "Detailed security specifications, threat landscape, and mitigation strategy overview." },
         security_architecture: {
             type: "object",
             required: ["authentication", "authorization"],
@@ -131,22 +131,25 @@ export const securitySchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["threat", "mitigation"],
+                required: ["threat", "mitigation", "severity"],
                 properties: {
-                        threat: { type: "string", maxLength: 50, description: "STRIDE threat." },
+                        threat: { type: "string", maxLength: 80, description: "STRIDE threat category and specific threat." },
+                        category: { type: "string", enum: ["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"], description: "STRIDE category." },
                         severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
                         likelihood: { type: "string", enum: ["high", "medium", "low"] },
-                        impact: { type: "string", maxLength: 100, description: "Technical impact description." },
-                        description: { type: "string", maxLength: 150, description: "Detailed threat description." },
-                        mitigation: { type: "string", maxLength: 150, description: "Technical mitigation." },
+                        impact: { type: "string", maxLength: 200, description: "Technical and business impact description." },
+                        description: { type: "string", maxLength: 300, description: "Detailed threat scenario and attack vector." },
+                        mitigation: { type: "string", maxLength: 300, description: "Specific, implementable mitigation strategy." },
                         affected_components: { 
                             type: "array", 
-                            items: { type: "string", maxLength: 30 },
+                            items: { type: "string", maxLength: 50 },
                             description: "Systems or components impacted."
                         },
+                        owasp_ref: { type: "string", maxLength: 50, description: "OWASP Top 10 reference (e.g., 'A03:2021 - Injection')." },
+                        cwe_ref: { type: "string", maxLength: 20, description: "CWE reference (e.g., 'CWE-89')." },
                     }
             },
-            description: "STRIDE-based threat model."
+            description: "STRIDE-based threat model with OWASP/CWE references. Scale depth to project complexity."
         },
         encryption: {
             type: "object",

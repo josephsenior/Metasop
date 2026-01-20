@@ -14,6 +14,8 @@
 - **LLM-Native Caching**: Leverages advanced Gemini context caching to minimize latency and token consumption during iterative refinement cycles.
 - **Structured Validation**: All agent outputs are validated against strict Zod schemas and JSON structures, ensuring reliable, machine-readable artifacts.
 - **Agent-to-Agent (A2A) Communication**: Specialized protocol for inter-agent delegation and task management.
+- **Guest Support**: Limited diagram generation for non-authenticated users with session tracking.
+- **Multi-Provider Support**: Built-in adapters for Google Gemini, Vercel AI SDK, and Token Factory (Llama 3.1).
 
 ## 🏗️ Architecture
 

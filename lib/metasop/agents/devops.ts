@@ -4,6 +4,7 @@ import { devopsSchema } from "../artifacts/devops/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
+import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 
 /**
  * DevOps Agent
@@ -36,25 +37,112 @@ export async function devopsAgent(
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
-      const projectTitle = pmArtifact?.title || "Project";
+      const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
+      
+      const domainContext = getDomainContext(user_request);
+      const qualityCheck = getQualityCheckPrompt("devops");
 
-      const devopsPrompt = `As a Principal Site Reliability Engineer (SRE), design a modern infrastructure strategy for '${projectTitle}'.
+      const devopsPrompt = `You are a Principal Site Reliability Engineer (SRE) and Platform Engineer with 10+ years of experience in cloud infrastructure, CI/CD automation, and production operations. Design a production-ready infrastructure strategy for:
+
+"${projectTitle}"
 
 ${pmArtifact ? `Project Context: ${pmArtifact.summary}` : `User Request: ${user_request}`}
-${archArtifact ? `Architecture Target: ${archArtifact.summary}
-Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 5).join(", ")}` : ""}
+${archArtifact ? `
+Architecture Context:
+- Summary: ${archArtifact.summary}
+- Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 8).join(", ")}
+- Database: ${archArtifact.technology_stack?.database?.join(", ") || "PostgreSQL"}
+- Scalability Target: ${archArtifact.scalability_approach?.performance_targets || "Standard web application"}` : ""}
+${domainContext ? `\n${domainContext}\n` : ""}
 
-MISSION OBJECTIVES:
-1. **Infrastructure as Code (IaC)**: Architect an IaC layer proportional to the project's scale.
-2. **Environment Tiering**: Define an environment strategy and access controls.
-3. **CI/CD Pipeline Architecture**: Design a pipeline with essential stages (Build, Test, Deploy).
-4. **Containerization & Orchestration**: Provide a container strategy (Docker/K8s) if applicable.
-5. **Deployment Model**: Select a deployment model based on the project's criticality.
-6. **Observability**: Design a monitoring and logging system focusing on essential signals.
-7. **DR & Resilience**: Define RPO/RTO targets and backup strategies.
-8. **Security & Compliance**: Integrate security into the DevOps lifecycle (DevSecOps).
+=== MISSION OBJECTIVES ===
 
-Respond with ONLY the structured JSON object.`;
+1. **Infrastructure as Code (IaC)**
+   - Choose appropriate IaC tool (Terraform, Pulumi, CloudFormation, CDK)
+   - Define infrastructure modules: networking, compute, storage, security
+   - Implement state management strategy (remote state, locking)
+   - Design for environment parity (dev/staging/prod consistency)
+   - Include cost estimation considerations
+
+2. **Cloud Provider & Services**
+   - Select primary cloud provider (AWS, GCP, Azure) with justification
+   - Map services to architecture components:
+     * Compute: ECS/EKS/Lambda, Cloud Run, App Service
+     * Database: RDS, Cloud SQL, managed PostgreSQL
+     * Cache: ElastiCache, Memorystore, Redis
+     * Storage: S3, GCS, Blob Storage
+     * CDN: CloudFront, Cloud CDN, Azure CDN
+     * DNS: Route53, Cloud DNS, Azure DNS
+
+3. **Environment Strategy**
+   - Define environments: development, staging, production
+   - Specify resource sizing per environment
+   - Design access control per environment (least privilege)
+   - Define data handling (synthetic data for non-prod, production data protection)
+
+4. **CI/CD Pipeline Architecture**
+   - Choose CI/CD platform (GitHub Actions, GitLab CI, CircleCI, Jenkins)
+   - Design pipeline stages:
+     * Build: Dependency installation, compilation
+     * Test: Unit, integration, E2E (with parallel execution)
+     * Security: SAST, DAST, dependency scanning
+     * Quality: Linting, type checking, coverage thresholds
+     * Deploy: Environment-specific deployments
+   - Implement quality gates with failure conditions
+   - Design artifact management and versioning
+
+5. **Containerization & Orchestration**
+   - Define Docker build strategy (multi-stage builds, layer caching)
+   - Container registry strategy (ECR, GCR, ACR)
+   - Orchestration approach:
+     * Kubernetes: Namespace strategy, resource quotas, HPA/VPA
+     * ECS/Cloud Run: Service definitions, scaling policies
+   - Define health checks and readiness probes
+
+6. **Deployment Strategy**
+   - Choose deployment model based on requirements:
+     * Blue/Green: Zero-downtime, instant rollback
+     * Canary: Gradual rollout, traffic splitting
+     * Rolling: Simple, resource-efficient
+   - Define rollback procedures and triggers
+   - Implement feature flags for gradual feature releases
+
+7. **Observability Stack**
+   - **Metrics**: Application metrics, infrastructure metrics, business KPIs
+   - **Logging**: Structured logging, log aggregation (ELK, CloudWatch, Datadog)
+   - **Tracing**: Distributed tracing (OpenTelemetry, Jaeger, X-Ray)
+   - **Alerting**: Alert thresholds, escalation policies, on-call rotation
+   - Define SLIs/SLOs for critical user journeys
+
+8. **Scaling Strategy**
+   - Horizontal Pod Autoscaler (HPA) configurations
+   - Vertical scaling policies
+   - Database scaling: Read replicas, connection pooling
+   - CDN and caching for traffic offloading
+
+9. **Disaster Recovery & Business Continuity**
+   - Define RTO (Recovery Time Objective) and RPO (Recovery Point Objective)
+   - Backup strategy: Frequency, retention, cross-region replication
+   - Disaster recovery procedures and runbooks
+   - Regular DR testing schedule
+
+10. **Security Integration (DevSecOps)**
+    - Secret management (Vault, AWS Secrets Manager)
+    - Security scanning in CI/CD (Snyk, Trivy, OWASP ZAP)
+    - Infrastructure security (security groups, NACLs, IAM policies)
+    - Compliance automation (AWS Config, Azure Policy)
+
+=== EXAMPLE CI/CD STAGE (Follow this format) ===
+${FEW_SHOT_EXAMPLES.cicdPipeline}
+
+=== CLOUD SERVICE SELECTION GUIDANCE ===
+- **Startups/MVPs**: Prefer managed services (Vercel, Railway, Render) for speed
+- **Growth Stage**: Container platforms (ECS, Cloud Run) for control + simplicity
+- **Enterprise**: Kubernetes (EKS, GKE, AKS) for full control and multi-cloud
+
+${qualityCheck}
+
+Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmDevOps: DevOpsBackendArtifact | null = null;
 

@@ -4,6 +4,7 @@ import { architectSchema } from "../artifacts/architect/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
+import { TECHNICAL_STANDARDS, FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 
 /**
  * Architect Agent
@@ -33,23 +34,85 @@ export async function architectAgent(
         }
       );
     } else {
-      const projectContext = pmSpec?.content 
-        ? `Project Goals: ${(pmSpec.content as any).summary}\nTarget Audience: ${(pmSpec.content as any).description}`
+      const pmContent = pmSpec?.content as any;
+      const projectContext = pmContent 
+        ? `Project Goals: ${pmContent.summary}\nTarget Audience: ${pmContent.description}\nKey User Stories: ${pmContent.user_stories?.slice(0, 3).map((s: any) => s.title).join(", ") || "N/A"}`
         : `User Request: ${user_request}`;
 
-      const architectPrompt = `As a Principal Software Architect, design a robust system architecture for '${user_request}'.
+      const domainContext = getDomainContext(user_request);
+      const qualityCheck = getQualityCheckPrompt("architect");
+
+      const architectPrompt = `You are a Principal Software Architect with 15+ years of experience designing scalable, secure, and maintainable systems. Design a production-ready system architecture for:
+
+"${user_request}"
 
 ${projectContext}
+${domainContext ? `\n${domainContext}\n` : ""}
 
-MISSION OBJECTIVES:
-1. **Design Documentation**: Create a high-fidelity Markdown design document as specified in the schema.
-2. **API Specification**: Design a clean RESTful API surface with full CRUD coverage for core entities.
-3. **Database Architecture**: Design a normalized relational schema with clear table/column naming.
-4. **Architectural Decisions**: Document key ADRs (Architectural Decision Records) including rationale and tradeoffs.
-5. **Technical Roadmap**: Define specific, actionable next tasks for the engineering and DevOps teams.
-6. **System Quality**: Address security, scalability, and integration points in detail.
+=== TECHNICAL STANDARDS (MUST FOLLOW) ===
+${TECHNICAL_STANDARDS.naming}
 
-Respond with ONLY the structured JSON object.`;
+${TECHNICAL_STANDARDS.api}
+
+${TECHNICAL_STANDARDS.database}
+
+=== MISSION OBJECTIVES ===
+
+1. **Architecture Design Document**
+   - Write comprehensive markdown documentation (~2000-3000 chars)
+   - Include system overview, component interactions, and data flow
+   - Document key architectural patterns used (MVC, CQRS, Event Sourcing, etc.)
+   - Address cross-cutting concerns (logging, monitoring, caching)
+
+2. **API Specification**
+   - Design RESTful APIs following REST maturity level 2+
+   - Include proper HTTP methods, status codes, and error responses
+   - Define request/response schemas with types
+   - Specify authentication requirements and rate limits
+   - Consider API versioning strategy
+
+3. **Database Architecture**
+   - Design normalized schema (3NF minimum for transactional data)
+   - Define all tables with columns, types, and constraints
+   - Map relationships (1:1, 1:N, M:N) with proper foreign keys
+   - Include indexes for frequently queried columns
+   - Consider read/write patterns and query optimization
+
+4. **Architectural Decision Records (ADRs)**
+   - Document 4-6 key decisions with full context
+   - Include: decision, status, rationale, tradeoffs, consequences
+   - List alternatives considered and why they were rejected
+   - Be specific about technical tradeoffs
+
+5. **Technology Stack**
+   - Justify each technology choice
+   - Consider team expertise, ecosystem maturity, and long-term support
+   - Balance innovation with stability
+
+6. **Scalability & Performance**
+   - Define horizontal and vertical scaling strategies
+   - Address database scaling (read replicas, sharding if needed)
+   - Specify caching layers and strategies
+   - Set performance targets (latency, throughput)
+
+7. **Integration Points**
+   - List external services and APIs
+   - Define integration patterns (REST, webhooks, message queues)
+   - Address failure handling and circuit breakers
+
+8. **Next Tasks**
+   - Provide actionable tasks for engineering, DevOps, and QA teams
+   - Prioritize by dependency and business value
+
+=== EXAMPLE ADR (Follow this depth) ===
+${FEW_SHOT_EXAMPLES.adr}
+
+=== EXAMPLE API ENDPOINT (Follow this format) ===
+${FEW_SHOT_EXAMPLES.api}
+
+${qualityCheck}
+
+Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmArchitecture: ArchitectBackendArtifact | null = null;
 

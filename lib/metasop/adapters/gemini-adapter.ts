@@ -136,71 +136,52 @@ ${prompt}`
         console.log(`   Latency: ${Date.now() - startTime}ms`);
         console.log("-".repeat(40) + "\n");
 
+        // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
+        if (options?.role) {
+          try {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+            const debugDir = path.join(process.cwd(), 'debug_logs');
+            
+            if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+            const debugPayload = {
+              agent: options.role,
+              model: model,
+              timestamp: new Date().toISOString(),
+              request: {
+                prompt: prompt,
+                config: {
+                  temperature: options?.temperature,
+                  maxTokens: options?.maxTokens,
+                  reasoning: !!options?.reasoning,
+                  cacheId: options?.cacheId
+                }
+              },
+              response: {
+                content: content,
+                raw: data,
+                thoughts: thoughts
+              }
+            };
+
+            fs.writeFileSync(
+              path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
+              JSON.stringify(debugPayload, null, 2)
+            );
+
+            console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
+          } catch (dumpErr) {
+            logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
+          }
+        }
+
         const finishReason = data.candidates?.[0]?.finishReason;
         logger.info("Token usage metadata", { usage, model, cost, finishReason });
       }
 
-      if (!content) {
-        throw new Error("No response from Gemini API");
-      }
-
-      // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
-      if (options?.role) {
-        try {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-          const debugDir = path.join(process.cwd(), 'debug_logs');
-          
-          if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-
-          const debugPayload = {
-            agent: options.role,
-            model: model,
-            timestamp: new Date().toISOString(),
-            request: {
-              prompt: prompt,
-              config: {
-                temperature: options?.temperature,
-                maxTokens: options?.maxTokens,
-                reasoning: !!options?.reasoning,
-                cacheId: options?.cacheId
-              }
-            },
-            response: {
-              content: content,
-              raw: data,
-              thoughts: thoughts
-            }
-          };
-
-          fs.writeFileSync(
-            path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
-            JSON.stringify(debugPayload, null, 2)
-          );
-
-          console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
-        } catch (dumpErr) {
-          logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
-        }
-      }
-
       return content;
     } catch (error: any) {
-      // DEBUG: DUMP ERROR TO FILE
-      if (options?.role) {
-        try {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-          const debugDir = path.join(process.cwd(), 'debug_logs');
-          fs.writeFileSync(path.join(debugDir, `${timestamp}_${agentRole}_ERROR.json`), JSON.stringify({
-            message: error.message,
-            stack: error.stack,
-            model: model,
-            timestamp: new Date().toISOString()
-          }, null, 2));
-        } catch (dumpErr) { /* ignore */ }
-      }
-
       logger.error("Gemini generation failed", { error: error.message, model });
       throw error;
     }
@@ -663,70 +644,8 @@ ${prompt}`
         delete (result as any)._reasoning;
       }
 
-      // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
-      if (options?.role) {
-        try {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-          const debugDir = path.join(process.cwd(), 'debug_logs');
-          
-          if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-
-          const debugPayload = {
-            agent: options.role,
-            model: model,
-            timestamp: new Date().toISOString(),
-            request: {
-              prompt: structuredPrompt,
-              schema: schema,
-              config: {
-                temperature: options?.temperature,
-                maxTokens: options?.maxTokens,
-                reasoning: !!options?.reasoning
-              }
-            },
-            response: {
-              content: result,
-              raw: data,
-              extracted_json_text: jsonText
-            }
-          };
-
-          fs.writeFileSync(
-            path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
-            JSON.stringify(debugPayload, null, 2)
-          );
-
-          console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
-        } catch (dumpErr) {
-          logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
-        }
-      }
-
       return result as T;
     } catch (error: any) {
-      // DEBUG: DUMP ERROR TO FILE
-      if (options?.role) {
-        try {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-          const debugDir = path.join(process.cwd(), 'debug_logs');
-          const errorFileName = `${timestamp}_${agentRole}_ERROR.json`;
-          const errorFilePath = path.join(debugDir, errorFileName);
-          
-          fs.writeFileSync(errorFilePath, JSON.stringify({
-            message: error.message,
-            stack: error.stack,
-            model: model,
-            timestamp: new Date().toISOString()
-          }, null, 2));
-          
-          console.error(`\n[DEBUG] ${options.role} ERROR DUMPED TO: ${errorFilePath}\n`);
-        } catch (dumpErr) {
-          // ignore
-        }
-      }
-
       logger.error("Gemini structured generation failed", { error: error.message, model });
       throw error;
     }

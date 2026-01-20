@@ -4,6 +4,7 @@ import { pmSchema } from "../artifacts/product-manager/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
+import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 
 /**
  * Product Manager Agent
@@ -34,20 +35,67 @@ export async function productManagerAgent(
         }
       );
     } else {
-      // Original generation logic
-      const pmPrompt = `As a Senior Product Manager, create a comprehensive product specification for '${user_request}'.
+      // Get domain-specific context if applicable
+      const domainContext = getDomainContext(user_request);
+      const qualityCheck = getQualityCheckPrompt("pm");
+
+      // Original generation logic with enhanced prompts
+      const pmPrompt = `You are a Senior Product Manager with 10+ years of experience in agile product development, user research, and stakeholder management. Create a comprehensive, production-ready product specification for:
+
+"${user_request}"
 
 ${(context as any).previous_artifacts ? `Review the initial request and ensure all aspects are covered in the spec.` : ""}
+${domainContext ? `\n${domainContext}\n` : ""}
 
-MISSION OBJECTIVES:
-1. **Product Strategy**: Define a clear summary and description as specified in the schema.
-2. **Feature Gaps & Opportunities**: Identify technical gaps and growth areas.
-3. **User Stories**: Generate INVEST-compliant user stories (Independent, Negotiable, Valuable, Estimable, Small, Testable).
-4. **Acceptance Criteria**: Detail comprehensive ACs for the overall product.
-5. **SWOT & Analysis**: Provide a strategic SWOT analysis and stakeholder map.
-6. **Project Scope**: Define explicit assumptions and out-of-scope items to prevent scope creep.
+=== MISSION OBJECTIVES ===
 
-Respond with ONLY the structured JSON object.`;
+1. **Product Strategy & Vision**
+   - Write a crisp, technical summary (1-2 sentences, no marketing fluff)
+   - Define the product vision with clear success metrics
+   - Identify the primary user persona and their core pain points
+
+2. **Feature Gaps & Opportunities**
+   - Analyze competitive landscape and identify differentiators
+   - Map user pain points to specific feature opportunities
+   - Prioritize opportunities by business value and technical feasibility
+
+3. **User Stories (INVEST-Compliant)**
+   - Each story must be: Independent, Negotiable, Valuable, Estimable, Small, Testable
+   - Use format: "As a [role], I want [feature] so that [benefit]"
+   - Include specific, measurable acceptance criteria for each story
+   - Assign realistic story points (Fibonacci: 1, 2, 3, 5, 8, 13)
+   - Map dependencies between stories
+
+4. **Acceptance Criteria**
+   - Write testable, unambiguous criteria
+   - Include both functional and non-functional requirements
+   - Use Given/When/Then format where applicable
+
+5. **SWOT Analysis & Stakeholder Mapping**
+   - Be realistic about weaknesses and threats
+   - Identify key stakeholders with their interests and influence levels
+   - Map stakeholder communication strategies
+
+6. **Project Scope Definition**
+   - Explicitly list assumptions (technical, business, resource)
+   - Define clear out-of-scope items to prevent scope creep
+   - Identify potential risks and dependencies
+
+=== EXAMPLE USER STORY (Follow this quality level) ===
+${FEW_SHOT_EXAMPLES.userStory}
+
+=== INVEST ANALYSIS GUIDANCE ===
+For each user story, evaluate:
+- **Independent**: Can be developed without depending on other stories
+- **Negotiable**: Details can be refined during development
+- **Valuable**: Delivers clear value to users or business
+- **Estimable**: Can be reasonably estimated by the team
+- **Small**: Completable within one sprint (1-2 weeks)
+- **Testable**: Has clear pass/fail criteria
+
+${qualityCheck}
+
+Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmPMSpec: ProductManagerBackendArtifact | null = null;
 
@@ -63,7 +111,7 @@ Respond with ONLY the structured JSON object.`;
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.2, // Lowered for precise specification output
+            temperature: 0.4, // Slightly higher for creative opportunity identification
             cacheId: context.cacheId,
             role: "Product Manager"
           }

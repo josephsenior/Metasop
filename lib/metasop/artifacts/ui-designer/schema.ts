@@ -3,8 +3,8 @@ export const uiDesignerSchema = {
     type: "object",
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
-        summary: { type: "string", maxLength: 200, description: "A technical, 1-sentence summary of the UI strategy. No conversational filler." },
-        description: { type: "string", description: "Detailed visual design philosophy and brand alignment." },
+        summary: { type: "string", maxLength: 300, description: "A technical, 1-2 sentence summary of the UI strategy and design system approach. No conversational filler." },
+        description: { type: "string", maxLength: 800, description: "Detailed visual design philosophy, brand alignment, and design principles." },
         component_hierarchy: {
             type: "object",
             required: ["root"],
@@ -141,19 +141,39 @@ export const uiDesignerSchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["name", "description"],
+                required: ["name", "description", "category"],
                 properties: {
-                    name: { type: "string", maxLength: 50 },
-                    description: { type: "string", maxLength: 500 },
+                    name: { type: "string", maxLength: 50, description: "Component name (e.g., 'Button', 'Modal')." },
+                    category: { type: "string", enum: ["atom", "molecule", "organism", "template"], description: "Atomic design category." },
+                    description: { type: "string", maxLength: 300, description: "Component purpose and usage guidelines." },
                     props: {
-                        type: "object",
-                        additionalProperties: { type: "string", maxLength: 100 },
-                        description: "Component props mapping name to type"
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                name: { type: "string", maxLength: 30 },
+                                type: { type: "string", maxLength: 50 },
+                                default: { type: "string", maxLength: 30 },
+                                description: { type: "string", maxLength: 100 }
+                            }
+                        },
+                        description: "Component props with types and defaults."
                     },
-                    variants: { type: "array", items: { type: "string", maxLength: 50 } },
-                    states: { type: "array", items: { type: "string", maxLength: 50 } },
+                    variants: { type: "array", items: { type: "string", maxLength: 30 }, description: "Visual variants (primary, secondary, ghost)." },
+                    sizes: { type: "array", items: { type: "string", maxLength: 10 }, description: "Size variants (sm, md, lg)." },
+                    states: { type: "array", items: { type: "string", maxLength: 20 }, description: "Interactive states (hover, active, disabled, loading)." },
+                    accessibility: {
+                        type: "object",
+                        properties: {
+                            role: { type: "string", maxLength: 30 },
+                            aria_label: { type: "string", maxLength: 100 },
+                            keyboard: { type: "string", maxLength: 100 }
+                        },
+                        description: "Accessibility requirements for this component."
+                    }
                 },
             },
+            description: "Key component specifications with props, variants, states, and accessibility. Scale to project needs."
         },
         layout_breakpoints: {
             type: "object",
@@ -218,9 +238,9 @@ export const uiDesignerSchema = {
             },
             description: "Information architecture/Sitemap for the application."
         },
-        layout_strategy: { type: "string" },
-        visual_philosophy: { type: "string" },
-        information_architecture: { type: "string" },
-        responsive_strategy: { type: "string" }
+        layout_strategy: { type: "string", maxLength: 500, description: "Grid system, container widths, and layout patterns." },
+        visual_philosophy: { type: "string", maxLength: 500, description: "Core design principles, aesthetic direction, and brand alignment." },
+        information_architecture: { type: "string", maxLength: 500, description: "Navigation hierarchy, user flows, and content organization." },
+        responsive_strategy: { type: "string", maxLength: 500, description: "Mobile-first approach, breakpoint behavior, and adaptive patterns." }
     },
 };

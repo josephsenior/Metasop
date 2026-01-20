@@ -10,14 +10,14 @@ export const qaSchema = {
             type: "object",
             required: ["unit", "integration", "e2e"],
             properties: {
-                unit: { type: "string", maxLength: 100, description: "Unit testing approach." },
-                integration: { type: "string", maxLength: 100, description: "Integration testing approach." },
-                e2e: { type: "string", maxLength: 100, description: "E2E testing approach." },
-                approach: { type: "string", maxLength: 150, description: "General QA philosophy." },
-                types: { type: "array", items: { type: "string", maxLength: 20 }, description: "Test types." },
-                tools: { type: "array", items: { type: "string", maxLength: 20 }, description: "Frameworks/tools." }
+                unit: { type: "string", maxLength: 300, description: "Unit testing approach with framework, coverage targets, and mocking strategy." },
+                integration: { type: "string", maxLength: 300, description: "Integration testing approach with scope, data management, and tools." },
+                e2e: { type: "string", maxLength: 300, description: "E2E testing approach with framework, critical paths, and environment strategy." },
+                approach: { type: "string", maxLength: 300, description: "General QA philosophy and testing pyramid rationale." },
+                types: { type: "array", items: { type: "string", maxLength: 30 }, description: "Test types (unit, integration, e2e, performance, security, accessibility)." },
+                tools: { type: "array", items: { type: "string", maxLength: 30 }, description: "Testing frameworks and tools (Vitest, Playwright, etc.)." }
             },
-            description: "Layered QA strategy."
+            description: "Layered QA strategy following the testing pyramid."
         },
         test_cases: {
             type: "array",
@@ -25,15 +25,26 @@ export const qaSchema = {
                 type: "object",
                 required: ["name", "priority", "type"],
                 properties: {
-                    name: { type: "string", maxLength: 50, description: "Test case name." },
-                    description: { type: "string", maxLength: 150, description: "What is verified." },
+                    id: { type: "string", maxLength: 15, description: "Test case ID (e.g., TC-001)." },
+                    name: { type: "string", maxLength: 80, description: "Descriptive test case name." },
+                    description: { type: "string", maxLength: 250, description: "What is verified and why it's important." },
                     priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
-                    type: { type: "string", enum: ["unit", "integration", "e2e", "performance", "security"] },
-                    gherkin: { type: "string", maxLength: 300, description: "Given/When/Then steps." },
-                    expected_result: { type: "string", maxLength: 100, description: "Success criteria." }
+                    type: { type: "string", enum: ["unit", "integration", "e2e", "performance", "security", "accessibility"] },
+                    preconditions: { type: "array", items: { type: "string", maxLength: 100 }, description: "Required setup before test." },
+                    gherkin: { 
+                        type: "object",
+                        properties: {
+                            given: { type: "string", maxLength: 200 },
+                            when: { type: "string", maxLength: 200 },
+                            then: { type: "string", maxLength: 200 }
+                        },
+                        description: "BDD format: Given/When/Then steps."
+                    },
+                    expected_result: { type: "string", maxLength: 200, description: "Clear success criteria." },
+                    user_story_ref: { type: "string", maxLength: 10, description: "Reference to user story (e.g., US-1)." }
                 }
             },
-            description: "Critical business flow test cases."
+            description: "Critical business flow test cases. Cover happy paths, error cases, and edge cases proportional to complexity."
         },
         security_plan: {
             type: "object",
@@ -68,8 +79,8 @@ export const qaSchema = {
             },
             description: "Quality risks and mitigations."
         },
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the QA strategy." },
-        description: { type: "string", maxLength: 300, description: "Detailed verification philosophy and test plan." },
+        summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the QA strategy and verification approach." },
+        description: { type: "string", maxLength: 600, description: "Detailed verification philosophy, test plan overview, and quality objectives." },
         coverage: {
             type: "object",
             properties: {
@@ -92,7 +103,24 @@ export const qaSchema = {
                 largest_contentful_paint: { type: "string", maxLength: 15 }
             }
         },
-        accessibility_plan: { type: "string", maxLength: 150, description: "Verification plan for accessibility compliance (WCAG)." },
-        manual_uat_plan: { type: "string", maxLength: 150, description: "Manual user acceptance testing plan." }
+        accessibility_plan: { 
+            type: "object",
+            properties: {
+                standard: { type: "string", maxLength: 30, description: "WCAG level target (e.g., 'WCAG 2.1 AA')." },
+                automated_tools: { type: "array", items: { type: "string", maxLength: 30 }, description: "Automated testing tools (axe-core, Lighthouse)." },
+                manual_checks: { type: "array", items: { type: "string", maxLength: 100 }, description: "Manual verification checklist items." },
+                screen_readers: { type: "array", items: { type: "string", maxLength: 20 }, description: "Screen readers to test (NVDA, VoiceOver)." }
+            },
+            description: "Comprehensive accessibility testing plan for WCAG compliance."
+        },
+        manual_uat_plan: { 
+            type: "object",
+            properties: {
+                scenarios: { type: "array", items: { type: "string", maxLength: 150 }, description: "UAT scenarios for stakeholder sign-off." },
+                acceptance_criteria: { type: "array", items: { type: "string", maxLength: 150 }, description: "Business acceptance criteria." },
+                stakeholders: { type: "array", items: { type: "string", maxLength: 50 }, description: "Stakeholders involved in UAT." }
+            },
+            description: "Manual user acceptance testing plan with stakeholder scenarios."
+        }
     }
 };

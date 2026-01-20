@@ -5,8 +5,8 @@ export const devopsSchema = {
     properties: {
         cloud_provider: { type: "string", maxLength: 20 },
         infra_components: { type: "number" },
-        summary: { type: "string", maxLength: 150, description: "A technical, 1-sentence summary of the DevOps strategy." },
-        description: { type: "string", maxLength: 300, description: "Detailed infrastructure philosophy and SRE approach." },
+        summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the DevOps strategy and infrastructure approach." },
+        description: { type: "string", maxLength: 600, description: "Detailed infrastructure philosophy, SRE approach, and operational excellence strategy." },
         infrastructure: {
             type: "object",
             required: ["cloud_provider", "services"],

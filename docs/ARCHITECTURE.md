@@ -52,6 +52,8 @@ saa-s-landing-page/
 1. User Input (Frontend)
    ↓
 2. POST /api/diagrams/generate
+   ├── Authenticated: Verify JWT & User ID
+   └── Guest: Check rate limits & session ID
    ↓
 3. MetaSOP Orchestrator (Backend TypeScript)
    ├── Product Manager Agent
@@ -62,9 +64,9 @@ saa-s-landing-page/
    ↓
 4. Transform to React Flow Diagram
    ↓
-5. Save to Database
+5. Save to Database (mapped to user or guest session)
    ↓
-6. Return to Frontend
+6. Return to Frontend (optional streaming support)
    ↓
 7. Display with React Flow
 ```
