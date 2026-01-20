@@ -123,27 +123,13 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
     try {
       setIsLoading(true)
 
-      // Check if this is a guest diagram
-      if (resolvedParams.id.startsWith("guest_")) {
+      // Load from API (now supports both auth and guest)
+      const data = await diagramsApi.getById(resolvedParams.id)
+      setDiagram(data)
+      
+      // Check if this is a guest diagram based on ID or metadata
+      if (resolvedParams.id.startsWith("guest_") || data.metadata?.is_guest) {
         setIsGuestDiagram(true)
-        // Try to load from localStorage
-        const guestDiagrams = JSON.parse(localStorage.getItem("guest_diagrams") || "[]")
-        const guestDiagram = guestDiagrams.find((d: Diagram) => d.id === resolvedParams.id)
-
-        if (guestDiagram) {
-          setDiagram(guestDiagram)
-        } else {
-          toast({
-            title: "Diagram not found",
-            description: "This guest diagram may have expired. Please create a new one.",
-            variant: "destructive",
-          })
-          router.push("/dashboard/create")
-        }
-      } else {
-        // Load from API for authenticated users
-        const data = await diagramsApi.getById(resolvedParams.id)
-        setDiagram(data)
       }
     } catch (error: any) {
       toast({
@@ -168,19 +154,11 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
         ...diagram,
         metadata: {
           ...diagram.metadata,
-          metasop_artifacts: result.artifacts
+          metasop_artifacts: result.artifacts,
+          metasop_report: result.report || diagram.metadata?.metasop_report,
+          metasop_steps: result.steps || diagram.metadata?.metasop_steps,
         }
       })
-      
-      toast({
-        title: "Syncing Changes",
-        description: "Local artifacts updated. Synchronizing with server...",
-      })
-      
-      // Still refresh from server to be sure everything is in sync (including diagram nodes/edges)
-      loadDiagram()
-    } else {
-      loadDiagram()
     }
   }
 
@@ -239,20 +217,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const handleDelete = async () => {
     if (!diagram) return
 
-    if (isGuestDiagram) {
-      // Remove from localStorage
-      const guestDiagrams = JSON.parse(localStorage.getItem("guest_diagrams") || "[]")
-      const filtered = guestDiagrams.filter((d: Diagram) => d.id !== resolvedParams.id)
-      localStorage.setItem("guest_diagrams", JSON.stringify(filtered))
-      toast({
-        title: "Diagram removed",
-        description: "The guest diagram has been removed.",
-        variant: "destructive",
-      })
-      router.push("/dashboard/create")
-      return
-    }
-
     if (!confirm("Are you sure you want to delete this diagram? This action cannot be undone.")) {
       return
     }
@@ -264,7 +228,12 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
         description: "The diagram has been permanently deleted.",
         variant: "destructive",
       })
-      router.push("/dashboard/diagrams")
+      
+      if (isAuthenticated) {
+        router.push("/dashboard/diagrams")
+      } else {
+        router.push("/dashboard/create")
+      }
     } catch (error: any) {
       toast({
         title: "Error",

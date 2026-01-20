@@ -106,6 +106,7 @@ export async function handleGuestAuth(
   return {
     isGuest: true,
     sessionId: session.sessionId,
+    userId: session.sessionId.startsWith("guest_") ? session.sessionId : `guest_${session.sessionId}`,
     canProceed: true,
     sessionInfo: sessionInfo || undefined,
   };

@@ -1,0 +1,576 @@
+{
+  "agent": "Engineer",
+  "model": "gemini-3-pro-preview",
+  "timestamp": "2026-01-20T01:41:07.329Z",
+  "request": {
+    "prompt": "Based on the cached context, please perform your task as Engineer.\n\n          As an expert Software Engineer, design a high-fidelity technical implementation blueprint for 'Project'.\n\nProject Context: A high-performance Next.js blog platform featuring Markdown editing, SEO tools, and a Node.js/PostgreSQL backend for scalable content management.\nArchitecture Target: A high-performance, SEO-focused blog platform using Next.js for rendering and a Node.js/PostgreSQL backend for robust content management.\nTech Stack: JWT, Bcrypt, HttpOnly Cookies, Node.js, Express\nVisual Strategy: A content-centric, minimalist design system prioritizing typography and readability, featuring a split-pane Markdown editor and modular admin dashboard components.\nDesign Tokens: primary=#2563EB, background=undefined\n\nMISSION OBJECTIVES:\n1. **Implementation Plan**: A detailed technical implementation guide in Markdown.\n2. **State Management**: Specific strategy for managing application state.\n3. **File Structure**: An organized directory tree mirroring professional architecture. (No file content).\n4. **Technical Decisions**: Critical architectural choices and rationales.\n5. **Dependencies**: Essential libraries and tools required.\n6. **Phases**: Implementation phases with granular technical tasks.\n\nRespond with ONLY the structured JSON object.\n\n        === JSON SCHEMA ===\n        {\n  \"type\": \"object\",\n  \"required\": [\n    \"artifact_path\",\n    \"file_structure\",\n    \"implementation_plan\",\n    \"implementation_plan_phases\",\n    \"dependencies\",\n    \"run_results\",\n    \"summary\",\n    \"description\",\n    \"technical_decisions\",\n    \"environment_variables\",\n    \"technical_patterns\",\n    \"state_management\"\n  ],\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\",\n      \"maxLength\": 150,\n      \"description\": \"A technical, 1-sentence summary of the implementation strategy.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"maxLength\": 300,\n      \"description\": \"Detailed implementation philosophy and technical roadmap.\"\n    },\n    \"artifact_path\": {\n      \"type\": \"string\",\n      \"maxLength\": 30,\n      \"description\": \"Base directory (e.g., 'src/app').\"\n    },\n    \"run_results\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"setup_commands\",\n        \"test_commands\",\n        \"dev_commands\"\n      ],\n      \"description\": \"Essential CLI commands.\",\n      \"properties\": {\n        \"setup_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Setup (e.g., 'npm install').\"\n        },\n        \"test_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Tests (e.g., 'npm test').\"\n        },\n        \"dev_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Dev (e.g., 'npm run dev').\"\n        },\n        \"build_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Build (e.g., 'npm run build').\"\n        },\n        \"notes\": {\n          \"type\": \"string\",\n          \"maxLength\": 200,\n          \"description\": \"Operational notes or context.\"\n        }\n      }\n    },\n    \"file_structure\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"name\",\n        \"type\",\n        \"children\"\n      ],\n      \"description\": \"Full project scaffold and boilerplate. Focus on metadata. DO NOT include file content.\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\",\n          \"maxLength\": 30,\n          \"description\": \"Root name.\"\n        },\n        \"type\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"file\",\n            \"directory\"\n          ]\n        },\n        \"children\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"type\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30\n              },\n              \"type\": {\n                \"type\": \"string\",\n                \"enum\": [\n                  \"file\",\n                  \"directory\"\n                ]\n              },\n              \"children\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"name\",\n                    \"type\"\n                  ],\n                  \"properties\": {\n                    \"name\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 30\n                    },\n                    \"type\": {\n                      \"type\": \"string\",\n                      \"enum\": [\n                        \"file\",\n                        \"directory\"\n                      ]\n                    },\n                    \"children\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"object\",\n                        \"required\": [\n                          \"name\",\n                          \"type\"\n                        ],\n                        \"properties\": {\n                          \"name\": {\n                            \"type\": \"string\",\n                            \"maxLength\": 30\n                          },\n                          \"type\": {\n                            \"type\": \"string\",\n                            \"enum\": [\n                              \"file\",\n                              \"directory\"\n                            ]\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    },\n    \"implementation_plan\": {\n      \"type\": \"string\",\n      \"maxLength\": 3000,\n      \"description\": \"Technical step-by-step guide in Markdown. Focused and concise.\"\n    },\n    \"implementation_plan_phases\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"name\",\n          \"description\",\n          \"tasks\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          },\n          \"tasks\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            }\n          }\n        }\n      },\n      \"description\": \"Structured implementation phases for the roadmap view.\"\n    },\n    \"dependencies\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 40,\n        \"description\": \"Dep (e.g., 'next@14.1.0').\"\n      },\n      \"description\": \"Essential build dependencies.\"\n    },\n    \"technical_decisions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"decision\",\n          \"rationale\"\n        ],\n        \"properties\": {\n          \"decision\": {\n            \"type\": \"string\",\n            \"maxLength\": 60\n          },\n          \"rationale\": {\n            \"type\": \"string\",\n            \"maxLength\": 150\n          },\n          \"alternatives\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          }\n        }\n      },\n      \"description\": \"Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection).\"\n    },\n    \"environment_variables\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"name\",\n          \"description\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\",\n            \"maxLength\": 40\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          },\n          \"example\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          }\n        }\n      },\n      \"description\": \"Environment variables.\"\n    },\n    \"technical_patterns\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 30\n      },\n      \"description\": \"Industry patterns used (e.g., SOLID, Repository, Factory).\"\n    },\n    \"state_management\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"tool\",\n        \"strategy\"\n      ],\n      \"properties\": {\n        \"tool\": {\n          \"type\": \"string\",\n          \"maxLength\": 30,\n          \"description\": \"The state management tool or pattern.\"\n        },\n        \"strategy\": {\n          \"type\": \"string\",\n          \"maxLength\": 150,\n          \"description\": \"Implementation strategy.\"\n        }\n      }\n    }\n  }\n}\n\n        === CRITICAL REQUIREMENTS ===\n        1. You MUST respond with ONLY a valid JSON object matching the provided schema.\n        2. Ensure ALL fields are present according to the schema.\n        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.",
+    "schema": {
+      "type": "object",
+      "required": [
+        "artifact_path",
+        "file_structure",
+        "implementation_plan",
+        "implementation_plan_phases",
+        "dependencies",
+        "run_results",
+        "summary",
+        "description",
+        "technical_decisions",
+        "environment_variables",
+        "technical_patterns",
+        "state_management"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "A technical, 1-sentence summary of the implementation strategy."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Detailed implementation philosophy and technical roadmap."
+        },
+        "artifact_path": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Base directory (e.g., 'src/app')."
+        },
+        "run_results": {
+          "type": "object",
+          "required": [
+            "setup_commands",
+            "test_commands",
+            "dev_commands"
+          ],
+          "description": "Essential CLI commands.",
+          "properties": {
+            "setup_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Setup (e.g., 'npm install')."
+            },
+            "test_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Tests (e.g., 'npm test')."
+            },
+            "dev_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Dev (e.g., 'npm run dev')."
+            },
+            "build_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Build (e.g., 'npm run build')."
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Operational notes or context."
+            }
+          }
+        },
+        "file_structure": {
+          "type": "object",
+          "required": [
+            "name",
+            "type",
+            "children"
+          ],
+          "description": "Full project scaffold and boilerplate. Focus on metadata. DO NOT include file content.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 30,
+              "description": "Root name."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "file",
+                "directory"
+              ]
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "file",
+                      "directory"
+                    ]
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 30
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "file",
+                            "directory"
+                          ]
+                        },
+                        "children": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "type"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "maxLength": 30
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "file",
+                                  "directory"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "implementation_plan": {
+          "type": "string",
+          "maxLength": 3000,
+          "description": "Technical step-by-step guide in Markdown. Focused and concise."
+        },
+        "implementation_plan_phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description",
+              "tasks"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              }
+            }
+          },
+          "description": "Structured implementation phases for the roadmap view."
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Dep (e.g., 'next@14.1.0')."
+          },
+          "description": "Essential build dependencies."
+        },
+        "technical_decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "decision",
+              "rationale"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "rationale": {
+                "type": "string",
+                "maxLength": 150
+              },
+              "alternatives": {
+                "type": "string",
+                "maxLength": 100
+              }
+            }
+          },
+          "description": "Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection)."
+        },
+        "environment_variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "example": {
+                "type": "string",
+                "maxLength": 100
+              }
+            }
+          },
+          "description": "Environment variables."
+        },
+        "technical_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "description": "Industry patterns used (e.g., SOLID, Repository, Factory)."
+        },
+        "state_management": {
+          "type": "object",
+          "required": [
+            "tool",
+            "strategy"
+          ],
+          "properties": {
+            "tool": {
+              "type": "string",
+              "maxLength": 30,
+              "description": "The state management tool or pattern."
+            },
+            "strategy": {
+              "type": "string",
+              "maxLength": 150,
+              "description": "Implementation strategy."
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "temperature": 0.3,
+      "maxTokens": 64000,
+      "reasoning": false
+    }
+  },
+  "response": {
+    "content": {
+      "artifact_path": "blog-platform",
+      "file_structure": {
+        "name": "blog-platform",
+        "type": "directory",
+        "children": [
+          {
+            "name": "client",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "app",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "components",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "lib",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "styles",
+                    "type": "directory"
+                  }
+                ]
+              },
+              {
+                "name": "public",
+                "type": "directory"
+              },
+              {
+                "name": "next.config.js",
+                "type": "file"
+              },
+              {
+                "name": "tailwind.config.js",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "server",
+            "type": "directory",
+            "children": [
+              {
+                "name": "src",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "config",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "controllers",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "middleware",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "routes",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "services",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "app.js",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "migrations",
+                "type": "directory"
+              },
+              {
+                "name": "package.json",
+                "type": "file"
+              }
+            ]
+          },
+          {
+            "name": "docker-compose.yml",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          }
+        ]
+      },
+      "implementation_plan": "# Implementation Plan\n\n## Phase 1: Infrastructure & Database\n1. **Setup Monorepo**: Initialize `client` (Next.js) and `server` (Express) directories.\n2. **Database Design**: Provision PostgreSQL and create schemas for `users`, `posts`, `comments`, and `tags`.\n3. **Migrations**: Set up `node-pg-migrate` or Knex for schema versioning.\n\n## Phase 2: Backend API Development\n1. **Auth Service**: Implement JWT issuance, Bcrypt hashing, and HttpOnly cookie middleware.\n2. **CRUD Endpoints**: Create routes for Posts (GET/POST/PUT/DELETE) and Comments.\n3. **Search Logic**: Implement PostgreSQL `tsvector` full-text search queries.\n4. **Security**: Add Helmet, CORS, and Rate Limiting middleware.\n\n## Phase 3: Frontend Core (Next.js)\n1. **Layouts**: Build responsive header, footer, and main layout using Tailwind CSS.\n2. **Public Views**: Implement ISR for `/blog` and `/blog/[slug]` to fetch data from the API.\n3. **Markdown Rendering**: Integrate `react-markdown` with syntax highlighting for post display.\n\n## Phase 4: Admin & Interactive Features\n1. **Auth Context**: Create React Context to handle user session state via API.\n2. **Admin Dashboard**: Build protected routes for post management (Create/Edit).\n3. **Markdown Editor**: Implement a split-pane editor with live preview.\n4. **Comments**: Add comment submission forms and nested display logic.\n\n## Phase 5: Optimization & SEO\n1. **SEO**: Configure dynamic `metadata` generation in Next.js App Router.\n2. **RSS**: Generate `rss.xml` endpoint.\n3. **Performance**: Optimize images and verify Lighthouse score.",
+      "implementation_plan_phases": [
+        {
+          "name": "Phase 1: Foundation",
+          "description": "Project scaffolding and database schema setup.",
+          "tasks": [
+            "Initialize Next.js and Express projects",
+            "Design PostgreSQL Schema",
+            "Configure Docker Compose for DB"
+          ]
+        },
+        {
+          "name": "Phase 2: Backend API",
+          "description": "Core business logic and API endpoints.",
+          "tasks": [
+            "Implement JWT Auth Middleware",
+            "Create Post and Comment CRUD Controllers",
+            "Implement Full-Text Search Query"
+          ]
+        },
+        {
+          "name": "Phase 3: Frontend Public",
+          "description": "Public-facing blog pages with ISR.",
+          "tasks": [
+            "Build Blog Listing Page",
+            "Build Single Post View with Markdown",
+            "Implement SEO Meta Tags"
+          ]
+        },
+        {
+          "name": "Phase 4: Admin & Interactive",
+          "description": "Content management and user interaction.",
+          "tasks": [
+            "Build Admin Dashboard",
+            "Integrate Markdown Editor",
+            "Implement Comment System"
+          ]
+        }
+      ],
+      "dependencies": [
+        "next@14.1.0",
+        "react@18.2.0",
+        "express@4.18.2",
+        "pg@8.11.3",
+        "tailwindcss@3.4.1",
+        "react-markdown@9.0.1",
+        "jsonwebtoken@9.0.2",
+        "bcrypt@5.1.1",
+        "swr@2.2.4",
+        "date-fns@3.3.1"
+      ],
+      "run_results": {
+        "setup_commands": [
+          "npm install",
+          "cd server && npm install",
+          "cd client && npm install"
+        ],
+        "test_commands": [
+          "npm run test",
+          "npm run lint"
+        ],
+        "dev_commands": [
+          "npm run dev:server",
+          "npm run dev:client"
+        ],
+        "build_commands": [
+          "cd client && npm run build",
+          "cd server && npm run build"
+        ],
+        "notes": "Ensure PostgreSQL is running via Docker before starting the server. Env vars must be set in both client and server directories."
+      },
+      "summary": "A decoupled blog platform utilizing Next.js for high-performance frontend rendering and a dedicated Node.js/Express API for scalable data management.",
+      "description": "This project implements a professional blogging engine. The frontend uses Next.js 14 with App Router and ISR for optimal SEO. The backend is a stateless Express API managing a PostgreSQL database. Key features include a Markdown editor, role-based access control, and full-text search.",
+      "technical_decisions": [
+        {
+          "decision": "Decoupled Architecture (Next.js + Express)",
+          "rationale": "Separates presentation concerns from business logic, allowing independent scaling.",
+          "alternatives": "Next.js API Routes (Monolithic)"
+        },
+        {
+          "decision": "PostgreSQL Full-Text Search",
+          "rationale": "Provides sufficient search capabilities without the overhead of managing Elasticsearch.",
+          "alternatives": "Elasticsearch, Algolia"
+        },
+        {
+          "decision": "Incremental Static Regeneration (ISR)",
+          "rationale": "Delivers static-like performance while keeping content fresh without full rebuilds.",
+          "alternatives": "SSR, CSR"
+        },
+        {
+          "decision": "JWT in HttpOnly Cookies",
+          "rationale": "Prevents XSS attacks from accessing authentication tokens.",
+          "alternatives": "LocalStorage, Session Store"
+        }
+      ],
+      "environment_variables": [
+        {
+          "name": "DATABASE_URL",
+          "description": "PostgreSQL connection string.",
+          "example": "postgresql://user:pass@localhost:5432/blog"
+        },
+        {
+          "name": "JWT_SECRET",
+          "description": "Secret key for signing JSON Web Tokens.",
+          "example": "super_secret_key_123"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_URL",
+          "description": "Public URL for the backend API.",
+          "example": "http://localhost:4000/api"
+        },
+        {
+          "name": "CORS_ORIGIN",
+          "description": "Allowed origin for CORS requests.",
+          "example": "http://localhost:3000"
+        }
+      ],
+      "technical_patterns": [
+        "MVC (Backend)",
+        "Repository Pattern",
+        "Middleware Chain",
+        "Component Composition"
+      ],
+      "state_management": {
+        "tool": "SWR + React Context",
+        "strategy": "SWR handles server state (caching, revalidation) while Context manages global UI state (auth user, theme)."
+      }
+    },
+    "raw": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n  \"artifact_path\": \"blog-platform\",\n  \"file_structure\": {\n    \"name\": \"blog-platform\",\n    \"type\": \"directory\",\n    \"children\": [\n      {\n        \"name\": \"client\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"src\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"app\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"components\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"lib\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"styles\",\n                \"type\": \"directory\"\n              }\n            ]\n          },\n          {\n            \"name\": \"public\",\n            \"type\": \"directory\"\n          },\n          {\n            \"name\": \"next.config.js\",\n            \"type\": \"file\"\n          },\n          {\n            \"name\": \"tailwind.config.js\",\n            \"type\": \"file\"\n          }\n        ]\n      },\n      {\n        \"name\": \"server\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"src\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"config\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"controllers\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"middleware\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"routes\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"services\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"app.js\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"migrations\",\n            \"type\": \"directory\"\n          },\n          {\n            \"name\": \"package.json\",\n            \"type\": \"file\"\n          }\n        ]\n      },\n      {\n        \"name\": \"docker-compose.yml\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"README.md\",\n        \"type\": \"file\"\n      }\n    ]\n  },\n  \"implementation_plan\": \"# Implementation Plan\\n\\n## Phase 1: Infrastructure & Database\\n1. **Setup Monorepo**: Initialize `client` (Next.js) and `server` (Express) directories.\\n2. **Database Design**: Provision PostgreSQL and create schemas for `users`, `posts`, `comments`, and `tags`.\\n3. **Migrations**: Set up `node-pg-migrate` or Knex for schema versioning.\\n\\n## Phase 2: Backend API Development\\n1. **Auth Service**: Implement JWT issuance, Bcrypt hashing, and HttpOnly cookie middleware.\\n2. **CRUD Endpoints**: Create routes for Posts (GET/POST/PUT/DELETE) and Comments.\\n3. **Search Logic**: Implement PostgreSQL `tsvector` full-text search queries.\\n4. **Security**: Add Helmet, CORS, and Rate Limiting middleware.\\n\\n## Phase 3: Frontend Core (Next.js)\\n1. **Layouts**: Build responsive header, footer, and main layout using Tailwind CSS.\\n2. **Public Views**: Implement ISR for `/blog` and `/blog/[slug]` to fetch data from the API.\\n3. **Markdown Rendering**: Integrate `react-markdown` with syntax highlighting for post display.\\n\\n## Phase 4: Admin & Interactive Features\\n1. **Auth Context**: Create React Context to handle user session state via API.\\n2. **Admin Dashboard**: Build protected routes for post management (Create/Edit).\\n3. **Markdown Editor**: Implement a split-pane editor with live preview.\\n4. **Comments**: Add comment submission forms and nested display logic.\\n\\n## Phase 5: Optimization & SEO\\n1. **SEO**: Configure dynamic `metadata` generation in Next.js App Router.\\n2. **RSS**: Generate `rss.xml` endpoint.\\n3. **Performance**: Optimize images and verify Lighthouse score.\",\n  \"implementation_plan_phases\": [\n    {\n      \"name\": \"Phase 1: Foundation\",\n      \"description\": \"Project scaffolding and database schema setup.\",\n      \"tasks\": [\n        \"Initialize Next.js and Express projects\",\n        \"Design PostgreSQL Schema\",\n        \"Configure Docker Compose for DB\"\n      ]\n    },\n    {\n      \"name\": \"Phase 2: Backend API\",\n      \"description\": \"Core business logic and API endpoints.\",\n      \"tasks\": [\n        \"Implement JWT Auth Middleware\",\n        \"Create Post and Comment CRUD Controllers\",\n        \"Implement Full-Text Search Query\"\n      ]\n    },\n    {\n      \"name\": \"Phase 3: Frontend Public\",\n      \"description\": \"Public-facing blog pages with ISR.\",\n      \"tasks\": [\n        \"Build Blog Listing Page\",\n        \"Build Single Post View with Markdown\",\n        \"Implement SEO Meta Tags\"\n      ]\n    },\n    {\n      \"name\": \"Phase 4: Admin & Interactive\",\n      \"description\": \"Content management and user interaction.\",\n      \"tasks\": [\n        \"Build Admin Dashboard\",\n        \"Integrate Markdown Editor\",\n        \"Implement Comment System\"\n      ]\n    }\n  ],\n  \"dependencies\": [\n    \"next@14.1.0\",\n    \"react@18.2.0\",\n    \"express@4.18.2\",\n    \"pg@8.11.3\",\n    \"tailwindcss@3.4.1\",\n    \"react-markdown@9.0.1\",\n    \"jsonwebtoken@9.0.2\",\n    \"bcrypt@5.1.1\",\n    \"swr@2.2.4\",\n    \"date-fns@3.3.1\"\n  ],\n  \"run_results\": {\n    \"setup_commands\": [\n      \"npm install\",\n      \"cd server && npm install\",\n      \"cd client && npm install\"\n    ],\n    \"test_commands\": [\n      \"npm run test\",\n      \"npm run lint\"\n    ],\n    \"dev_commands\": [\n      \"npm run dev:server\",\n      \"npm run dev:client\"\n    ],\n    \"build_commands\": [\n      \"cd client && npm run build\",\n      \"cd server && npm run build\"\n    ],\n    \"notes\": \"Ensure PostgreSQL is running via Docker before starting the server. Env vars must be set in both client and server directories.\"\n  },\n  \"summary\": \"A decoupled blog platform utilizing Next.js for high-performance frontend rendering and a dedicated Node.js/Express API for scalable data management.\",\n  \"description\": \"This project implements a professional blogging engine. The frontend uses Next.js 14 with App Router and ISR for optimal SEO. The backend is a stateless Express API managing a PostgreSQL database. Key features include a Markdown editor, role-based access control, and full-text search.\",\n  \"technical_decisions\": [\n    {\n      \"decision\": \"Decoupled Architecture (Next.js + Express)\",\n      \"rationale\": \"Separates presentation concerns from business logic, allowing independent scaling.\",\n      \"alternatives\": \"Next.js API Routes (Monolithic)\"\n    },\n    {\n      \"decision\": \"PostgreSQL Full-Text Search\",\n      \"rationale\": \"Provides sufficient search capabilities without the overhead of managing Elasticsearch.\",\n      \"alternatives\": \"Elasticsearch, Algolia\"\n    },\n    {\n      \"decision\": \"Incremental Static Regeneration (ISR)\",\n      \"rationale\": \"Delivers static-like performance while keeping content fresh without full rebuilds.\",\n      \"alternatives\": \"SSR, CSR\"\n    },\n    {\n      \"decision\": \"JWT in HttpOnly Cookies\",\n      \"rationale\": \"Prevents XSS attacks from accessing authentication tokens.\",\n      \"alternatives\": \"LocalStorage, Session Store\"\n    }\n  ],\n  \"environment_variables\": [\n    {\n      \"name\": \"DATABASE_URL\",\n      \"description\": \"PostgreSQL connection string.\",\n      \"example\": \"postgresql://user:pass@localhost:5432/blog\"\n    },\n    {\n      \"name\": \"JWT_SECRET\",\n      \"description\": \"Secret key for signing JSON Web Tokens.\",\n      \"example\": \"super_secret_key_123\"\n    },\n    {\n      \"name\": \"NEXT_PUBLIC_API_URL\",\n      \"description\": \"Public URL for the backend API.\",\n      \"example\": \"http://localhost:4000/api\"\n    },\n    {\n      \"name\": \"CORS_ORIGIN\",\n      \"description\": \"Allowed origin for CORS requests.\",\n      \"example\": \"http://localhost:3000\"\n    }\n  ],\n  \"technical_patterns\": [\n    \"MVC (Backend)\",\n    \"Repository Pattern\",\n    \"Middleware Chain\",\n    \"Component Composition\"\n  ],\n  \"state_management\": {\n    \"tool\": \"SWR + React Context\",\n    \"strategy\": \"SWR handles server state (caching, revalidation) while Context manages global UI state (auth user, theme).\"\n  }\n}",
+                "thoughtSignature": "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"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 8693,
+        "candidatesTokenCount": 2154,
+        "totalTokenCount": 12177,
+        "cachedContentTokenCount": 6438,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8693
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 6438
+          }
+        ],
+        "thoughtsTokenCount": 1330
+      },
+      "modelVersion": "gemini-3-pro-preview",
+      "responseId": "M91uaafoB-LwxN8PjPy9yQI"
+    },
+    "extracted_json_text": "{\n  \"artifact_path\": \"blog-platform\",\n  \"file_structure\": {\n    \"name\": \"blog-platform\",\n    \"type\": \"directory\",\n    \"children\": [\n      {\n        \"name\": \"client\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"src\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"app\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"components\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"lib\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"styles\",\n                \"type\": \"directory\"\n              }\n            ]\n          },\n          {\n            \"name\": \"public\",\n            \"type\": \"directory\"\n          },\n          {\n            \"name\": \"next.config.js\",\n            \"type\": \"file\"\n          },\n          {\n            \"name\": \"tailwind.config.js\",\n            \"type\": \"file\"\n          }\n        ]\n      },\n      {\n        \"name\": \"server\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"src\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"config\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"controllers\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"middleware\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"routes\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"services\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"app.js\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"migrations\",\n            \"type\": \"directory\"\n          },\n          {\n            \"name\": \"package.json\",\n            \"type\": \"file\"\n          }\n        ]\n      },\n      {\n        \"name\": \"docker-compose.yml\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"README.md\",\n        \"type\": \"file\"\n      }\n    ]\n  },\n  \"implementation_plan\": \"# Implementation Plan\\n\\n## Phase 1: Infrastructure & Database\\n1. **Setup Monorepo**: Initialize `client` (Next.js) and `server` (Express) directories.\\n2. **Database Design**: Provision PostgreSQL and create schemas for `users`, `posts`, `comments`, and `tags`.\\n3. **Migrations**: Set up `node-pg-migrate` or Knex for schema versioning.\\n\\n## Phase 2: Backend API Development\\n1. **Auth Service**: Implement JWT issuance, Bcrypt hashing, and HttpOnly cookie middleware.\\n2. **CRUD Endpoints**: Create routes for Posts (GET/POST/PUT/DELETE) and Comments.\\n3. **Search Logic**: Implement PostgreSQL `tsvector` full-text search queries.\\n4. **Security**: Add Helmet, CORS, and Rate Limiting middleware.\\n\\n## Phase 3: Frontend Core (Next.js)\\n1. **Layouts**: Build responsive header, footer, and main layout using Tailwind CSS.\\n2. **Public Views**: Implement ISR for `/blog` and `/blog/[slug]` to fetch data from the API.\\n3. **Markdown Rendering**: Integrate `react-markdown` with syntax highlighting for post display.\\n\\n## Phase 4: Admin & Interactive Features\\n1. **Auth Context**: Create React Context to handle user session state via API.\\n2. **Admin Dashboard**: Build protected routes for post management (Create/Edit).\\n3. **Markdown Editor**: Implement a split-pane editor with live preview.\\n4. **Comments**: Add comment submission forms and nested display logic.\\n\\n## Phase 5: Optimization & SEO\\n1. **SEO**: Configure dynamic `metadata` generation in Next.js App Router.\\n2. **RSS**: Generate `rss.xml` endpoint.\\n3. **Performance**: Optimize images and verify Lighthouse score.\",\n  \"implementation_plan_phases\": [\n    {\n      \"name\": \"Phase 1: Foundation\",\n      \"description\": \"Project scaffolding and database schema setup.\",\n      \"tasks\": [\n        \"Initialize Next.js and Express projects\",\n        \"Design PostgreSQL Schema\",\n        \"Configure Docker Compose for DB\"\n      ]\n    },\n    {\n      \"name\": \"Phase 2: Backend API\",\n      \"description\": \"Core business logic and API endpoints.\",\n      \"tasks\": [\n        \"Implement JWT Auth Middleware\",\n        \"Create Post and Comment CRUD Controllers\",\n        \"Implement Full-Text Search Query\"\n      ]\n    },\n    {\n      \"name\": \"Phase 3: Frontend Public\",\n      \"description\": \"Public-facing blog pages with ISR.\",\n      \"tasks\": [\n        \"Build Blog Listing Page\",\n        \"Build Single Post View with Markdown\",\n        \"Implement SEO Meta Tags\"\n      ]\n    },\n    {\n      \"name\": \"Phase 4: Admin & Interactive\",\n      \"description\": \"Content management and user interaction.\",\n      \"tasks\": [\n        \"Build Admin Dashboard\",\n        \"Integrate Markdown Editor\",\n        \"Implement Comment System\"\n      ]\n    }\n  ],\n  \"dependencies\": [\n    \"next@14.1.0\",\n    \"react@18.2.0\",\n    \"express@4.18.2\",\n    \"pg@8.11.3\",\n    \"tailwindcss@3.4.1\",\n    \"react-markdown@9.0.1\",\n    \"jsonwebtoken@9.0.2\",\n    \"bcrypt@5.1.1\",\n    \"swr@2.2.4\",\n    \"date-fns@3.3.1\"\n  ],\n  \"run_results\": {\n    \"setup_commands\": [\n      \"npm install\",\n      \"cd server && npm install\",\n      \"cd client && npm install\"\n    ],\n    \"test_commands\": [\n      \"npm run test\",\n      \"npm run lint\"\n    ],\n    \"dev_commands\": [\n      \"npm run dev:server\",\n      \"npm run dev:client\"\n    ],\n    \"build_commands\": [\n      \"cd client && npm run build\",\n      \"cd server && npm run build\"\n    ],\n    \"notes\": \"Ensure PostgreSQL is running via Docker before starting the server. Env vars must be set in both client and server directories.\"\n  },\n  \"summary\": \"A decoupled blog platform utilizing Next.js for high-performance frontend rendering and a dedicated Node.js/Express API for scalable data management.\",\n  \"description\": \"This project implements a professional blogging engine. The frontend uses Next.js 14 with App Router and ISR for optimal SEO. The backend is a stateless Express API managing a PostgreSQL database. Key features include a Markdown editor, role-based access control, and full-text search.\",\n  \"technical_decisions\": [\n    {\n      \"decision\": \"Decoupled Architecture (Next.js + Express)\",\n      \"rationale\": \"Separates presentation concerns from business logic, allowing independent scaling.\",\n      \"alternatives\": \"Next.js API Routes (Monolithic)\"\n    },\n    {\n      \"decision\": \"PostgreSQL Full-Text Search\",\n      \"rationale\": \"Provides sufficient search capabilities without the overhead of managing Elasticsearch.\",\n      \"alternatives\": \"Elasticsearch, Algolia\"\n    },\n    {\n      \"decision\": \"Incremental Static Regeneration (ISR)\",\n      \"rationale\": \"Delivers static-like performance while keeping content fresh without full rebuilds.\",\n      \"alternatives\": \"SSR, CSR\"\n    },\n    {\n      \"decision\": \"JWT in HttpOnly Cookies\",\n      \"rationale\": \"Prevents XSS attacks from accessing authentication tokens.\",\n      \"alternatives\": \"LocalStorage, Session Store\"\n    }\n  ],\n  \"environment_variables\": [\n    {\n      \"name\": \"DATABASE_URL\",\n      \"description\": \"PostgreSQL connection string.\",\n      \"example\": \"postgresql://user:pass@localhost:5432/blog\"\n    },\n    {\n      \"name\": \"JWT_SECRET\",\n      \"description\": \"Secret key for signing JSON Web Tokens.\",\n      \"example\": \"super_secret_key_123\"\n    },\n    {\n      \"name\": \"NEXT_PUBLIC_API_URL\",\n      \"description\": \"Public URL for the backend API.\",\n      \"example\": \"http://localhost:4000/api\"\n    },\n    {\n      \"name\": \"CORS_ORIGIN\",\n      \"description\": \"Allowed origin for CORS requests.\",\n      \"example\": \"http://localhost:3000\"\n    }\n  ],\n  \"technical_patterns\": [\n    \"MVC (Backend)\",\n    \"Repository Pattern\",\n    \"Middleware Chain\",\n    \"Component Composition\"\n  ],\n  \"state_management\": {\n    \"tool\": \"SWR + React Context\",\n    \"strategy\": \"SWR handles server state (caching, revalidation) while Context manages global UI state (auth user, theme).\"\n  }\n}"
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "timestamp": "2026-01-20T09:01:08.757Z",
+  "content": {
+    "summary": "A scalable social platform with real-time feeds, multimedia sharing, and messaging using React, Node.js, GraphQL, and PostgreSQL.",
+    "description": "This platform connects users via dynamic feeds, image/video sharing, and messaging. It leverages Redis for caching and WebSockets for instant notifications. Features include hashtags, trending topics, and moderation tools, ensuring a safe, responsive community experience.",
+    "user_stories": [
+      {
+        "title": "User Registration & Auth",
+        "story": "As a new user, I want to sign up using email and password so that I can create a profile and access the platform.",
+        "description": "Implement JWT-based auth via GraphQL mutations. Store hashed passwords in Postgres.",
+        "priority": "critical",
+        "story_points": 3,
+        "acceptance_criteria": [
+          "User can sign up with valid email/password",
+          "Email uniqueness check",
+          "Password strength validation",
+          "JWT token returned on success"
+        ],
+        "estimated_complexity": "small",
+        "user_value": "Access to the platform",
+        "dependencies": [],
+        "id": "US-1"
+      },
+      {
+        "title": "Create Multimedia Post",
+        "story": "As a user, I want to create posts with text, images, or videos so that I can share content with my followers.",
+        "description": "React dropzone for uploads. Backend handles S3 upload and stores metadata in Postgres.",
+        "priority": "critical",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "Support JPEG, PNG, MP4 formats",
+          "Max file size validation (10MB)",
+          "Post appears in user profile immediately",
+          "Optimistic UI update"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Core content sharing capability",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-2"
+      },
+      {
+        "title": "Real-time Feed Algorithm",
+        "story": "As a user, I want to see a feed of posts from people I follow so that I stay updated with their activities.",
+        "description": "GraphQL subscription or polling for new posts. Redis for caching feed data.",
+        "priority": "high",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "Feed displays posts from followed users",
+          "Pagination (infinite scroll)",
+          "New posts appear in real-time via WebSockets",
+          "Chronological order initially"
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Primary content consumption method",
+        "dependencies": [
+          "US-2",
+          "US-4"
+        ],
+        "id": "US-3"
+      },
+      {
+        "title": "Follow/Unfollow System",
+        "story": "As a user, I want to follow or unfollow other users so that I can curate the content in my feed.",
+        "description": "Relational mapping in Postgres (follower_id, following_id). Update Redis counters.",
+        "priority": "high",
+        "story_points": 3,
+        "acceptance_criteria": [
+          "Clicking follow updates button state",
+          "Follower count increments immediately",
+          "User cannot follow themselves",
+          "Unfollow removes posts from feed"
+        ],
+        "estimated_complexity": "small",
+        "user_value": "Network building and curation",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-4"
+      },
+      {
+        "title": "Direct Messaging",
+        "story": "As a user, I want to send private messages to other users so that I can communicate privately.",
+        "description": "Real-time chat using WebSockets (Socket.io). Store history in Postgres.",
+        "priority": "medium",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "Real-time message delivery",
+          "Typing indicators",
+          "Read receipts",
+          "Access to chat history"
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Private communication",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-5"
+      },
+      {
+        "title": "Content Moderation",
+        "story": "As an admin, I want to view reported posts so that I can remove content that violates community guidelines.",
+        "description": "Admin dashboard to view flagged content. Soft delete capability.",
+        "priority": "high",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "Users can report posts",
+          "Admin view of reported queue",
+          "Admin can delete post",
+          "Admin can ban user"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Platform safety",
+        "dependencies": [
+          "US-2"
+        ],
+        "id": "US-6"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "criteria": "System must handle 10,000 concurrent users without degradation.",
+        "description": "Load testing requirement for launch.",
+        "id": "AC-1",
+        "priority": "must",
+        "title": "Scalability Target"
+      },
+      {
+        "criteria": "API response time must be under 200ms for 95% of requests.",
+        "description": "Performance benchmark for GraphQL API.",
+        "id": "AC-2",
+        "priority": "should",
+        "title": "API Latency"
+      },
+      {
+        "criteria": "All user data must be encrypted at rest and in transit.",
+        "description": "Security compliance requirement.",
+        "id": "AC-3",
+        "priority": "must",
+        "title": "Data Security"
+      },
+      {
+        "criteria": "UI must be fully responsive on mobile devices.",
+        "description": "CSS media queries and mobile-first design.",
+        "id": "AC-4",
+        "priority": "must",
+        "title": "Mobile Responsiveness"
+      }
+    ],
+    "ui_multi_section": true,
+    "assumptions": [
+      "Users have stable internet connections.",
+      "AWS S3 will be used for media storage.",
+      "Initial launch targets English-speaking users.",
+      "GDPR compliance is required from day one."
+    ],
+    "out_of_scope": [
+      "Live video streaming functionality.",
+      "Native iOS and Android mobile applications.",
+      "E-commerce marketplace features.",
+      "Stories (24h ephemeral content)."
+    ],
+    "swot": {
+      "strengths": [
+        "Modern Tech Stack (GraphQL/React)",
+        "Real-time capabilities",
+        "Scalable Architecture",
+        "Robust Moderation Tools"
+      ],
+      "weaknesses": [
+        "No initial user base",
+        "High media storage costs",
+        "Complex feed algorithm",
+        "Web-only initially"
+      ],
+      "opportunities": [
+        "Niche community targeting",
+        "Creator monetization tools",
+        "API for third-party devs",
+        "Global expansion"
+      ],
+      "threats": [
+        "Established competitors (FB/Twitter)",
+        "Data privacy regulations",
+        "Cybersecurity attacks",
+        "User retention challenges"
+      ]
+    },
+    "stakeholders": [
+      {
+        "role": "Product Owner",
+        "interest": "Product Strategy & ROI",
+        "influence": "high"
+      },
+      {
+        "role": "Lead Engineer",
+        "interest": "Technical Feasibility & Scale",
+        "influence": "high"
+      },
+      {
+        "role": "Trust & Safety Team",
+        "interest": "Content Policy & Moderation",
+        "influence": "medium"
+      },
+      {
+        "role": "End Users",
+        "interest": "Usability & Features",
+        "influence": "high"
+      }
+    ],
+    "invest_analysis": [
+      {
+        "user_story_id": "US-1",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 10,
+        "comments": "Standard auth flow."
+      },
+      {
+        "user_story_id": "US-2",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Depends on Auth."
+      },
+      {
+        "user_story_id": "US-3",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": false,
+        "small": false,
+        "testable": true,
+        "score": 6,
+        "comments": "Complex algo, hard to estimate."
+      },
+      {
+        "user_story_id": "US-4",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Straightforward relation logic."
+      },
+      {
+        "user_story_id": "US-5",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": false,
+        "testable": true,
+        "score": 7,
+        "comments": "Large scope due to real-time."
+      },
+      {
+        "user_story_id": "US-6",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Critical for safety."
+      }
+    ],
+    "gaps": [
+      {
+        "gap": "Lack of Native Mobile App",
+        "impact": "Lower retention on mobile devices",
+        "priority": "high"
+      },
+      {
+        "gap": "Basic Feed Algorithm",
+        "impact": "Lower engagement compared to AI feeds",
+        "priority": "medium"
+      },
+      {
+        "gap": "No Analytics for Users",
+        "impact": "Creators cannot track performance",
+        "priority": "low"
+      }
+    ],
+    "opportunities": [
+      {
+        "opportunity": "Creator Monetization",
+        "value": "New revenue stream via subscriptions",
+        "feasibility": "medium"
+      },
+      {
+        "opportunity": "AI Content Recommendation",
+        "value": "Increased time-on-site",
+        "feasibility": "low"
+      },
+      {
+        "opportunity": "Brand Partnerships",
+        "value": "Ad revenue potential",
+        "feasibility": "high"
+      }
+    ]
+  }
+}

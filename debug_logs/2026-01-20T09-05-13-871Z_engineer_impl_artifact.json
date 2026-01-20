@@ -1,0 +1,137 @@
+{
+  "step_id": "engineer_impl",
+  "role": "Engineer",
+  "timestamp": "2026-01-20T09:05:13.872Z",
+  "content": {
+    "summary": "A modular monolith leveraging GraphQL for flexible data fetching, Redis for hybrid feed caching, and WebSockets for real-time interactivity.",
+    "description": "The architecture prioritizes read scalability using a hybrid fan-out feed system. Write operations are asynchronous where possible (media processing). The frontend uses Apollo Client for normalized caching, ensuring UI consistency across complex nested social data.",
+    "artifact_path": "social-platform-monorepo",
+    "implementation_plan": "## Technical Implementation Guide\n\n### Phase 1: Foundation & Infrastructure\n1. **Monorepo Setup**: Initialize Nx workspace. Create `apps/api` (Node/Express) and `apps/web` (React/Vite).\n2. **Database**: Provision PostgreSQL and Redis containers via Docker Compose. Configure `knex` for migrations.\n3. **Auth Service**: Implement Passport.js with JWT strategy. Create `User` table. Secure endpoints with HttpOnly cookies.\n\n### Phase 2: Core Backend & GraphQL\n1. **Schema Design**: Define GraphQL TypeDefs for `User`, `Post`, `Comment`. Setup Apollo Server.\n2. **Media Handling**: Implement S3 Presigned URL endpoint. Create `Post` table with `media_url` column.\n3. **Feed Logic**: Implement 'Fan-out-on-write' for standard users using Redis Lists. Create `FeedService` to merge SQL and Redis data.\n\n### Phase 3: Frontend Development\n1. **Apollo Client**: Configure cache normalization. Generate TypeScript types from GraphQL schema.\n2. **Auth Flow**: Build Login/Register forms. Implement JWT persistence and silent refresh.\n3. **Feed UI**: Create Infinite Scroll component using `IntersectionObserver`. Optimistic UI updates for Likes.\n\n### Phase 4: Real-time Features\n1. **WebSockets**: Integrate `socket.io` with Redis Adapter for horizontal scaling.\n2. **Messaging**: Create `Message` table. Implement real-time chat UI with typing indicators.\n3. **Notifications**: Trigger GraphQL Subscriptions on `FOLLOW` or `LIKE` events.",
+    "state_management": {
+      "tool": "Apollo Client + Redux Toolkit",
+      "strategy": "Apollo handles server state (caching graph data). Redux handles local UI state (modals, chat window status)."
+    },
+    "file_structure": {
+      "name": "social-platform-monorepo",
+      "type": "directory",
+      "children": [
+        {
+          "name": "apps",
+          "type": "directory",
+          "children": [
+            {
+              "name": "api",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "src",
+                  "type": "directory"
+                },
+                {
+                  "name": "package.json",
+                  "type": "file"
+                },
+                {
+                  "name": "Dockerfile",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "web",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "src",
+                  "type": "directory"
+                },
+                {
+                  "name": "public",
+                  "type": "directory"
+                },
+                {
+                  "name": "package.json",
+                  "type": "file"
+                },
+                {
+                  "name": "tailwind.config.js",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "packages",
+          "type": "directory",
+          "children": [
+            {
+              "name": "shared-types",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "package.json",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "ui-kit",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "components",
+                  "type": "directory"
+                },
+                {
+                  "name": "package.json",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "docker-compose.yml",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "nx.json",
+          "type": "file"
+        }
+      ]
+    },
+    "technical_patterns": [
+      "Modular Monolith",
+      "Fan-out-on-write",
+      "Repository Pattern",
+      "Optimistic UI",
+      "Pub/Sub"
+    ],
+    "dependencies": [
+      "react@18.2.0",
+      "express@4.18.2",
+      "@apollo/server@4.9.0",
+      "@apollo/client@3.8.0",
+      "graphql@16.8.0",
+      "pg@8.11.0",
+      "knex@2.5.0",
+      "redis@4.6.0",
+      "socket.io@4.7.0",
+      "socket.io-client@4.7.0",
+      "passport@0.6.0",
+      "jsonwebtoken@9.0.0",
+      "bcrypt@5.1.0",
+      "aws-sdk@2.14.0",
+      "tailwindcss@3.3.0"
+    ]
+  }
+}

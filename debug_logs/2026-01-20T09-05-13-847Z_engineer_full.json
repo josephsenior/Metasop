@@ -1,0 +1,576 @@
+{
+  "agent": "Engineer",
+  "model": "gemini-3-pro-preview",
+  "timestamp": "2026-01-20T09:05:13.847Z",
+  "request": {
+    "prompt": "Based on the cached context, please perform your task as Engineer.\n\n          As an expert Software Engineer, design a high-fidelity technical implementation blueprint for 'Project'.\n\nProject Context: A scalable social platform with real-time feeds, multimedia sharing, and messaging using React, Node.js, GraphQL, and PostgreSQL.\nArchitecture Target: A scalable, real-time social media architecture using Node.js, GraphQL, and React, featuring a hybrid feed algorithm and direct media uploads.\nTech Stack: JWT, Passport.js, Bcrypt, Node.js, Express\nVisual Strategy: A responsive, content-first design system utilizing atomic principles to support real-time feeds and multimedia interactions.\nDesign Tokens: primary=#4F46E5, background=undefined\n\nMISSION OBJECTIVES:\n1. **Implementation Plan**: A detailed technical implementation guide in Markdown.\n2. **State Management**: Specific strategy for managing application state.\n3. **File Structure**: An organized directory tree mirroring professional architecture. (No file content).\n4. **Technical Decisions**: Critical architectural choices and rationales.\n5. **Dependencies**: Essential libraries and tools required.\n6. **Phases**: Implementation phases with granular technical tasks.\n\nRespond with ONLY the structured JSON object.\n\n        === JSON SCHEMA ===\n        {\n  \"type\": \"object\",\n  \"required\": [\n    \"artifact_path\",\n    \"file_structure\",\n    \"implementation_plan\",\n    \"implementation_plan_phases\",\n    \"dependencies\",\n    \"run_results\",\n    \"summary\",\n    \"description\",\n    \"technical_decisions\",\n    \"environment_variables\",\n    \"technical_patterns\",\n    \"state_management\"\n  ],\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\",\n      \"maxLength\": 150,\n      \"description\": \"A technical, 1-sentence summary of the implementation strategy.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"maxLength\": 300,\n      \"description\": \"Detailed implementation philosophy and technical roadmap.\"\n    },\n    \"artifact_path\": {\n      \"type\": \"string\",\n      \"maxLength\": 30,\n      \"description\": \"Base directory (e.g., 'src/app').\"\n    },\n    \"run_results\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"setup_commands\",\n        \"test_commands\",\n        \"dev_commands\"\n      ],\n      \"description\": \"Essential CLI commands.\",\n      \"properties\": {\n        \"setup_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Setup (e.g., 'npm install').\"\n        },\n        \"test_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Tests (e.g., 'npm test').\"\n        },\n        \"dev_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Dev (e.g., 'npm run dev').\"\n        },\n        \"build_commands\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": \"Build (e.g., 'npm run build').\"\n        },\n        \"notes\": {\n          \"type\": \"string\",\n          \"maxLength\": 200,\n          \"description\": \"Operational notes or context.\"\n        }\n      }\n    },\n    \"file_structure\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"name\",\n        \"type\",\n        \"children\"\n      ],\n      \"description\": \"Full project scaffold and boilerplate. Focus on metadata. DO NOT include file content.\",\n      \"properties\": {\n        \"name\": {\n          \"type\": \"string\",\n          \"maxLength\": 30,\n          \"description\": \"Root name.\"\n        },\n        \"type\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"file\",\n            \"directory\"\n          ]\n        },\n        \"children\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"type\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30\n              },\n              \"type\": {\n                \"type\": \"string\",\n                \"enum\": [\n                  \"file\",\n                  \"directory\"\n                ]\n              },\n              \"children\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"name\",\n                    \"type\"\n                  ],\n                  \"properties\": {\n                    \"name\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 30\n                    },\n                    \"type\": {\n                      \"type\": \"string\",\n                      \"enum\": [\n                        \"file\",\n                        \"directory\"\n                      ]\n                    },\n                    \"children\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"object\",\n                        \"required\": [\n                          \"name\",\n                          \"type\"\n                        ],\n                        \"properties\": {\n                          \"name\": {\n                            \"type\": \"string\",\n                            \"maxLength\": 30\n                          },\n                          \"type\": {\n                            \"type\": \"string\",\n                            \"enum\": [\n                              \"file\",\n                              \"directory\"\n                            ]\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    },\n    \"implementation_plan\": {\n      \"type\": \"string\",\n      \"maxLength\": 3000,\n      \"description\": \"Technical step-by-step guide in Markdown. Focused and concise.\"\n    },\n    \"implementation_plan_phases\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"name\",\n          \"description\",\n          \"tasks\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          },\n          \"tasks\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            }\n          }\n        }\n      },\n      \"description\": \"Structured implementation phases for the roadmap view.\"\n    },\n    \"dependencies\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 40,\n        \"description\": \"Dep (e.g., 'next@14.1.0').\"\n      },\n      \"description\": \"Essential build dependencies.\"\n    },\n    \"technical_decisions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"decision\",\n          \"rationale\"\n        ],\n        \"properties\": {\n          \"decision\": {\n            \"type\": \"string\",\n            \"maxLength\": 60\n          },\n          \"rationale\": {\n            \"type\": \"string\",\n            \"maxLength\": 150\n          },\n          \"alternatives\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          }\n        }\n      },\n      \"description\": \"Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection).\"\n    },\n    \"environment_variables\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"name\",\n          \"description\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\",\n            \"maxLength\": 40\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          },\n          \"example\": {\n            \"type\": \"string\",\n            \"maxLength\": 100\n          }\n        }\n      },\n      \"description\": \"Environment variables.\"\n    },\n    \"technical_patterns\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 30\n      },\n      \"description\": \"Industry patterns used (e.g., SOLID, Repository, Factory).\"\n    },\n    \"state_management\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"tool\",\n        \"strategy\"\n      ],\n      \"properties\": {\n        \"tool\": {\n          \"type\": \"string\",\n          \"maxLength\": 30,\n          \"description\": \"The state management tool or pattern.\"\n        },\n        \"strategy\": {\n          \"type\": \"string\",\n          \"maxLength\": 150,\n          \"description\": \"Implementation strategy.\"\n        }\n      }\n    }\n  }\n}\n\n        === CRITICAL REQUIREMENTS ===\n        1. You MUST respond with ONLY a valid JSON object matching the provided schema.\n        2. Ensure ALL fields are present according to the schema.\n        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.",
+    "schema": {
+      "type": "object",
+      "required": [
+        "artifact_path",
+        "file_structure",
+        "implementation_plan",
+        "implementation_plan_phases",
+        "dependencies",
+        "run_results",
+        "summary",
+        "description",
+        "technical_decisions",
+        "environment_variables",
+        "technical_patterns",
+        "state_management"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "A technical, 1-sentence summary of the implementation strategy."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Detailed implementation philosophy and technical roadmap."
+        },
+        "artifact_path": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Base directory (e.g., 'src/app')."
+        },
+        "run_results": {
+          "type": "object",
+          "required": [
+            "setup_commands",
+            "test_commands",
+            "dev_commands"
+          ],
+          "description": "Essential CLI commands.",
+          "properties": {
+            "setup_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Setup (e.g., 'npm install')."
+            },
+            "test_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Tests (e.g., 'npm test')."
+            },
+            "dev_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Dev (e.g., 'npm run dev')."
+            },
+            "build_commands": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": "Build (e.g., 'npm run build')."
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Operational notes or context."
+            }
+          }
+        },
+        "file_structure": {
+          "type": "object",
+          "required": [
+            "name",
+            "type",
+            "children"
+          ],
+          "description": "Full project scaffold and boilerplate. Focus on metadata. DO NOT include file content.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 30,
+              "description": "Root name."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "file",
+                "directory"
+              ]
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "file",
+                      "directory"
+                    ]
+                  },
+                  "children": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 30
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "file",
+                            "directory"
+                          ]
+                        },
+                        "children": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "type"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "maxLength": 30
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "file",
+                                  "directory"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "implementation_plan": {
+          "type": "string",
+          "maxLength": 3000,
+          "description": "Technical step-by-step guide in Markdown. Focused and concise."
+        },
+        "implementation_plan_phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description",
+              "tasks"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              }
+            }
+          },
+          "description": "Structured implementation phases for the roadmap view."
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Dep (e.g., 'next@14.1.0')."
+          },
+          "description": "Essential build dependencies."
+        },
+        "technical_decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "decision",
+              "rationale"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "rationale": {
+                "type": "string",
+                "maxLength": 150
+              },
+              "alternatives": {
+                "type": "string",
+                "maxLength": 100
+              }
+            }
+          },
+          "description": "Critical implementation decisions (e.g., State Management choice, UI Kit, ORM selection)."
+        },
+        "environment_variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "example": {
+                "type": "string",
+                "maxLength": 100
+              }
+            }
+          },
+          "description": "Environment variables."
+        },
+        "technical_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "description": "Industry patterns used (e.g., SOLID, Repository, Factory)."
+        },
+        "state_management": {
+          "type": "object",
+          "required": [
+            "tool",
+            "strategy"
+          ],
+          "properties": {
+            "tool": {
+              "type": "string",
+              "maxLength": 30,
+              "description": "The state management tool or pattern."
+            },
+            "strategy": {
+              "type": "string",
+              "maxLength": 150,
+              "description": "Implementation strategy."
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "temperature": 0.3,
+      "maxTokens": 64000,
+      "reasoning": false
+    }
+  },
+  "response": {
+    "content": {
+      "artifact_path": "social-platform-monorepo",
+      "file_structure": {
+        "name": "social-platform-monorepo",
+        "type": "directory",
+        "children": [
+          {
+            "name": "apps",
+            "type": "directory",
+            "children": [
+              {
+                "name": "api",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "Dockerfile",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "web",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "src",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "public",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  },
+                  {
+                    "name": "tailwind.config.js",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "packages",
+            "type": "directory",
+            "children": [
+              {
+                "name": "shared-types",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "index.ts",
+                    "type": "file"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  }
+                ]
+              },
+              {
+                "name": "ui-kit",
+                "type": "directory",
+                "children": [
+                  {
+                    "name": "components",
+                    "type": "directory"
+                  },
+                  {
+                    "name": "package.json",
+                    "type": "file"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "docker-compose.yml",
+            "type": "file"
+          },
+          {
+            "name": "package.json",
+            "type": "file"
+          },
+          {
+            "name": "nx.json",
+            "type": "file"
+          }
+        ]
+      },
+      "implementation_plan": "## Technical Implementation Guide\n\n### Phase 1: Foundation & Infrastructure\n1. **Monorepo Setup**: Initialize Nx workspace. Create `apps/api` (Node/Express) and `apps/web` (React/Vite).\n2. **Database**: Provision PostgreSQL and Redis containers via Docker Compose. Configure `knex` for migrations.\n3. **Auth Service**: Implement Passport.js with JWT strategy. Create `User` table. Secure endpoints with HttpOnly cookies.\n\n### Phase 2: Core Backend & GraphQL\n1. **Schema Design**: Define GraphQL TypeDefs for `User`, `Post`, `Comment`. Setup Apollo Server.\n2. **Media Handling**: Implement S3 Presigned URL endpoint. Create `Post` table with `media_url` column.\n3. **Feed Logic**: Implement 'Fan-out-on-write' for standard users using Redis Lists. Create `FeedService` to merge SQL and Redis data.\n\n### Phase 3: Frontend Development\n1. **Apollo Client**: Configure cache normalization. Generate TypeScript types from GraphQL schema.\n2. **Auth Flow**: Build Login/Register forms. Implement JWT persistence and silent refresh.\n3. **Feed UI**: Create Infinite Scroll component using `IntersectionObserver`. Optimistic UI updates for Likes.\n\n### Phase 4: Real-time Features\n1. **WebSockets**: Integrate `socket.io` with Redis Adapter for horizontal scaling.\n2. **Messaging**: Create `Message` table. Implement real-time chat UI with typing indicators.\n3. **Notifications**: Trigger GraphQL Subscriptions on `FOLLOW` or `LIKE` events.",
+      "implementation_plan_phases": [
+        {
+          "name": "Phase 1: Core Infrastructure",
+          "description": "Setup monorepo, database, and authentication.",
+          "tasks": [
+            "Initialize Nx Monorepo",
+            "Docker Compose for Postgres/Redis",
+            "Knex Migration Setup",
+            "JWT Auth Implementation"
+          ]
+        },
+        {
+          "name": "Phase 2: Content & Feed",
+          "description": "Post creation, media uploads, and feed algorithms.",
+          "tasks": [
+            "GraphQL Schema Definition",
+            "S3 Presigned URL Service",
+            "Redis Feed Fan-out Logic",
+            "Post CRUD Operations"
+          ]
+        },
+        {
+          "name": "Phase 3: Social & Real-time",
+          "description": "Follow system, messaging, and notifications.",
+          "tasks": [
+            "Follow/Unfollow Logic",
+            "Socket.io Setup",
+            "Direct Messaging API",
+            "Notification Subscriptions"
+          ]
+        }
+      ],
+      "dependencies": [
+        "react@18.2.0",
+        "express@4.18.2",
+        "@apollo/server@4.9.0",
+        "@apollo/client@3.8.0",
+        "graphql@16.8.0",
+        "pg@8.11.0",
+        "knex@2.5.0",
+        "redis@4.6.0",
+        "socket.io@4.7.0",
+        "socket.io-client@4.7.0",
+        "passport@0.6.0",
+        "jsonwebtoken@9.0.0",
+        "bcrypt@5.1.0",
+        "aws-sdk@2.14.0",
+        "tailwindcss@3.3.0"
+      ],
+      "run_results": {
+        "setup_commands": [
+          "npm install",
+          "npx knex migrate:latest",
+          "docker-compose up -d"
+        ],
+        "test_commands": [
+          "npm run test",
+          "npm run test:e2e"
+        ],
+        "dev_commands": [
+          "npm run dev",
+          "npm run codegen"
+        ],
+        "build_commands": [
+          "npm run build",
+          "docker build -t social-api ."
+        ],
+        "notes": "Ensure Redis is running before starting the API. S3 credentials must be set in .env for media uploads to work."
+      },
+      "summary": "A modular monolith leveraging GraphQL for flexible data fetching, Redis for hybrid feed caching, and WebSockets for real-time interactivity.",
+      "description": "The architecture prioritizes read scalability using a hybrid fan-out feed system. Write operations are asynchronous where possible (media processing). The frontend uses Apollo Client for normalized caching, ensuring UI consistency across complex nested social data.",
+      "technical_decisions": [
+        {
+          "decision": "GraphQL over REST",
+          "rationale": "Prevents over-fetching in complex feed views and enables precise data selection for mobile.",
+          "alternatives": "REST, tRPC"
+        },
+        {
+          "decision": "Hybrid Feed (Push/Pull)",
+          "rationale": "Balances write load for celebrities (Pull) with read speed for normal users (Push).",
+          "alternatives": "Pure SQL JOIN, Pure Redis Fan-out"
+        },
+        {
+          "decision": "Presigned S3 Uploads",
+          "rationale": "Offloads heavy binary traffic from the Node.js backend directly to S3.",
+          "alternatives": "Multipart Upload to Server"
+        },
+        {
+          "decision": "Redis Adapter for Socket.io",
+          "rationale": "Allows WebSocket events to propagate across multiple backend instances.",
+          "alternatives": "Sticky Sessions only"
+        }
+      ],
+      "environment_variables": [
+        {
+          "name": "DATABASE_URL",
+          "description": "PostgreSQL connection string.",
+          "example": "postgres://user:pass@localhost:5432/social"
+        },
+        {
+          "name": "REDIS_URL",
+          "description": "Redis connection string.",
+          "example": "redis://localhost:6379"
+        },
+        {
+          "name": "JWT_SECRET",
+          "description": "Secret key for signing tokens.",
+          "example": "super_secret_key_123"
+        },
+        {
+          "name": "AWS_S3_BUCKET",
+          "description": "Bucket name for media storage.",
+          "example": "social-platform-media"
+        }
+      ],
+      "technical_patterns": [
+        "Modular Monolith",
+        "Fan-out-on-write",
+        "Repository Pattern",
+        "Optimistic UI",
+        "Pub/Sub"
+      ],
+      "state_management": {
+        "tool": "Apollo Client + Redux Toolkit",
+        "strategy": "Apollo handles server state (caching graph data). Redux handles local UI state (modals, chat window status)."
+      }
+    },
+    "raw": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n  \"artifact_path\": \"social-platform-monorepo\",\n  \"file_structure\": {\n    \"name\": \"social-platform-monorepo\",\n    \"type\": \"directory\",\n    \"children\": [\n      {\n        \"name\": \"apps\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"api\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"src\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"Dockerfile\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"web\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"src\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"public\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"tailwind.config.js\",\n                \"type\": \"file\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"packages\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"shared-types\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"index.ts\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"ui-kit\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"components\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"docker-compose.yml\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"package.json\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"nx.json\",\n        \"type\": \"file\"\n      }\n    ]\n  },\n  \"implementation_plan\": \"## Technical Implementation Guide\\n\\n### Phase 1: Foundation & Infrastructure\\n1. **Monorepo Setup**: Initialize Nx workspace. Create `apps/api` (Node/Express) and `apps/web` (React/Vite).\\n2. **Database**: Provision PostgreSQL and Redis containers via Docker Compose. Configure `knex` for migrations.\\n3. **Auth Service**: Implement Passport.js with JWT strategy. Create `User` table. Secure endpoints with HttpOnly cookies.\\n\\n### Phase 2: Core Backend & GraphQL\\n1. **Schema Design**: Define GraphQL TypeDefs for `User`, `Post`, `Comment`. Setup Apollo Server.\\n2. **Media Handling**: Implement S3 Presigned URL endpoint. Create `Post` table with `media_url` column.\\n3. **Feed Logic**: Implement 'Fan-out-on-write' for standard users using Redis Lists. Create `FeedService` to merge SQL and Redis data.\\n\\n### Phase 3: Frontend Development\\n1. **Apollo Client**: Configure cache normalization. Generate TypeScript types from GraphQL schema.\\n2. **Auth Flow**: Build Login/Register forms. Implement JWT persistence and silent refresh.\\n3. **Feed UI**: Create Infinite Scroll component using `IntersectionObserver`. Optimistic UI updates for Likes.\\n\\n### Phase 4: Real-time Features\\n1. **WebSockets**: Integrate `socket.io` with Redis Adapter for horizontal scaling.\\n2. **Messaging**: Create `Message` table. Implement real-time chat UI with typing indicators.\\n3. **Notifications**: Trigger GraphQL Subscriptions on `FOLLOW` or `LIKE` events.\",\n  \"implementation_plan_phases\": [\n    {\n      \"name\": \"Phase 1: Core Infrastructure\",\n      \"description\": \"Setup monorepo, database, and authentication.\",\n      \"tasks\": [\n        \"Initialize Nx Monorepo\",\n        \"Docker Compose for Postgres/Redis\",\n        \"Knex Migration Setup\",\n        \"JWT Auth Implementation\"\n      ]\n    },\n    {\n      \"name\": \"Phase 2: Content & Feed\",\n      \"description\": \"Post creation, media uploads, and feed algorithms.\",\n      \"tasks\": [\n        \"GraphQL Schema Definition\",\n        \"S3 Presigned URL Service\",\n        \"Redis Feed Fan-out Logic\",\n        \"Post CRUD Operations\"\n      ]\n    },\n    {\n      \"name\": \"Phase 3: Social & Real-time\",\n      \"description\": \"Follow system, messaging, and notifications.\",\n      \"tasks\": [\n        \"Follow/Unfollow Logic\",\n        \"Socket.io Setup\",\n        \"Direct Messaging API\",\n        \"Notification Subscriptions\"\n      ]\n    }\n  ],\n  \"dependencies\": [\n    \"react@18.2.0\",\n    \"express@4.18.2\",\n    \"@apollo/server@4.9.0\",\n    \"@apollo/client@3.8.0\",\n    \"graphql@16.8.0\",\n    \"pg@8.11.0\",\n    \"knex@2.5.0\",\n    \"redis@4.6.0\",\n    \"socket.io@4.7.0\",\n    \"socket.io-client@4.7.0\",\n    \"passport@0.6.0\",\n    \"jsonwebtoken@9.0.0\",\n    \"bcrypt@5.1.0\",\n    \"aws-sdk@2.14.0\",\n    \"tailwindcss@3.3.0\"\n  ],\n  \"run_results\": {\n    \"setup_commands\": [\n      \"npm install\",\n      \"npx knex migrate:latest\",\n      \"docker-compose up -d\"\n    ],\n    \"test_commands\": [\n      \"npm run test\",\n      \"npm run test:e2e\"\n    ],\n    \"dev_commands\": [\n      \"npm run dev\",\n      \"npm run codegen\"\n    ],\n    \"build_commands\": [\n      \"npm run build\",\n      \"docker build -t social-api .\"\n    ],\n    \"notes\": \"Ensure Redis is running before starting the API. S3 credentials must be set in .env for media uploads to work.\"\n  },\n  \"summary\": \"A modular monolith leveraging GraphQL for flexible data fetching, Redis for hybrid feed caching, and WebSockets for real-time interactivity.\",\n  \"description\": \"The architecture prioritizes read scalability using a hybrid fan-out feed system. Write operations are asynchronous where possible (media processing). The frontend uses Apollo Client for normalized caching, ensuring UI consistency across complex nested social data.\",\n  \"technical_decisions\": [\n    {\n      \"decision\": \"GraphQL over REST\",\n      \"rationale\": \"Prevents over-fetching in complex feed views and enables precise data selection for mobile.\",\n      \"alternatives\": \"REST, tRPC\"\n    },\n    {\n      \"decision\": \"Hybrid Feed (Push/Pull)\",\n      \"rationale\": \"Balances write load for celebrities (Pull) with read speed for normal users (Push).\",\n      \"alternatives\": \"Pure SQL JOIN, Pure Redis Fan-out\"\n    },\n    {\n      \"decision\": \"Presigned S3 Uploads\",\n      \"rationale\": \"Offloads heavy binary traffic from the Node.js backend directly to S3.\",\n      \"alternatives\": \"Multipart Upload to Server\"\n    },\n    {\n      \"decision\": \"Redis Adapter for Socket.io\",\n      \"rationale\": \"Allows WebSocket events to propagate across multiple backend instances.\",\n      \"alternatives\": \"Sticky Sessions only\"\n    }\n  ],\n  \"environment_variables\": [\n    {\n      \"name\": \"DATABASE_URL\",\n      \"description\": \"PostgreSQL connection string.\",\n      \"example\": \"postgres://user:pass@localhost:5432/social\"\n    },\n    {\n      \"name\": \"REDIS_URL\",\n      \"description\": \"Redis connection string.\",\n      \"example\": \"redis://localhost:6379\"\n    },\n    {\n      \"name\": \"JWT_SECRET\",\n      \"description\": \"Secret key for signing tokens.\",\n      \"example\": \"super_secret_key_123\"\n    },\n    {\n      \"name\": \"AWS_S3_BUCKET\",\n      \"description\": \"Bucket name for media storage.\",\n      \"example\": \"social-platform-media\"\n    }\n  ],\n  \"technical_patterns\": [\n    \"Modular Monolith\",\n    \"Fan-out-on-write\",\n    \"Repository Pattern\",\n    \"Optimistic UI\",\n    \"Pub/Sub\"\n  ],\n  \"state_management\": {\n    \"tool\": \"Apollo Client + Redux Toolkit\",\n    \"strategy\": \"Apollo handles server state (caching graph data). Redux handles local UI state (modals, chat window status).\"\n  }\n}",
+                "thoughtSignature": "EoMlCoAlAXLI2nzQGK9kn7f2awgVF8NqKaGrIQnS/KVdhj79pqtr4WGqmVPbEjWWesJE8kfY7tKXpYAHWDhppDgXJutgO0BHBgHkaQQKKKmdugcOoy+NmHpyET+kKZXAULUNbKPMXmrcM1l9aOjDqCPNoS9T/ocU4AjpOlFaW7bHRgCAf+I/fEp8GR3Aer+/2LTbqyIJz0AvZhPhWwghy3beSa1yHVE3wSZ1JMYwm4y+3y9KHXKyg9iqLLBNu9nJtBg4sZp7Om7AnqSsGiNSNAZZKBhepFDcKtT/xlsHX/yQsNfupE+Ou6adqB5FubOEeBBsPXkPIU+eNrHl3UX6N2KvaA4bymuTr5iMkrxOonznpq9DWAztExnEoZd/FnXlodEzB+bDbng0dy10Hf6QaH+pZq8Vl93LZ6nmQKd7pZleVsSYXV7MCczdrv6ZqCFHzg1y/vlkbB4IQQqkwx0zDErS3W9HyuEKt1NbpgRujX4wCjxQ3VhFrZzbJcA7eyLS4oUAsUqWsqfPSDZ5Mh5Ry0VaRnZYT/RPvClgNzU8J/p+JFJwiNlMiPeTHqXbWtTQ510JdAYEgl/AhDB88j31sFo8gLSCSBFUPEVEduoRX9wAmx960daU053JJCZiOHyYeHVEy5T4OH66Hf6Q5N2qDGYzU9j6UWMhhMnXpDIvNn/gpibzOn5ulhC6R39u9SPartmsA67MAm0nIp5KpyD4MjAcoKksuM4dv6sWBf3yoCFC0tf5e3cRzwwut2PFLzoEFtwN9Wfw6ViPJyCa6tDZl4vE8uGGa5ubt/YDjSuNsQTbwwGKV3BtlXr/3M+3mr9LzhENKJ5EbWnEN+nwdTAmgrlKstEJQ3MbE9l60O9gL3eNUr+PcoV+b15EpxZeCQuEJF6NQe89iJtJ/E3560eUmEMXV7D6HwawAbM4ZihmK9CGE2sFSr+dRbPBi2tsXxa1mtlaYkzhJ3DGtqkgX8zRha2gtCvdO+QTAlQ2STJACBNrRIacGMbnmcKXjJstVm0kQD/aWrCDlVDKpBxc6bu5tu+Z7O1qIPqh3x9KblzQ8oc9UBAJrsWFcSrAf4R8fFf65CAkTtYydTWp6daQx77EohV63XPcl5WY5C/jOCXR+OBjuKGEamNQtDOwXgBVqQvrOp3UiM8+D1mF7NBowjg5cxQ+o62DBKa4TMuadSuATEd8ZMgjI7Y8CXk5Ea+YCxL1PPRGUCPo4PVEKDW59BF2ECvz9wu7SMtO2oypP0xtkcaIOG3IR0kaEolNbcHRPkUxubwq9NjM21Z1YRhANPH4M6sq2mAVUBE8yFCMPb/OzuzPj1jIYYlPqF+c6Oc/caOEuZq8gqdGmW9Tb4qJ/7NMrfmqc6VFHCFDl8r/h9jGaSwtwVJOzquW07ZGIUNwdLQHjaqWTAGNlY6xjap3b0ijlA0zMqn5KWverNc/CgRpJ0oZnt9h/vAUUg8L4qs5eVJwQvkYI+9GCM5LC7uFKDSDmcGcojA+RRY23OW2FtoGQyOXQvo1R8yum7CDfRMwa6aXU3+D05Vm2vWCb/o8SHUR9+o27FF/Qm+tUTv6R9cBEZAxNZjufVKlviF+0YomekIEowWxvPRtGaB65h1OxP8VmCU08rDrA0OzpkiT0lKxDr/RfONRBd2LuMzIGfzow0FqNCzkfa78hZqEYYS6aPENnkIiY/t1wTGubGlZA09MGxezPglcXNNxavlrPvoYcY37lT5HtMGJ8DcJqTJt+pS/ZuZ8DU/NL0vW9icqgDNwJuqiqF7pglmCogBcxjsH7ZRLEp9pPTeXfqJOwQHFP/bdyFbr/ImJIygdDYd5yqp0obf6BmESdj56eUfs+vdo0JWo/oVMx+e2st62/N0zpkXGO37zcQ86ULxrwcCTI2w5iTIox8/zXb5zdSKCru9qPnDEC2SQlzT6a/lZp9t3Bz6vu4lpaWEryALjwHVqXH2q7d1haLqw0wxBVNrlxpX2AFEXJph40JWZ+I44/Le+leJNfMvxRNyH9E+OJdnaTvTuD7m6Q1JtPPK5aDbfKMnklJJn2VLbJgtm7gViu53CGhrJ2lw9Ctp9bL3+SWuGN75lcaQjkPRfSNvoahDVW+Guf+2fl323mW1x29eesyFrZbzwaupkT38zPhbajHNosMWvVQ3iGUgZS9uE242RQkdjkyO8AvGwCqXrvFtokyGADvbz+9ghdq8s5BOt5W05QZ/nIWbk3ZVc4SNKfXQpJqm4uL1o8vJhR5Tnq7AntW4fJM4dBWanowL1bhYxe8sUzJIHhtTzgjqRfoo4T7nsvOTn7+mmF4ZI6yi5Vr25PTeO8inX/FOh8aGBRDePgCT6LKvHFm0ND3DJTXUHoW3Xynk/XonhMaGc+tRJB2coSvPhJtKzRofF3DsQbon4kepCZbh0bJ1CuqqUEoKKaJ1VY9oZQQzGAQIM73jYMSeRGfv2zPR1gFUOud8iqLpjd5AQS7PGpXvH2kaylk8ykxaQ+KPQR8xFE+xGMeUuSuixg0t+BqnEOxGId6+E6wvkpJaVvDYC9lDoEM64QbHa6eYcB8snf6IjsHyVpUSbxKm3OiySiKlPmyLUWVNUwFitG3cpXf2kf2dNyNUD+mMJS+DBIpmyOWoB4zKx+6QXHG1e3NWaZ/ANgt2KEE4c6UH8lLGB5NF0kvu4EcAIrPdWY83ZTtZ3rVGLNRDH/FdfLUolh+qlbSExsNcs34ynAvztyMGD5eECXTTu8F7IKkrLXQA7rJVxbAfGuWMeIRRTHa+Zl3syMpr3UUQ5sFwOgS40sgBKgg80ATCjTWZwcHajNWwiflK18MrafowSEEcHoSYTv0bD8VPMuLlNl5VddfvW7c4rW/vPpOi3GgHHG4jmQ6ZKRgcqUyhtDOFRiRKACpHXdDdmtoQO9FE8Mxl5EjrKb/s6CdCCvCRk60duFA+0FpXPg0frDCoNyswL22Zd9vcCPJ3lgOrmJ1rLLLav9flLVkEO+Pj0uzFW8Deu3m99X8uTzQUnjGekg3fUzjiPvaLKiXtvIHPLYH4+pMAZPAOW29eezHvTJqj0nsgBnM6/fUR+x1MOnbaDo3AgB1nyPv6KfSBmZpdnRUvOiljN7vofeRdEh5Vy03oq7VVyuUWp1hatmvCnVimBu1bkrvMT9dEpP1qgsgdIhsYptD36O/LIKDr1EkuNU8mefZqOSzof6OypGDTGu6pixsKUHF45Ib7YYfexatMVoihyP96MGAKI7B7axrIj2prWgDcFRXMKBOJpau1+9pdXCkN+PBUfulL78CvG44bcxjYagWDgA+pJIsNQjl2reDr/151Ehg5NE2Zh2jnKmZGbThlzc/4bvjk/wlyBuBmqnUKT83xY727sa59BvtEI24Sf9+NtlcEeAIzwa9C7Nx4YCyYN2Kp1DNoQLvusmRfomjZsyY7hQnbStxWs/s9RCUFnKzBeGibl3jUgE1RzW4vwepOC8Rqn0b5YCfM5srLo9ep0ML/zf6oi8087x/lb3/VOiruzha4q7ij/hFLrGBO7pMioTBUeuVkU6+SaS1ul56GHVx2tqW0+MAAV+ibrwuc5ckF/HUDajn/U8Z1dunJ7LTz3cKsGdSq+/GAJS9rDXvAGonZdX9uvBomEzyn47syIaCXIBBkdhYbP6ZVk1oZGdxiKmVOt1YwrEQj56JlGq3zVu6A+rmjN8J2+o9KnhTe1WaDXm/tGU5UHdii2JDRE72fn/1Xz8DVqqIIM0+hEkJA4iaRoIgwZU34o56fmA+j14heL7JlLSgBlrDT3qInJPNDnUiUmQnOD2PZ/9+LJnZVOJERvsBAoFCAxV+NVhBsZ9FR5cX5GbJRnWk0UtQKuaz7QhRqj/wYBVDGqQt6Cmi+TvILMJ7eIDLCpaj4dIyjmsSsUa/6l04xhFxNHokqv4CTqhc+DR1QwufDbCwcRLfHDYVn9vZha7NDcZhzx+DGzHqdTkh1sYWgRFyqPtohtS07DBi6mqk64ExHLIF2303wC9NtnvU/L6AMudizZ+8qRLh6n+OCB8QsvKvhqVEbFwHwby7ABmPEmhPvZ2RRG7s2ck1/eq+x1ljTQ620DBGFc53FPrw7YRwQPwyc3sbW0HURsIh0MzYztv+G6uCRQd2vsbTsuPOSKo7mDv10e5og5KSY2Wo5cvyiXwGNQaB6aZLrUwh3e52hGO8cryUGXAIbauQkTuDpmMA84kSwCWxzcG3n2IWB4+HkRnlAWKzgwa2lQwyt8XvtYqty79seKQm+iQYeF+iOZAVdL7MXyiC6iXqgJ6RKw9FSM22aT5LKAAADb7UKezKCWgUKsKkaNFvD5X4c0sdOk4TOUsd98RV733LlvJGnlx/xdftQv0poD2Hn6+CowMoRsZbQ6S5uvm2ELnXpi+XxkLAFS5V6BQ5/z3fxJfYP2+BnnBATNnkhVI9Mp0TdAsLzyjw0/wZuKqm/RuJJckFngmKPkmx4DvWTc9UUcAUT1HyOKwc4Rqb7PU3U8INrT/tleloFHAfdyNZ2CqoheuYobfZuhUfpz6/UnmDVbSI2WYYfKNh8/i0Bo4p2xnVjaLr9uTBgVCCYpEGz9OGGRSA4EjZjFJBRKFupHixvpHDU3dkgxbqcBtjK3RjKjDkT54R6T7II8M1CHN715llm2GHUsF3KB1E2aEBUC0Ez5XCBKltOwlvMCDvoxftwTjc0VMhuUiNZL/MNkNI4wBmU2Miei3T5yqIanetzUVJSYdFHPsDD+rkmnX16E/1nsW/SnIT+F2gyiieOLn1OTrAMgjcJMKLtya6aAxyZZNz1PRFvlZ6QY6sSVos4oO+ljUO4ZGtxVpxmDfguAKXCp2xxLH22PI7RGzEhCf9FSFWeiMr2Wo08yOGe3ao0rudp/JPuJqNnuvOHFVNsDHo5FV5WI2L/zij9WyidC/ovyJxyw3HtYEmR+HYATDdyBqlSQ8Csqzm2SfTMKpgqIB+owu/ieHOEMQ+9lVqwwqd4VgLiK4rpFgYQ8CzceoQgyAg5FXrfyKsvcN6rHsAMXhKUfNsTorlUG2H5/gG5toiDasd/nhe0eDakQAjN1sM+1Ft2NQIxHMtqXl7wpD8MbApkXcyLoaBzu9hf08Xe3lqUDkCRiAIUjmWUOXnUNAmxYawvSyeH8GE1nzUPMGEiQqnI93rpuAJtK/4US2i1mZFxMqbjthMRM1MzD9kdzRdg07x937DnhHR9ZZSplRO1X4iE4b8iQGN0FWBzRm3ng2pIu6JTGLxE1/YnugWgkv/Tvn1NgtM9DZf5fTNfopAGlia+88cIz98Y6KtlXNZkm+4QDp3C96og5kcYsVW10W6CdhvgP9V55FCXWkMf+an20ZInNXfOAnoeKuIuCq1ngKvTd5ZTBI0zpeYEEg87ILvP9NJIOhthVIGB4GdWKmSXy2FifPSLoIa5lbCdZENSIWU6xV5kcTebQCXGlVsV1ocJ1AfQHLdZTQ4bfNdIdGW5bK24s69K4mxlMQaaqF8zs3/cA6TmtZoLp6PFVZSpP1G0IuurTg1YcvQ8iKLj3JBj1jaolA7k/k5cknKZQYkD0JbN8CxhqvTHBOnE0NEvZeaptJWVK/AovS2RL83dUv7g67VKiSrtFjiwuC2KUanXSv+db8+pGe6ARRRKuWFLK0gJ0spGUSv2NiPjU644kcaRgAFyzHozFlnqoRaAKN8p6XBez212n+5pJX4LF4xWO5T6T1TNlmvQFPrVi5RWMVzYE4RLH87qhElTNbJ0rQTs8BFvUA816q5eMciorj7X0I8VUrXSLzC6wtNZ2/3kE3e/GqgkadCxcFRomj2Nn7Yk7yaM0MfGyPQp/EsiB+rt0EhBEJk1y90gKftLF4ic+bxpu8opvMnj63VFUqCtGEOQjEJCn8Ik16a/DiOITvhs+M5ikVZ8Snw7uQOS4vOGNWfwtAv5NCZxB/pPlO26n7h72UcNhC46FUJ0SQaV5cNsMpJ4GAOFWN23MZkqS3c006IIS32NZb7bLCCyiW5+VrUEl6WtIc3lnIbqcY+nIges0xLxJpUmegtv0k/5vfxYoHETRvPtPBzolq7Zv4H9HcH2RIBtJfPyHdoomvUtL8hQ3DrTdNEOCjbWO0ZxKVfMooTwqe18em5xqbNXV6oj3L8L60ObLGF2duwSSgTJMAgPQZFP2Tlvq0yfeikgs8kCzFdWOMxYTP4tjcM6d8L1ehAdUDKOX8SeLc6JX5RqB4Jbf4Yrppxc9H6MeQ+pBCyTdHfbECfHXPYeOjsyIgae5n6/Pf/dWnPtMMk0tnDA4M7lAcjPRFnvR9+ZX64wurUzWC1fDjKvC/tlZYYvkDmK0sJp8VxEIniIk0yk="
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 8744,
+        "candidatesTokenCount": 2141,
+        "totalTokenCount": 12145,
+        "cachedContentTokenCount": 6497,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8744
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 6497
+          }
+        ],
+        "thoughtsTokenCount": 1260
+      },
+      "modelVersion": "gemini-3-pro-preview",
+      "responseId": "SEVvaZ3BLqXTvdIP_rfuwA0"
+    },
+    "extracted_json_text": "{\n  \"artifact_path\": \"social-platform-monorepo\",\n  \"file_structure\": {\n    \"name\": \"social-platform-monorepo\",\n    \"type\": \"directory\",\n    \"children\": [\n      {\n        \"name\": \"apps\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"api\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"src\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"Dockerfile\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"web\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"src\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"public\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"tailwind.config.js\",\n                \"type\": \"file\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"packages\",\n        \"type\": \"directory\",\n        \"children\": [\n          {\n            \"name\": \"shared-types\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"index.ts\",\n                \"type\": \"file\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              }\n            ]\n          },\n          {\n            \"name\": \"ui-kit\",\n            \"type\": \"directory\",\n            \"children\": [\n              {\n                \"name\": \"components\",\n                \"type\": \"directory\"\n              },\n              {\n                \"name\": \"package.json\",\n                \"type\": \"file\"\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"docker-compose.yml\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"package.json\",\n        \"type\": \"file\"\n      },\n      {\n        \"name\": \"nx.json\",\n        \"type\": \"file\"\n      }\n    ]\n  },\n  \"implementation_plan\": \"## Technical Implementation Guide\\n\\n### Phase 1: Foundation & Infrastructure\\n1. **Monorepo Setup**: Initialize Nx workspace. Create `apps/api` (Node/Express) and `apps/web` (React/Vite).\\n2. **Database**: Provision PostgreSQL and Redis containers via Docker Compose. Configure `knex` for migrations.\\n3. **Auth Service**: Implement Passport.js with JWT strategy. Create `User` table. Secure endpoints with HttpOnly cookies.\\n\\n### Phase 2: Core Backend & GraphQL\\n1. **Schema Design**: Define GraphQL TypeDefs for `User`, `Post`, `Comment`. Setup Apollo Server.\\n2. **Media Handling**: Implement S3 Presigned URL endpoint. Create `Post` table with `media_url` column.\\n3. **Feed Logic**: Implement 'Fan-out-on-write' for standard users using Redis Lists. Create `FeedService` to merge SQL and Redis data.\\n\\n### Phase 3: Frontend Development\\n1. **Apollo Client**: Configure cache normalization. Generate TypeScript types from GraphQL schema.\\n2. **Auth Flow**: Build Login/Register forms. Implement JWT persistence and silent refresh.\\n3. **Feed UI**: Create Infinite Scroll component using `IntersectionObserver`. Optimistic UI updates for Likes.\\n\\n### Phase 4: Real-time Features\\n1. **WebSockets**: Integrate `socket.io` with Redis Adapter for horizontal scaling.\\n2. **Messaging**: Create `Message` table. Implement real-time chat UI with typing indicators.\\n3. **Notifications**: Trigger GraphQL Subscriptions on `FOLLOW` or `LIKE` events.\",\n  \"implementation_plan_phases\": [\n    {\n      \"name\": \"Phase 1: Core Infrastructure\",\n      \"description\": \"Setup monorepo, database, and authentication.\",\n      \"tasks\": [\n        \"Initialize Nx Monorepo\",\n        \"Docker Compose for Postgres/Redis\",\n        \"Knex Migration Setup\",\n        \"JWT Auth Implementation\"\n      ]\n    },\n    {\n      \"name\": \"Phase 2: Content & Feed\",\n      \"description\": \"Post creation, media uploads, and feed algorithms.\",\n      \"tasks\": [\n        \"GraphQL Schema Definition\",\n        \"S3 Presigned URL Service\",\n        \"Redis Feed Fan-out Logic\",\n        \"Post CRUD Operations\"\n      ]\n    },\n    {\n      \"name\": \"Phase 3: Social & Real-time\",\n      \"description\": \"Follow system, messaging, and notifications.\",\n      \"tasks\": [\n        \"Follow/Unfollow Logic\",\n        \"Socket.io Setup\",\n        \"Direct Messaging API\",\n        \"Notification Subscriptions\"\n      ]\n    }\n  ],\n  \"dependencies\": [\n    \"react@18.2.0\",\n    \"express@4.18.2\",\n    \"@apollo/server@4.9.0\",\n    \"@apollo/client@3.8.0\",\n    \"graphql@16.8.0\",\n    \"pg@8.11.0\",\n    \"knex@2.5.0\",\n    \"redis@4.6.0\",\n    \"socket.io@4.7.0\",\n    \"socket.io-client@4.7.0\",\n    \"passport@0.6.0\",\n    \"jsonwebtoken@9.0.0\",\n    \"bcrypt@5.1.0\",\n    \"aws-sdk@2.14.0\",\n    \"tailwindcss@3.3.0\"\n  ],\n  \"run_results\": {\n    \"setup_commands\": [\n      \"npm install\",\n      \"npx knex migrate:latest\",\n      \"docker-compose up -d\"\n    ],\n    \"test_commands\": [\n      \"npm run test\",\n      \"npm run test:e2e\"\n    ],\n    \"dev_commands\": [\n      \"npm run dev\",\n      \"npm run codegen\"\n    ],\n    \"build_commands\": [\n      \"npm run build\",\n      \"docker build -t social-api .\"\n    ],\n    \"notes\": \"Ensure Redis is running before starting the API. S3 credentials must be set in .env for media uploads to work.\"\n  },\n  \"summary\": \"A modular monolith leveraging GraphQL for flexible data fetching, Redis for hybrid feed caching, and WebSockets for real-time interactivity.\",\n  \"description\": \"The architecture prioritizes read scalability using a hybrid fan-out feed system. Write operations are asynchronous where possible (media processing). The frontend uses Apollo Client for normalized caching, ensuring UI consistency across complex nested social data.\",\n  \"technical_decisions\": [\n    {\n      \"decision\": \"GraphQL over REST\",\n      \"rationale\": \"Prevents over-fetching in complex feed views and enables precise data selection for mobile.\",\n      \"alternatives\": \"REST, tRPC\"\n    },\n    {\n      \"decision\": \"Hybrid Feed (Push/Pull)\",\n      \"rationale\": \"Balances write load for celebrities (Pull) with read speed for normal users (Push).\",\n      \"alternatives\": \"Pure SQL JOIN, Pure Redis Fan-out\"\n    },\n    {\n      \"decision\": \"Presigned S3 Uploads\",\n      \"rationale\": \"Offloads heavy binary traffic from the Node.js backend directly to S3.\",\n      \"alternatives\": \"Multipart Upload to Server\"\n    },\n    {\n      \"decision\": \"Redis Adapter for Socket.io\",\n      \"rationale\": \"Allows WebSocket events to propagate across multiple backend instances.\",\n      \"alternatives\": \"Sticky Sessions only\"\n    }\n  ],\n  \"environment_variables\": [\n    {\n      \"name\": \"DATABASE_URL\",\n      \"description\": \"PostgreSQL connection string.\",\n      \"example\": \"postgres://user:pass@localhost:5432/social\"\n    },\n    {\n      \"name\": \"REDIS_URL\",\n      \"description\": \"Redis connection string.\",\n      \"example\": \"redis://localhost:6379\"\n    },\n    {\n      \"name\": \"JWT_SECRET\",\n      \"description\": \"Secret key for signing tokens.\",\n      \"example\": \"super_secret_key_123\"\n    },\n    {\n      \"name\": \"AWS_S3_BUCKET\",\n      \"description\": \"Bucket name for media storage.\",\n      \"example\": \"social-platform-media\"\n    }\n  ],\n  \"technical_patterns\": [\n    \"Modular Monolith\",\n    \"Fan-out-on-write\",\n    \"Repository Pattern\",\n    \"Optimistic UI\",\n    \"Pub/Sub\"\n  ],\n  \"state_management\": {\n    \"tool\": \"Apollo Client + Redux Toolkit\",\n    \"strategy\": \"Apollo handles server state (caching graph data). Redux handles local UI state (modals, chat window status).\"\n  }\n}"
+  }
+}

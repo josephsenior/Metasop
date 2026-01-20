@@ -1,0 +1,907 @@
+{
+  "agent": "DevOps",
+  "model": "gemini-3-pro-preview",
+  "timestamp": "2026-01-20T09:03:09.532Z",
+  "request": {
+    "prompt": "Based on the cached context, please perform your task as DevOps.\n\n          As a Principal Site Reliability Engineer (SRE), design a modern infrastructure strategy for 'Project'.\n\nProject Context: A scalable social platform with real-time feeds, multimedia sharing, and messaging using React, Node.js, GraphQL, and PostgreSQL.\nArchitecture Target: A scalable, real-time social media architecture using Node.js, GraphQL, and React, featuring a hybrid feed algorithm and direct media uploads.\nTech Stack: JWT, Passport.js, Bcrypt, Node.js, Express\n\nMISSION OBJECTIVES:\n1. **Infrastructure as Code (IaC)**: Architect an IaC layer proportional to the project's scale.\n2. **Environment Tiering**: Define an environment strategy and access controls.\n3. **CI/CD Pipeline Architecture**: Design a pipeline with essential stages (Build, Test, Deploy).\n4. **Containerization & Orchestration**: Provide a container strategy (Docker/K8s) if applicable.\n5. **Deployment Model**: Select a deployment model based on the project's criticality.\n6. **Observability**: Design a monitoring and logging system focusing on essential signals.\n7. **DR & Resilience**: Define RPO/RTO targets and backup strategies.\n8. **Security & Compliance**: Integrate security into the DevOps lifecycle (DevSecOps).\n\nRespond with ONLY the structured JSON object.\n\n        === JSON SCHEMA ===\n        {\n  \"type\": \"object\",\n  \"required\": [\n    \"infrastructure\",\n    \"cicd\",\n    \"deployment\",\n    \"monitoring\",\n    \"containerization\",\n    \"scaling\",\n    \"disaster_recovery\",\n    \"summary\",\n    \"description\"\n  ],\n  \"properties\": {\n    \"cloud_provider\": {\n      \"type\": \"string\",\n      \"maxLength\": 20\n    },\n    \"infra_components\": {\n      \"type\": \"number\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"maxLength\": 150,\n      \"description\": \"A technical, 1-sentence summary of the DevOps strategy.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"maxLength\": 300,\n      \"description\": \"Detailed infrastructure philosophy and SRE approach.\"\n    },\n    \"infrastructure\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"cloud_provider\",\n        \"services\"\n      ],\n      \"properties\": {\n        \"cloud_provider\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"AWS\",\n            \"GCP\",\n            \"Azure\",\n            \"self-hosted\",\n            \"hybrid\"\n          ],\n          \"description\": \"Primary cloud provider. Must match project scale.\"\n        },\n        \"iac\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"Terraform\",\n            \"CloudFormation\",\n            \"Crossplane\",\n            \"Ansible\",\n            \"Pulumi\"\n          ],\n          \"description\": \"Infrastructure as Code tool for automation.\"\n        },\n        \"services\": {\n          \"type\": \"array\",\n          \"description\": \"Infrastructure services (compute, DB, storage).\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"type\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30,\n                \"description\": \"Service name (e.g., 'prod-db').\"\n              },\n              \"type\": {\n                \"type\": \"string\",\n                \"enum\": [\n                  \"compute\",\n                  \"database\",\n                  \"storage\",\n                  \"networking\",\n                  \"monitoring\",\n                  \"security\",\n                  \"cdn\",\n                  \"load-balancer\"\n                ],\n                \"description\": \"Service type\"\n              },\n              \"configuration\": {\n                \"type\": \"object\",\n                \"description\": \"Technical config (e.g., 'instance_type: t3.medium').\"\n              },\n              \"description\": {\n                \"type\": \"string\",\n                \"maxLength\": 100,\n                \"description\": \"Technical role of this service.\"\n              }\n            }\n          }\n        },\n        \"regions\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 20\n          },\n          \"description\": \"Deployment regions (e.g., 'us-east-1').\"\n        }\n      }\n    },\n    \"cicd\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"pipeline_stages\",\n        \"tools\"\n      ],\n      \"properties\": {\n        \"pipeline_stages\": {\n          \"type\": \"array\",\n          \"description\": \"CI/CD pipeline stages.\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"steps\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 20,\n                \"description\": \"Stage name (e.g., 'Build').\"\n              },\n              \"steps\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 50\n                }\n              },\n              \"goal\": {\n                \"type\": \"string\",\n                \"maxLength\": 100,\n                \"description\": \"Technical goal of this stage.\"\n              }\n            }\n          }\n        },\n        \"tools\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 20\n          },\n          \"description\": \"CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.).\"\n        },\n        \"triggers\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"type\"\n            ],\n            \"properties\": {\n              \"type\": {\n                \"type\": \"string\",\n                \"enum\": [\n                  \"push\",\n                  \"pull_request\",\n                  \"schedule\",\n                  \"manual\"\n                ],\n                \"description\": \"Trigger type\"\n              },\n              \"branch\": {\n                \"type\": \"string\",\n                \"maxLength\": 20,\n                \"description\": \"Branch name.\"\n              },\n              \"description\": {\n                \"type\": \"string\",\n                \"maxLength\": 50,\n                \"description\": \"Trigger description.\"\n              }\n            }\n          },\n          \"description\": \"Pipeline triggers.\"\n        }\n      }\n    },\n    \"containerization\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"dockerfile\": {\n          \"type\": \"string\",\n          \"description\": \"Dockerfile content or path\"\n        },\n        \"docker_compose\": {\n          \"type\": \"string\",\n          \"description\": \"Docker Compose configuration\"\n        },\n        \"kubernetes\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"namespace\": {\n              \"type\": \"string\",\n              \"description\": \"Kubernetes namespace\"\n            },\n            \"deployments\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"required\": [\n                  \"name\"\n                ],\n                \"properties\": {\n                  \"name\": {\n                    \"type\": \"string\",\n                    \"description\": \"Deployment name\"\n                  },\n                  \"replicas\": {\n                    \"type\": \"number\",\n                    \"minimum\": 1,\n                    \"description\": \"Number of replicas\"\n                  },\n                  \"resources\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"cpu\": {\n                        \"type\": \"string\",\n                        \"description\": \"CPU resource (e.g., '500m', '1')\"\n                      },\n                      \"memory\": {\n                        \"type\": \"string\",\n                        \"description\": \"Memory resource (e.g., '512Mi', '1Gi')\"\n                      }\n                    }\n                  }\n                }\n              }\n            },\n            \"services\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"required\": [\n                  \"name\"\n                ],\n                \"properties\": {\n                  \"name\": {\n                    \"type\": \"string\",\n                    \"description\": \"Service name\"\n                  },\n                  \"type\": {\n                    \"type\": \"string\",\n                    \"enum\": [\n                      \"ClusterIP\",\n                      \"NodePort\",\n                      \"LoadBalancer\"\n                    ],\n                    \"description\": \"Service type\"\n                  },\n                  \"ports\": {\n                    \"type\": \"array\",\n                    \"items\": {\n                      \"type\": \"object\",\n                      \"required\": [\n                        \"port\",\n                        \"targetPort\"\n                      ],\n                      \"properties\": {\n                        \"port\": {\n                          \"type\": \"number\",\n                          \"description\": \"Service port\"\n                        },\n                        \"targetPort\": {\n                          \"type\": \"number\",\n                          \"description\": \"Target container port\"\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    },\n    \"deployment\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"strategy\",\n        \"environments\"\n      ],\n      \"properties\": {\n        \"strategy\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"blue-green\",\n            \"canary\",\n            \"rolling\",\n            \"recreate\",\n            \"none\"\n          ],\n          \"description\": \"Deployment strategy\"\n        },\n        \"environments\": {\n          \"type\": \"array\",\n          \"description\": \"Deployment environments (dev, staging, production)\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"configuration\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"minLength\": 1,\n                \"description\": \"Environment name\"\n              },\n              \"configuration\": {\n                \"type\": \"object\",\n                \"properties\": {\n                  \"key\": {\n                    \"type\": \"string\"\n                  },\n                  \"value\": {\n                    \"type\": \"string\"\n                  }\n                },\n                \"description\": \"Environment-specific configuration\"\n              },\n              \"description\": {\n                \"type\": \"string\",\n                \"description\": \"Environment description\"\n              }\n            }\n          }\n        },\n        \"rollback_strategy\": {\n          \"type\": \"string\",\n          \"description\": \"Rollback strategy\"\n        }\n      }\n    },\n    \"monitoring\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"tools\",\n        \"metrics\",\n        \"alerts\"\n      ],\n      \"properties\": {\n        \"tools\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 20\n          },\n          \"description\": \"Monitoring tools.\"\n        },\n        \"metrics\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"threshold\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30\n              },\n              \"threshold\": {\n                \"type\": \"string\",\n                \"maxLength\": 30\n              },\n              \"action\": {\n                \"type\": \"string\",\n                \"maxLength\": 50\n              }\n            }\n          },\n          \"description\": \"Key performance metrics and SLOs.\"\n        },\n        \"alerts\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"condition\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30,\n                \"description\": \"Alert name.\"\n              },\n              \"condition\": {\n                \"type\": \"string\",\n                \"maxLength\": 100,\n                \"description\": \"Threshold/condition.\"\n              },\n              \"severity\": {\n                \"type\": \"string\",\n                \"enum\": [\n                  \"critical\",\n                  \"warning\",\n                  \"info\"\n                ]\n              }\n            }\n          },\n          \"description\": \"Infrastructure alerts.\"\n        },\n        \"logging\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"tools\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\",\n                \"maxLength\": 20\n              },\n              \"description\": \"Logging tools.\"\n            },\n            \"retention\": {\n              \"type\": \"string\",\n              \"maxLength\": 10,\n              \"description\": \"e.g., '30d'.\"\n            }\n          }\n        }\n      }\n    },\n    \"scaling\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"auto_scaling\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"enabled\": {\n              \"type\": \"boolean\",\n              \"description\": \"Whether auto-scaling is enabled\"\n            },\n            \"min_replicas\": {\n              \"type\": \"number\",\n              \"minimum\": 1,\n              \"description\": \"Minimum number of replicas\"\n            },\n            \"max_replicas\": {\n              \"type\": \"number\",\n              \"minimum\": 1,\n              \"description\": \"Maximum number of replicas\"\n            },\n            \"target_cpu\": {\n              \"type\": \"number\",\n              \"minimum\": 0,\n              \"maximum\": 100,\n              \"description\": \"Target CPU percentage\"\n            },\n            \"target_memory\": {\n              \"type\": \"number\",\n              \"minimum\": 0,\n              \"maximum\": 100,\n              \"description\": \"Target memory percentage\"\n            },\n            \"metrics\": {\n              \"type\": \"object\",\n              \"description\": \"Custom scaling metrics (e.g., requests_per_second: 1000)\"\n            },\n            \"triggers\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"object\",\n                \"required\": [\n                  \"type\",\n                  \"threshold\"\n                ],\n                \"properties\": {\n                  \"type\": {\n                    \"type\": \"string\",\n                    \"maxLength\": 20\n                  },\n                  \"threshold\": {\n                    \"type\": \"string\",\n                    \"maxLength\": 20\n                  }\n                }\n              }\n            }\n          }\n        },\n        \"manual_scaling\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"replicas\": {\n              \"type\": \"number\",\n              \"minimum\": 1,\n              \"description\": \"Number of replicas\"\n            }\n          }\n        }\n      }\n    },\n    \"disaster_recovery\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"rpo\",\n        \"rto\",\n        \"backup_strategy\"\n      ],\n      \"properties\": {\n        \"rpo\": {\n          \"type\": \"string\",\n          \"description\": \"Recovery Point Objective\"\n        },\n        \"rto\": {\n          \"type\": \"string\",\n          \"description\": \"Recovery Time Objective\"\n        },\n        \"backup_strategy\": {\n          \"type\": \"string\",\n          \"description\": \"Detailed backup strategy\"\n        },\n        \"failover_plan\": {\n          \"type\": \"string\",\n          \"description\": \"Automated or manual failover steps\"\n        }\n      },\n      \"description\": \"Disaster recovery and business continuity plan\"\n    }\n  }\n}\n\n        === CRITICAL REQUIREMENTS ===\n        1. You MUST respond with ONLY a valid JSON object matching the provided schema.\n        2. Ensure ALL fields are present according to the schema.\n        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.",
+    "schema": {
+      "type": "object",
+      "required": [
+        "infrastructure",
+        "cicd",
+        "deployment",
+        "monitoring",
+        "containerization",
+        "scaling",
+        "disaster_recovery",
+        "summary",
+        "description"
+      ],
+      "properties": {
+        "cloud_provider": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "infra_components": {
+          "type": "number"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "A technical, 1-sentence summary of the DevOps strategy."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Detailed infrastructure philosophy and SRE approach."
+        },
+        "infrastructure": {
+          "type": "object",
+          "required": [
+            "cloud_provider",
+            "services"
+          ],
+          "properties": {
+            "cloud_provider": {
+              "type": "string",
+              "enum": [
+                "AWS",
+                "GCP",
+                "Azure",
+                "self-hosted",
+                "hybrid"
+              ],
+              "description": "Primary cloud provider. Must match project scale."
+            },
+            "iac": {
+              "type": "string",
+              "enum": [
+                "Terraform",
+                "CloudFormation",
+                "Crossplane",
+                "Ansible",
+                "Pulumi"
+              ],
+              "description": "Infrastructure as Code tool for automation."
+            },
+            "services": {
+              "type": "array",
+              "description": "Infrastructure services (compute, DB, storage).",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "description": "Service name (e.g., 'prod-db')."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "compute",
+                      "database",
+                      "storage",
+                      "networking",
+                      "monitoring",
+                      "security",
+                      "cdn",
+                      "load-balancer"
+                    ],
+                    "description": "Service type"
+                  },
+                  "configuration": {
+                    "type": "object",
+                    "description": "Technical config (e.g., 'instance_type: t3.medium')."
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Technical role of this service."
+                  }
+                }
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "description": "Deployment regions (e.g., 'us-east-1')."
+            }
+          }
+        },
+        "cicd": {
+          "type": "object",
+          "required": [
+            "pipeline_stages",
+            "tools"
+          ],
+          "properties": {
+            "pipeline_stages": {
+              "type": "array",
+              "description": "CI/CD pipeline stages.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "steps"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Stage name (e.g., 'Build')."
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    }
+                  },
+                  "goal": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Technical goal of this stage."
+                  }
+                }
+              }
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "description": "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.)."
+            },
+            "triggers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "push",
+                      "pull_request",
+                      "schedule",
+                      "manual"
+                    ],
+                    "description": "Trigger type"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Branch name."
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Trigger description."
+                  }
+                }
+              },
+              "description": "Pipeline triggers."
+            }
+          }
+        },
+        "containerization": {
+          "type": "object",
+          "properties": {
+            "dockerfile": {
+              "type": "string",
+              "description": "Dockerfile content or path"
+            },
+            "docker_compose": {
+              "type": "string",
+              "description": "Docker Compose configuration"
+            },
+            "kubernetes": {
+              "type": "object",
+              "properties": {
+                "namespace": {
+                  "type": "string",
+                  "description": "Kubernetes namespace"
+                },
+                "deployments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Deployment name"
+                      },
+                      "replicas": {
+                        "type": "number",
+                        "minimum": 1,
+                        "description": "Number of replicas"
+                      },
+                      "resources": {
+                        "type": "object",
+                        "properties": {
+                          "cpu": {
+                            "type": "string",
+                            "description": "CPU resource (e.g., '500m', '1')"
+                          },
+                          "memory": {
+                            "type": "string",
+                            "description": "Memory resource (e.g., '512Mi', '1Gi')"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Service name"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "ClusterIP",
+                          "NodePort",
+                          "LoadBalancer"
+                        ],
+                        "description": "Service type"
+                      },
+                      "ports": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "port",
+                            "targetPort"
+                          ],
+                          "properties": {
+                            "port": {
+                              "type": "number",
+                              "description": "Service port"
+                            },
+                            "targetPort": {
+                              "type": "number",
+                              "description": "Target container port"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deployment": {
+          "type": "object",
+          "required": [
+            "strategy",
+            "environments"
+          ],
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "blue-green",
+                "canary",
+                "rolling",
+                "recreate",
+                "none"
+              ],
+              "description": "Deployment strategy"
+            },
+            "environments": {
+              "type": "array",
+              "description": "Deployment environments (dev, staging, production)",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "configuration"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Environment name"
+                  },
+                  "configuration": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    },
+                    "description": "Environment-specific configuration"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Environment description"
+                  }
+                }
+              }
+            },
+            "rollback_strategy": {
+              "type": "string",
+              "description": "Rollback strategy"
+            }
+          }
+        },
+        "monitoring": {
+          "type": "object",
+          "required": [
+            "tools",
+            "metrics",
+            "alerts"
+          ],
+          "properties": {
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "description": "Monitoring tools."
+            },
+            "metrics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "threshold"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "threshold": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "action": {
+                    "type": "string",
+                    "maxLength": 50
+                  }
+                }
+              },
+              "description": "Key performance metrics and SLOs."
+            },
+            "alerts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "condition"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "description": "Alert name."
+                  },
+                  "condition": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Threshold/condition."
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": [
+                      "critical",
+                      "warning",
+                      "info"
+                    ]
+                  }
+                }
+              },
+              "description": "Infrastructure alerts."
+            },
+            "logging": {
+              "type": "object",
+              "properties": {
+                "tools": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "description": "Logging tools."
+                },
+                "retention": {
+                  "type": "string",
+                  "maxLength": 10,
+                  "description": "e.g., '30d'."
+                }
+              }
+            }
+          }
+        },
+        "scaling": {
+          "type": "object",
+          "properties": {
+            "auto_scaling": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether auto-scaling is enabled"
+                },
+                "min_replicas": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Minimum number of replicas"
+                },
+                "max_replicas": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Maximum number of replicas"
+                },
+                "target_cpu": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Target CPU percentage"
+                },
+                "target_memory": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Target memory percentage"
+                },
+                "metrics": {
+                  "type": "object",
+                  "description": "Custom scaling metrics (e.g., requests_per_second: 1000)"
+                },
+                "triggers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "type",
+                      "threshold"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "threshold": {
+                        "type": "string",
+                        "maxLength": 20
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "manual_scaling": {
+              "type": "object",
+              "properties": {
+                "replicas": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Number of replicas"
+                }
+              }
+            }
+          }
+        },
+        "disaster_recovery": {
+          "type": "object",
+          "required": [
+            "rpo",
+            "rto",
+            "backup_strategy"
+          ],
+          "properties": {
+            "rpo": {
+              "type": "string",
+              "description": "Recovery Point Objective"
+            },
+            "rto": {
+              "type": "string",
+              "description": "Recovery Time Objective"
+            },
+            "backup_strategy": {
+              "type": "string",
+              "description": "Detailed backup strategy"
+            },
+            "failover_plan": {
+              "type": "string",
+              "description": "Automated or manual failover steps"
+            }
+          },
+          "description": "Disaster recovery and business continuity plan"
+        }
+      }
+    },
+    "config": {
+      "temperature": 0.3,
+      "maxTokens": 64000,
+      "reasoning": false
+    }
+  },
+  "response": {
+    "content": {
+      "infrastructure": {
+        "cloud_provider": "AWS",
+        "services": [
+          {
+            "name": "eks-cluster-prod",
+            "type": "compute",
+            "configuration": {
+              "version": "1.27",
+              "node_groups": [
+                {
+                  "instance_types": [
+                    "t3.medium",
+                    "m5.large"
+                  ],
+                  "scaling_config": {
+                    "min_size": 3,
+                    "max_size": 10
+                  }
+                }
+              ]
+            },
+            "description": "Managed Kubernetes cluster for application workloads."
+          },
+          {
+            "name": "rds-postgres-prod",
+            "type": "database",
+            "configuration": {
+              "engine": "postgres",
+              "engine_version": "15.3",
+              "instance_class": "db.r6g.xlarge",
+              "multi_az": true,
+              "storage_encrypted": true
+            },
+            "description": "Primary relational database for user data and posts."
+          },
+          {
+            "name": "elasticache-redis-prod",
+            "type": "database",
+            "configuration": {
+              "engine": "redis",
+              "cache_node_type": "cache.m6g.large",
+              "num_cache_nodes": 2,
+              "automatic_failover_enabled": true
+            },
+            "description": "In-memory store for feeds, sessions, and Pub/Sub."
+          },
+          {
+            "name": "s3-media-storage",
+            "type": "storage",
+            "configuration": {
+              "bucket_name": "social-platform-media-prod",
+              "versioning": "Enabled",
+              "cors_rules": [
+                {
+                  "allowed_methods": [
+                    "PUT",
+                    "GET"
+                  ]
+                }
+              ]
+            },
+            "description": "Object storage for user-uploaded images and videos."
+          },
+          {
+            "name": "cloudfront-cdn",
+            "type": "cdn",
+            "configuration": {
+              "price_class": "PriceClass_100",
+              "enabled": true,
+              "origins": [
+                {
+                  "domain_name": "s3-media-storage"
+                }
+              ]
+            },
+            "description": "Content Delivery Network for static assets and media."
+          },
+          {
+            "name": "alb-ingress",
+            "type": "load-balancer",
+            "configuration": {
+              "scheme": "internet-facing",
+              "ip_address_type": "ipv4",
+              "target_type": "ip"
+            },
+            "description": "Application Load Balancer for traffic distribution."
+          }
+        ],
+        "iac": "Terraform",
+        "regions": [
+          "us-east-1",
+          "eu-central-1"
+        ]
+      },
+      "cicd": {
+        "pipeline_stages": [
+          {
+            "name": "Lint & Test",
+            "steps": [
+              "npm install",
+              "npm run lint",
+              "npm run test:unit"
+            ],
+            "goal": "Ensure code quality and functionality before build."
+          },
+          {
+            "name": "Security Scan",
+            "steps": [
+              "snyk test",
+              "trivy image scan"
+            ],
+            "goal": "Detect vulnerabilities in dependencies and container images."
+          },
+          {
+            "name": "Build & Push",
+            "steps": [
+              "docker build -t social-api:${GITHUB_SHA}",
+              "aws ecr get-login-password",
+              "docker push social-api:${GITHUB_SHA}"
+            ],
+            "goal": "Package application into immutable container artifacts."
+          },
+          {
+            "name": "Deploy Staging",
+            "steps": [
+              "helm upgrade --install social-api ./charts --namespace staging"
+            ],
+            "goal": "Deploy to pre-production environment for integration testing."
+          },
+          {
+            "name": "Deploy Production",
+            "steps": [
+              "helm upgrade --install social-api ./charts --namespace prod --set image.tag=${GITHUB_SHA}"
+            ],
+            "goal": "Rollout to production using defined strategy."
+          }
+        ],
+        "tools": [
+          "GitHub Actions",
+          "ArgoCD",
+          "Helm",
+          "SonarQube"
+        ],
+        "triggers": [
+          {
+            "type": "push",
+            "branch": "main",
+            "description": "Triggers build and deploy to staging."
+          },
+          {
+            "type": "pull_request",
+            "branch": "main",
+            "description": "Triggers lint, test, and security scan."
+          },
+          {
+            "type": "manual",
+            "description": "Production promotion trigger."
+          }
+        ]
+      },
+      "deployment": {
+        "strategy": "canary",
+        "environments": [
+          {
+            "name": "development",
+            "configuration": {
+              "key": "replicas",
+              "value": "1"
+            },
+            "description": "Ephemeral environments for feature branches."
+          },
+          {
+            "name": "staging",
+            "configuration": {
+              "key": "replicas",
+              "value": "2"
+            },
+            "description": "Pre-production environment with data parity."
+          },
+          {
+            "name": "production",
+            "configuration": {
+              "key": "replicas",
+              "value": "auto"
+            },
+            "description": "High-availability environment for end users."
+          }
+        ],
+        "rollback_strategy": "Automated rollback via ArgoCD if health checks fail within 5 minutes of deployment."
+      },
+      "monitoring": {
+        "tools": [
+          "Prometheus",
+          "Grafana",
+          "ELK Stack",
+          "PagerDuty"
+        ],
+        "metrics": [
+          {
+            "name": "API Latency",
+            "threshold": "200ms",
+            "action": "Scale out or Alert Warning"
+          },
+          {
+            "name": "Error Rate (5xx)",
+            "threshold": "1%",
+            "action": "Alert Critical and Rollback"
+          },
+          {
+            "name": "CPU Saturation",
+            "threshold": "75%",
+            "action": "Trigger HPA"
+          }
+        ],
+        "alerts": [
+          {
+            "name": "HighErrorRate",
+            "condition": "rate(http_requests_total{status=~\"5..\"}[5m]) > 1%",
+            "severity": "critical"
+          },
+          {
+            "name": "HighLatency",
+            "condition": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.2",
+            "severity": "warning"
+          },
+          {
+            "name": "DatabaseCPUHigh",
+            "condition": "avg(rds_cpu_utilization) > 85%",
+            "severity": "critical"
+          }
+        ],
+        "logging": {
+          "retention": "30d",
+          "tools": [
+            "Fluentd",
+            "Elasticsearch",
+            "Kibana"
+          ]
+        }
+      },
+      "containerization": {
+        "docker_compose": "version: '3.8'\nservices:\n  api:\n    build: .\n    ports: ['4000:4000']\n    environment:\n      - NODE_ENV=development\n      - DATABASE_URL=postgres://user:pass@db:5432/social\n  db:\n    image: postgres:15\n  redis:\n    image: redis:7",
+        "dockerfile": "FROM node:18-alpine AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:18-alpine\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCMD [\"node\", \"dist/index.js\"]",
+        "kubernetes": {
+          "deployments": [
+            {
+              "name": "social-api",
+              "replicas": 3,
+              "resources": {
+                "cpu": "500m",
+                "memory": "512Mi"
+              }
+            },
+            {
+              "name": "feed-worker",
+              "replicas": 2,
+              "resources": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              }
+            }
+          ],
+          "namespace": "social-platform",
+          "services": [
+            {
+              "name": "social-api-svc",
+              "ports": [
+                {
+                  "port": 80,
+                  "targetPort": 4000
+                }
+              ],
+              "type": "ClusterIP"
+            }
+          ]
+        }
+      },
+      "scaling": {
+        "auto_scaling": {
+          "enabled": true,
+          "max_replicas": 50,
+          "metrics": {
+            "requests_per_second": 1000,
+            "active_socket_connections": 5000
+          },
+          "min_replicas": 3,
+          "target_cpu": 70,
+          "target_memory": 80,
+          "triggers": [
+            {
+              "type": "cpu",
+              "threshold": "70%"
+            },
+            {
+              "type": "memory",
+              "threshold": "80%"
+            }
+          ]
+        },
+        "manual_scaling": {
+          "replicas": 3
+        }
+      },
+      "disaster_recovery": {
+        "rpo": "15 minutes",
+        "rto": "4 hours",
+        "backup_strategy": "Daily automated snapshots of RDS and ElastiCache with 35-day retention. S3 Cross-Region Replication enabled for media assets.",
+        "failover_plan": "Automated DNS failover via Route53 to secondary region. Terraform scripts to hydrate stateless compute in DR region."
+      },
+      "summary": "Cloud-native AWS architecture using EKS and Terraform, featuring canary deployments and auto-scaling to support high-throughput social feeds.",
+      "description": "We utilize a GitOps approach with Terraform and ArgoCD to manage a scalable Kubernetes (EKS) infrastructure. The system leverages managed services (RDS, ElastiCache) for data persistence to reduce operational overhead. Observability is centralized via Prometheus/ELK, ensuring strict SLO adherence for the real-time feed and messaging components.",
+      "cloud_provider": "AWS",
+      "infra_components": 12
+    },
+    "raw": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n  \"infrastructure\": {\n    \"cloud_provider\": \"AWS\",\n    \"services\": [\n      {\n        \"name\": \"eks-cluster-prod\",\n        \"type\": \"compute\",\n        \"configuration\":  \"{\\\"version\\\": \\\"1.27\\\", \\\"node_groups\\\": [{\\\"instance_types\\\": [\\\"t3.medium\\\", \\\"m5.large\\\"], \\\"scaling_config\\\": {\\\"min_size\\\": 3, \\\"max_size\\\": 10}}]}\",\n        \"description\": \"Managed Kubernetes cluster for application workloads.\"\n      },\n      {\n        \"name\": \"rds-postgres-prod\",\n        \"type\": \"database\",\n        \"configuration\": \"{\\\"engine\\\": \\\"postgres\\\", \\\"engine_version\\\": \\\"15.3\\\", \\\"instance_class\\\": \\\"db.r6g.xlarge\\\", \\\"multi_az\\\": true, \\\"storage_encrypted\\\": true}\",\n        \"description\": \"Primary relational database for user data and posts.\"\n      },\n      {\n        \"name\": \"elasticache-redis-prod\",\n        \"type\": \"database\",\n        \"configuration\": \"{\\\"engine\\\": \\\"redis\\\", \\\"cache_node_type\\\": \\\"cache.m6g.large\\\", \\\"num_cache_nodes\\\": 2, \\\"automatic_failover_enabled\\\": true}\",\n        \"description\": \"In-memory store for feeds, sessions, and Pub/Sub.\"\n      },\n      {\n        \"name\": \"s3-media-storage\",\n        \"type\": \"storage\",\n        \"configuration\": \"{\\\"bucket_name\\\": \\\"social-platform-media-prod\\\", \\\"versioning\\\": \\\"Enabled\\\", \\\"cors_rules\\\": [{\\\"allowed_methods\\\": [\\\"PUT\\\", \\\"GET\\\"]}]}\",\n        \"description\": \"Object storage for user-uploaded images and videos.\"\n      },\n      {\n        \"name\": \"cloudfront-cdn\",\n        \"type\": \"cdn\",\n        \"configuration\": \"{\\\"price_class\\\": \\\"PriceClass_100\\\", \\\"enabled\\\": true, \\\"origins\\\": [{\\\"domain_name\\\": \\\"s3-media-storage\\\"}]}\",\n        \"description\": \"Content Delivery Network for static assets and media.\"\n      },\n      {\n        \"name\": \"alb-ingress\",\n        \"type\": \"load-balancer\",\n        \"configuration\": \"{\\\"scheme\\\": \\\"internet-facing\\\", \\\"ip_address_type\\\": \\\"ipv4\\\", \\\"target_type\\\": \\\"ip\\\"}\",\n        \"description\": \"Application Load Balancer for traffic distribution.\"\n      }\n    ],\n    \"iac\": \"Terraform\",\n    \"regions\": [\n      \"us-east-1\",\n      \"eu-central-1\"\n    ]\n  },\n  \"cicd\": {\n    \"pipeline_stages\": [\n      {\n        \"name\": \"Lint & Test\",\n        \"steps\": [\n          \"npm install\",\n          \"npm run lint\",\n          \"npm run test:unit\"\n        ],\n        \"goal\": \"Ensure code quality and functionality before build.\"\n      },\n      {\n        \"name\": \"Security Scan\",\n        \"steps\": [\n          \"snyk test\",\n          \"trivy image scan\"\n        ],\n        \"goal\": \"Detect vulnerabilities in dependencies and container images.\"\n      },\n      {\n        \"name\": \"Build & Push\",\n        \"steps\": [\n          \"docker build -t social-api:${GITHUB_SHA}\",\n          \"aws ecr get-login-password\",\n          \"docker push social-api:${GITHUB_SHA}\"\n        ],\n        \"goal\": \"Package application into immutable container artifacts.\"\n      },\n      {\n        \"name\": \"Deploy Staging\",\n        \"steps\": [\n          \"helm upgrade --install social-api ./charts --namespace staging\"\n        ],\n        \"goal\": \"Deploy to pre-production environment for integration testing.\"\n      },\n      {\n        \"name\": \"Deploy Production\",\n        \"steps\": [\n          \"helm upgrade --install social-api ./charts --namespace prod --set image.tag=${GITHUB_SHA}\"\n        ],\n        \"goal\": \"Rollout to production using defined strategy.\"\n      }\n    ],\n    \"tools\": [\n      \"GitHub Actions\",\n      \"ArgoCD\",\n      \"Helm\",\n      \"SonarQube\"\n    ],\n    \"triggers\": [\n      {\n        \"type\": \"push\",\n        \"branch\": \"main\",\n        \"description\": \"Triggers build and deploy to staging.\"\n      },\n      {\n        \"type\": \"pull_request\",\n        \"branch\": \"main\",\n        \"description\": \"Triggers lint, test, and security scan.\"\n      },\n      {\n        \"type\": \"manual\",\n        \"description\": \"Production promotion trigger.\"\n      }\n    ]\n  },\n  \"deployment\": {\n    \"strategy\": \"canary\",\n    \"environments\": [\n      {\n        \"name\": \"development\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"1\"\n        },\n        \"description\": \"Ephemeral environments for feature branches.\"\n      },\n      {\n        \"name\": \"staging\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"2\"\n        },\n        \"description\": \"Pre-production environment with data parity.\"\n      },\n      {\n        \"name\": \"production\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"auto\"\n        },\n        \"description\": \"High-availability environment for end users.\"\n      }\n    ],\n    \"rollback_strategy\": \"Automated rollback via ArgoCD if health checks fail within 5 minutes of deployment.\"\n  },\n  \"monitoring\": {\n    \"tools\": [\n      \"Prometheus\",\n      \"Grafana\",\n      \"ELK Stack\",\n      \"PagerDuty\"\n    ],\n    \"metrics\": [\n      {\n        \"name\": \"API Latency\",\n        \"threshold\": \"200ms\",\n        \"action\": \"Scale out or Alert Warning\"\n      },\n      {\n        \"name\": \"Error Rate (5xx)\",\n        \"threshold\": \"1%\",\n        \"action\": \"Alert Critical and Rollback\"\n      },\n      {\n        \"name\": \"CPU Saturation\",\n        \"threshold\": \"75%\",\n        \"action\": \"Trigger HPA\"\n      }\n    ],\n    \"alerts\": [\n      {\n        \"name\": \"HighErrorRate\",\n        \"condition\": \"rate(http_requests_total{status=~\\\"5..\\\"}[5m]) > 1%\",\n        \"severity\": \"critical\"\n      },\n      {\n        \"name\": \"HighLatency\",\n        \"condition\": \"histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.2\",\n        \"severity\": \"warning\"\n      },\n      {\n        \"name\": \"DatabaseCPUHigh\",\n        \"condition\": \"avg(rds_cpu_utilization) > 85%\",\n        \"severity\": \"critical\"\n      }\n    ],\n    \"logging\": {\n      \"retention\": \"30d\",\n      \"tools\": [\n        \"Fluentd\",\n        \"Elasticsearch\",\n        \"Kibana\"\n      ]\n    }\n  },\n  \"containerization\": {\n    \"docker_compose\": \"version: '3.8'\\nservices:\\n  api:\\n    build: .\\n    ports: ['4000:4000']\\n    environment:\\n      - NODE_ENV=development\\n      - DATABASE_URL=postgres://user:pass@db:5432/social\\n  db:\\n    image: postgres:15\\n  redis:\\n    image: redis:7\",\n    \"dockerfile\": \"FROM node:18-alpine AS builder\\nWORKDIR /app\\nCOPY package*.json ./\\nRUN npm ci\\nCOPY . .\\nRUN npm run build\\n\\nFROM node:18-alpine\\nWORKDIR /app\\nCOPY --from=builder /app/dist ./dist\\nCOPY --from=builder /app/node_modules ./node_modules\\nCMD [\\\"node\\\", \\\"dist/index.js\\\"]\",\n    \"kubernetes\": {\n      \"deployments\": [\n        {\n          \"name\": \"social-api\",\n          \"replicas\": 3,\n          \"resources\": {\n            \"cpu\": \"500m\",\n            \"memory\": \"512Mi\"\n          }\n        },\n        {\n          \"name\": \"feed-worker\",\n          \"replicas\": 2,\n          \"resources\": {\n            \"cpu\": \"250m\",\n            \"memory\": \"256Mi\"\n          }\n        }\n      ],\n      \"namespace\": \"social-platform\",\n      \"services\": [\n        {\n          \"name\": \"social-api-svc\",\n          \"ports\": [\n            {\n              \"port\": 80,\n              \"targetPort\": 4000\n            }\n          ],\n          \"type\": \"ClusterIP\"\n        }\n      ]\n    }\n  },\n  \"scaling\": {\n    \"auto_scaling\": {\n      \"enabled\": true,\n      \"max_replicas\": 50,\n      \"metrics\": \"{\\\"requests_per_second\\\": 1000, \\\"active_socket_connections\\\": 5000}\",\n      \"min_replicas\": 3,\n      \"target_cpu\": 70,\n      \"target_memory\": 80,\n      \"triggers\": [\n        {\n          \"type\": \"cpu\",\n          \"threshold\": \"70%\"\n        },\n        {\n          \"type\": \"memory\",\n          \"threshold\": \"80%\"\n        }\n      ]\n    },\n    \"manual_scaling\": {\n      \"replicas\": 3\n    }\n  },\n  \"disaster_recovery\": {\n    \"rpo\": \"15 minutes\",\n    \"rto\": \"4 hours\",\n    \"backup_strategy\": \"Daily automated snapshots of RDS and ElastiCache with 35-day retention. S3 Cross-Region Replication enabled for media assets.\",\n    \"failover_plan\": \"Automated DNS failover via Route53 to secondary region. Terraform scripts to hydrate stateless compute in DR region.\"\n  },\n  \"summary\": \"Cloud-native AWS architecture using EKS and Terraform, featuring canary deployments and auto-scaling to support high-throughput social feeds.\",\n  \"description\": \"We utilize a GitOps approach with Terraform and ArgoCD to manage a scalable Kubernetes (EKS) infrastructure. The system leverages managed services (RDS, ElastiCache) for data persistence to reduce operational overhead. Observability is centralized via Prometheus/ELK, ensuring strict SLO adherence for the real-time feed and messaging components.\",\n  \"cloud_provider\": \"AWS\",\n  \"infra_components\": 12\n}",
+                "thoughtSignature": "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"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 10286,
+        "candidatesTokenCount": 2504,
+        "totalTokenCount": 14750,
+        "cachedContentTokenCount": 6497,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 10286
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 6497
+          }
+        ],
+        "thoughtsTokenCount": 1960
+      },
+      "modelVersion": "gemini-3-pro-preview",
+      "responseId": "zERvabKMHbLUvdIPn-uOoAo"
+    },
+    "extracted_json_text": "{\n  \"infrastructure\": {\n    \"cloud_provider\": \"AWS\",\n    \"services\": [\n      {\n        \"name\": \"eks-cluster-prod\",\n        \"type\": \"compute\",\n        \"configuration\":  \"{\\\"version\\\": \\\"1.27\\\", \\\"node_groups\\\": [{\\\"instance_types\\\": [\\\"t3.medium\\\", \\\"m5.large\\\"], \\\"scaling_config\\\": {\\\"min_size\\\": 3, \\\"max_size\\\": 10}}]}\",\n        \"description\": \"Managed Kubernetes cluster for application workloads.\"\n      },\n      {\n        \"name\": \"rds-postgres-prod\",\n        \"type\": \"database\",\n        \"configuration\": \"{\\\"engine\\\": \\\"postgres\\\", \\\"engine_version\\\": \\\"15.3\\\", \\\"instance_class\\\": \\\"db.r6g.xlarge\\\", \\\"multi_az\\\": true, \\\"storage_encrypted\\\": true}\",\n        \"description\": \"Primary relational database for user data and posts.\"\n      },\n      {\n        \"name\": \"elasticache-redis-prod\",\n        \"type\": \"database\",\n        \"configuration\": \"{\\\"engine\\\": \\\"redis\\\", \\\"cache_node_type\\\": \\\"cache.m6g.large\\\", \\\"num_cache_nodes\\\": 2, \\\"automatic_failover_enabled\\\": true}\",\n        \"description\": \"In-memory store for feeds, sessions, and Pub/Sub.\"\n      },\n      {\n        \"name\": \"s3-media-storage\",\n        \"type\": \"storage\",\n        \"configuration\": \"{\\\"bucket_name\\\": \\\"social-platform-media-prod\\\", \\\"versioning\\\": \\\"Enabled\\\", \\\"cors_rules\\\": [{\\\"allowed_methods\\\": [\\\"PUT\\\", \\\"GET\\\"]}]}\",\n        \"description\": \"Object storage for user-uploaded images and videos.\"\n      },\n      {\n        \"name\": \"cloudfront-cdn\",\n        \"type\": \"cdn\",\n        \"configuration\": \"{\\\"price_class\\\": \\\"PriceClass_100\\\", \\\"enabled\\\": true, \\\"origins\\\": [{\\\"domain_name\\\": \\\"s3-media-storage\\\"}]}\",\n        \"description\": \"Content Delivery Network for static assets and media.\"\n      },\n      {\n        \"name\": \"alb-ingress\",\n        \"type\": \"load-balancer\",\n        \"configuration\": \"{\\\"scheme\\\": \\\"internet-facing\\\", \\\"ip_address_type\\\": \\\"ipv4\\\", \\\"target_type\\\": \\\"ip\\\"}\",\n        \"description\": \"Application Load Balancer for traffic distribution.\"\n      }\n    ],\n    \"iac\": \"Terraform\",\n    \"regions\": [\n      \"us-east-1\",\n      \"eu-central-1\"\n    ]\n  },\n  \"cicd\": {\n    \"pipeline_stages\": [\n      {\n        \"name\": \"Lint & Test\",\n        \"steps\": [\n          \"npm install\",\n          \"npm run lint\",\n          \"npm run test:unit\"\n        ],\n        \"goal\": \"Ensure code quality and functionality before build.\"\n      },\n      {\n        \"name\": \"Security Scan\",\n        \"steps\": [\n          \"snyk test\",\n          \"trivy image scan\"\n        ],\n        \"goal\": \"Detect vulnerabilities in dependencies and container images.\"\n      },\n      {\n        \"name\": \"Build & Push\",\n        \"steps\": [\n          \"docker build -t social-api:${GITHUB_SHA}\",\n          \"aws ecr get-login-password\",\n          \"docker push social-api:${GITHUB_SHA}\"\n        ],\n        \"goal\": \"Package application into immutable container artifacts.\"\n      },\n      {\n        \"name\": \"Deploy Staging\",\n        \"steps\": [\n          \"helm upgrade --install social-api ./charts --namespace staging\"\n        ],\n        \"goal\": \"Deploy to pre-production environment for integration testing.\"\n      },\n      {\n        \"name\": \"Deploy Production\",\n        \"steps\": [\n          \"helm upgrade --install social-api ./charts --namespace prod --set image.tag=${GITHUB_SHA}\"\n        ],\n        \"goal\": \"Rollout to production using defined strategy.\"\n      }\n    ],\n    \"tools\": [\n      \"GitHub Actions\",\n      \"ArgoCD\",\n      \"Helm\",\n      \"SonarQube\"\n    ],\n    \"triggers\": [\n      {\n        \"type\": \"push\",\n        \"branch\": \"main\",\n        \"description\": \"Triggers build and deploy to staging.\"\n      },\n      {\n        \"type\": \"pull_request\",\n        \"branch\": \"main\",\n        \"description\": \"Triggers lint, test, and security scan.\"\n      },\n      {\n        \"type\": \"manual\",\n        \"description\": \"Production promotion trigger.\"\n      }\n    ]\n  },\n  \"deployment\": {\n    \"strategy\": \"canary\",\n    \"environments\": [\n      {\n        \"name\": \"development\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"1\"\n        },\n        \"description\": \"Ephemeral environments for feature branches.\"\n      },\n      {\n        \"name\": \"staging\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"2\"\n        },\n        \"description\": \"Pre-production environment with data parity.\"\n      },\n      {\n        \"name\": \"production\",\n        \"configuration\": {\n          \"key\": \"replicas\",\n          \"value\": \"auto\"\n        },\n        \"description\": \"High-availability environment for end users.\"\n      }\n    ],\n    \"rollback_strategy\": \"Automated rollback via ArgoCD if health checks fail within 5 minutes of deployment.\"\n  },\n  \"monitoring\": {\n    \"tools\": [\n      \"Prometheus\",\n      \"Grafana\",\n      \"ELK Stack\",\n      \"PagerDuty\"\n    ],\n    \"metrics\": [\n      {\n        \"name\": \"API Latency\",\n        \"threshold\": \"200ms\",\n        \"action\": \"Scale out or Alert Warning\"\n      },\n      {\n        \"name\": \"Error Rate (5xx)\",\n        \"threshold\": \"1%\",\n        \"action\": \"Alert Critical and Rollback\"\n      },\n      {\n        \"name\": \"CPU Saturation\",\n        \"threshold\": \"75%\",\n        \"action\": \"Trigger HPA\"\n      }\n    ],\n    \"alerts\": [\n      {\n        \"name\": \"HighErrorRate\",\n        \"condition\": \"rate(http_requests_total{status=~\\\"5..\\\"}[5m]) > 1%\",\n        \"severity\": \"critical\"\n      },\n      {\n        \"name\": \"HighLatency\",\n        \"condition\": \"histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.2\",\n        \"severity\": \"warning\"\n      },\n      {\n        \"name\": \"DatabaseCPUHigh\",\n        \"condition\": \"avg(rds_cpu_utilization) > 85%\",\n        \"severity\": \"critical\"\n      }\n    ],\n    \"logging\": {\n      \"retention\": \"30d\",\n      \"tools\": [\n        \"Fluentd\",\n        \"Elasticsearch\",\n        \"Kibana\"\n      ]\n    }\n  },\n  \"containerization\": {\n    \"docker_compose\": \"version: '3.8'\\nservices:\\n  api:\\n    build: .\\n    ports: ['4000:4000']\\n    environment:\\n      - NODE_ENV=development\\n      - DATABASE_URL=postgres://user:pass@db:5432/social\\n  db:\\n    image: postgres:15\\n  redis:\\n    image: redis:7\",\n    \"dockerfile\": \"FROM node:18-alpine AS builder\\nWORKDIR /app\\nCOPY package*.json ./\\nRUN npm ci\\nCOPY . .\\nRUN npm run build\\n\\nFROM node:18-alpine\\nWORKDIR /app\\nCOPY --from=builder /app/dist ./dist\\nCOPY --from=builder /app/node_modules ./node_modules\\nCMD [\\\"node\\\", \\\"dist/index.js\\\"]\",\n    \"kubernetes\": {\n      \"deployments\": [\n        {\n          \"name\": \"social-api\",\n          \"replicas\": 3,\n          \"resources\": {\n            \"cpu\": \"500m\",\n            \"memory\": \"512Mi\"\n          }\n        },\n        {\n          \"name\": \"feed-worker\",\n          \"replicas\": 2,\n          \"resources\": {\n            \"cpu\": \"250m\",\n            \"memory\": \"256Mi\"\n          }\n        }\n      ],\n      \"namespace\": \"social-platform\",\n      \"services\": [\n        {\n          \"name\": \"social-api-svc\",\n          \"ports\": [\n            {\n              \"port\": 80,\n              \"targetPort\": 4000\n            }\n          ],\n          \"type\": \"ClusterIP\"\n        }\n      ]\n    }\n  },\n  \"scaling\": {\n    \"auto_scaling\": {\n      \"enabled\": true,\n      \"max_replicas\": 50,\n      \"metrics\": \"{\\\"requests_per_second\\\": 1000, \\\"active_socket_connections\\\": 5000}\",\n      \"min_replicas\": 3,\n      \"target_cpu\": 70,\n      \"target_memory\": 80,\n      \"triggers\": [\n        {\n          \"type\": \"cpu\",\n          \"threshold\": \"70%\"\n        },\n        {\n          \"type\": \"memory\",\n          \"threshold\": \"80%\"\n        }\n      ]\n    },\n    \"manual_scaling\": {\n      \"replicas\": 3\n    }\n  },\n  \"disaster_recovery\": {\n    \"rpo\": \"15 minutes\",\n    \"rto\": \"4 hours\",\n    \"backup_strategy\": \"Daily automated snapshots of RDS and ElastiCache with 35-day retention. S3 Cross-Region Replication enabled for media assets.\",\n    \"failover_plan\": \"Automated DNS failover via Route53 to secondary region. Terraform scripts to hydrate stateless compute in DR region.\"\n  },\n  \"summary\": \"Cloud-native AWS architecture using EKS and Terraform, featuring canary deployments and auto-scaling to support high-throughput social feeds.\",\n  \"description\": \"We utilize a GitOps approach with Terraform and ArgoCD to manage a scalable Kubernetes (EKS) infrastructure. The system leverages managed services (RDS, ElastiCache) for data persistence to reduce operational overhead. Observability is centralized via Prometheus/ELK, ensuring strict SLO adherence for the real-time feed and messaging components.\",\n  \"cloud_provider\": \"AWS\",\n  \"infra_components\": 12\n}"
+  }
+}

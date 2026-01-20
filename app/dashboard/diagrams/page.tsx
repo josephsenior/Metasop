@@ -13,7 +13,9 @@ import { diagramsApi } from "@/lib/api/diagrams"
 import { FloatingCreateButton } from "@/components/layout/floating-create-button"
 import { useToast } from "@/components/ui/use-toast"
 import type { Diagram } from "@/types/diagram"
-import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2 } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2, AlertCircle } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia } from "@/components/ui/empty"
 import {
@@ -24,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export default function MyDiagramsPage() {
+  const { user } = useAuth()
   const { toast } = useToast()
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -112,11 +115,25 @@ export default function MyDiagramsPage() {
   }, [searchQuery, sortBy, sortOrder, statusFilter])
 
   return (
-    <AuthGuard requireAuth={true}>
+    <AuthGuard requireAuth={false}>
       <div className="min-h-screen bg-background">
         <DashboardHeader />
 
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          {/* Guest notice */}
+          {!user && (
+            <Alert className="border-blue-600/30 bg-blue-600/10 mb-8">
+              <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+              <AlertDescription className="text-sm">
+                <span className="font-medium">You are in guest mode.</span> Your diagrams are saved for this session only.{" "}
+                <Link href="/register" className="underline hover:no-underline font-medium">
+                  Sign up
+                </Link>{" "}
+                to save them permanently.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>

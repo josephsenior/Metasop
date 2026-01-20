@@ -11,25 +11,25 @@ import { validateUpdateDiagramRequest } from "@/lib/diagrams/schemas";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     let userId: string;
     
-    try {
+    const guestAuth = await handleGuestAuth(request);
+    
+    if (guestAuth.isGuest) {
+      if (!guestAuth.canProceed || !guestAuth.userId) {
+        return createErrorResponse(guestAuth.reason || "Unauthorized", 401);
+      }
+      userId = guestAuth.userId;
+    } else {
       const user = await getAuthenticatedUser(request);
       userId = user.userId;
-    } catch (authError) {
-      const guestAuth = await handleGuestAuth(request);
-      if (guestAuth.isGuest && guestAuth.sessionId) {
-        userId = `guest_${guestAuth.sessionId}`;
-      } else {
-        return createErrorResponse("Unauthorized", 401);
-      }
     }
 
-    const { id } = await params;
-    const diagram = await diagramDb.findById(id, userId);
+    const resolvedParams = await params;
+    const diagram = await diagramDb.findById(resolvedParams.id, userId);
 
     if (!diagram) {
       return createErrorResponse("Diagram not found", 404);
@@ -37,9 +37,6 @@ export async function GET(
 
     return createSuccessResponse({ diagram });
   } catch (error: any) {
-    if (error.message === "Unauthorized") {
-      return createErrorResponse("Unauthorized", 401);
-    }
     return createErrorResponse(error.message || "Failed to fetch diagram", 500);
   }
 }
@@ -49,49 +46,29 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     let userId: string;
     
-    try {
+    const guestAuth = await handleGuestAuth(request);
+    
+    if (guestAuth.isGuest) {
+      if (!guestAuth.canProceed || !guestAuth.userId) {
+        return createErrorResponse(guestAuth.reason || "Unauthorized", 401);
+      }
+      userId = guestAuth.userId;
+    } else {
       const user = await getAuthenticatedUser(request);
       userId = user.userId;
-    } catch (authError) {
-      const guestAuth = await handleGuestAuth(request);
-      if (guestAuth.isGuest && guestAuth.sessionId) {
-        userId = `guest_${guestAuth.sessionId}`;
-      } else {
-        return createErrorResponse("Unauthorized", 401);
-      }
     }
 
-    const { id } = await params;
-    let body: UpdateDiagramRequest = await request.json();
-    
-    // Validate request data
-    try {
-      body = validateUpdateDiagramRequest(body);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        return createErrorResponse(
-          `Invalid request: ${error.errors.map((e) => e.message).join(", ")}`,
-          400
-        );
-      }
-      return createErrorResponse("Invalid request format", 400);
-    }
+    const resolvedParams = await params;
+    const body = await request.json();
+    const diagram = await diagramDb.update(resolvedParams.id, userId, body);
 
-    const diagram = await diagramDb.update(id, userId, body);
-
-    return createSuccessResponse(
-      { diagram },
-      "Diagram updated successfully"
-    );
+    return createSuccessResponse({ diagram });
   } catch (error: any) {
-    if (error.message === "Unauthorized") {
-      return createErrorResponse("Unauthorized", 401);
-    }
     if (error.message === "Diagram not found") {
       return createErrorResponse("Diagram not found", 404);
     }
@@ -104,31 +81,28 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     let userId: string;
     
-    try {
+    const guestAuth = await handleGuestAuth(request);
+    
+    if (guestAuth.isGuest) {
+      if (!guestAuth.canProceed || !guestAuth.userId) {
+        return createErrorResponse(guestAuth.reason || "Unauthorized", 401);
+      }
+      userId = guestAuth.userId;
+    } else {
       const user = await getAuthenticatedUser(request);
       userId = user.userId;
-    } catch (authError) {
-      const guestAuth = await handleGuestAuth(request);
-      if (guestAuth.isGuest && guestAuth.sessionId) {
-        userId = `guest_${guestAuth.sessionId}`;
-      } else {
-        return createErrorResponse("Unauthorized", 401);
-      }
     }
 
-    const { id } = await params;
-    await diagramDb.delete(id, userId);
+    const resolvedParams = await params;
+    await diagramDb.delete(resolvedParams.id, userId);
 
-    return createSuccessResponse(null, "Diagram deleted successfully");
+    return createSuccessResponse({ message: "Diagram deleted successfully" });
   } catch (error: any) {
-    if (error.message === "Unauthorized") {
-      return createErrorResponse("Unauthorized", 401);
-    }
     if (error.message === "Diagram not found") {
       return createErrorResponse("Diagram not found", 404);
     }

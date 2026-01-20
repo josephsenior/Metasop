@@ -1,0 +1,432 @@
+{
+  "step_id": "arch_design",
+  "role": "Architect",
+  "timestamp": "2026-01-20T01:35:36.913Z",
+  "content": {
+    "design_doc": "# System Architecture: Next.js Blog Platform\n\n## Overview\nThis document outlines the architecture for a high-performance, SEO-optimized blogging platform. The system utilizes a decoupled architecture where **Next.js** serves as the frontend application (handling SSR, SSG, and ISR) and a dedicated **Node.js** service provides a RESTful API for data management. **PostgreSQL** is the relational source of truth.\n\n## Core Components\n\n### 1. Frontend (Next.js)\n- **Rendering**: Utilizes Server-Side Rendering (SSR) for dynamic routes and Incremental Static Regeneration (ISR) for blog posts to ensure instant loading and SEO dominance.\n- **State Management**: React Context for auth state; SWR/TanStack Query for data fetching.\n- **Editor**: Integrated Markdown editor with live preview using `react-markdown` and `remark` plugins.\n\n### 2. Backend API (Node.js/Express)\n- **Role**: Stateless REST API handling business logic, authentication, and database interactions.\n- **Security**: Implements Helmet, rate-limiting, and input sanitization (specifically for Markdown/HTML injection).\n- **Search**: Leverages PostgreSQL's native full-text search (`tsvector`) to avoid the overhead of external search engines like Elasticsearch.\n\n### 3. Database (PostgreSQL)\n- **Schema**: Normalized schema for Posts, Users, Comments, and Taxonomy (Tags/Categories).\n- **Optimization**: Indexes on slugs, foreign keys, and full-text search columns.\n\n### 4. Infrastructure\n- **CDN**: Cloudflare or Vercel Edge Network for caching static assets and ISR pages.\n- **Caching**: Redis (optional, or in-memory) for caching expensive API aggregation queries (e.g., \"Related Posts\").\n\n## Data Flow\n1. **Read**: User requests a post -> Next.js checks ISR cache -> If stale, fetches from Node.js API -> API queries DB -> Returns JSON -> Next.js renders HTML.\n2. **Write**: Admin saves post -> Next.js sends POST to API (Auth Header) -> API validates & sanitizes -> Saves to DB -> Triggers on-demand revalidation for Next.js path.\n\n## Analytics & SEO\n- **Analytics**: Server-side logging of page views into a `post_analytics` table to avoid ad-blockers.\n- **SEO**: Dynamic generation of `sitemap.xml` and `robots.txt` based on DB content.",
+    "apis": [
+      {
+        "path": "/api/posts",
+        "method": "GET",
+        "description": "Retrieve paginated list of posts with filters.",
+        "request_schema": {
+          "page": "integer",
+          "limit": "integer",
+          "tag": "string",
+          "category": "string"
+        },
+        "response_schema": {
+          "data": [
+            {
+              "id": "uuid",
+              "title": "string",
+              "slug": "string",
+              "excerpt": "string"
+            }
+          ],
+          "meta": {
+            "total": "integer"
+          }
+        },
+        "auth_required": false,
+        "endpoint": "https://api.blogplatform.com",
+        "rate_limit": "100/min"
+      },
+      {
+        "path": "/api/posts",
+        "method": "POST",
+        "description": "Create a new blog post.",
+        "request_schema": {
+          "title": "string",
+          "content": "string",
+          "slug": "string",
+          "tags": [
+            "string"
+          ],
+          "category_id": "uuid"
+        },
+        "response_schema": {
+          "id": "uuid",
+          "slug": "string",
+          "status": "published"
+        },
+        "auth_required": true,
+        "endpoint": "https://api.blogplatform.com",
+        "rate_limit": "10/min"
+      },
+      {
+        "path": "/api/posts/:slug",
+        "method": "GET",
+        "description": "Get single post details by slug.",
+        "request_schema": {},
+        "response_schema": {
+          "id": "uuid",
+          "title": "string",
+          "content": "string",
+          "author": {
+            "name": "string"
+          },
+          "comments": []
+        },
+        "auth_required": false,
+        "endpoint": "https://api.blogplatform.com",
+        "rate_limit": "200/min"
+      },
+      {
+        "path": "/api/comments",
+        "method": "POST",
+        "description": "Submit a comment on a post.",
+        "request_schema": {
+          "post_id": "uuid",
+          "content": "string",
+          "parent_id": "uuid|null",
+          "author_name": "string"
+        },
+        "response_schema": {
+          "id": "uuid",
+          "status": "pending_moderation"
+        },
+        "auth_required": false,
+        "endpoint": "https://api.blogplatform.com",
+        "rate_limit": "5/min"
+      },
+      {
+        "path": "/api/search",
+        "method": "GET",
+        "description": "Full-text search across posts.",
+        "request_schema": {
+          "q": "string"
+        },
+        "response_schema": {
+          "results": [
+            {
+              "id": "uuid",
+              "title": "string",
+              "relevance": "float"
+            }
+          ]
+        },
+        "auth_required": false,
+        "endpoint": "https://api.blogplatform.com",
+        "rate_limit": "60/min"
+      }
+    ],
+    "summary": "A high-performance, SEO-focused blog platform using Next.js for rendering and a Node.js/PostgreSQL backend for robust content management.",
+    "description": "This architecture separates the presentation layer (Next.js) from the data layer (Node.js API). It leverages Server-Side Rendering and Incremental Static Regeneration to deliver static-like performance with dynamic capabilities. PostgreSQL handles complex relationships and full-text search, while a CDN ensures global low-latency delivery.",
+    "decisions": [
+      {
+        "decision": "Use PostgreSQL for Full-Text Search",
+        "status": "accepted",
+        "reason": "Postgres offers sufficient FTS capabilities (tsvector) for a blog scale without the operational overhead of Elasticsearch.",
+        "rationale": "Reduces infrastructure complexity.",
+        "tradeoffs": "Less advanced fuzzy matching than dedicated search engines; higher DB load.",
+        "consequences": "Simplified infrastructure; requires careful index tuning.",
+        "alternatives": [
+          "Elasticsearch",
+          "Algolia",
+          "Meilisearch"
+        ]
+      },
+      {
+        "decision": "Markdown for Content Storage",
+        "status": "accepted",
+        "reason": "Provides portability, version control friendliness, and security (easier to sanitize than raw HTML).",
+        "rationale": "Developer-centric standard.",
+        "tradeoffs": "Requires parsing on the frontend; no native rich-media embedding without plugins.",
+        "consequences": "Need a robust Markdown parser (remark/rehype) pipeline.",
+        "alternatives": [
+          "Rich Text (HTML)",
+          "JSON Blocks (Editor.js)"
+        ]
+      },
+      {
+        "decision": "Incremental Static Regeneration (ISR)",
+        "status": "accepted",
+        "reason": "Combines the performance of static sites with the flexibility of dynamic rendering.",
+        "rationale": "Best balance of speed and freshness.",
+        "tradeoffs": "Users might see stale content for a few seconds until revalidation occurs.",
+        "consequences": "Fast TTFB (Time to First Byte) and excellent SEO scores.",
+        "alternatives": [
+          "SSR (Server Side Rendering)",
+          "CSR (Client Side Rendering)"
+        ]
+      }
+    ],
+    "database_schema": {
+      "tables": [
+        {
+          "name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Unique identifier"
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(50)",
+              "constraints": [
+                "UNIQUE",
+                "NOT NULL"
+              ],
+              "description": "Display name"
+            },
+            {
+              "name": "password_hash",
+              "type": "VARCHAR(255)",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Bcrypt hash"
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(20)",
+              "constraints": [
+                "DEFAULT 'user'"
+              ],
+              "description": "admin or user"
+            }
+          ],
+          "description": "System users and authors",
+          "indexes": [
+            {
+              "columns": [
+                "username"
+              ],
+              "reason": "Login lookups",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "one-to-many",
+              "from": "id",
+              "to": "posts.author_id",
+              "description": "User authors many posts"
+            }
+          ]
+        },
+        {
+          "name": "posts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Post ID"
+            },
+            {
+              "name": "slug",
+              "type": "VARCHAR(100)",
+              "constraints": [
+                "UNIQUE",
+                "NOT NULL"
+              ],
+              "description": "URL friendly identifier"
+            },
+            {
+              "name": "content_markdown",
+              "type": "TEXT",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Raw markdown"
+            },
+            {
+              "name": "search_vector",
+              "type": "TSVECTOR",
+              "constraints": [],
+              "description": "Full text search vector"
+            },
+            {
+              "name": "author_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "FK to users"
+            }
+          ],
+          "description": "Blog content",
+          "indexes": [
+            {
+              "columns": [
+                "search_vector"
+              ],
+              "reason": "Full text search",
+              "type": "gin"
+            },
+            {
+              "columns": [
+                "slug"
+              ],
+              "reason": "Routing lookups",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "many-to-one",
+              "from": "author_id",
+              "to": "users.id",
+              "description": "Post belongs to author"
+            },
+            {
+              "type": "many-to-many",
+              "from": "id",
+              "to": "tags.id",
+              "through": "post_tags_map"
+            }
+          ]
+        },
+        {
+          "name": "comments",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Comment ID"
+            },
+            {
+              "name": "post_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "FK to posts"
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Comment text"
+            },
+            {
+              "name": "parent_id",
+              "type": "UUID",
+              "constraints": [
+                "NULLABLE"
+              ],
+              "description": "For nested replies"
+            }
+          ],
+          "description": "User comments",
+          "indexes": [
+            {
+              "columns": [
+                "post_id"
+              ],
+              "reason": "Load comments for post",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "many-to-one",
+              "from": "post_id",
+              "to": "posts.id",
+              "description": "Comment belongs to post"
+            }
+          ]
+        }
+      ]
+    },
+    "technology_stack": {
+      "authentication": [
+        "JWT",
+        "Bcrypt",
+        "HttpOnly Cookies"
+      ],
+      "backend": [
+        "Node.js",
+        "Express",
+        "Helmet"
+      ],
+      "database": [
+        "PostgreSQL",
+        "pg-node"
+      ],
+      "frontend": [
+        "Next.js 14",
+        "React",
+        "Tailwind CSS",
+        "React Markdown"
+      ],
+      "hosting": [
+        "Vercel (Frontend)",
+        "AWS/DigitalOcean (API)",
+        "Neon/Supabase (DB)"
+      ],
+      "other": [
+        "Redis (Cache)",
+        "Sharp (Image Proc)",
+        "DOMPurify"
+      ]
+    },
+    "security_considerations": [
+      "Sanitize all Markdown input using DOMPurify to prevent XSS attacks.",
+      "Implement Rate Limiting on comment submission endpoints.",
+      "Use HttpOnly and Secure flags for authentication cookies.",
+      "Ensure CORS policies strictly allow only the Next.js frontend domain."
+    ],
+    "scalability_approach": {
+      "caching_strategy": "Use Next.js ISR for pages (1-minute revalidation). Cache API responses in Redis for 5 minutes.",
+      "database_scaling": "Use connection pooling (PgBouncer). Read replicas for heavy read traffic.",
+      "horizontal_scaling": "Node.js API is stateless and can be scaled horizontally behind a load balancer.",
+      "performance_targets": "Page load < 1s (LCP). API response < 200ms."
+    },
+    "integration_points": [
+      {
+        "service": "Google Analytics 4",
+        "purpose": "Traffic analysis and user behavior tracking",
+        "api_docs": "https://developers.google.com/analytics",
+        "name": "GA4",
+        "system": "Analytics"
+      },
+      {
+        "service": "Cloudflare CDN",
+        "purpose": "Static asset caching and DDoS protection",
+        "api_docs": "https://developers.cloudflare.com/api",
+        "name": "Cloudflare",
+        "system": "Infrastructure"
+      }
+    ],
+    "next_tasks": [
+      {
+        "task": "Initialize Next.js repo with Tailwind and Markdown parser",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Set up the base frontend project structure."
+      },
+      {
+        "task": "Design PostgreSQL schema migration scripts",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Create Knex.js or Prisma migrations for Users, Posts, and Comments."
+      },
+      {
+        "task": "Implement JWT Authentication Middleware",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Secure the Node.js API endpoints."
+      },
+      {
+        "task": "Configure CI/CD pipeline for Vercel and Backend",
+        "priority": "medium",
+        "assignee": "devops",
+        "description": "Automate deployments on push to main."
+      }
+    ]
+  }
+}

@@ -115,7 +115,7 @@ function CreateDiagramContent() {
   // UI State
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
-  const [isChatOpen] = useState(true)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [currentDiagram, setCurrentDiagram] = useState<{
     nodes: DiagramNode[]
     edges: DiagramEdge[]
@@ -395,10 +395,10 @@ function CreateDiagramContent() {
                 hasMetadata: !!event.diagram?.metadata
               })
 
-              const diagram = event.diagram
-              const isGuestDiagram = diagram.id.startsWith("guest_") || event.is_guest || false
+            const diagram = event.diagram
+            const isGuestDiagram = diagram.metadata?.is_guest || diagram.id.startsWith("guest_") || false
 
-              if (!diagram.nodes || diagram.nodes.length === 0) {
+            if (!diagram.nodes || diagram.nodes.length === 0) {
                 console.error("[Frontend] ERROR: Diagram has no nodes!", diagram)
                 toast({
                   title: "Generation Warning",
@@ -481,40 +481,35 @@ function CreateDiagramContent() {
       return
     }
 
-    // If user is not authenticated, prompt them to sign up
-    if (!isAuthenticated || currentDiagram.isGuest) {
-      toast({
-        title: "Sign up to save",
-        description: "Please sign up to save your diagrams permanently",
-        variant: "default",
-      })
-      router.push("/register?redirect=/dashboard/create")
-      return
-    }
-
     try {
-      // If diagram already has an ID (was saved during generation), update it
-      if (currentDiagram.id && !currentDiagram.id.startsWith("guest_")) {
+      // If diagram already has a permanent ID (not temp_), update it
+      // Note: guest_ IDs are considered "permanent" within the session
+      if (currentDiagram.id && !currentDiagram.id.startsWith("temp_")) {
         // Update existing diagram
         await diagramsApi.update(currentDiagram.id, {
           nodes: currentDiagram.nodes,
           edges: currentDiagram.edges,
           title: currentDiagram.title || prompt.substring(0, 50),
           description: currentDiagram.description || prompt,
+          metadata: {
+            ...currentDiagram.metadata,
+            is_guest: !isAuthenticated,
+          }, // Preserve agent artifacts and add guest flag
         })
 
         toast({
-          title: "Diagram updated!",
-          description: "Your changes have been saved successfully.",
+          title: isAuthenticated ? "Diagram updated!" : "Saved to session",
+          description: isAuthenticated 
+            ? "Your changes have been saved successfully."
+            : "Your changes are saved for this session. Sign up to keep them forever!",
         })
 
-        // Navigate to view page
-        router.push(`/dashboard/diagrams/${currentDiagram.id}`)
+        // Only navigate to view page if authenticated
+        if (isAuthenticated) {
+          router.push(`/dashboard/diagrams/${currentDiagram.id}`)
+        }
       } else {
-        // This shouldn't happen for authenticated users (diagrams are auto-saved during generation)
-        // But handle it as a fallback - create new diagram
-        console.warn("[Create Page] Diagram missing ID for authenticated user, creating new diagram")
-
+        // Create new diagram (since autosave is removed, even authenticated users start with a temp ID)
         const savedDiagram = await diagramsApi.create({
           prompt: prompt || currentDiagram.description || "Architecture diagram",
           options: {
@@ -530,22 +525,30 @@ function CreateDiagramContent() {
           edges: currentDiagram.edges,
           title: currentDiagram.title || prompt.substring(0, 50),
           description: currentDiagram.description || prompt,
+          metadata: {
+            ...currentDiagram.metadata,
+            is_guest: !isAuthenticated,
+          }, // Preserve agent artifacts and add guest flag
         })
 
         // Update local state with new ID
         setCurrentDiagram({
           ...currentDiagram,
           id: savedDiagram.id,
-          isGuest: false,
+          isGuest: !isAuthenticated,
         })
 
         toast({
-          title: "Diagram saved!",
-          description: "Your diagram has been saved successfully.",
+          title: isAuthenticated ? "Diagram saved!" : "Saved to session",
+          description: isAuthenticated
+            ? "Your diagram has been saved successfully."
+            : "Your diagram is saved for this session. Sign up to keep it forever!",
         })
 
-        // Navigate to view page
-        router.push(`/dashboard/diagrams/${savedDiagram.id}`)
+        // Navigate to view page for authenticated users
+        if (isAuthenticated) {
+          router.push(`/dashboard/diagrams/${savedDiagram.id}`)
+        }
       }
     } catch (error: any) {
       console.error("[Create Page] Error saving diagram:", error)
@@ -635,7 +638,7 @@ function CreateDiagramContent() {
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {currentDiagram && (
               <>
-                {isAuthenticated && currentDiagram.id && !currentDiagram.id.startsWith("guest_") ? (
+                {currentDiagram.id && !currentDiagram.id.startsWith("temp_") ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -646,7 +649,9 @@ function CreateDiagramContent() {
                           className="gap-1 sm:gap-2"
                         >
                           <Save className="h-4 w-4" />
-                          <span className="hidden sm:inline">View Saved</span>
+                          <span className="hidden sm:inline">
+                            {isAuthenticated ? "View Saved" : "View in Session"}
+                          </span>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -663,18 +668,17 @@ function CreateDiagramContent() {
                           size="sm"
                           onClick={handleSave}
                           className="gap-1 sm:gap-2"
-                          disabled={!isAuthenticated || currentDiagram.isGuest}
                         >
                           <Save className="h-4 w-4" />
                           <span className="hidden sm:inline">
-                            {isAuthenticated ? "Save Changes" : "Save"}
+                            {isAuthenticated ? "Save Diagram" : "Save"}
                           </span>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
                         {isAuthenticated
-                          ? "Save changes to diagram"
-                          : "Sign up to save diagrams"}
+                          ? "Save diagram to your account"
+                          : "Save to current session"}
                         {" "}
                         <Kbd>S</Kbd>
                       </TooltipContent>
@@ -686,6 +690,25 @@ function CreateDiagramContent() {
 
             {currentDiagram && (
               <div className="flex items-center gap-1.5">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isChatOpen ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                        className={`gap-1 sm:gap-2 ${isChatOpen ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="hidden sm:inline">Chat</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isChatOpen ? "Close chat" : "Open chat"} <Kbd>C</Kbd>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

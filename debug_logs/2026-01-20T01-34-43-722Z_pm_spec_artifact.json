@@ -1,0 +1,282 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "timestamp": "2026-01-20T01:34:43.722Z",
+  "content": {
+    "summary": "A high-performance Next.js blog platform featuring Markdown editing, SEO tools, and a Node.js/PostgreSQL backend for scalable content management.",
+    "description": "This project builds a robust blogging engine designed for developers and creators. It leverages Next.js for Server-Side Rendering (SSR) to ensure optimal SEO and fast load times. Key features include a Markdown-based editor, granular taxonomy (categories/tags), author profiles, and a secure Node.js API managing a PostgreSQL database, with static assets served via CDN.",
+    "user_stories": [
+      {
+        "title": "Markdown Post Creation",
+        "story": "As an author, I want to write posts using Markdown so that I can format code and text efficiently without complex UI.",
+        "description": "Implementation of a Markdown editor with syntax highlighting and live preview in the admin panel.",
+        "priority": "critical",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "Editor supports standard Markdown syntax",
+          "Live preview updates in real-time",
+          "Images can be uploaded and referenced",
+          "Content saves to PostgreSQL database"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Enables technical content creation.",
+        "dependencies": [],
+        "id": "US-1"
+      },
+      {
+        "title": "SEO Meta Management",
+        "story": "As a site owner, I want to configure meta tags for each post so that the content ranks well on search engines.",
+        "description": "Fields for custom title, description, and canonical URLs that inject into the Next.js Head component.",
+        "priority": "high",
+        "story_points": 3,
+        "acceptance_criteria": [
+          "Input fields for Meta Title and Description",
+          "Open Graph tags generated automatically",
+          "Sitemap.xml updates on post publish",
+          "Robots.txt configuration"
+        ],
+        "estimated_complexity": "small",
+        "user_value": "Increases organic traffic visibility.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-2"
+      },
+      {
+        "title": "Public Comment System",
+        "story": "As a reader, I want to leave comments on posts so that I can engage with the author and community.",
+        "description": "Nested comment system with basic moderation tools and spam protection.",
+        "priority": "medium",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "Users can submit text comments",
+          "Support for nested replies (1 level deep)",
+          "Basic spam rate limiting",
+          "Admin can delete inappropriate comments"
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Builds community engagement.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-3"
+      },
+      {
+        "title": "Full-Text Search",
+        "story": "As a visitor, I want to search for keywords so that I can find relevant articles quickly.",
+        "description": "Search API endpoint querying PostgreSQL with full-text search capabilities.",
+        "priority": "high",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "Search bar available in header",
+          "Results page displays matching posts",
+          "Search queries title and body content",
+          "Fast response time (<200ms)"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Improves content discoverability.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-4"
+      },
+      {
+        "title": "Admin Dashboard",
+        "story": "As an admin, I want a dashboard to manage content so that I can view, edit, or delete posts and users.",
+        "description": "Protected route in Next.js displaying data tables for posts, users, and analytics summaries.",
+        "priority": "critical",
+        "story_points": 13,
+        "acceptance_criteria": [
+          "Authentication required to access",
+          "List view of all posts with status",
+          "CRUD operations for posts and users",
+          "Overview of site analytics"
+        ],
+        "estimated_complexity": "large",
+        "user_value": "Centralized control of the platform.",
+        "dependencies": [],
+        "id": "US-5"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "criteria": "The platform must achieve a Lighthouse Performance score of 90+.",
+        "description": "Ensures Next.js SSR and CDN assets are optimized for Core Web Vitals.",
+        "id": "AC-1",
+        "priority": "must",
+        "title": "Performance Benchmark"
+      },
+      {
+        "criteria": "All user inputs must be sanitized to prevent XSS attacks.",
+        "description": "Critical for the comment system and markdown rendering.",
+        "id": "AC-2",
+        "priority": "must",
+        "title": "Security Sanitization"
+      },
+      {
+        "criteria": "The UI must be fully responsive across mobile, tablet, and desktop.",
+        "description": "Layout adapts using CSS Grid/Flexbox for all viewports.",
+        "id": "AC-3",
+        "priority": "must",
+        "title": "Mobile Responsiveness"
+      },
+      {
+        "criteria": "RSS feed must be valid and auto-update with new posts.",
+        "description": "Standard XML RSS feed accessible at /rss.xml.",
+        "id": "AC-4",
+        "priority": "should",
+        "title": "RSS Feed Validity"
+      }
+    ],
+    "ui_multi_section": true,
+    "assumptions": [
+      "Users have basic familiarity with Markdown syntax.",
+      "PostgreSQL database is hosted on a managed service (e.g., AWS RDS, Supabase).",
+      "Authentication is handled via a standard provider or JWT implementation.",
+      "Node.js environment is version 18 or higher."
+    ],
+    "out_of_scope": [
+      "Native mobile applications (iOS/Android).",
+      "Real-time collaborative editing (Google Docs style).",
+      "E-commerce or paid subscription paywalls.",
+      "Multi-tenant SaaS architecture (hosting multiple blogs)."
+    ],
+    "swot": {
+      "strengths": [
+        "High performance via Next.js SSR",
+        "Strong SEO capabilities out-of-the-box",
+        "Scalable PostgreSQL architecture",
+        "Developer-friendly Markdown workflow"
+      ],
+      "weaknesses": [
+        "No WYSIWYG editor for non-technical users",
+        "Requires developer knowledge to deploy",
+        "Initial setup complexity compared to WordPress"
+      ],
+      "opportunities": [
+        "Integration with Headless CMS APIs",
+        "Plugin ecosystem for extended functionality",
+        "AI-assisted content generation features",
+        "Newsletter integration for audience growth"
+      ],
+      "threats": [
+        "Dominance of established platforms (WordPress)",
+        "Rise of static site generators (Hugo, Jekyll)",
+        "Security vulnerabilities in user-generated content"
+      ]
+    },
+    "stakeholders": [
+      {
+        "role": "Product Owner",
+        "interest": "Platform adoption and content ROI",
+        "influence": "high"
+      },
+      {
+        "role": "Content Creator",
+        "interest": "Ease of writing and publishing workflow",
+        "influence": "high"
+      },
+      {
+        "role": "Lead Developer",
+        "interest": "Code maintainability and tech stack stability",
+        "influence": "medium"
+      },
+      {
+        "role": "SEO Specialist",
+        "interest": "Search ranking and metadata control",
+        "influence": "medium"
+      }
+    ],
+    "invest_analysis": [
+      {
+        "user_story_id": "US-1",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "Core feature, highly independent."
+      },
+      {
+        "user_story_id": "US-2",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 8,
+        "comments": "Depends on post creation structure."
+      },
+      {
+        "user_story_id": "US-3",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": false,
+        "testable": true,
+        "score": 6,
+        "comments": "Complex logic for nesting and moderation."
+      },
+      {
+        "user_story_id": "US-4",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 7,
+        "comments": "Depends on having content to search."
+      },
+      {
+        "user_story_id": "US-5",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": false,
+        "testable": true,
+        "score": 5,
+        "comments": "Large scope, could be split further."
+      }
+    ],
+    "gaps": [
+      {
+        "gap": "Lack of WYSIWYG Editor",
+        "impact": "High barrier to entry for non-technical writers.",
+        "priority": "medium"
+      },
+      {
+        "gap": "No Image Optimization Pipeline",
+        "impact": "Potential performance hit with large uploads.",
+        "priority": "high"
+      },
+      {
+        "gap": "Basic Analytics Only",
+        "impact": "Limited insights compared to Google Analytics.",
+        "priority": "low"
+      }
+    ],
+    "opportunities": [
+      {
+        "opportunity": "AI Content Assistant",
+        "value": "Accelerates writing process for authors.",
+        "feasibility": "medium"
+      },
+      {
+        "opportunity": "Newsletter Integration",
+        "value": "Increases user retention and recurring traffic.",
+        "feasibility": "high"
+      },
+      {
+        "opportunity": "Theme System",
+        "value": "Allows visual customization without code changes.",
+        "feasibility": "low"
+      }
+    ]
+  }
+}

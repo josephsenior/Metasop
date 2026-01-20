@@ -1,0 +1,267 @@
+{
+  "step_id": "ui_design",
+  "role": "UI Designer",
+  "timestamp": "2026-01-20T01:40:33.213Z",
+  "content": {
+    "summary": "A content-centric, minimalist design system prioritizing typography and readability, featuring a split-pane Markdown editor and modular admin dashboard components.",
+    "description": "The visual philosophy centers on 'Invisible UI'—where the interface recedes to let content shine. We utilize a high-contrast monochromatic base (Slate scale) with a vibrant primary blue (#2563EB) for actions. Typography pairs 'Inter' for UI elements with 'Merriweather' for long-form blog content to ensure optimal reading experiences. The Admin interface shifts to a dense, utility-focused layout using data tables and split-screen editors to maximize productivity for creators.",
+    "schema_version": "0.8",
+    "design_tokens": {
+      "colors": {
+        "primary": "#2563EB",
+        "secondary": "#475569",
+        "text": "#1E293B",
+        "warning": "#F59E0B"
+      },
+      "spacing": {
+        "xs": "0.25rem"
+      },
+      "typography": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontSize": {
+          "xs": "0.75rem"
+        },
+        "fontWeight": {
+          "bold": "700"
+        }
+      }
+    },
+    "atomic_structure": {
+      "atoms": [
+        "Button",
+        "Input",
+        "Avatar",
+        "Tag",
+        "Icon",
+        "Spinner"
+      ],
+      "molecules": [
+        "SearchBar",
+        "CommentItem",
+        "PostMeta",
+        "Pagination",
+        "ToastNotification"
+      ],
+      "organisms": [
+        "Header",
+        "Footer",
+        "PostGrid",
+        "CommentSection",
+        "EditorToolbar",
+        "AdminSidebar"
+      ]
+    },
+    "primary_feature_manifest": {
+      "root": {
+        "raw": "AdminEditorLayout"
+      }
+    },
+    "accessibility": {
+      "aria_labels": true,
+      "checklist": [
+        "Ensure color contrast ratio of 4.5:1 for text",
+        "Provide alt text for all user-uploaded images",
+        "Keyboard trap prevention in Markdown editor",
+        "Focus management for modal dialogs"
+      ],
+      "focus_indicators": true,
+      "guidelines": [
+        "Semantic HTML5 landmarks (main, nav, aside)",
+        "Skip-to-content links for keyboard users"
+      ],
+      "keyboard_navigation": true,
+      "screen_reader_support": true,
+      "standard": "WCAG 2.1",
+      "wcag_level": "AA"
+    },
+    "layout_strategy": "Public pages use a centered single-column layout (max-width 65ch) for optimal reading. The Admin panel uses a fluid dashboard layout with a fixed sidebar and scrollable main content area.",
+    "visual_philosophy": "Content is King. The UI should be invisible, using whitespace and typography to guide the eye. Interactive elements use the primary blue to signify action.",
+    "information_architecture": "The site follows a shallow hierarchy. Public pages are route-based (Home -> Post). The Admin area is distinct, utilizing a sidebar navigation structure for managing resources (Posts, Users, Settings).",
+    "responsive_strategy": "Mobile-first approach. The Admin sidebar collapses to a hamburger menu on mobile. The Split-Pane editor stacks vertically on screens smaller than 'lg' breakpoint.",
+    "ui_patterns": [
+      "Split-Pane Editor",
+      "Card-Based Content Grid",
+      "Sticky Table Headers",
+      "Slide-over Meta Panels",
+      "Nested Comment Threads",
+      "Skeleton Loading States"
+    ],
+    "component_hierarchy": {
+      "root": "App",
+      "children": [
+        {
+          "name": "Layout",
+          "props": [
+            "children: ReactNode",
+            "user: UserProfile",
+            "theme: string"
+          ]
+        },
+        {
+          "name": "Header",
+          "props": [
+            "navItems: array",
+            "onSearch: function"
+          ]
+        },
+        {
+          "name": "MainContent",
+          "children": [
+            {
+              "name": "PostList",
+              "props": [
+                "posts: array",
+                "layout: grid|list"
+              ]
+            },
+            {
+              "name": "PostDetail",
+              "props": [
+                "post: object"
+              ]
+            },
+            {
+              "name": "AdminDashboard",
+              "props": [
+                "stats: object"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Footer",
+          "props": [
+            "links: array"
+          ]
+        }
+      ]
+    },
+    "website_layout": {
+      "pages": [
+        {
+          "name": "Home",
+          "route": "/index",
+          "sections": [
+            {
+              "name": "Hero",
+              "components": [
+                "FeaturedPost",
+                "NewsletterSignup"
+              ]
+            },
+            {
+              "name": "LatestPosts",
+              "components": [
+                "PostGrid",
+                "Pagination"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Post Detail",
+          "route": "/posts/[slug]",
+          "sections": [
+            {
+              "name": "Article",
+              "components": [
+                "PostHeader",
+                "MarkdownRenderer",
+                "AuthorBio"
+              ]
+            },
+            {
+              "name": "Engagement",
+              "components": [
+                "CommentSection",
+                "RelatedPosts"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Admin Dashboard",
+          "route": "/admin",
+          "sections": [
+            {
+              "name": "Overview",
+              "components": [
+                "StatsCards",
+                "RecentActivity"
+              ]
+            },
+            {
+              "name": "ContentManager",
+              "components": [
+                "PostTable",
+                "FilterBar"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "component_specs": [
+      {
+        "name": "MarkdownEditor",
+        "description": "A dual-pane editor with raw markdown input and real-time HTML preview.",
+        "props": {
+          "value": "string",
+          "onChange": "function",
+          "onImageUpload": "function"
+        },
+        "states": [
+          "loading",
+          "saving",
+          "error"
+        ],
+        "variants": [
+          "split-view",
+          "edit-only",
+          "preview-only"
+        ]
+      },
+      {
+        "name": "PostCard",
+        "description": "Summary card for displaying post previews in lists.",
+        "props": {
+          "title": "string",
+          "excerpt": "string",
+          "coverImage": "string",
+          "author": "object",
+          "tags": "array"
+        },
+        "states": [
+          "hover",
+          "loading"
+        ],
+        "variants": [
+          "featured",
+          "standard",
+          "compact"
+        ]
+      },
+      {
+        "name": "CommentThread",
+        "description": "Recursive component for displaying nested user comments.",
+        "props": {
+          "comments": "array",
+          "depth": "number",
+          "onReply": "function"
+        },
+        "states": [
+          "collapsed",
+          "expanded"
+        ],
+        "variants": [
+          "root",
+          "nested"
+        ]
+      }
+    ],
+    "layout_breakpoints": {
+      "sm": "640px",
+      "xl": "1280px"
+    }
+  }
+}

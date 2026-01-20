@@ -140,94 +140,34 @@ export async function POST(request: NextRequest) {
                 transformedDiagram.edges = transformedDiagram.edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to));
               }
 
-              if (isGuest && guestSessionId) {
-                // recordGuestDiagramCreation(guestSessionId); // User requested no guest diagram rendering
-                
-                safeEnqueue({
-                  type: "orchestration_complete",
-                  diagram: {
-                    id: `temp_${Date.now()}`,
-                    userId: userId,
-                    title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-                    description: body.prompt,
-                    nodes: transformedDiagram.nodes,
-                    edges: transformedDiagram.edges,
-                    status: "completed" as const,
-                    metadata: {
-                      prompt: body.prompt,
-                      options: body.options,
-                      metasop_artifacts: metasopResult.artifacts,
-                      metasop_report: metasopResult.report,
-                      metasop_steps: metasopResult.steps,
-                      is_guest: true,
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  },
-                  success: true,
-                  timestamp: new Date().toISOString()
-                });
-              } else {
-                let diagram;
-                let diagramWithMetadata;
-                
-                try {
-                  diagram = await diagramDb.create(userId, body);
-                  diagramWithMetadata = diagram;
-                  
-                  try {
-                    diagramWithMetadata = await diagramDb.update(diagram.id, userId, {
-                      nodes: transformedDiagram.nodes,
-                      edges: transformedDiagram.edges,
-                      status: "completed",
-                      metadata: {
-                        prompt: body.prompt,
-                        options: body.options,
-                        metasop_artifacts: metasopResult.artifacts,
-                        metasop_report: metasopResult.report,
-                        metasop_steps: metasopResult.steps,
-                      },
-                    });
-                  } catch (updateError: any) {
-                    console.error("Failed to update diagram:", updateError);
-                    diagramWithMetadata = {
-                      ...diagram,
-                      nodes: transformedDiagram.nodes,
-                      edges: transformedDiagram.edges,
-                      status: "completed" as const
-                    };
-                  }
-                } catch (dbError: any) {
-                  console.error("Database error during diagram creation:", dbError);
-                  diagramWithMetadata = {
-                    id: `temp_${Date.now()}`,
-                    userId: userId,
-                    title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-                    description: body.prompt,
-                    nodes: transformedDiagram.nodes,
-                    edges: transformedDiagram.edges,
-                    status: "completed" as const,
-                    metadata: {
-                      prompt: body.prompt,
-                      options: body.options,
-                      metasop_artifacts: metasopResult.artifacts,
-                      metasop_report: metasopResult.report,
-                      metasop_steps: metasopResult.steps,
-                      db_error: dbError.message,
-                      is_temporary: true,
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  };
-                }
+              // Always return a temporary diagram object to avoid autosaving
+              const diagramWithMetadata = {
+                id: `temp_${Date.now()}`,
+                userId: userId,
+                title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
+                description: body.prompt,
+                nodes: transformedDiagram.nodes,
+                edges: transformedDiagram.edges,
+                status: "completed" as const,
+                metadata: {
+                  prompt: body.prompt,
+                  options: body.options,
+                  metasop_artifacts: metasopResult.artifacts,
+                  metasop_report: metasopResult.report,
+                  metasop_steps: metasopResult.steps,
+                  is_temporary: true,
+                  is_guest: isGuest,
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
 
-                safeEnqueue({
-                  type: "orchestration_complete",
-                  diagram: diagramWithMetadata,
-                  success: true,
-                  timestamp: new Date().toISOString()
-                });
-              }
+              safeEnqueue({
+                type: "orchestration_complete",
+                diagram: diagramWithMetadata,
+                success: true,
+                timestamp: new Date().toISOString()
+              });
             } catch (transformError: any) {
               console.error("[Backend] Transformation error:", transformError);
               safeEnqueue({
@@ -284,69 +224,39 @@ export async function POST(request: NextRequest) {
       transformedDiagram.edges = transformedDiagram.edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to));
     }
 
-    if (isGuest && guestSessionId) {
-      // recordGuestDiagramCreation(guestSessionId); // User requested no guest diagram rendering
-      
-      return NextResponse.json({
-        status: "success",
-        data: {
-          diagram: {
-            id: `temp_${Date.now()}`,
-            userId: userId,
-            title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-            description: body.prompt,
-            nodes: transformedDiagram.nodes,
-            edges: transformedDiagram.edges,
-            status: "completed" as const,
-            metadata: {
-              prompt: body.prompt,
-              options: body.options,
-              metasop_artifacts: metasopResult.artifacts,
-              metasop_report: metasopResult.report,
-              metasop_steps: metasopResult.steps,
-              is_guest: true,
-            },
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          orchestration: {
-            status: metasopResult.success ? "success" : "failed",
-            artifacts: metasopResult.artifacts,
-            report: metasopResult.report,
-            steps: metasopResult.steps,
-          },
-        },
-      });
-    }
-
-    let diagram = await diagramDb.create(userId, body);
-    let diagramWithMetadata = diagram;
-    try {
-      diagramWithMetadata = await diagramDb.update(diagram.id, userId, {
-        nodes: transformedDiagram.nodes,
-        edges: transformedDiagram.edges,
-        status: "completed",
-        metadata: {
-          prompt: body.prompt,
-          options: body.options,
-          metasop_artifacts: metasopResult.artifacts,
-          metasop_report: metasopResult.report,
-          metasop_steps: metasopResult.steps,
-        },
-      });
-    } catch (dbError: any) {
-      console.error("Database error creating diagram:", dbError);
-      return createErrorResponse(dbError.message || "Failed to create diagram", 500);
-    }
+    // Always return a temporary diagram object to avoid autosaving
+     const diagramWithMetadata = {
+       id: `temp_${Date.now()}`,
+       userId: userId,
+       title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
+       description: body.prompt,
+       nodes: transformedDiagram.nodes,
+       edges: transformedDiagram.edges,
+       status: "completed" as const,
+       metadata: {
+         prompt: body.prompt,
+         options: body.options,
+         metasop_artifacts: metasopResult.artifacts,
+         metasop_report: metasopResult.report,
+         metasop_steps: metasopResult.steps,
+         is_temporary: true,
+         is_guest: isGuest,
+       },
+       createdAt: new Date().toISOString(),
+       updatedAt: new Date().toISOString(),
+     };
 
     return createSuccessResponse(
-      { diagram: diagramWithMetadata, orchestration: {
-        status: metasopResult.success ? "success" : "failed",
-        artifacts: metasopResult.artifacts,
-        report: metasopResult.report,
-        steps: metasopResult.steps,
-      }},
-      "Diagram generated and saved successfully"
+      { 
+        diagram: diagramWithMetadata, 
+        orchestration: {
+          status: metasopResult.success ? "success" : "failed",
+          artifacts: metasopResult.artifacts,
+          report: metasopResult.report,
+          steps: metasopResult.steps,
+        }
+      },
+      "Diagram generated successfully"
     );
   } catch (error: any) {
     if (error.message === "Unauthorized") {

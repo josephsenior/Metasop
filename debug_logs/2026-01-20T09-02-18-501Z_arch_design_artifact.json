@@ -1,0 +1,438 @@
+{
+  "step_id": "arch_design",
+  "role": "Architect",
+  "timestamp": "2026-01-20T09:02:18.505Z",
+  "content": {
+    "design_doc": "## Architecture Overview\nThe system follows a **Modular Monolith** architecture, designed to transition into microservices (User, Feed, Chat, Notification services) as scale increases. The core communication layer is **GraphQL**, allowing the React frontend to request specific data structures efficiently, which is crucial for mobile performance and complex nested data (e.g., a feed with posts, authors, and top comments).\n\n### Data Flow & Feed Architecture\n1. **Write Path**: When a user creates a post, the `PostService` writes to PostgreSQL. An asynchronous event is emitted to the `FeedService` via Redis Pub/Sub.\n2. **Feed Generation (Hybrid Fan-out)**:\n    - **Push Model (Fan-out-on-write)**: For standard users, new post IDs are pushed immediately to the Redis lists of their followers. This ensures O(1) read time for feeds.\n    - **Pull Model (Fan-out-on-read)**: For 'celebrity' accounts (users with >50k followers), we do not fan-out. Instead, their posts are merged into followers' feeds at query time to prevent massive write spikes.\n3. **Read Path**: The feed is constructed by querying the user's Redis feed list and hydrating content from PostgreSQL (with a Read-Through cache pattern).\n\n### Real-time & Messaging\n**WebSockets** (implemented via GraphQL Subscriptions) handle instant notifications (likes, follows) and Direct Messages. A **Redis Adapter** is used to propagate WebSocket events across multiple backend instances, ensuring that a user connected to Server A can receive a message sent via Server B.\n\n### Media Handling\nTo minimize backend throughput, the system uses the **Presigned URL** pattern. Clients request an upload URL from the API, then upload images/videos directly to **AWS S3**. A background worker (triggered via S3 events or webhook) processes the media (compression, thumbnail generation) and updates the database status.",
+    "apis": [
+      {
+        "path": "/graphql",
+        "method": "POST",
+        "description": "Primary GraphQL endpoint for all data queries and mutations.",
+        "request_schema": {
+          "query": "string",
+          "variables": "object"
+        },
+        "response_schema": {
+          "data": "object",
+          "errors": "array"
+        },
+        "auth_required": true,
+        "endpoint": "https://api.socialplatform.com/graphql",
+        "rate_limit": "1000/min"
+      },
+      {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "description": "Authenticates user and sets HttpOnly cookie.",
+        "request_schema": {
+          "email": "string",
+          "password": "string"
+        },
+        "response_schema": {
+          "user": {
+            "id": "uuid",
+            "username": "string"
+          },
+          "token": "string"
+        },
+        "auth_required": false,
+        "endpoint": "https://api.socialplatform.com/api/auth/login",
+        "rate_limit": "10/min"
+      },
+      {
+        "path": "/api/media/presigned-url",
+        "method": "POST",
+        "description": "Generates S3 presigned URL for direct client upload.",
+        "request_schema": {
+          "fileName": "string",
+          "fileType": "string",
+          "fileSize": "number"
+        },
+        "response_schema": {
+          "uploadUrl": "string",
+          "fileKey": "string",
+          "expiresIn": "number"
+        },
+        "auth_required": true,
+        "endpoint": "https://api.socialplatform.com/api/media/presigned-url",
+        "rate_limit": "50/min"
+      }
+    ],
+    "summary": "A scalable, real-time social media architecture using Node.js, GraphQL, and React, featuring a hybrid feed algorithm and direct media uploads.",
+    "description": "This system leverages a Modular Monolith design with GraphQL for efficient data fetching. It uses PostgreSQL for relational data, Redis for high-performance feed caching and Pub/Sub, and AWS S3 for media. The architecture prioritizes read-performance via fan-out strategies and ensures real-time interactivity through WebSockets.",
+    "decisions": [
+      {
+        "decision": "Use GraphQL over REST",
+        "status": "accepted",
+        "reason": "Prevents over-fetching in complex feed views and allows flexible UI iteration.",
+        "rationale": "Efficient data loading for graph-like social data.",
+        "tradeoffs": "Increased complexity in caching and rate limiting compared to REST.",
+        "consequences": "Requires Apollo Client on frontend and careful query complexity analysis on backend.",
+        "alternatives": [
+          "RESTful API",
+          "gRPC"
+        ]
+      },
+      {
+        "decision": "Hybrid Feed Architecture",
+        "status": "accepted",
+        "reason": "Pure push fails for celebrities; pure pull is slow for general users.",
+        "rationale": "Balances write-load and read-latency.",
+        "tradeoffs": "Complexity in merging feed sources at read time.",
+        "consequences": "Need robust Redis infrastructure and logic to distinguish user types.",
+        "alternatives": [
+          "Pure Pull (SQL JOIN)",
+          "Pure Push (Fan-out)"
+        ]
+      },
+      {
+        "decision": "Direct S3 Uploads",
+        "status": "accepted",
+        "reason": "Prevents large binary files from blocking Node.js event loop.",
+        "rationale": "Scalability for media-heavy platform.",
+        "tradeoffs": "Client must handle multipart upload logic; security relies on short-lived signatures.",
+        "consequences": "Backend never touches raw media files, improving throughput.",
+        "alternatives": [
+          "Multipart upload to Backend",
+          "Base64 encoding"
+        ]
+      }
+    ],
+    "database_schema": {
+      "tables": [
+        {
+          "name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Unique user identifier"
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(30)",
+              "constraints": [
+                "UNIQUE",
+                "NOT NULL"
+              ],
+              "description": "Public handle"
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "constraints": [
+                "UNIQUE",
+                "NOT NULL"
+              ],
+              "description": "Login email"
+            },
+            {
+              "name": "password_hash",
+              "type": "VARCHAR(255)",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Bcrypt hash"
+            }
+          ],
+          "description": "Core user identity data",
+          "indexes": [
+            {
+              "columns": [
+                "username"
+              ],
+              "reason": "Fast lookup for profile views",
+              "type": "btree"
+            },
+            {
+              "columns": [
+                "email"
+              ],
+              "reason": "Login lookup",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "one-to-many",
+              "from": "id",
+              "to": "posts.user_id",
+              "description": "User authors posts"
+            }
+          ]
+        },
+        {
+          "name": "posts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Post ID"
+            },
+            {
+              "name": "user_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL",
+                "FOREIGN KEY"
+              ],
+              "description": "Author"
+            },
+            {
+              "name": "content_text",
+              "type": "TEXT",
+              "constraints": [],
+              "description": "Post caption/body"
+            },
+            {
+              "name": "media_url",
+              "type": "VARCHAR(255)",
+              "constraints": [],
+              "description": "S3 URL"
+            },
+            {
+              "name": "created_at",
+              "type": "TIMESTAMP",
+              "constraints": [
+                "DEFAULT NOW()"
+              ],
+              "description": "Creation time"
+            }
+          ],
+          "description": "User generated content",
+          "indexes": [
+            {
+              "columns": [
+                "user_id",
+                "created_at"
+              ],
+              "reason": "Profile feed pagination",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "many-to-one",
+              "from": "user_id",
+              "to": "users.id",
+              "description": "Author"
+            }
+          ]
+        },
+        {
+          "name": "follows",
+          "columns": [
+            {
+              "name": "follower_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "User who follows"
+            },
+            {
+              "name": "following_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "User being followed"
+            },
+            {
+              "name": "created_at",
+              "type": "TIMESTAMP",
+              "constraints": [
+                "DEFAULT NOW()"
+              ],
+              "description": "When follow occurred"
+            }
+          ],
+          "description": "Social graph connections",
+          "indexes": [
+            {
+              "columns": [
+                "follower_id",
+                "following_id"
+              ],
+              "reason": "Unique constraint and lookup",
+              "type": "btree"
+            }
+          ],
+          "relationships": [
+            {
+              "type": "many-to-one",
+              "from": "follower_id",
+              "to": "users.id",
+              "description": "Follower"
+            }
+          ]
+        },
+        {
+          "name": "messages",
+          "columns": [
+            {
+              "name": "id",
+              "type": "UUID",
+              "constraints": [
+                "PRIMARY KEY"
+              ],
+              "description": "Message ID"
+            },
+            {
+              "name": "sender_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Sender"
+            },
+            {
+              "name": "receiver_id",
+              "type": "UUID",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Recipient"
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "constraints": [
+                "NOT NULL"
+              ],
+              "description": "Message body"
+            },
+            {
+              "name": "is_read",
+              "type": "BOOLEAN",
+              "constraints": [
+                "DEFAULT FALSE"
+              ],
+              "description": "Read receipt status"
+            }
+          ],
+          "description": "Direct messages between users",
+          "indexes": [
+            {
+              "columns": [
+                "sender_id",
+                "receiver_id"
+              ],
+              "reason": "Chat history retrieval",
+              "type": "btree"
+            }
+          ],
+          "relationships": []
+        }
+      ]
+    },
+    "technology_stack": {
+      "authentication": [
+        "JWT",
+        "Passport.js",
+        "Bcrypt"
+      ],
+      "backend": [
+        "Node.js",
+        "Express",
+        "Apollo Server",
+        "GraphQL"
+      ],
+      "database": [
+        "PostgreSQL",
+        "Redis"
+      ],
+      "frontend": [
+        "React",
+        "Apollo Client",
+        "Redux Toolkit",
+        "Tailwind CSS"
+      ],
+      "hosting": [
+        "AWS EC2",
+        "AWS S3",
+        "CloudFront"
+      ],
+      "other": [
+        "Socket.io",
+        "BullMQ (Job Queue)",
+        "Elasticsearch"
+      ]
+    },
+    "security_considerations": [
+      "JWTs stored in HttpOnly, Secure cookies to prevent XSS.",
+      "CSRF tokens required for all mutation operations.",
+      "Rate limiting on all API endpoints using Redis to prevent abuse.",
+      "Input sanitization on both client and server to prevent injection attacks.",
+      "Presigned URLs for S3 have short expiration times (5 mins)."
+    ],
+    "scalability_approach": {
+      "caching_strategy": "Redis for user sessions and pre-computed feeds. 'Read-through' for individual post data.",
+      "database_scaling": "PostgreSQL Read Replicas for heavy read operations. Partitioning 'posts' table by time if needed.",
+      "horizontal_scaling": "Stateless Node.js instances behind a Load Balancer. Redis Adapter for Socket.io scaling.",
+      "performance_targets": "Feed load < 200ms. Real-time notification latency < 100ms."
+    },
+    "integration_points": [
+      {
+        "service": "AWS S3",
+        "purpose": "Object storage for user uploaded images and videos.",
+        "api_docs": "https://docs.aws.amazon.com/s3/index.html",
+        "name": "Media Storage",
+        "system": "Cloud Storage"
+      },
+      {
+        "service": "Redis",
+        "purpose": "Caching feeds, sessions, and Pub/Sub for WebSockets.",
+        "api_docs": "https://redis.io/docs/",
+        "name": "Cache Layer",
+        "system": "In-Memory DB"
+      },
+      {
+        "service": "AWS Rekognition",
+        "purpose": "Automated content moderation (NSFW detection).",
+        "api_docs": "https://docs.aws.amazon.com/rekognition/",
+        "name": "Content Safety",
+        "system": "AI Service"
+      }
+    ],
+    "next_tasks": [
+      {
+        "task": "Initialize Monorepo",
+        "priority": "high",
+        "assignee": "devops",
+        "description": "Set up Nx or Turborepo with React, Node, and shared types packages."
+      },
+      {
+        "task": "Database Migration Setup",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Configure Knex.js or TypeORM with PostgreSQL and create initial user/post tables."
+      },
+      {
+        "task": "GraphQL Schema Definition",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Define TypeDefs for User, Post, and Comment entities."
+      },
+      {
+        "task": "Auth Service Implementation",
+        "priority": "high",
+        "assignee": "engineer",
+        "description": "Implement JWT issuance, password hashing, and login/register mutations."
+      },
+      {
+        "task": "Redis Infrastructure",
+        "priority": "medium",
+        "assignee": "devops",
+        "description": "Provision Redis cluster and configure connection pooling for backend."
+      }
+    ]
+  }
+}

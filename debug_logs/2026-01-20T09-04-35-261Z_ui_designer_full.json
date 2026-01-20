@@ -1,0 +1,902 @@
+{
+  "agent": "UI Designer",
+  "model": "gemini-3-pro-preview",
+  "timestamp": "2026-01-20T09:04:35.264Z",
+  "request": {
+    "prompt": "Based on the cached context, please perform your task as UI Designer.\n\n          As a Principal UI/UX Designer, create a high-impact design system and UI architecture for 'Create a social media platform with user profiles, posts with images/videos, comments, likes, shares, real-time feed algorithm, follow/unfollow system, direct messaging, notifications, hashtags, trending topics, and content moderation. Use React frontend, Node.js backend with GraphQL API, PostgreSQL for relational data, Redis for caching, and WebSockets for real-time features.'.\n\nADAPTIVE DEPTH GUIDELINE:\n- For **simple web apps/utilities**: Prioritize a clean, minimal design system and straightforward component hierarchy.\n- For **complex/enterprise systems**: Provide exhaustive design tokens and deep atomic hierarchy.\n\nProject Goals: A scalable social platform with real-time feeds, multimedia sharing, and messaging using React, Node.js, GraphQL, and PostgreSQL.\nCore User Stories: User Registration & Auth, Create Multimedia Post, Real-time Feed Algorithm\nTech Stack: JWT, Passport.js, Bcrypt, Node.js, Express\nKey APIs: /graphql, /api/auth/login, /api/media/presigned-url\n\nMISSION OBJECTIVES:\n1. **Design Language**: Establish Design Tokens (Colors, Spacing, Typography) as defined in the schema.\n2. **Atomic Structure**: Map application real estate: Atoms, Molecules, Organisms.\n3. **Primary Feature Manifest**: Generate an **A2UI Manifest** (v0.8) for critical workflows.\n4. **Accessibility**: Design for inclusivity (WCAG 2.1) including ARIA and keyboard navigation.\n5. **Component Blueprint**: Detail key components with technical specs: Props, Variants, States.\n6. **Information Architecture**: Define website layout structure (pages, routes, layout sections).\n7. **Visual Design Philosophy**: Define core aesthetic principles and brand alignment.\n\nRespond with ONLY the structured JSON object.\n\n        === JSON SCHEMA ===\n        {\n  \"type\": \"object\",\n  \"required\": [\n    \"component_hierarchy\",\n    \"design_tokens\",\n    \"summary\",\n    \"description\",\n    \"ui_patterns\",\n    \"component_specs\",\n    \"layout_breakpoints\",\n    \"accessibility\",\n    \"atomic_structure\",\n    \"website_layout\"\n  ],\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\",\n      \"maxLength\": 200,\n      \"description\": \"A technical, 1-sentence summary of the UI strategy. No conversational filler.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"Detailed visual design philosophy and brand alignment.\"\n    },\n    \"component_hierarchy\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"root\"\n      ],\n      \"properties\": {\n        \"root\": {\n          \"type\": \"string\",\n          \"maxLength\": 40,\n          \"description\": \"Root component name (e.g., 'App').\"\n        },\n        \"children\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 40,\n                \"description\": \"Component name.\"\n              },\n              \"props\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 30\n                },\n                \"description\": \"Key component props (e.g., 'title: string').\"\n              },\n              \"children\": {\n                \"type\": \"array\",\n                \"description\": \"Child components (recursive).\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"properties\": {\n                    \"name\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 20\n                    },\n                    \"props\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"string\",\n                        \"maxLength\": 30\n                      }\n                    },\n                    \"children\": {\n                      \"type\": \"array\",\n                      \"description\": \"Child components (recursive)\",\n                      \"items\": {\n                        \"type\": \"object\",\n                        \"properties\": {\n                          \"name\": {\n                            \"type\": \"string\",\n                            \"maxLength\": 20\n                          }\n                        }\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          },\n          \"description\": \"Child components in the hierarchy\"\n        }\n      },\n      \"description\": \"Legacy structural component hierarchy (used by internal engine)\"\n    },\n    \"design_tokens\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"colors\",\n        \"spacing\",\n        \"typography\"\n      ],\n      \"properties\": {\n        \"colors\": {\n          \"type\": \"object\",\n          \"description\": \"Color palette. Use ONLY 6-digit hex codes (e.g., #FFFFFF).\",\n          \"properties\": {\n            \"primary\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Primary brand color (6-digit hex, e.g. #0F4C81)\"\n            },\n            \"secondary\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Secondary brand color (6-digit hex)\"\n            },\n            \"background\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Main background color (6-digit hex)\"\n            },\n            \"text\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Primary text color (6-digit hex)\"\n            },\n            \"accent\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Accent/Call-to-action color (6-digit hex)\"\n            },\n            \"error\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Error state color (6-digit hex)\"\n            },\n            \"success\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Success state color (6-digit hex)\"\n            },\n            \"warning\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Warning state color (6-digit hex)\"\n            },\n            \"surface\": {\n              \"type\": \"string\",\n              \"minLength\": 7,\n              \"maxLength\": 7,\n              \"pattern\": \"^#[0-9A-Fa-f]{6}$\",\n              \"description\": \"Surface/Card color (6-digit hex)\"\n            }\n          }\n        },\n        \"spacing\": {\n          \"type\": \"object\",\n          \"description\": \"Spacing scale. Use ONLY raw CSS values (e.g., '0.5rem'). No descriptions.\",\n          \"properties\": {\n            \"xs\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"sm\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"md\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"lg\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"xl\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"2xl\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            }\n          }\n        },\n        \"typography\": {\n          \"type\": \"object\",\n          \"description\": \"Typography system. Use raw CSS values only.\",\n          \"properties\": {\n            \"fontFamily\": {\n              \"type\": \"string\",\n              \"maxLength\": 100,\n              \"description\": \"Primary font family (e.g., 'Inter').\"\n            },\n            \"headingFont\": {\n              \"type\": \"string\",\n              \"maxLength\": 100,\n              \"description\": \"Heading font family.\"\n            },\n            \"fontSize\": {\n              \"type\": \"object\",\n              \"description\": \"Font size scale (e.g., '0.875rem').\",\n              \"properties\": {\n                \"xs\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"sm\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"base\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"lg\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"xl\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"2xl\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                }\n              }\n            },\n            \"fontWeight\": {\n              \"type\": \"object\",\n              \"description\": \"Font weights (e.g., '400').\",\n              \"properties\": {\n                \"light\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"normal\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"medium\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"semibold\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                },\n                \"bold\": {\n                  \"type\": \"string\",\n                  \"maxLength\": 10\n                }\n              }\n            }\n          }\n        },\n        \"borderRadius\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"none\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"sm\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"md\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"lg\": {\n              \"type\": \"string\",\n              \"maxLength\": 10\n            },\n            \"full\": {\n              \"type\": \"string\",\n              \"maxLength\": 20\n            }\n          }\n        },\n        \"shadows\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"sm\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            },\n            \"md\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            },\n            \"lg\": {\n              \"type\": \"string\",\n              \"maxLength\": 150\n            },\n            \"inner\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            }\n          }\n        }\n      }\n    },\n    \"ui_patterns\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 100\n      }\n    },\n    \"component_specs\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"name\",\n          \"description\"\n        ],\n        \"properties\": {\n          \"name\": {\n            \"type\": \"string\",\n            \"maxLength\": 50\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 500\n          },\n          \"props\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            },\n            \"description\": \"Component props mapping name to type\"\n          },\n          \"variants\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"maxLength\": 50\n            }\n          },\n          \"states\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"maxLength\": 50\n            }\n          }\n        }\n      }\n    },\n    \"layout_breakpoints\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"sm\": {\n          \"type\": \"string\",\n          \"maxLength\": 15,\n          \"description\": \"Small breakpoint (e.g., '640px')\"\n        },\n        \"md\": {\n          \"type\": \"string\",\n          \"maxLength\": 15,\n          \"description\": \"Medium breakpoint (e.g., '768px')\"\n        },\n        \"lg\": {\n          \"type\": \"string\",\n          \"maxLength\": 15,\n          \"description\": \"Large breakpoint (e.g., '1024px')\"\n        },\n        \"xl\": {\n          \"type\": \"string\",\n          \"maxLength\": 15,\n          \"description\": \"Extra large breakpoint (e.g., '1280px')\"\n        },\n        \"2xl\": {\n          \"type\": \"string\",\n          \"maxLength\": 15,\n          \"description\": \"2X large breakpoint (e.g., '1536px')\"\n        }\n      },\n      \"description\": \"Responsive breakpoints\"\n    },\n    \"accessibility\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"standard\": {\n          \"type\": \"string\",\n          \"maxLength\": 50\n        },\n        \"guidelines\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          }\n        },\n        \"checklist\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 200\n          }\n        },\n        \"aria_labels\": {\n          \"type\": \"boolean\",\n          \"description\": \"Use ARIA labels\"\n        },\n        \"keyboard_navigation\": {\n          \"type\": \"boolean\",\n          \"description\": \"Support keyboard navigation\"\n        },\n        \"screen_reader_support\": {\n          \"type\": \"boolean\",\n          \"description\": \"Screen reader support\"\n        },\n        \"wcag_level\": {\n          \"type\": \"string\",\n          \"enum\": [\n            \"A\",\n            \"AA\",\n            \"AAA\"\n          ]\n        },\n        \"focus_indicators\": {\n          \"type\": \"boolean\",\n          \"description\": \"Visible focus indicators\"\n        }\n      },\n      \"description\": \"Accessibility requirements\"\n    },\n    \"atomic_structure\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"atoms\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"molecules\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"organisms\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"website_layout\": {\n      \"type\": \"object\",\n      \"required\": [\n        \"pages\"\n      ],\n      \"properties\": {\n        \"pages\": {\n          \"type\": \"array\",\n          \"minItems\": 1,\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"route\",\n              \"sections\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 50,\n                \"description\": \"Page name (e.g., 'Dashboard').\"\n              },\n              \"route\": {\n                \"type\": \"string\",\n                \"maxLength\": 100,\n                \"description\": \"URL route (e.g., '/dashboard').\"\n              },\n              \"sections\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"name\",\n                    \"components\"\n                  ],\n                  \"properties\": {\n                    \"name\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 50,\n                      \"description\": \"Section name (e.g., 'Hero').\"\n                    },\n                    \"components\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"string\",\n                        \"maxLength\": 50\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      },\n      \"description\": \"Information architecture/Sitemap for the application.\"\n    },\n    \"primary_feature_manifest\": {\n      \"type\": \"object\",\n      \"description\": \"A2UI Manifest (v0.8) for critical user workflows.\",\n      \"properties\": {\n        \"root\": {\n          \"type\": \"object\",\n          \"description\": \"Root node of the UI manifest\"\n        }\n      }\n    },\n    \"layout_strategy\": {\n      \"type\": \"string\"\n    },\n    \"visual_philosophy\": {\n      \"type\": \"string\"\n    },\n    \"information_architecture\": {\n      \"type\": \"string\"\n    },\n    \"responsive_strategy\": {\n      \"type\": \"string\"\n    }\n  }\n}\n\n        === CRITICAL REQUIREMENTS ===\n        1. You MUST respond with ONLY a valid JSON object matching the provided schema.\n        2. Ensure ALL fields are present according to the schema.\n        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.",
+    "schema": {
+      "type": "object",
+      "required": [
+        "component_hierarchy",
+        "design_tokens",
+        "summary",
+        "description",
+        "ui_patterns",
+        "component_specs",
+        "layout_breakpoints",
+        "accessibility",
+        "atomic_structure",
+        "website_layout"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "A technical, 1-sentence summary of the UI strategy. No conversational filler."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed visual design philosophy and brand alignment."
+        },
+        "component_hierarchy": {
+          "type": "object",
+          "required": [
+            "root"
+          ],
+          "properties": {
+            "root": {
+              "type": "string",
+              "maxLength": 40,
+              "description": "Root component name (e.g., 'App')."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "description": "Component name."
+                  },
+                  "props": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "description": "Key component props (e.g., 'title: string')."
+                  },
+                  "children": {
+                    "type": "array",
+                    "description": "Child components (recursive).",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "props": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 30
+                          }
+                        },
+                        "children": {
+                          "type": "array",
+                          "description": "Child components (recursive)",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "description": "Child components in the hierarchy"
+            }
+          },
+          "description": "Legacy structural component hierarchy (used by internal engine)"
+        },
+        "design_tokens": {
+          "type": "object",
+          "required": [
+            "colors",
+            "spacing",
+            "typography"
+          ],
+          "properties": {
+            "colors": {
+              "type": "object",
+              "description": "Color palette. Use ONLY 6-digit hex codes (e.g., #FFFFFF).",
+              "properties": {
+                "primary": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Primary brand color (6-digit hex, e.g. #0F4C81)"
+                },
+                "secondary": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Secondary brand color (6-digit hex)"
+                },
+                "background": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Main background color (6-digit hex)"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Primary text color (6-digit hex)"
+                },
+                "accent": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Accent/Call-to-action color (6-digit hex)"
+                },
+                "error": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Error state color (6-digit hex)"
+                },
+                "success": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Success state color (6-digit hex)"
+                },
+                "warning": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Warning state color (6-digit hex)"
+                },
+                "surface": {
+                  "type": "string",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "pattern": "^#[0-9A-Fa-f]{6}$",
+                  "description": "Surface/Card color (6-digit hex)"
+                }
+              }
+            },
+            "spacing": {
+              "type": "object",
+              "description": "Spacing scale. Use ONLY raw CSS values (e.g., '0.5rem'). No descriptions.",
+              "properties": {
+                "xs": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "sm": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "md": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "lg": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "xl": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "2xl": {
+                  "type": "string",
+                  "maxLength": 10
+                }
+              }
+            },
+            "typography": {
+              "type": "object",
+              "description": "Typography system. Use raw CSS values only.",
+              "properties": {
+                "fontFamily": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "description": "Primary font family (e.g., 'Inter')."
+                },
+                "headingFont": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "description": "Heading font family."
+                },
+                "fontSize": {
+                  "type": "object",
+                  "description": "Font size scale (e.g., '0.875rem').",
+                  "properties": {
+                    "xs": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "sm": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "base": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "lg": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "xl": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "2xl": {
+                      "type": "string",
+                      "maxLength": 10
+                    }
+                  }
+                },
+                "fontWeight": {
+                  "type": "object",
+                  "description": "Font weights (e.g., '400').",
+                  "properties": {
+                    "light": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "normal": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "medium": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "semibold": {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    "bold": {
+                      "type": "string",
+                      "maxLength": 10
+                    }
+                  }
+                }
+              }
+            },
+            "borderRadius": {
+              "type": "object",
+              "properties": {
+                "none": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "sm": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "md": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "lg": {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                "full": {
+                  "type": "string",
+                  "maxLength": 20
+                }
+              }
+            },
+            "shadows": {
+              "type": "object",
+              "properties": {
+                "sm": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "md": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "lg": {
+                  "type": "string",
+                  "maxLength": 150
+                },
+                "inner": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              }
+            }
+          }
+        },
+        "ui_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "component_specs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "description"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "props": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "description": "Component props mapping name to type"
+              },
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              },
+              "states": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              }
+            }
+          }
+        },
+        "layout_breakpoints": {
+          "type": "object",
+          "properties": {
+            "sm": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "Small breakpoint (e.g., '640px')"
+            },
+            "md": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "Medium breakpoint (e.g., '768px')"
+            },
+            "lg": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "Large breakpoint (e.g., '1024px')"
+            },
+            "xl": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "Extra large breakpoint (e.g., '1280px')"
+            },
+            "2xl": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "2X large breakpoint (e.g., '1536px')"
+            }
+          },
+          "description": "Responsive breakpoints"
+        },
+        "accessibility": {
+          "type": "object",
+          "properties": {
+            "standard": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "guidelines": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "checklist": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "aria_labels": {
+              "type": "boolean",
+              "description": "Use ARIA labels"
+            },
+            "keyboard_navigation": {
+              "type": "boolean",
+              "description": "Support keyboard navigation"
+            },
+            "screen_reader_support": {
+              "type": "boolean",
+              "description": "Screen reader support"
+            },
+            "wcag_level": {
+              "type": "string",
+              "enum": [
+                "A",
+                "AA",
+                "AAA"
+              ]
+            },
+            "focus_indicators": {
+              "type": "boolean",
+              "description": "Visible focus indicators"
+            }
+          },
+          "description": "Accessibility requirements"
+        },
+        "atomic_structure": {
+          "type": "object",
+          "properties": {
+            "atoms": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "molecules": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "organisms": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "website_layout": {
+          "type": "object",
+          "required": [
+            "pages"
+          ],
+          "properties": {
+            "pages": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "route",
+                  "sections"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Page name (e.g., 'Dashboard')."
+                  },
+                  "route": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "URL route (e.g., '/dashboard')."
+                  },
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "components"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 50,
+                          "description": "Section name (e.g., 'Hero')."
+                        },
+                        "components": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 50
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "description": "Information architecture/Sitemap for the application."
+        },
+        "primary_feature_manifest": {
+          "type": "object",
+          "description": "A2UI Manifest (v0.8) for critical user workflows.",
+          "properties": {
+            "root": {
+              "type": "object",
+              "description": "Root node of the UI manifest"
+            }
+          }
+        },
+        "layout_strategy": {
+          "type": "string"
+        },
+        "visual_philosophy": {
+          "type": "string"
+        },
+        "information_architecture": {
+          "type": "string"
+        },
+        "responsive_strategy": {
+          "type": "string"
+        }
+      }
+    },
+    "config": {
+      "temperature": 0.2,
+      "maxTokens": 64000,
+      "reasoning": false
+    }
+  },
+  "response": {
+    "content": {
+      "component_hierarchy": {
+        "root": "App",
+        "children": [
+          {
+            "name": "AuthProvider",
+            "children": [
+              {
+                "name": "ApolloProvider",
+                "props": [
+                  "client"
+                ]
+              },
+              {
+                "name": "ThemeProvider",
+                "props": [
+                  "theme"
+                ]
+              },
+              {
+                "name": "Router",
+                "props": [
+                  "routes"
+                ]
+              },
+              {
+                "name": "MainLayout",
+                "props": [
+                  "user"
+                ]
+              }
+            ],
+            "props": [
+              "session"
+            ]
+          },
+          {
+            "name": "ToastContainer",
+            "props": [
+              "position",
+              "autoClose"
+            ]
+          }
+        ]
+      },
+      "design_tokens": {
+        "colors": {
+          "primary": "#4F46E5",
+          "secondary": "#EC4899",
+          "text": "#1F2937",
+          "warning": "#F59E0B"
+        },
+        "spacing": {
+          "xs": "0.25rem"
+        },
+        "typography": {
+          "fontFamily": "Inter, system-ui, sans-serif",
+          "fontSize": {
+            "xs": "0.75rem"
+          },
+          "fontWeight": {
+            "bold": "700"
+          }
+        },
+        "borderRadius": {
+          "full": "9999px",
+          "lg": "0.5rem",
+          "md": "0.375rem",
+          "none": "0",
+          "sm": "0.125rem"
+        },
+        "shadows": {
+          "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
+          "lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          "md": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+        }
+      },
+      "summary": "A responsive, content-first design system utilizing atomic principles to support real-time feeds and multimedia interactions.",
+      "description": "The visual philosophy prioritizes content legibility and interaction speed. Using a 'Clean Modern' aesthetic, the interface minimizes chrome to let user-generated content shine. The color palette uses a deep Indigo primary for trust and stability, with vibrant accents for interactions. The layout adopts a classic 3-column structure (Navigation, Feed, Widgets) optimized for desktop, collapsing to a bottom-nav single column on mobile. Optimistic UI patterns are heavily employed to mask network latency.",
+      "ui_patterns": [
+        "Optimistic UI Updates",
+        "Infinite Scroll Feed",
+        "Skeleton Loading States",
+        "Toast Notifications",
+        "Modal Dialogs",
+        "Drawer Navigation (Mobile)",
+        "Real-time Badge Counters"
+      ],
+      "component_specs": [
+        {
+          "name": "PostCard",
+          "description": "The primary unit of content in the feed, displaying user info, media, and actions.",
+          "props": {
+            "id": "string",
+            "author": "User",
+            "content": "string",
+            "mediaUrl": "string?",
+            "likesCount": "number",
+            "commentsCount": "number",
+            "isLiked": "boolean"
+          },
+          "states": [
+            "default",
+            "loading",
+            "error",
+            "optimistic-like"
+          ],
+          "variants": [
+            "text-only",
+            "image-post",
+            "video-post",
+            "shared-post"
+          ]
+        },
+        {
+          "name": "CreatePostComposer",
+          "description": "A rich input area allowing text entry, media attachment, and emoji selection.",
+          "props": {
+            "placeholder": "string",
+            "currentUser": "User",
+            "onSubmit": "function",
+            "isUploading": "boolean"
+          },
+          "states": [
+            "idle",
+            "focused",
+            "has-content",
+            "uploading",
+            "drag-over"
+          ],
+          "variants": [
+            "modal",
+            "inline"
+          ]
+        },
+        {
+          "name": "ChatWindow",
+          "description": "Real-time messaging interface with history and input.",
+          "props": {
+            "recipient": "User",
+            "messages": "Message[]",
+            "onSend": "function",
+            "isTyping": "boolean"
+          },
+          "states": [
+            "connected",
+            "connecting",
+            "disconnected"
+          ],
+          "variants": [
+            "floating",
+            "fullscreen"
+          ]
+        }
+      ],
+      "layout_breakpoints": {
+        "2xl": "1536px",
+        "lg": "1024px",
+        "md": "768px",
+        "sm": "640px",
+        "xl": "1280px"
+      },
+      "accessibility": {
+        "aria_labels": true,
+        "checklist": [
+          "All images have alt text",
+          "Color contrast ratio > 4.5:1",
+          "Interactive elements min size 44x44px",
+          "Focus visible on all inputs"
+        ],
+        "focus_indicators": true,
+        "guidelines": [
+          "Use semantic HTML5 elements",
+          "Ensure logical tab order",
+          "Provide skip links for navigation"
+        ],
+        "keyboard_navigation": true,
+        "screen_reader_support": true,
+        "standard": "WCAG 2.1",
+        "wcag_level": "AA"
+      },
+      "atomic_structure": {
+        "atoms": [
+          "Avatar",
+          "Button",
+          "Icon",
+          "Input",
+          "Typography",
+          "Badge",
+          "Spinner"
+        ],
+        "molecules": [
+          "UserListItem",
+          "CommentRow",
+          "SearchBar",
+          "NotificationItem",
+          "MediaPreview",
+          "ActionToolbar"
+        ],
+        "organisms": [
+          "PostCard",
+          "FeedStream",
+          "SidebarNavigation",
+          "ChatWindow",
+          "CreatePostModal",
+          "ProfileHeader"
+        ]
+      },
+      "website_layout": {
+        "pages": [
+          {
+            "name": "Home Feed",
+            "route": "/feed",
+            "sections": [
+              {
+                "name": "LeftSidebar",
+                "components": [
+                  "Logo",
+                  "NavMenu",
+                  "UserMiniProfile"
+                ]
+              },
+              {
+                "name": "MainFeed",
+                "components": [
+                  "CreatePostComposer",
+                  "FeedStream"
+                ]
+              },
+              {
+                "name": "RightWidgets",
+                "components": [
+                  "TrendingTopics",
+                  "WhoToFollow"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Profile",
+            "route": "/u/:username",
+            "sections": [
+              {
+                "name": "Header",
+                "components": [
+                  "ProfileCover",
+                  "ProfileStats",
+                  "EditProfileButton"
+                ]
+              },
+              {
+                "name": "Content",
+                "components": [
+                  "PostGrid",
+                  "MediaGallery"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Messages",
+            "route": "/messages",
+            "sections": [
+              {
+                "name": "ConversationList",
+                "components": [
+                  "SearchBar",
+                  "InboxList"
+                ]
+              },
+              {
+                "name": "ActiveChat",
+                "components": [
+                  "ChatHeader",
+                  "MessageList",
+                  "MessageInput"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "information_architecture": "The application uses a flat hierarchy with a persistent side navigation on desktop and bottom navigation on mobile. The primary view is the 'Feed', with secondary views for 'Explore', 'Notifications', and 'Messages'. Contextual actions (like creating a post) are available globally via a Floating Action Button (mobile) or prominent header button (desktop).",
+      "layout_strategy": "Responsive 3-column grid (Left Nav, Center Content, Right Widgets) collapsing to 1-column on mobile.",
+      "primary_feature_manifest": {
+        "root": {
+          "value": "CreatePostWorkflow"
+        }
+      },
+      "responsive_strategy": "Mobile-first approach using Tailwind CSS breakpoints. Complex components like the 'ChatWindow' transform from a floating widget on desktop to a full-screen page on mobile.",
+      "visual_philosophy": "Clean, whitespace-heavy design that emphasizes user content over UI chrome. Uses a cool color palette to reduce eye strain during prolonged usage."
+    },
+    "raw": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "{\n  \"component_hierarchy\": {\n    \"root\": \"App\",\n    \"children\": [\n      {\n        \"name\": \"AuthProvider\",\n        \"children\": [\n          {\n            \"name\": \"ApolloProvider\",\n            \"props\": [\n              \"client\"\n            ]\n          },\n          {\n            \"name\": \"ThemeProvider\",\n            \"props\": [\n              \"theme\"\n            ]\n          },\n          {\n            \"name\": \"Router\",\n            \"props\": [\n              \"routes\"\n            ]\n          },\n          {\n            \"name\": \"MainLayout\",\n            \"props\": [\n              \"user\"\n            ]\n          }\n        ],\n        \"props\": [\n          \"session\"\n        ]\n      },\n      {\n        \"name\": \"ToastContainer\",\n        \"props\": [\n          \"position\",\n          \"autoClose\"\n        ]\n      }\n    ]\n  },\n  \"design_tokens\": {\n    \"colors\": {\n      \"primary\": \"#4F46E5\",\n      \"secondary\": \"#EC4899\",\n      \"text\": \"#1F2937\",\n      \"warning\": \"#F59E0B\"\n    },\n    \"spacing\": {\n      \"xs\": \"0.25rem\"\n    },\n    \"typography\": {\n      \"fontFamily\": \"Inter, system-ui, sans-serif\",\n      \"fontSize\": {\n        \"xs\": \"0.75rem\"\n      },\n      \"fontWeight\": {\n        \"bold\": \"700\"\n      }\n    },\n    \"borderRadius\": {\n      \"full\": \"9999px\",\n      \"lg\": \"0.5rem\",\n      \"md\": \"0.375rem\",\n      \"none\": \"0\",\n      \"sm\": \"0.125rem\"\n    },\n    \"shadows\": {\n      \"inner\": \"inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)\",\n      \"lg\": \"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)\",\n      \"md\": \"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)\",\n      \"sm\": \"0 1px 2px 0 rgba(0, 0, 0, 0.05)\"\n    }\n  },\n  \"summary\": \"A responsive, content-first design system utilizing atomic principles to support real-time feeds and multimedia interactions.\",\n  \"description\": \"The visual philosophy prioritizes content legibility and interaction speed. Using a 'Clean Modern' aesthetic, the interface minimizes chrome to let user-generated content shine. The color palette uses a deep Indigo primary for trust and stability, with vibrant accents for interactions. The layout adopts a classic 3-column structure (Navigation, Feed, Widgets) optimized for desktop, collapsing to a bottom-nav single column on mobile. Optimistic UI patterns are heavily employed to mask network latency.\",\n  \"ui_patterns\": [\n    \"Optimistic UI Updates\",\n    \"Infinite Scroll Feed\",\n    \"Skeleton Loading States\",\n    \"Toast Notifications\",\n    \"Modal Dialogs\",\n    \"Drawer Navigation (Mobile)\",\n    \"Real-time Badge Counters\"\n  ],\n  \"component_specs\": [\n    {\n      \"name\": \"PostCard\",\n      \"description\": \"The primary unit of content in the feed, displaying user info, media, and actions.\",\n      \"props\": \"{\\\"id\\\": \\\"string\\\", \\\"author\\\": \\\"User\\\", \\\"content\\\": \\\"string\\\", \\\"mediaUrl\\\": \\\"string?\\\", \\\"likesCount\\\": \\\"number\\\", \\\"commentsCount\\\": \\\"number\\\", \\\"isLiked\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"default\",\n        \"loading\",\n        \"error\",\n        \"optimistic-like\"\n      ],\n      \"variants\": [\n        \"text-only\",\n        \"image-post\",\n        \"video-post\",\n        \"shared-post\"\n      ]\n    },\n    {\n      \"name\": \"CreatePostComposer\",\n      \"description\": \"A rich input area allowing text entry, media attachment, and emoji selection.\",\n      \"props\": \"{\\\"placeholder\\\": \\\"string\\\", \\\"currentUser\\\": \\\"User\\\", \\\"onSubmit\\\": \\\"function\\\", \\\"isUploading\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"idle\",\n        \"focused\",\n        \"has-content\",\n        \"uploading\",\n        \"drag-over\"\n      ],\n      \"variants\": [\n        \"modal\",\n        \"inline\"\n      ]\n    },\n    {\n      \"name\": \"ChatWindow\",\n      \"description\": \"Real-time messaging interface with history and input.\",\n      \"props\": \"{\\\"recipient\\\": \\\"User\\\", \\\"messages\\\": \\\"Message[]\\\", \\\"onSend\\\": \\\"function\\\", \\\"isTyping\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"connected\",\n        \"connecting\",\n        \"disconnected\"\n      ],\n      \"variants\": [\n        \"floating\",\n        \"fullscreen\"\n      ]\n    }\n  ],\n  \"layout_breakpoints\": {\n    \"2xl\": \"1536px\",\n    \"lg\": \"1024px\",\n    \"md\": \"768px\",\n    \"sm\": \"640px\",\n    \"xl\": \"1280px\"\n  },\n  \"accessibility\": {\n    \"aria_labels\": true,\n    \"checklist\": [\n      \"All images have alt text\",\n      \"Color contrast ratio > 4.5:1\",\n      \"Interactive elements min size 44x44px\",\n      \"Focus visible on all inputs\"\n    ],\n    \"focus_indicators\": true,\n    \"guidelines\": [\n      \"Use semantic HTML5 elements\",\n      \"Ensure logical tab order\",\n      \"Provide skip links for navigation\"\n    ],\n    \"keyboard_navigation\": true,\n    \"screen_reader_support\": true,\n    \"standard\": \"WCAG 2.1\",\n    \"wcag_level\": \"AA\"\n  },\n  \"atomic_structure\": {\n    \"atoms\": [\n      \"Avatar\",\n      \"Button\",\n      \"Icon\",\n      \"Input\",\n      \"Typography\",\n      \"Badge\",\n      \"Spinner\"\n    ],\n    \"molecules\": [\n      \"UserListItem\",\n      \"CommentRow\",\n      \"SearchBar\",\n      \"NotificationItem\",\n      \"MediaPreview\",\n      \"ActionToolbar\"\n    ],\n    \"organisms\": [\n      \"PostCard\",\n      \"FeedStream\",\n      \"SidebarNavigation\",\n      \"ChatWindow\",\n      \"CreatePostModal\",\n      \"ProfileHeader\"\n    ]\n  },\n  \"website_layout\": {\n    \"pages\": [\n      {\n        \"name\": \"Home Feed\",\n        \"route\": \"/feed\",\n        \"sections\": [\n          {\n            \"name\": \"LeftSidebar\",\n            \"components\": [\n              \"Logo\",\n              \"NavMenu\",\n              \"UserMiniProfile\"\n            ]\n          },\n          {\n            \"name\": \"MainFeed\",\n            \"components\": [\n              \"CreatePostComposer\",\n              \"FeedStream\"\n            ]\n          },\n          {\n            \"name\": \"RightWidgets\",\n            \"components\": [\n              \"TrendingTopics\",\n              \"WhoToFollow\"\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"Profile\",\n        \"route\": \"/u/:username\",\n        \"sections\": [\n          {\n            \"name\": \"Header\",\n            \"components\": [\n              \"ProfileCover\",\n              \"ProfileStats\",\n              \"EditProfileButton\"\n            ]\n          },\n          {\n            \"name\": \"Content\",\n            \"components\": [\n              \"PostGrid\",\n              \"MediaGallery\"\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"Messages\",\n        \"route\": \"/messages\",\n        \"sections\": [\n          {\n            \"name\": \"ConversationList\",\n            \"components\": [\n              \"SearchBar\",\n              \"InboxList\"\n            ]\n          },\n          {\n            \"name\": \"ActiveChat\",\n            \"components\": [\n              \"ChatHeader\",\n              \"MessageList\",\n              \"MessageInput\"\n            ]\n          }\n        ]\n      }\n    ]\n  },\n  \"information_architecture\": \"The application uses a flat hierarchy with a persistent side navigation on desktop and bottom navigation on mobile. The primary view is the 'Feed', with secondary views for 'Explore', 'Notifications', and 'Messages'. Contextual actions (like creating a post) are available globally via a Floating Action Button (mobile) or prominent header button (desktop).\",\n  \"layout_strategy\": \"Responsive 3-column grid (Left Nav, Center Content, Right Widgets) collapsing to 1-column on mobile.\",\n  \"primary_feature_manifest\": {\n    \"root\": \"CreatePostWorkflow\"\n  },\n  \"responsive_strategy\": \"Mobile-first approach using Tailwind CSS breakpoints. Complex components like the 'ChatWindow' transform from a floating widget on desktop to a full-screen page on mobile.\",\n  \"visual_philosophy\": \"Clean, whitespace-heavy design that emphasizes user content over UI chrome. Uses a cool color palette to reduce eye strain during prolonged usage.\"\n}",
+                "thoughtSignature": "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"
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 10867,
+        "candidatesTokenCount": 2208,
+        "totalTokenCount": 14098,
+        "cachedContentTokenCount": 6497,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 10867
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 6497
+          }
+        ],
+        "thoughtsTokenCount": 1023
+      },
+      "modelVersion": "gemini-3-pro-preview",
+      "responseId": "IkVvaYuADsWlvdIPvuXRgA8"
+    },
+    "extracted_json_text": "{\n  \"component_hierarchy\": {\n    \"root\": \"App\",\n    \"children\": [\n      {\n        \"name\": \"AuthProvider\",\n        \"children\": [\n          {\n            \"name\": \"ApolloProvider\",\n            \"props\": [\n              \"client\"\n            ]\n          },\n          {\n            \"name\": \"ThemeProvider\",\n            \"props\": [\n              \"theme\"\n            ]\n          },\n          {\n            \"name\": \"Router\",\n            \"props\": [\n              \"routes\"\n            ]\n          },\n          {\n            \"name\": \"MainLayout\",\n            \"props\": [\n              \"user\"\n            ]\n          }\n        ],\n        \"props\": [\n          \"session\"\n        ]\n      },\n      {\n        \"name\": \"ToastContainer\",\n        \"props\": [\n          \"position\",\n          \"autoClose\"\n        ]\n      }\n    ]\n  },\n  \"design_tokens\": {\n    \"colors\": {\n      \"primary\": \"#4F46E5\",\n      \"secondary\": \"#EC4899\",\n      \"text\": \"#1F2937\",\n      \"warning\": \"#F59E0B\"\n    },\n    \"spacing\": {\n      \"xs\": \"0.25rem\"\n    },\n    \"typography\": {\n      \"fontFamily\": \"Inter, system-ui, sans-serif\",\n      \"fontSize\": {\n        \"xs\": \"0.75rem\"\n      },\n      \"fontWeight\": {\n        \"bold\": \"700\"\n      }\n    },\n    \"borderRadius\": {\n      \"full\": \"9999px\",\n      \"lg\": \"0.5rem\",\n      \"md\": \"0.375rem\",\n      \"none\": \"0\",\n      \"sm\": \"0.125rem\"\n    },\n    \"shadows\": {\n      \"inner\": \"inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)\",\n      \"lg\": \"0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)\",\n      \"md\": \"0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)\",\n      \"sm\": \"0 1px 2px 0 rgba(0, 0, 0, 0.05)\"\n    }\n  },\n  \"summary\": \"A responsive, content-first design system utilizing atomic principles to support real-time feeds and multimedia interactions.\",\n  \"description\": \"The visual philosophy prioritizes content legibility and interaction speed. Using a 'Clean Modern' aesthetic, the interface minimizes chrome to let user-generated content shine. The color palette uses a deep Indigo primary for trust and stability, with vibrant accents for interactions. The layout adopts a classic 3-column structure (Navigation, Feed, Widgets) optimized for desktop, collapsing to a bottom-nav single column on mobile. Optimistic UI patterns are heavily employed to mask network latency.\",\n  \"ui_patterns\": [\n    \"Optimistic UI Updates\",\n    \"Infinite Scroll Feed\",\n    \"Skeleton Loading States\",\n    \"Toast Notifications\",\n    \"Modal Dialogs\",\n    \"Drawer Navigation (Mobile)\",\n    \"Real-time Badge Counters\"\n  ],\n  \"component_specs\": [\n    {\n      \"name\": \"PostCard\",\n      \"description\": \"The primary unit of content in the feed, displaying user info, media, and actions.\",\n      \"props\": \"{\\\"id\\\": \\\"string\\\", \\\"author\\\": \\\"User\\\", \\\"content\\\": \\\"string\\\", \\\"mediaUrl\\\": \\\"string?\\\", \\\"likesCount\\\": \\\"number\\\", \\\"commentsCount\\\": \\\"number\\\", \\\"isLiked\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"default\",\n        \"loading\",\n        \"error\",\n        \"optimistic-like\"\n      ],\n      \"variants\": [\n        \"text-only\",\n        \"image-post\",\n        \"video-post\",\n        \"shared-post\"\n      ]\n    },\n    {\n      \"name\": \"CreatePostComposer\",\n      \"description\": \"A rich input area allowing text entry, media attachment, and emoji selection.\",\n      \"props\": \"{\\\"placeholder\\\": \\\"string\\\", \\\"currentUser\\\": \\\"User\\\", \\\"onSubmit\\\": \\\"function\\\", \\\"isUploading\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"idle\",\n        \"focused\",\n        \"has-content\",\n        \"uploading\",\n        \"drag-over\"\n      ],\n      \"variants\": [\n        \"modal\",\n        \"inline\"\n      ]\n    },\n    {\n      \"name\": \"ChatWindow\",\n      \"description\": \"Real-time messaging interface with history and input.\",\n      \"props\": \"{\\\"recipient\\\": \\\"User\\\", \\\"messages\\\": \\\"Message[]\\\", \\\"onSend\\\": \\\"function\\\", \\\"isTyping\\\": \\\"boolean\\\"}\",\n      \"states\": [\n        \"connected\",\n        \"connecting\",\n        \"disconnected\"\n      ],\n      \"variants\": [\n        \"floating\",\n        \"fullscreen\"\n      ]\n    }\n  ],\n  \"layout_breakpoints\": {\n    \"2xl\": \"1536px\",\n    \"lg\": \"1024px\",\n    \"md\": \"768px\",\n    \"sm\": \"640px\",\n    \"xl\": \"1280px\"\n  },\n  \"accessibility\": {\n    \"aria_labels\": true,\n    \"checklist\": [\n      \"All images have alt text\",\n      \"Color contrast ratio > 4.5:1\",\n      \"Interactive elements min size 44x44px\",\n      \"Focus visible on all inputs\"\n    ],\n    \"focus_indicators\": true,\n    \"guidelines\": [\n      \"Use semantic HTML5 elements\",\n      \"Ensure logical tab order\",\n      \"Provide skip links for navigation\"\n    ],\n    \"keyboard_navigation\": true,\n    \"screen_reader_support\": true,\n    \"standard\": \"WCAG 2.1\",\n    \"wcag_level\": \"AA\"\n  },\n  \"atomic_structure\": {\n    \"atoms\": [\n      \"Avatar\",\n      \"Button\",\n      \"Icon\",\n      \"Input\",\n      \"Typography\",\n      \"Badge\",\n      \"Spinner\"\n    ],\n    \"molecules\": [\n      \"UserListItem\",\n      \"CommentRow\",\n      \"SearchBar\",\n      \"NotificationItem\",\n      \"MediaPreview\",\n      \"ActionToolbar\"\n    ],\n    \"organisms\": [\n      \"PostCard\",\n      \"FeedStream\",\n      \"SidebarNavigation\",\n      \"ChatWindow\",\n      \"CreatePostModal\",\n      \"ProfileHeader\"\n    ]\n  },\n  \"website_layout\": {\n    \"pages\": [\n      {\n        \"name\": \"Home Feed\",\n        \"route\": \"/feed\",\n        \"sections\": [\n          {\n            \"name\": \"LeftSidebar\",\n            \"components\": [\n              \"Logo\",\n              \"NavMenu\",\n              \"UserMiniProfile\"\n            ]\n          },\n          {\n            \"name\": \"MainFeed\",\n            \"components\": [\n              \"CreatePostComposer\",\n              \"FeedStream\"\n            ]\n          },\n          {\n            \"name\": \"RightWidgets\",\n            \"components\": [\n              \"TrendingTopics\",\n              \"WhoToFollow\"\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"Profile\",\n        \"route\": \"/u/:username\",\n        \"sections\": [\n          {\n            \"name\": \"Header\",\n            \"components\": [\n              \"ProfileCover\",\n              \"ProfileStats\",\n              \"EditProfileButton\"\n            ]\n          },\n          {\n            \"name\": \"Content\",\n            \"components\": [\n              \"PostGrid\",\n              \"MediaGallery\"\n            ]\n          }\n        ]\n      },\n      {\n        \"name\": \"Messages\",\n        \"route\": \"/messages\",\n        \"sections\": [\n          {\n            \"name\": \"ConversationList\",\n            \"components\": [\n              \"SearchBar\",\n              \"InboxList\"\n            ]\n          },\n          {\n            \"name\": \"ActiveChat\",\n            \"components\": [\n              \"ChatHeader\",\n              \"MessageList\",\n              \"MessageInput\"\n            ]\n          }\n        ]\n      }\n    ]\n  },\n  \"information_architecture\": \"The application uses a flat hierarchy with a persistent side navigation on desktop and bottom navigation on mobile. The primary view is the 'Feed', with secondary views for 'Explore', 'Notifications', and 'Messages'. Contextual actions (like creating a post) are available globally via a Floating Action Button (mobile) or prominent header button (desktop).\",\n  \"layout_strategy\": \"Responsive 3-column grid (Left Nav, Center Content, Right Widgets) collapsing to 1-column on mobile.\",\n  \"primary_feature_manifest\": {\n    \"root\": \"CreatePostWorkflow\"\n  },\n  \"responsive_strategy\": \"Mobile-first approach using Tailwind CSS breakpoints. Complex components like the 'ChatWindow' transform from a floating widget on desktop to a full-screen page on mobile.\",\n  \"visual_philosophy\": \"Clean, whitespace-heavy design that emphasizes user content over UI chrome. Uses a cool color palette to reduce eye strain during prolonged usage.\"\n}"
+  }
+}

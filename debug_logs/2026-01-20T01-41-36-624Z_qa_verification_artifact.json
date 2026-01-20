@@ -1,0 +1,122 @@
+{
+  "step_id": "qa_verification",
+  "role": "QA",
+  "timestamp": "2026-01-20T01:41:36.624Z",
+  "content": {
+    "ok": true,
+    "test_strategy": {
+      "unit": "Jest/Vitest for backend business logic, utility functions, and isolated React components.",
+      "integration": "Supertest for API endpoints; React Testing Library for component interactions and data fetching.",
+      "e2e": "Playwright for critical user journeys: Authentication, Post Creation, and Admin Dashboard management.",
+      "approach": "Shift-left strategy emphasizing automated regression, strict performance gates (Lighthouse), and security scanning in CI/CD.",
+      "tools": [
+        "Jest",
+        "Playwright",
+        "Supertest",
+        "Lighthouse",
+        "OWASP ZAP"
+      ],
+      "types": [
+        "Functional",
+        "Performance",
+        "Security",
+        "Accessibility",
+        "Regression"
+      ]
+    },
+    "test_cases": [
+      {
+        "name": "Admin Login & Auth",
+        "priority": "critical",
+        "type": "e2e",
+        "description": "Verify admin can log in and receive a secure HttpOnly cookie.",
+        "expected_result": "Redirect to dashboard; Auth cookie set.",
+        "gherkin": "GIVEN user is on login page WHEN valid admin credentials entered THEN redirect to /admin AND set HttpOnly JWT cookie."
+      },
+      {
+        "name": "Markdown Post Creation",
+        "priority": "critical",
+        "type": "e2e",
+        "description": "Verify author can write markdown, preview it, and publish.",
+        "expected_result": "Post saved to DB and visible on frontend.",
+        "gherkin": "GIVEN admin is logged in WHEN title and markdown content entered AND 'Publish' clicked THEN new post appears in list AND slug is generated."
+      },
+      {
+        "name": "Search API Performance",
+        "priority": "high",
+        "type": "performance",
+        "description": "Verify full-text search returns results under 200ms.",
+        "expected_result": "Status 200; Response time < 200ms.",
+        "gherkin": "GIVEN 1000 posts in DB WHEN GET /api/search?q=keyword is called THEN return matching JSON results within 200ms."
+      },
+      {
+        "name": "XSS Prevention in Comments",
+        "priority": "critical",
+        "type": "security",
+        "description": "Ensure malicious scripts in comments are sanitized.",
+        "expected_result": "Script tags stripped; text renders safely.",
+        "gherkin": "GIVEN a post exists WHEN a comment with <script>alert(1)</script> is submitted THEN the stored comment does not execute JS on render."
+      },
+      {
+        "name": "SEO Meta Tag Injection",
+        "priority": "high",
+        "type": "integration",
+        "description": "Verify custom meta title and description are rendered in HEAD.",
+        "expected_result": "Meta tags present in HTML source.",
+        "gherkin": "GIVEN a post with custom SEO fields WHEN the post page is requested THEN the <title> and <meta name='description'> match input."
+      }
+    ],
+    "security_plan": {
+      "auth_verification_steps": [
+        "Verify JWT is not accessible via JavaScript (HttpOnly).",
+        "Ensure API endpoints return 401 without valid token.",
+        "Test token expiration and refresh flow.",
+        "Verify password hashing (Bcrypt) in database."
+      ],
+      "vulnerability_scan_strategy": "Weekly automated scans using OWASP ZAP; Snyk dependency scanning on every PR."
+    },
+    "manual_verification_steps": [
+      "Verify visual layout consistency on mobile (iOS/Android) and desktop.",
+      "Check Markdown rendering edge cases (nested lists, code blocks).",
+      "Validate 'Related Posts' relevance manually.",
+      "Test RSS feed validity in a real RSS reader."
+    ],
+    "risk_analysis": [
+      {
+        "risk": "XSS via Markdown/Comments",
+        "impact": "high",
+        "mitigation": "Strict DOMPurify sanitization on both server (API) and client (render)."
+      },
+      {
+        "risk": "Slow ISR Revalidation",
+        "impact": "medium",
+        "mitigation": "Monitor Vercel logs; implement fallback states for stale content."
+      },
+      {
+        "risk": "SEO Regression",
+        "impact": "high",
+        "mitigation": "Lighthouse CI checks on every PR to enforce SEO score > 90."
+      }
+    ],
+    "summary": "A comprehensive automated strategy focusing on E2E critical paths, strict security sanitization for user content, and performance benchmarking.",
+    "description": "The QA plan prioritizes the integrity of the content pipeline. We will use Playwright for the 'Write-to-Publish' flow to ensure authors are never blocked. Security testing focuses heavily on XSS prevention due to Markdown/Comment features. Performance testing ensures the Next.js SSR/ISR benefits are realized.",
+    "coverage": {
+      "branches": 80,
+      "functions": 85,
+      "lines": 85,
+      "percentage": 85,
+      "statements": 85,
+      "threshold": 80
+    },
+    "performance_metrics": {
+      "api_response_time_p95": "200ms",
+      "database_query_time": "50ms",
+      "first_contentful_paint": "1.5s",
+      "largest_contentful_paint": "2.5s",
+      "page_load_time": "3.0s",
+      "time_to_interactive": "3.5s"
+    },
+    "accessibility_plan": "Automated Axe-core scans in CI; Manual keyboard navigation testing for Admin Dashboard and Comment forms.",
+    "manual_uat_plan": "Product Owner to verify 'User Story' acceptance criteria in Staging environment before production deployment."
+  }
+}
