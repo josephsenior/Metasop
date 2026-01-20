@@ -57,11 +57,10 @@ ${techContext}
 MISSION OBJECTIVES:
 1. **Design Language**: Establish Design Tokens (Colors, Spacing, Typography) as defined in the schema.
 2. **Atomic Structure**: Map application real estate: Atoms, Molecules, Organisms.
-3. **Primary Feature Manifest**: Generate an **A2UI Manifest** (v0.8) for critical workflows.
-4. **Accessibility**: Design for inclusivity (WCAG 2.1) including ARIA and keyboard navigation.
-5. **Component Blueprint**: Detail key components with technical specs: Props, Variants, States.
-6. **Information Architecture**: Define website layout structure (pages, routes, layout sections).
-7. **Visual Design Philosophy**: Define core aesthetic principles and brand alignment.
+3. **Accessibility**: Design for inclusivity (WCAG 2.1) including ARIA and keyboard navigation.
+4. **Component Blueprint**: Detail key components with technical specs: Props, Variants, States.
+5. **Information Architecture**: Define website layout structure (pages, routes, layout sections).
+6. **Visual Design Philosophy**: Define core aesthetic principles and brand alignment.
 
 Respond with ONLY the structured JSON object.`;
 
@@ -98,7 +97,6 @@ Respond with ONLY the structured JSON object.`;
         schema_version: "0.8",
         design_tokens: llmUIDesign.design_tokens,
         atomic_structure: llmUIDesign.atomic_structure,
-        primary_feature_manifest: llmUIDesign.primary_feature_manifest,
         accessibility: llmUIDesign.accessibility,
         component_blueprint: llmUIDesign.component_blueprint,
         layout_strategy: llmUIDesign.layout_strategy,

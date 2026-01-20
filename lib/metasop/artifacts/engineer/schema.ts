@@ -89,6 +89,7 @@ export const engineerSchema = {
         },
         technical_decisions: {
             type: "array",
+            minItems: 3,
             items: {
                 type: "object",
                 required: ["decision", "rationale"],
@@ -102,6 +103,7 @@ export const engineerSchema = {
         },
         environment_variables: {
             type: "array",
+            minItems: 2,
             items: {
                 type: "object",
                 required: ["name", "description"],

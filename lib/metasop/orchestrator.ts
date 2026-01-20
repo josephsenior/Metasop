@@ -655,10 +655,17 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
 
       // DEBUG: Dump raw artifact to file for inspection
       try {
-        const dumpPath = path.join(process.cwd(), `${stepId}_raw_response.json`);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const agentRole = stepId.toLowerCase().replace(/\s+/g, '_');
+        const debugDir = path.join(process.cwd(), 'debug_logs');
+        
+        if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+        const dumpPath = path.join(debugDir, `${timestamp}_${agentRole}_artifact.json`);
         const dumpContent = {
           step_id: stepId,
           role: role,
+          timestamp: new Date().toISOString(),
           content: result.artifact.content
         };
         // Use synchronous write to ensure it's written before moving on
@@ -742,7 +749,10 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
         backoffMultiplier: agentConfig.retryPolicy.backoffMultiplier,
         jitter: agentConfig.retryPolicy.jitter,
       }
-      : RetryService.createDefaultPolicy();
+      : {
+        ...RetryService.createDefaultPolicy(),
+        maxRetries: retries, // Explicitly override with agent's retry setting
+      };
 
     retryPolicy.maxRetries = retries;
 

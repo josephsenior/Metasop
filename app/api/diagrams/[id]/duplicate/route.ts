@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
+import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 
 /**
@@ -10,9 +11,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request);
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      return createErrorResponse("Unauthorized", 401);
+    }
+
     const { id } = await params;
-    const duplicated = await diagramDb.duplicate(id, user.userId);
+    const duplicated = await diagramDb.duplicate(id, userId);
 
     return createSuccessResponse(
       { diagram: duplicated },

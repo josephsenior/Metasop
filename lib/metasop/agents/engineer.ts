@@ -51,13 +51,17 @@ Design Tokens: primary=${uiArtifact.design_tokens?.colors?.primary}, background=
 
 MISSION OBJECTIVES:
 1. **Implementation Plan**: A detailed technical implementation guide in Markdown.
-2. **State Management**: Specific strategy for managing application state.
+2. **Technical Decisions**: MANDATORY. List at least 3-5 critical architectural choices, rationales, and alternatives. Do not leave empty.
 3. **File Structure**: An organized directory tree mirroring professional architecture. (No file content).
-4. **Technical Decisions**: Critical architectural choices and rationales.
-5. **Dependencies**: Essential libraries and tools required.
-6. **Phases**: Implementation phases with granular technical tasks.
+4. **CLI Scripts**: MANDATORY. Essential commands for setup, development, testing, and building in the 'run_results' field.
+5. **Environment Variables**: MANDATORY. List all required configuration variables with descriptions and examples. Do not leave empty.
+6. **Dependencies**: Essential libraries and tools required (e.g., 'package@version').
+7. **Implementation Roadmap**: Granular technical tasks organized into logical phases.
+8. **State Management**: Specific strategy for managing application state.
 
-Respond with ONLY the structured JSON object.`;
+CRITICAL: You MUST provide non-empty values for 'technical_decisions', 'environment_variables', and 'run_results' (including setup_commands, dev_commands, and test_commands). These are essential for the engineering specification.
+
+Respond with ONLY the structured JSON object matching the provided schema.`;
 
       let llmEngineerImpl: EngineerBackendArtifact | null = null;
 
@@ -91,11 +95,21 @@ Respond with ONLY the structured JSON object.`;
         description: llmEngineerImpl.description,
         artifact_path: llmEngineerImpl.artifact_path,
         implementation_plan: llmEngineerImpl.implementation_plan,
+        implementation_plan_phases: llmEngineerImpl.implementation_plan_phases || llmEngineerImpl.phases,
         state_management: llmEngineerImpl.state_management,
         file_structure: llmEngineerImpl.file_structure,
-        technical_patterns: llmEngineerImpl.technical_patterns,
-        dependencies: llmEngineerImpl.dependencies,
-        phases: llmEngineerImpl.phases
+        technical_patterns: llmEngineerImpl.technical_patterns || [],
+        technical_decisions: llmEngineerImpl.technical_decisions || [],
+        environment_variables: llmEngineerImpl.environment_variables || [],
+        dependencies: llmEngineerImpl.dependencies || [],
+        run_results: {
+          setup_commands: llmEngineerImpl.run_results?.setup_commands || [],
+          test_commands: llmEngineerImpl.run_results?.test_commands || [],
+          dev_commands: llmEngineerImpl.run_results?.dev_commands || [],
+          build_commands: llmEngineerImpl.run_results?.build_commands || [],
+          notes: llmEngineerImpl.run_results?.notes || ""
+        },
+        phases: llmEngineerImpl.phases || llmEngineerImpl.implementation_plan_phases || []
       };
     }
 

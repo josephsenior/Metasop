@@ -205,9 +205,11 @@ function AssumptionCard({ text, type }: { text: string, type: 'assumption' | 'ou
 }
 
 export default function PMSpecPanel({
-  artifact
+  artifact,
+  className
 }: {
-  artifact: any
+  artifact: any,
+  className?: string
 }) {
   const data = (artifact?.content || artifact || {}) as ProductManagerBackendArtifact
   const userStories = data.user_stories || []
@@ -223,7 +225,7 @@ export default function PMSpecPanel({
   const description = data.description || ""
 
   return (
-    <div className={cn("h-full flex flex-col", styles.colors.bg)}>
+    <div className={cn("h-full flex flex-col", styles.colors.bg, className)}>
       {/* Header Summary */}
       <div className="p-4 border-b border-border/40 bg-muted/10">
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -251,7 +253,7 @@ export default function PMSpecPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3">
           <StatsCard
             icon={TrendingUp}
             label="Stories"
@@ -322,8 +324,8 @@ export default function PMSpecPanel({
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="overview" className="h-full flex flex-col">
           <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
+            <ScrollArea className="w-full pb-2">
+              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full flex-wrap">
                 <TabTrigger value="overview" icon={Info} label="Overview" />
                 <TabTrigger value="stories" icon={ListTodo} label="User Stories" count={userStories.length} />
                 <TabTrigger value="acceptance" icon={CheckCircle2} label="Acceptance" count={acceptance.length} />

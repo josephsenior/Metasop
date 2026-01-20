@@ -1,27 +1,8 @@
 
-export interface A2UINode {
-    type: "View" | "Container" | "ScrollView" | "Stack" | "Grid" | "Card" | "Button" | "TextInput" | "Text" | "Image" | "Icon" | "Divider" | "List";
-    props?: {
-        label?: string;
-        value?: string;
-        placeholder?: string;
-        variant?: "primary" | "secondary" | "outline" | "ghost" | "link";
-        size?: "sm" | "md" | "lg" | "xl";
-        spacing?: string;
-        alignment?: "start" | "center" | "end";
-        on_click?: string;
-        [key: string]: any;
-    };
-    children?: A2UINode[];
-}
-
 export interface UIDesignerBackendArtifact {
     summary?: string;
     description?: string;
     schema_version?: "0.8";
-    a2ui_manifest?: {
-        root: A2UINode;
-    };
     component_hierarchy: {
         root: string;
         children: Array<{
@@ -82,11 +63,11 @@ export interface UIDesignerBackendArtifact {
         pages: Array<{
             name: string;
             route: string;
-            sections: string[];
+            sections: Array<string | {
+                name: string;
+                components: string[];
+            }>;
         }>;
-    };
-    primary_feature_manifest?: {
-        root: any;
     };
     layout_strategy?: string;
     visual_philosophy?: string;

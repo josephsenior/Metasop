@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthenticatedUser, createErrorResponse } from "@/lib/auth/middleware"
+import { handleGuestAuth } from "@/lib/middleware/guest-auth"
 import { diagramDb } from "@/lib/diagrams/db"
 import { DocumentationGenerator } from "@/lib/artifacts/documentation-generator"
 import { PDFGenerator } from "@/lib/artifacts/pdf-generator"
@@ -22,20 +23,28 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request)
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      return createErrorResponse("Unauthorized", 401);
+    }
+
     const resolvedParams = await params
     const { searchParams } = new URL(request.url)
     const format = searchParams.get("format") || "markdown"
     const artifact = searchParams.get("artifact") || "documentation"
 
     // Get diagram
-    const diagram = await diagramDb.findById(resolvedParams.id, user.userId)
+    const diagram = await diagramDb.findById(resolvedParams.id, userId)
     if (!diagram) {
       return createErrorResponse("Diagram not found", 404)
     }
 
     // Check if user has access (or if it's a guest diagram)
-    if (diagram.userId !== user.userId && !diagram.id.startsWith("guest_")) {
+    if (diagram.userId !== userId && !diagram.id.startsWith("guest_")) {
       return createErrorResponse("Unauthorized", 403)
     }
 
@@ -201,18 +210,31 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request)
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      const guestAuth = await handleGuestAuth(request);
+      if (guestAuth.isGuest && guestAuth.sessionId) {
+        userId = `guest_${guestAuth.sessionId}`;
+      } else {
+        return createErrorResponse("Unauthorized", 401);
+      }
+    }
+
     const resolvedParams = await params
     const body = await request.json()
     const artifact = body.artifact || "scaffold"
 
     // Get diagram
-    const diagram = await diagramDb.findById(resolvedParams.id, user.userId)
+    const diagram = await diagramDb.findById(resolvedParams.id, userId)
     if (!diagram) {
       return createErrorResponse("Diagram not found", 404)
     }
 
-    if (diagram.userId !== user.userId && !diagram.id.startsWith("guest_")) {
+    if (diagram.userId !== userId && !diagram.id.startsWith("guest_")) {
       return createErrorResponse("Unauthorized", 403)
     }
 

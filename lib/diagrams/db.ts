@@ -15,59 +15,85 @@ function mapToDiagram(p: any): Diagram {
 
 export const diagramDb = {
     async findById(id: string, userId?: string): Promise<Diagram | null> {
-        const p = await prisma.diagram.findFirst({
-            where: {
-                id,
-                ...(userId ? { userId: userId } : {}),
-            },
-        });
-        return mapToDiagram(p);
+        try {
+            const p = await prisma.diagram.findFirst({
+                where: {
+                    id,
+                    ...(userId ? { userId: userId } : {}),
+                },
+            });
+            return mapToDiagram(p);
+        } catch (error) {
+            console.error("Database error in findById:", error);
+            return null;
+        }
     },
 
     async findByUserId(userId: string, options: { limit?: number; offset?: number; status?: string } = {}) {
         const { limit = 20, offset = 0, status } = options;
-        const [diagrams, total] = await Promise.all([
-            prisma.diagram.findMany({
-                where: {
-                    userId: userId,
-                    ...(status ? { status } : {}),
-                },
-                orderBy: { createdAt: "desc" },
-                take: limit,
-                skip: offset,
-            }),
-            prisma.diagram.count({
-                where: {
-                    userId: userId,
-                    ...(status ? { status } : {}),
-                },
-            }),
-        ]);
+        
+        try {
+            const [diagrams, total] = await Promise.all([
+                prisma.diagram.findMany({
+                    where: {
+                        userId: userId,
+                        ...(status ? { status } : {}),
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: limit,
+                    skip: offset,
+                }),
+                prisma.diagram.count({
+                    where: {
+                        userId: userId,
+                        ...(status ? { status } : {}),
+                    },
+                }),
+            ]);
 
-        return {
-            diagrams: diagrams.map(mapToDiagram),
-            total,
-            limit,
-            offset
-        };
+            const page = Math.floor(offset / limit) + 1;
+
+            return {
+                diagrams: diagrams.map(mapToDiagram),
+                total,
+                limit,
+                page
+            };
+        } catch (error) {
+            console.error("Database error in findByUserId:", error);
+            return {
+                diagrams: [],
+                total: 0,
+                limit,
+                offset,
+                error: "Database unavailable"
+            };
+        }
     },
 
     async create(userId: string, data: CreateDiagramRequest): Promise<Diagram> {
-        const p = await prisma.diagram.create({
-            data: {
-                userId: userId,
-                title: data.prompt.split('\n')[0].substring(0, 50) || "New Diagram",
-                description: data.prompt.substring(0, 200),
-                nodes: [],
-                edges: [],
-                status: "processing",
-                metadata: {
-                    prompt: data.prompt,
-                    options: data.options,
+        try {
+            const p = await prisma.diagram.create({
+                data: {
+                    userId: userId,
+                    title: data.prompt.split('\n')[0].substring(0, 50) || "New Diagram",
+                    description: data.prompt.substring(0, 200),
+                    nodes: [],
+                    edges: [],
+                    status: "processing",
+                    metadata: {
+                        prompt: data.prompt,
+                        options: data.options,
+                    },
                 },
-            },
-        });
-        return mapToDiagram(p);
+            });
+            return mapToDiagram(p);
+        } catch (error) {
+            console.error("Database error in create:", error);
+            // Return a mock object if DB fails to allow the flow to continue in memory if needed
+            // However, the caller usually handles this
+            throw error;
+        }
     },
 
     async update(id: string, userId: string, data: UpdateDiagramRequest): Promise<Diagram> {
@@ -81,6 +107,7 @@ export const diagramDb = {
                 ...(data.description ? { description: data.description } : {}),
                 ...(data.nodes ? { nodes: data.nodes as any } : {}),
                 ...(data.edges ? { edges: data.edges as any } : {}),
+                ...(data.status ? { status: data.status } : { status: "completed" }),
                 ...(data.metadata ? { metadata: data.metadata as any } : {}),
             },
         });
@@ -149,6 +176,23 @@ export const diagramDb = {
             },
         });
         return mapToDiagram(p);
+    },
+
+    async migrateGuestDiagrams(guestUserId: string, targetUserId: string) {
+        // Find all diagrams belonging to the guest user
+        const guestDiagrams = await prisma.diagram.findMany({
+            where: { userId: guestUserId },
+        });
+
+        if (guestDiagrams.length === 0) return;
+
+        // Update them to the new user ID
+        await prisma.diagram.updateMany({
+            where: { userId: guestUserId },
+            data: { userId: targetUserId },
+        });
+
+        console.log(`Migrated ${guestDiagrams.length} diagrams from ${guestUserId} to ${targetUserId}`);
     }
 };
 

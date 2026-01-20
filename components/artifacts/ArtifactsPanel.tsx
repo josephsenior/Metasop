@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, Download, Archive, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { downloadFile } from "@/lib/utils"
+import { downloadFile, cn } from "@/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,6 +39,7 @@ interface ArtifactsPanelProps {
     className?: string
     activeTab?: string
     onTabChange?: (tab: string) => void
+    sidebarMode?: boolean
 }
 
 const agentTabs = [
@@ -58,7 +59,8 @@ export function ArtifactsPanel({
     steps, 
     className = "",
     activeTab: externalActiveTab,
-    onTabChange
+    onTabChange,
+    sidebarMode = false
 }: ArtifactsPanelProps) {
     const { toast } = useToast()
     const [internalActiveTab, setInternalActiveTab] = useState("summary")
@@ -119,60 +121,93 @@ export function ArtifactsPanel({
     }
 
     return (
-        <div className={`flex flex-col h-full bg-background min-h-0 ${className}`}>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div className="border-b border-border bg-background px-3 pt-3 pb-2 sticky top-0 z-20 shrink-0">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className={`p-1.5 rounded-lg ${currentTab.bgColor} ${currentTab.color}`}>
-                            <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-xs font-semibold text-foreground truncate">
-                                {currentTab.label}
+        <div className={cn("flex h-full bg-background min-h-0", sidebarMode ? "flex-row" : "flex-col", className)}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className={cn("flex-1 flex min-h-0 overflow-hidden", sidebarMode ? "flex-row" : "flex-col")}>
+                
+                {/* Sidebar Mode Tabs */}
+                {sidebarMode && (
+                    <div className="w-48 shrink-0 border-r border-border bg-muted/10 flex flex-col hidden lg:flex">
+                        <div className="p-4 border-b border-border">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
+                                Agent Reports
                             </h3>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <TabsList className="flex flex-col items-stretch w-full h-auto gap-1 bg-transparent p-2 rounded-none overflow-y-auto custom-scrollbar">
+                            {agentTabs.map((tab) => {
+                                const TabIcon = tab.icon
+                                const hasData = tab.id === "summary" || tab.id === "documents" || !!artifacts[tab.id as keyof typeof artifacts]
+                                return (
+                                    <TabsTrigger
+                                        key={tab.id}
+                                        value={tab.id}
+                                        disabled={!hasData}
+                                        className="flex items-center gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50"
+                                    >
+                                        <TabIcon className={cn("h-4 w-4", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
+                                        <span className="font-medium truncate">{tab.label}</span>
+                                    </TabsTrigger>
+                                )
+                            })}
+                        </TabsList>
+                    </div>
+                )}
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                        <Download className="h-3.5 w-3.5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem onClick={handleExportAll} className="text-xs cursor-pointer">
-                                        <Archive className="mr-2 h-3.5 w-3.5" />
-                                        Export Project (JSON)
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleExportMarkdown} className="text-xs cursor-pointer">
-                                        <FileText className="mr-2 h-3.5 w-3.5" />
-                                        Export Spec (Markdown)
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <div className="border-b border-border bg-background px-3 pt-3 pb-2 sticky top-0 z-20 shrink-0">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className={`p-1.5 rounded-lg ${currentTab.bgColor} ${currentTab.color}`}>
+                                <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-xs font-semibold text-foreground truncate">
+                                    {currentTab.label}
+                                </h3>
+                            </div>
+                            <div className="flex items-center gap-1">
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                                            <Download className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuItem onClick={handleExportAll} className="text-xs cursor-pointer">
+                                            <Archive className="mr-2 h-3.5 w-3.5" />
+                                            Export Project (JSON)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleExportMarkdown} className="text-xs cursor-pointer">
+                                            <FileText className="mr-2 h-3.5 w-3.5" />
+                                            Export Spec (Markdown)
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
+
+                        {/* Top Mode Tabs (only if not sidebar) */}
+                        {!sidebarMode && (
+                            <TabsList className="flex items-center w-full h-auto gap-0.5 bg-muted/30 p-0.5 rounded-md overflow-x-auto custom-scrollbar">
+                                {agentTabs.map((tab) => {
+                                    const TabIcon = tab.icon
+                                    const hasData = tab.id === "summary" || tab.id === "documents" || !!artifacts[tab.id as keyof typeof artifacts]
+                                    return (
+                                        <TabsTrigger
+                                            key={tab.id}
+                                            value={tab.id}
+                                            disabled={!hasData}
+                                            className="flex flex-col items-center gap-0.5 py-1 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-disabled:opacity-40 rounded text-[10px] min-w-[70px]"
+                                        >
+                                            <TabIcon className={`h-3 w-3 ${hasData && activeTab === tab.id ? tab.color : "text-muted-foreground"}`} />
+                                            <span className="text-[9px] font-medium truncate w-full text-center leading-tight">{tab.label.split(' ')[0]}</span>
+                                        </TabsTrigger>
+                                    )
+                                })}
+                            </TabsList>
+                        )}
                     </div>
 
-                    <TabsList className="flex items-center w-full h-auto gap-0.5 bg-muted/30 p-0.5 rounded-md overflow-x-auto custom-scrollbar">
-                        {agentTabs.map((tab) => {
-                            const TabIcon = tab.icon
-                            const hasData = tab.id === "summary" || tab.id === "documents" || !!artifacts[tab.id as keyof typeof artifacts]
-                            return (
-                                <TabsTrigger
-                                    key={tab.id}
-                                    value={tab.id}
-                                    disabled={!hasData}
-                                    className="flex flex-col items-center gap-0.5 py-1 px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-disabled:opacity-40 rounded text-[10px] min-w-[70px]"
-                                >
-                                    <TabIcon className={`h-3 w-3 ${hasData && activeTab === tab.id ? tab.color : "text-muted-foreground"}`} />
-                                    <span className="text-[9px] font-medium truncate w-full text-center leading-tight">{tab.label.split(' ')[0]}</span>
-                                </TabsTrigger>
-                            )
-                        })}
-                    </TabsList>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-hidden relative">
+                    <div className="flex-1 min-h-0 overflow-hidden relative">
                     <div className="h-full w-full overflow-y-auto custom-scrollbar p-3 pb-6">
                         <AnimatePresence mode="wait">
                                 <motion.div
@@ -190,7 +225,7 @@ export function ArtifactsPanel({
                                         switch (activeTab) {
                                             case "pm_spec":
                                                 const PMComp = PMSpecArtifact as any
-                                                return <PMComp artifact={artifact} diagramId={diagramId} allArtifacts={artifacts} />
+                                                return <PMComp artifact={artifact} diagramId={diagramId} allArtifacts={artifacts} className="max-w-full" />
                                             case "arch_design":
                                                 const ArchComp = ArchDesignArtifact as any
                                                 return <ArchComp artifact={artifact} diagramId={diagramId} allArtifacts={artifacts} />
@@ -245,11 +280,10 @@ export function ArtifactsPanel({
                                     </div>
                                 )
                             })()}
+                        </div>
                     </div>
                 </div>
             </Tabs>
-
-
         </div>
     )
 }

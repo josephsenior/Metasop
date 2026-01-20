@@ -3,6 +3,8 @@
  */
 
 import { NextRequest } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth/options";
 import {
   getGuestSession,
   canGuestCreateDiagram,
@@ -55,11 +57,18 @@ function getIpAddress(request: NextRequest): string | undefined {
 }
 
 /**
- * Check if request is from authenticated user
+ * Check if request is from authenticated user (JWT or Session)
  */
-function isAuthenticated(request: NextRequest): boolean {
+async function isAuthenticated(request: NextRequest): Promise<boolean> {
+  // 1. Check Bearer Token
   const authHeader = request.headers.get("authorization");
-  return !!(authHeader && authHeader.startsWith("Bearer "));
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return true;
+  }
+
+  // 2. Check Session
+  const session = await getServerSession(authOptions);
+  return !!session;
 }
 
 /**
@@ -70,9 +79,8 @@ export async function handleGuestAuth(
   requireAuth: boolean = false
 ): Promise<GuestAuthResult> {
   // Check if user is authenticated
-  if (isAuthenticated(request)) {
-    // User is authenticated, extract userId from token if needed
-    // For now, we'll just return that they're not a guest
+  if (await isAuthenticated(request)) {
+    // User is authenticated, return that they're not a guest
     return {
       isGuest: false,
       canProceed: true,

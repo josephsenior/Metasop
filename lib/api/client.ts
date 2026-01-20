@@ -4,6 +4,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { tokenStorage } from "../auth/token-storage";
+import { getGuestSessionId } from "./guest-session";
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -19,6 +20,12 @@ apiClient.interceptors.request.use(
     const token = tokenStorage.getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else if (config.headers) {
+      // Add guest session ID if no token is present
+      const guestId = getGuestSessionId();
+      if (guestId) {
+        config.headers["x-guest-session-id"] = guestId;
+      }
     }
     return config;
   },

@@ -90,8 +90,8 @@ export default function MyDiagramsPage() {
   const filteredAndSortedDiagrams = useMemo(() => {
     let filtered = diagrams.filter((diagram) => {
       const matchesSearch =
-        diagram.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        diagram.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (diagram.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (diagram.description || "").toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "all" || diagram.status === statusFilter
       return matchesSearch && matchesStatus
     })
@@ -112,7 +112,7 @@ export default function MyDiagramsPage() {
   }, [searchQuery, sortBy, sortOrder, statusFilter])
 
   return (
-    <AuthGuard>
+    <AuthGuard requireAuth={true}>
       <div className="min-h-screen bg-background">
         <DashboardHeader />
 

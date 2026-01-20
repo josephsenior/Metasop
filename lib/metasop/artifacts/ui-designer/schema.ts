@@ -3,20 +3,20 @@ export const uiDesignerSchema = {
     type: "object",
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
-        summary: { type: "string", description: "A technical, 1-sentence summary of the UI strategy. No conversational filler." },
+        summary: { type: "string", maxLength: 200, description: "A technical, 1-sentence summary of the UI strategy. No conversational filler." },
         description: { type: "string", description: "Detailed visual design philosophy and brand alignment." },
         component_hierarchy: {
             type: "object",
             required: ["root"],
             properties: {
-                root: { type: "string", description: "Root component name (e.g., 'App')." },
+                root: { type: "string", maxLength: 40, description: "Root component name (e.g., 'App')." },
                 children: {
                     type: "array",
                     items: {
                         type: "object",
                         required: ["name"],
                         properties: {
-                            name: { type: "string", description: "Component name." },
+                            name: { type: "string", maxLength: 40, description: "Component name." },
                             props: {
                                 type: "array",
                                 items: { type: "string", maxLength: 30 },
@@ -56,17 +56,17 @@ export const uiDesignerSchema = {
             properties: {
                 colors: {
                     type: "object",
-                    description: "Color palette. Use ONLY 6-digit hex codes.",
+                    description: "Color palette. Use ONLY 6-digit hex codes (e.g., #FFFFFF).",
                     properties: {
-                        primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary brand color (hex only)" },
-                        secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Secondary brand color (hex only)" },
-                        background: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Main background color (hex only)" },
-                        text: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary text color (hex only)" },
-                        accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Accent/Call-to-action color (hex only)" },
-                        error: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Error state color (hex only)" },
-                        success: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Success state color (hex only)" },
-                        warning: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Warning state color (hex only)" },
-                        surface: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Surface/Card color (hex only)" },
+                        primary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary brand color (6-digit hex, e.g. #0F4C81)" },
+                        secondary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Secondary brand color (6-digit hex)" },
+                        background: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Main background color (6-digit hex)" },
+                        text: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary text color (6-digit hex)" },
+                        accent: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Accent/Call-to-action color (6-digit hex)" },
+                        error: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Error state color (6-digit hex)" },
+                        success: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Success state color (6-digit hex)" },
+                        warning: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Warning state color (6-digit hex)" },
+                        surface: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Surface/Card color (6-digit hex)" },
                     },
                 },
                 spacing: {
@@ -85,8 +85,8 @@ export const uiDesignerSchema = {
                     type: "object",
                     description: "Typography system. Use raw CSS values only.",
                     properties: {
-                        fontFamily: { type: "string", description: "Primary font family (e.g., 'Inter')." },
-                        headingFont: { type: "string", description: "Heading font family." },
+                        fontFamily: { type: "string", maxLength: 100, description: "Primary font family (e.g., 'Inter')." },
+                        headingFont: { type: "string", maxLength: 100, description: "Heading font family." },
                         fontSize: {
                             type: "object",
                             description: "Font size scale (e.g., '0.875rem').",
@@ -103,11 +103,11 @@ export const uiDesignerSchema = {
                             type: "object",
                             description: "Font weights (e.g., '400').",
                             properties: {
-                                light: { type: "string", maxLength: 5 },
-                                normal: { type: "string", maxLength: 5 },
-                                medium: { type: "string", maxLength: 5 },
-                                semibold: { type: "string", maxLength: 5 },
-                                bold: { type: "string", maxLength: 5 },
+                                light: { type: "string", maxLength: 10 },
+                                normal: { type: "string", maxLength: 10 },
+                                medium: { type: "string", maxLength: 10 },
+                                semibold: { type: "string", maxLength: 10 },
+                                bold: { type: "string", maxLength: 10 },
                             }
                         }
                     },
@@ -115,27 +115,27 @@ export const uiDesignerSchema = {
                 borderRadius: {
                     type: "object",
                     properties: {
-                        none: { type: "string" },
-                        sm: { type: "string" },
-                        md: { type: "string" },
-                        lg: { type: "string" },
-                        full: { type: "string" },
+                        none: { type: "string", maxLength: 10 },
+                        sm: { type: "string", maxLength: 10 },
+                        md: { type: "string", maxLength: 10 },
+                        lg: { type: "string", maxLength: 10 },
+                        full: { type: "string", maxLength: 20 },
                     }
                 },
                 shadows: {
                     type: "object",
                     properties: {
-                        sm: { type: "string" },
-                        md: { type: "string" },
-                        lg: { type: "string" },
-                        inner: { type: "string" },
+                        sm: { type: "string", maxLength: 100 },
+                        md: { type: "string", maxLength: 100 },
+                        lg: { type: "string", maxLength: 150 },
+                        inner: { type: "string", maxLength: 100 },
                     }
                 }
             },
         },
         ui_patterns: {
             type: "array",
-            items: { type: "string" },
+            items: { type: "string", maxLength: 100 },
         },
         component_specs: {
             type: "array",
@@ -143,35 +143,35 @@ export const uiDesignerSchema = {
                 type: "object",
                 required: ["name", "description"],
                 properties: {
-                    name: { type: "string" },
-                    description: { type: "string" },
+                    name: { type: "string", maxLength: 50 },
+                    description: { type: "string", maxLength: 500 },
                     props: {
                         type: "object",
-                        additionalProperties: { type: "string" },
+                        additionalProperties: { type: "string", maxLength: 100 },
                         description: "Component props mapping name to type"
                     },
-                    variants: { type: "array", items: { type: "string" } },
-                    states: { type: "array", items: { type: "string" } },
+                    variants: { type: "array", items: { type: "string", maxLength: 50 } },
+                    states: { type: "array", items: { type: "string", maxLength: 50 } },
                 },
             },
         },
         layout_breakpoints: {
             type: "object",
             properties: {
-                sm: { type: "string", description: "Small breakpoint (e.g., '640px')" },
-                md: { type: "string", description: "Medium breakpoint (e.g., '768px')" },
-                lg: { type: "string", description: "Large breakpoint (e.g., '1024px')" },
-                xl: { type: "string", description: "Extra large breakpoint (e.g., '1280px')" },
-                "2xl": { type: "string", description: "2X large breakpoint (e.g., '1536px')" },
+                sm: { type: "string", maxLength: 15, description: "Small breakpoint (e.g., '640px')" },
+                md: { type: "string", maxLength: 15, description: "Medium breakpoint (e.g., '768px')" },
+                lg: { type: "string", maxLength: 15, description: "Large breakpoint (e.g., '1024px')" },
+                xl: { type: "string", maxLength: 15, description: "Extra large breakpoint (e.g., '1280px')" },
+                "2xl": { type: "string", maxLength: 15, description: "2X large breakpoint (e.g., '1536px')" },
             },
             description: "Responsive breakpoints",
         },
         accessibility: {
             type: "object",
             properties: {
-                standard: { type: "string" },
-                guidelines: { type: "array", items: { type: "string" } },
-                checklist: { type: "array", items: { type: "string" } },
+                standard: { type: "string", maxLength: 50 },
+                guidelines: { type: "array", items: { type: "string", maxLength: 200 } },
+                checklist: { type: "array", items: { type: "string", maxLength: 200 } },
                 aria_labels: { type: "boolean", description: "Use ARIA labels" },
                 keyboard_navigation: { type: "boolean", description: "Support keyboard navigation" },
                 screen_reader_support: { type: "boolean", description: "Screen reader support" },
@@ -199,28 +199,24 @@ export const uiDesignerSchema = {
                         type: "object",
                         required: ["name", "route", "sections"],
                         properties: {
-                            name: { type: "string", description: "Page display name" },
-                            route: { type: "string", description: "URL route path (e.g. '/dashboard')" },
+                            name: { type: "string", maxLength: 50, description: "Page name (e.g., 'Dashboard')." },
+                            route: { type: "string", maxLength: 100, description: "URL route (e.g., '/dashboard')." },
                             sections: {
                                 type: "array",
-                                items: { type: "string" },
-                                description: "Key page sections (e.g. Hero, Stats, Grid)"
-                            },
+                                items: {
+                                    type: "object",
+                                    required: ["name", "components"],
+                                    properties: {
+                                        name: { type: "string", maxLength: 50, description: "Section name (e.g., 'Hero')." },
+                                        components: { type: "array", items: { type: "string", maxLength: 50 } },
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             },
             description: "Information architecture/Sitemap for the application."
-        },
-        primary_feature_manifest: {
-            type: "object",
-            description: "A2UI Manifest (v0.8) for critical user workflows.",
-            properties: {
-                root: {
-                    type: "object",
-                    description: "Root node of the UI manifest"
-                }
-            }
         },
         layout_strategy: { type: "string" },
         visual_philosophy: { type: "string" },

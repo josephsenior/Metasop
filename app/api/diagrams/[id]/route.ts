@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
+import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 import type { UpdateDiagramRequest } from "@/types/diagram";
 import { validateUpdateDiagramRequest } from "@/lib/diagrams/schemas";
@@ -13,9 +14,22 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request);
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      const guestAuth = await handleGuestAuth(request);
+      if (guestAuth.isGuest && guestAuth.sessionId) {
+        userId = `guest_${guestAuth.sessionId}`;
+      } else {
+        return createErrorResponse("Unauthorized", 401);
+      }
+    }
+
     const { id } = await params;
-    const diagram = await diagramDb.findById(id, user.userId);
+    const diagram = await diagramDb.findById(id, userId);
 
     if (!diagram) {
       return createErrorResponse("Diagram not found", 404);
@@ -38,10 +52,23 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request);
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      const guestAuth = await handleGuestAuth(request);
+      if (guestAuth.isGuest && guestAuth.sessionId) {
+        userId = `guest_${guestAuth.sessionId}`;
+      } else {
+        return createErrorResponse("Unauthorized", 401);
+      }
+    }
+
     const { id } = await params;
     let body: UpdateDiagramRequest = await request.json();
-
+    
     // Validate request data
     try {
       body = validateUpdateDiagramRequest(body);
@@ -55,7 +82,7 @@ export async function PATCH(
       return createErrorResponse("Invalid request format", 400);
     }
 
-    const diagram = await diagramDb.update(id, user.userId, body);
+    const diagram = await diagramDb.update(id, userId, body);
 
     return createSuccessResponse(
       { diagram },
@@ -80,9 +107,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request);
+    let userId: string;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+    } catch (authError) {
+      const guestAuth = await handleGuestAuth(request);
+      if (guestAuth.isGuest && guestAuth.sessionId) {
+        userId = `guest_${guestAuth.sessionId}`;
+      } else {
+        return createErrorResponse("Unauthorized", 401);
+      }
+    }
+
     const { id } = await params;
-    await diagramDb.delete(id, user.userId);
+    await diagramDb.delete(id, userId);
 
     return createSuccessResponse(null, "Diagram deleted successfully");
   } catch (error: any) {

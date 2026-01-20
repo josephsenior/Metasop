@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
     }
 
     const gemini = new GeminiLLMProvider(apiKey);
+    logger.info("Transcription started", { mimeType: mimeType || "audio/webm", size: audio.length });
     const text = await gemini.transcribe(audio, mimeType || "audio/webm");
+    logger.info("Transcription success", { textLength: text.length });
 
     return NextResponse.json({ text });
   } catch (error: any) {

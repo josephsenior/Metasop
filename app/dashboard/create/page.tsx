@@ -419,25 +419,10 @@ function CreateDiagramContent() {
 
               console.log("[Frontend] Diagram set, nodes:", diagram.nodes?.length || 0, "edges:", diagram.edges?.length || 0)
 
-              if (diagram.id.startsWith("guest_") || isGuestDiagram) {
-                const guestDiagrams = JSON.parse(localStorage.getItem("guest_diagrams") || "[]")
-                guestDiagrams.push(diagram)
-                if (guestDiagrams.length > 5) guestDiagrams.shift()
-                localStorage.setItem("guest_diagrams", JSON.stringify(guestDiagrams))
-              }
-
-              if (isAuthenticated && !isGuestDiagram) {
-                toast({
-                  title: "Diagram saved automatically!",
-                  description: "Your diagram has been saved. You can view it anytime from your dashboard.",
-                  duration: 5000,
-                })
-              } else {
-                toast({
-                  title: "Diagram generated!",
-                  description: "Your architecture diagram has been generated successfully.",
-                })
-              }
+              toast({
+                title: "Diagram generated!",
+                description: "Your architecture diagram has been generated successfully. Don't forget to save it if you want to keep it.",
+              })
 
               // Automatically mark first steps as success if they weren't matched in stream
               // (Keep existing completion logic)

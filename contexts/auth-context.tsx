@@ -12,6 +12,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import type { User, LoginRequest, RegisterRequest } from "@/types/auth";
 import { authApi } from "@/lib/api/auth";
 import { tokenStorage } from "@/lib/auth/token-storage";
+import { ensureGuestSessionId } from "@/lib/api/guest-session";
 import {
   setupTokenRefresh,
   clearTokenRefresh,
@@ -38,6 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize guest session on mount
+  useEffect(() => {
+    ensureGuestSessionId();
+  }, []);
 
   // Sync with NextAuth session
   useEffect(() => {

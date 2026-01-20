@@ -12,11 +12,11 @@ export interface GuestSession {
 }
 
 export const GUEST_LIMITS = {
-  maxDiagrams: 2, // Limit for guests
-  saveEnabled: false, // Guests cannot save to DB permanently
+  maxDiagrams: 5, // Increased for better guest experience
+  saveEnabled: true, // Guests can now save to DB within their session
   exportEnabled: true, // Guests can export
-  sessionTimeout: 30 * 60 * 1000, // 30 minutes of inactivity
-  maxSessionAge: 24 * 60 * 60 * 1000, // 24 hours total session age
+  sessionTimeout: 60 * 60 * 1000, // 60 minutes of inactivity
+  maxSessionAge: 48 * 60 * 60 * 1000, // 48 hours total session age
 } as const;
 
 // In-memory storage for guest sessions (in production, use Redis or similar)

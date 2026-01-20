@@ -63,12 +63,20 @@ export class ExecutionService {
           // Pass the onProgress callback to the agent function
           // We wrap it to ensure it includes the stepId and role
           const wrappedOnProgress = onProgress ? (event: Partial<MetaSOPEvent>) => {
-            onProgress({
-              ...event,
-              step_id: stepId,
-              role: role,
-              timestamp: event.timestamp || new Date().toISOString()
-            } as MetaSOPEvent);
+            try {
+              onProgress({
+                ...event,
+                step_id: stepId,
+                role: role,
+                timestamp: event.timestamp || new Date().toISOString()
+              } as MetaSOPEvent);
+            } catch (e: any) {
+              logger.warn(`[Execution] Failed to propagate progress for ${stepId}: ${e.message}`);
+              // If we detect the stream is closed, we rethrow a specific error that the orchestrator/route can handle
+              if (e.message === "STREAM_CLOSED" || e.message.includes("closed")) {
+                throw e; 
+              }
+            }
           } : undefined;
 
           // Wrap agent function with timeout

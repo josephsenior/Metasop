@@ -64,6 +64,7 @@ export interface UpdateDiagramRequest {
   description?: string;
   nodes?: DiagramNode[];
   edges?: DiagramEdge[];
+  status?: "processing" | "completed" | "failed" | "pending";
   metadata?: any;
 }
 

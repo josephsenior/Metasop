@@ -144,8 +144,63 @@ ${prompt}`
         throw new Error("No response from Gemini API");
       }
 
+      // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
+      if (options?.role) {
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+          const debugDir = path.join(process.cwd(), 'debug_logs');
+          
+          if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+          const debugPayload = {
+            agent: options.role,
+            model: model,
+            timestamp: new Date().toISOString(),
+            request: {
+              prompt: prompt,
+              config: {
+                temperature: options?.temperature,
+                maxTokens: options?.maxTokens,
+                reasoning: !!options?.reasoning,
+                cacheId: options?.cacheId
+              }
+            },
+            response: {
+              content: content,
+              raw: data,
+              thoughts: thoughts
+            }
+          };
+
+          fs.writeFileSync(
+            path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
+            JSON.stringify(debugPayload, null, 2)
+          );
+
+          console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
+        } catch (dumpErr) {
+          logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
+        }
+      }
+
       return content;
     } catch (error: any) {
+      // DEBUG: DUMP ERROR TO FILE
+      if (options?.role) {
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+          const debugDir = path.join(process.cwd(), 'debug_logs');
+          fs.writeFileSync(path.join(debugDir, `${timestamp}_${agentRole}_ERROR.json`), JSON.stringify({
+            message: error.message,
+            stack: error.stack,
+            model: model,
+            timestamp: new Date().toISOString()
+          }, null, 2));
+        } catch (dumpErr) { /* ignore */ }
+      }
+
       logger.error("Gemini generation failed", { error: error.message, model });
       throw error;
     }
@@ -157,8 +212,8 @@ ${prompt}`
    */
   async transcribe(audioBase64: string, mimeType: string = "audio/webm"): Promise<string> {
     const startTime = Date.now();
-    // Using Gemini 2.5 Flash Native Audio Dialog for best transcription performance
-    const model = "gemini-2.5-flash-native-audio-dialog"; 
+    // Using Gemini 2.0 Flash for best transcription performance
+    const model = "gemini-2.0-flash"; 
 
     try {
       const requestBody = {
@@ -377,14 +432,48 @@ ${prompt}`
 
           data = response.data;
         } catch (axiosErr: any) {
-          if (axios.isCancel(axiosErr)) {
-            throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
-          }
+        if (axios.isCancel(axiosErr)) {
+          throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
+        }
+        
+        if (axiosErr.response) {
+          const errorData = axiosErr.response.data;
           
-          if (axiosErr.response) {
-            const errorData = axiosErr.response.data;
-            throw new Error(`Gemini API error (${axiosErr.response.status}): ${errorData.error?.message || axiosErr.response.statusText}`);
+          // DEBUG: DUMP DETAILED ERROR RESPONSE (as requested by user)
+          if (options?.role) {
+            try {
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+              const debugDir = path.join(process.cwd(), 'debug_logs');
+              
+              if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+              const errorPayload = {
+                agent: options.role,
+                model: model,
+                timestamp: new Date().toISOString(),
+                status: axiosErr.response.status,
+                statusText: axiosErr.response.statusText,
+                request: {
+                  prompt: structuredPrompt,
+                  schema: schema,
+                  config: requestBody.generationConfig
+                },
+                error: errorData
+              };
+
+              fs.writeFileSync(
+                path.join(debugDir, `${timestamp}_${agentRole}_API_ERROR.json`), 
+                JSON.stringify(errorPayload, null, 2)
+              );
+              console.error(`\n[DEBUG] ${options.role} API ERROR captured to debug_logs/`);
+            } catch (dumpErr) {
+              // ignore
+            }
           }
+
+          throw new Error(`Gemini API error (${axiosErr.response.status}): ${errorData.error?.message || axiosErr.response.statusText}`);
+        }
 
           logger.error("Low-level Axios failure", { 
             message: axiosErr.message, 
@@ -409,17 +498,11 @@ ${prompt}`
       }
 
       if (!jsonText && data) {
-        // If we have data but no text, dump the whole data object for debugging
-        if (options?.role) {
-          try {
-            const debugFileName = `raw_data_${options.role.toLowerCase().replace(/\s+/g, '_')}.json`;
-            const debugFilePath = path.join(process.cwd(), debugFileName);
-            fs.writeFileSync(debugFilePath, JSON.stringify(data, null, 2));
-            console.error(`\n[DEBUG] ${options.role} EMPTY TEXT BUT DATA FOUND. DUMPED DATA TO: ${debugFilePath}\n`);
-          } catch (dumpErr) {
-            logger.error(`Failed to dump ${options?.role} empty text data`, { error: (dumpErr as Error).message });
-          }
-        }
+        // Log additional info if text is missing but data exists
+        logger.warn(`[Gemini] ${options?.role || 'Agent'} returned data but no text part`, { 
+          candidateCount: data.candidates?.length,
+          finishReason: data.candidates?.[0]?.finishReason
+        });
       }
 
       const usageMetadata = data.usageMetadata;
@@ -458,19 +541,6 @@ ${prompt}`
 
       if (!jsonText) {
         throw new Error("No JSON response from Gemini API");
-      }
-
-      // ALWAYS DUMP TO FILE FOR DEBUGGING (as requested by user)
-      if (options?.role) {
-        try {
-          const debugFileName = `raw_${options.role.toLowerCase().replace(/\s+/g, '_')}.json`;
-          const debugFilePath = path.join(process.cwd(), debugFileName);
-          fs.writeFileSync(debugFilePath, jsonText);
-          console.log(`\n[DEBUG] ${options.role} RAW RESPONSE DUMPED TO: ${debugFilePath}`);
-          console.log(`[DEBUG] Size: ${jsonText.length} characters\n`);
-        } catch (dumpErr) {
-          logger.error(`Failed to dump ${options?.role} debug response`, { error: (dumpErr as Error).message });
-        }
       }
 
       // Parse final aggregated JSON
@@ -593,8 +663,70 @@ ${prompt}`
         delete (result as any)._reasoning;
       }
 
+      // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
+      if (options?.role) {
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+          const debugDir = path.join(process.cwd(), 'debug_logs');
+          
+          if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+          const debugPayload = {
+            agent: options.role,
+            model: model,
+            timestamp: new Date().toISOString(),
+            request: {
+              prompt: structuredPrompt,
+              schema: schema,
+              config: {
+                temperature: options?.temperature,
+                maxTokens: options?.maxTokens,
+                reasoning: !!options?.reasoning
+              }
+            },
+            response: {
+              content: result,
+              raw: data,
+              extracted_json_text: jsonText
+            }
+          };
+
+          fs.writeFileSync(
+            path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
+            JSON.stringify(debugPayload, null, 2)
+          );
+
+          console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
+        } catch (dumpErr) {
+          logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
+        }
+      }
+
       return result as T;
     } catch (error: any) {
+      // DEBUG: DUMP ERROR TO FILE
+      if (options?.role) {
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+          const debugDir = path.join(process.cwd(), 'debug_logs');
+          const errorFileName = `${timestamp}_${agentRole}_ERROR.json`;
+          const errorFilePath = path.join(debugDir, errorFileName);
+          
+          fs.writeFileSync(errorFilePath, JSON.stringify({
+            message: error.message,
+            stack: error.stack,
+            model: model,
+            timestamp: new Date().toISOString()
+          }, null, 2));
+          
+          console.error(`\n[DEBUG] ${options.role} ERROR DUMPED TO: ${errorFilePath}\n`);
+        } catch (dumpErr) {
+          // ignore
+        }
+      }
+
       logger.error("Gemini structured generation failed", { error: error.message, model });
       throw error;
     }
@@ -618,12 +750,16 @@ ${prompt}`
     let progressCount = 0;
     
     if (onProgress) {
-      onProgress({
-        type: "agent_progress",
-        status: "in_progress",
-        message: `Agent ${options?.role || "LLM"} is thinking...`,
-        timestamp: new Date().toISOString()
-      });
+      try {
+        onProgress({
+          type: "agent_progress",
+          status: "in_progress",
+          message: `Agent ${options?.role || "LLM"} is thinking...`,
+          timestamp: new Date().toISOString()
+        });
+      } catch (e: any) {
+        logger.warn(`[Gemini] Failed to send initial progress: ${e.message}`);
+      }
 
       // Emit progress updates every 5 seconds to prevent "hanging" perception
       progressInterval = setInterval(() => {
@@ -639,12 +775,20 @@ ${prompt}`
         ];
         const message = messages[Math.min(progressCount - 1, messages.length - 1)];
         
-        onProgress({
-          type: "agent_progress",
-          status: "in_progress",
-          message: `${options?.role || "Agent"}: ${message}`,
-          timestamp: new Date().toISOString()
-        });
+        try {
+          onProgress({
+            type: "agent_progress",
+            status: "in_progress",
+            message: `${options?.role || "Agent"}: ${message}`,
+            timestamp: new Date().toISOString()
+          });
+        } catch (e: any) {
+          logger.warn(`[Gemini] Failed to send heartbeat progress: ${e.message}`);
+          // If the stream is closed, stop the interval
+          if (e.message === "STREAM_CLOSED" || e.message.includes("closed")) {
+            if (progressInterval) clearInterval(progressInterval);
+          }
+        }
       }, 5000);
     }
 
@@ -688,35 +832,46 @@ ${prompt}`
 
           // Handle potential double-stringification
           if (cleaned.startsWith('"') && cleaned.endsWith('"') && cleaned.length > 2) {
-            cleaned = JSON.parse(cleaned);
+            try {
+              cleaned = JSON.parse(cleaned);
+            } catch {
+              // Ignore parse error and keep cleaned as is
+            }
           }
 
           obj[key] = JSON.parse(cleaned);
         } catch {
           // If it's not valid JSON, try to wrap it in an object if it looks like key-value pairs
-          if (value.includes(":") && !value.includes("{")) {
+          if (typeof value === 'string' && value.includes(":") && !value.includes("{")) {
             try {
               const lines = value.split("\n").filter(l => l.includes(":"));
               const partialObj: any = {};
               lines.forEach(l => {
                 const parts = l.split(":");
                 if (parts.length >= 2) {
-                  partialObj[parts[0].trim().replace(/^["']|["']$/g, "")] = parts[1].trim().replace(/^["']|["']$/g, "");
+                  const k = parts[0].trim().replace(/^["']|["']$/g, "");
+                  const v = parts.slice(1).join(":").trim().replace(/^["']|["']$/g, "");
+                  if (k) partialObj[k] = v;
                 }
               });
-              obj[key] = partialObj;
+              if (Object.keys(partialObj).length > 0) {
+                obj[key] = partialObj;
+              } else {
+                obj[key] = { value: value };
+              }
             } catch {
               logger.warn(`Failed to parse dynamic field at ${path} even with heuristics`, { value });
-              obj[key] = { raw: value }; // Standardize on object even in failure
+              obj[key] = { value: value }; 
             }
           } else {
             logger.warn(`Failed to parse dynamic field at ${path}`, { value });
-            // Fallback: provide an object with the raw string so Zod doesn't fail on "string" type
-            obj[key] = { raw: value };
+            // Fallback: provide an object with the value so Zod doesn't fail on "string" type
+            obj[key] = { value: value };
           }
         }
 
-        // Final sanity check: if it's still not an object, make it an object to satisfy Zod
+        // Final sanity check: if it's still not an object, make it an object to satisfy Zod/Schema
+        // Only if we are sure it's supposed to be an object (which it is if it's in dynamicPaths)
         if (typeof obj[key] !== "object" || obj[key] === null) {
           obj[key] = { "value": obj[key] };
         }
@@ -808,6 +963,14 @@ ${prompt}`
     if (prop.enum) {
       geminiProp.enum = prop.enum;
     }
+
+    // Pass through JSON Schema constraints that Gemini supports
+    if (prop.pattern) geminiProp.pattern = prop.pattern;
+    if (prop.minLength !== undefined) geminiProp.minLength = prop.minLength;
+    if (prop.maxLength !== undefined) geminiProp.maxLength = prop.maxLength;
+    if (prop.format) geminiProp.format = prop.format;
+    if (prop.minItems !== undefined) geminiProp.minItems = prop.minItems;
+    if (prop.maxItems !== undefined) geminiProp.maxItems = prop.maxItems;
 
     return geminiProp;
   }

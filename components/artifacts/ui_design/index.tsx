@@ -81,7 +81,6 @@ export default function UIDesignPanel({
   const visualPhilosophy = data.visual_philosophy
   const informationArchitecture = data.information_architecture
   const responsiveStrategy = data.responsive_strategy
-  const primaryFeatureManifest = data.primary_feature_manifest
 
   const hierarchyNodes: any[] = Array.isArray(componentHierarchy)
     ? componentHierarchy
@@ -216,7 +215,6 @@ export default function UIDesignPanel({
                 <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
                 <TabTrigger value="atomic" icon={Box} label="Atomic" count={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0} />
                 <TabTrigger value="arch" icon={Layout} label="Blueprint" count={componentSpecs.length} />
-                <TabTrigger value="manifest" icon={FileJson} label="Manifest" />
                 <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
               </TabsList>
             </ScrollArea>
@@ -311,15 +309,29 @@ export default function UIDesignPanel({
                             <Badge variant="outline" className="text-[8px] uppercase h-5">Page</Badge>
                           </CardHeader>
                           <CardContent className="px-4 pb-4 pt-2">
-                            <div className="space-y-3">
-                              <div className="flex flex-wrap gap-1.5">
-                                {page.sections?.map((section: string, sIdx: number) => (
-                                  <div key={sIdx} className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border border-border/40 group hover:border-primary/30 transition-colors">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary" />
-                                    <span className="text-[10px] font-medium text-foreground/80">{section}</span>
+                            <div className="flex flex-col gap-3">
+                              {page.sections?.map((section: any, sIdx: number) => {
+                                const sectionName = typeof section === 'string' ? section : section.name;
+                                const components = typeof section === 'object' ? section.components : [];
+                                
+                                return (
+                                  <div key={sIdx} className="space-y-1.5">
+                                    <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border border-border/40 group hover:border-primary/30 transition-colors">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary" />
+                                      <span className="text-[10px] font-medium text-foreground/80">{sectionName}</span>
+                                    </div>
+                                    {components && components.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 pl-3">
+                                        {components.map((comp: string, cIdx: number) => (
+                                          <span key={cIdx} className="text-[8px] font-mono text-muted-foreground/70 bg-muted/10 px-1 py-0.5 rounded border border-border/10">
+                                            {comp}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                ))}
-                              </div>
+                                );
+                              })}
                             </div>
                           </CardContent>
                         </Card>
@@ -645,32 +657,6 @@ export default function UIDesignPanel({
                         </div>
                       </motion.div>
                     ))}
-                  </motion.div>
-                </TabsContent>
-
-                <TabsContent key="manifest" value="manifest" className="m-0 outline-none">
-                  <motion.div variants={container} initial="hidden" animate="show">
-                    <Card className={cn("border-border/50", styles.colors.bgCard)}>
-                      <CardHeader className="pb-2 border-b border-border/50 px-4 pt-4">
-                        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
-                          <FileJson className="h-4 w-4 text-orange-500" />
-                          A2UI Manifest (v0.8)
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        {primaryFeatureManifest ? (
-                          <div className="bg-muted/30 rounded-lg border border-border/40 p-4 overflow-x-auto">
-                            <pre className="text-[10px] font-mono text-foreground/80 leading-relaxed">
-                              {JSON.stringify(primaryFeatureManifest, null, 2)}
-                            </pre>
-                          </div>
-                        ) : (
-                          <div className="py-8 text-center text-muted-foreground italic text-xs">
-                            No feature manifest defined.
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
                   </motion.div>
                 </TabsContent>
 

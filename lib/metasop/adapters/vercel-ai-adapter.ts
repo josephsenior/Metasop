@@ -73,11 +73,15 @@ export class VercelAILlmProvider implements LLMProvider {
                 if (part.type === 'text-delta') {
                     // This is the reasoning/thought stream!
                     logger.info(`[VercelAI] Got text-delta: ${part.textDelta?.substring(0, 30)}`)
-                    onProgress({
-                        type: "step_thought",
-                        thought: part.textDelta,
-                        timestamp: new Date().toISOString()
-                    });
+                    try {
+                        onProgress({
+                            type: "step_thought",
+                            thought: part.textDelta,
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch (e: any) {
+                        logger.warn(`[VercelAI] Failed to send text-delta progress: ${e.message}`);
+                    }
                 } else if (part.type === 'tool-call') {
                     logger.info(`[VercelAI] Got tool-call: ${part.toolName}`)
                 } else {
@@ -89,11 +93,15 @@ export class VercelAILlmProvider implements LLMProvider {
                             thoughts: partAny.thoughts,
                             thinkingDelta: partAny.thinkingDelta
                         });
-                        onProgress({
-                            type: "step_thought",
-                            thought: partAny.thinking || partAny.thoughts || partAny.thinkingDelta,
-                            timestamp: new Date().toISOString()
-                        });
+                        try {
+                            onProgress({
+                                type: "step_thought",
+                                thought: partAny.thinking || partAny.thoughts || partAny.thinkingDelta,
+                                timestamp: new Date().toISOString()
+                            });
+                        } catch (e: any) {
+                            logger.warn(`[VercelAI] Failed to send thinking progress: ${e.message}`);
+                        }
                     }
                 }
             }
@@ -131,11 +139,15 @@ export class VercelAILlmProvider implements LLMProvider {
 
                 if (thinkingContent) {
                     logger.info(`[VercelAI] Found thinking content in metadata!`);
-                    onProgress({
-                        type: "step_thought",
-                        thought: JSON.stringify(thinkingContent),
-                        timestamp: new Date().toISOString()
-                    });
+                    try {
+                        onProgress({
+                            type: "step_thought",
+                            thought: JSON.stringify(thinkingContent),
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch (e: any) {
+                        logger.warn(`[VercelAI] Failed to send metadata thinking progress: ${e.message}`);
+                    }
                 }
             }
 

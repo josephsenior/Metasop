@@ -17,7 +17,7 @@ import { ensureUniqueNodeIds, ensureEdgeIds, validateEdgeReferences } from "@/li
  * 
  * Supports both authenticated users and guest users (with limits).
  */
-export const maxDuration = 600; // 10 minutes
+export const maxDuration = 900; // 15 minutes
 
 export async function POST(request: NextRequest) {
   try {
@@ -141,30 +141,29 @@ export async function POST(request: NextRequest) {
               }
 
               if (isGuest && guestSessionId) {
-                recordGuestDiagramCreation(guestSessionId);
-                const guestDiagram = {
-        id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: userId,
-        title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-        description: body.prompt,
-        nodes: transformedDiagram.nodes,
-        edges: transformedDiagram.edges,
-        status: "completed" as const,
-        metadata: {
-          prompt: body.prompt,
-          options: body.options,
-          metasop_artifacts: metasopResult.artifacts,
-          metasop_report: metasopResult.report,
-          metasop_steps: metasopResult.steps,
-          is_guest: true,
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
+                // recordGuestDiagramCreation(guestSessionId); // User requested no guest diagram rendering
+                
                 safeEnqueue({
                   type: "orchestration_complete",
-                  diagram: guestDiagram,
+                  diagram: {
+                    id: `temp_${Date.now()}`,
+                    userId: userId,
+                    title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
+                    description: body.prompt,
+                    nodes: transformedDiagram.nodes,
+                    edges: transformedDiagram.edges,
+                    status: "completed" as const,
+                    metadata: {
+                      prompt: body.prompt,
+                      options: body.options,
+                      metasop_artifacts: metasopResult.artifacts,
+                      metasop_report: metasopResult.report,
+                      metasop_steps: metasopResult.steps,
+                      is_guest: true,
+                    },
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  },
                   success: true,
                   timestamp: new Date().toISOString()
                 });
@@ -180,6 +179,7 @@ export async function POST(request: NextRequest) {
                     diagramWithMetadata = await diagramDb.update(diagram.id, userId, {
                       nodes: transformedDiagram.nodes,
                       edges: transformedDiagram.edges,
+                      status: "completed",
                       metadata: {
                         prompt: body.prompt,
                         options: body.options,
@@ -285,31 +285,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (isGuest && guestSessionId) {
-      recordGuestDiagramCreation(guestSessionId);
-      const guestDiagram = {
-        id: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: userId,
-        title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-        description: body.prompt,
-        nodes: transformedDiagram.nodes,
-        edges: transformedDiagram.edges,
-        status: "completed" as const,
-        metadata: {
-          prompt: body.prompt,
-          options: body.options,
-          metasop_artifacts: metasopResult.artifacts,
-          metasop_report: metasopResult.report,
-          metasop_steps: metasopResult.steps,
-          is_guest: true,
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
+      // recordGuestDiagramCreation(guestSessionId); // User requested no guest diagram rendering
+      
       return NextResponse.json({
         status: "success",
         data: {
-          diagram: guestDiagram,
+          diagram: {
+            id: `temp_${Date.now()}`,
+            userId: userId,
+            title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
+            description: body.prompt,
+            nodes: transformedDiagram.nodes,
+            edges: transformedDiagram.edges,
+            status: "completed" as const,
+            metadata: {
+              prompt: body.prompt,
+              options: body.options,
+              metasop_artifacts: metasopResult.artifacts,
+              metasop_report: metasopResult.report,
+              metasop_steps: metasopResult.steps,
+              is_guest: true,
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
           orchestration: {
             status: metasopResult.success ? "success" : "failed",
             artifacts: metasopResult.artifacts,
@@ -326,6 +325,7 @@ export async function POST(request: NextRequest) {
       diagramWithMetadata = await diagramDb.update(diagram.id, userId, {
         nodes: transformedDiagram.nodes,
         edges: transformedDiagram.edges,
+        status: "completed",
         metadata: {
           prompt: body.prompt,
           options: body.options,
@@ -367,7 +367,6 @@ function transformMetaSOPToDiagram(
   const nodes: DiagramNode[] = [];
   const edges: DiagramEdge[] = [];
 
-  // 1. Create Agent Nodes
   const agentNodes = [
     { id: "agent-pm", label: "Product Manager", type: "agent", role: "pm", pos: { x: 0, y: 0 } },
     { id: "agent-arch", label: "Architect", type: "agent", role: "arch", pos: { x: 250, y: 0 } },
@@ -388,8 +387,6 @@ function transformMetaSOPToDiagram(
     });
   });
 
-  // 3. Artifacts (The "What")
-  // -------------------------------------------------------------
   const pmSpec = artifacts.pm_spec?.content || {};
   if (pmSpec.user_stories && Array.isArray(pmSpec.user_stories)) {
     const storyId = "artifact-user-stories";

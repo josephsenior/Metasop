@@ -14,7 +14,23 @@ import { useToast } from "@/components/ui/use-toast"
 import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
 import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
 import type { Diagram } from "@/types/diagram"
-import { ArrowLeft, Share2, Edit, MoreVertical, Copy, Trash2, Maximize2, Info, Code2, Loader2, AlertCircle, Keyboard, MessageSquare } from "lucide-react"
+import { 
+  ArrowLeft, 
+  Share2, 
+  Edit, 
+  MoreVertical, 
+  Copy, 
+  Trash2, 
+  Maximize2, 
+  Info, 
+  Code2, 
+  Loader2, 
+  AlertCircle, 
+  Keyboard, 
+  MessageSquare,
+  PanelLeft,
+  PanelRight
+} from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useFullscreen } from "@/hooks/use-fullscreen"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -48,6 +64,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const [compactView, setCompactView] = useState(false)
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
   const diagramViewerRef = useRef<HTMLDivElement>(null)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
@@ -74,6 +91,16 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
       if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         setCompactView(!compactView)
+      }
+      // [ for left panel
+      if (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        setIsLeftPanelOpen(!isLeftPanelOpen)
+      }
+      // ] for right panel
+      if (e.key === ']' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        setIsChatOpen(!isChatOpen)
       }
       // ? for help
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -305,16 +332,34 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={isChatOpen ? "default" : "outline"}
-                      size="sm"
+                      variant={isLeftPanelOpen ? "default" : "outline"}
+                      size="icon"
                       className={cn(
-                        "gap-1 sm:gap-2 transition-all",
+                        "h-9 w-9 transition-all",
+                        isLeftPanelOpen ? "bg-blue-600 hover:bg-blue-700" : ""
+                      )}
+                      onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
+                    >
+                      <PanelLeft className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Toggle Left Sidebar
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isChatOpen ? "default" : "outline"}
+                      size="icon"
+                      className={cn(
+                        "h-9 w-9 transition-all",
                         isChatOpen ? "bg-blue-600 hover:bg-blue-700" : ""
                       )}
                       onClick={() => setIsChatOpen(!isChatOpen)}
                     >
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="hidden sm:inline">Chat</span>
+                      <PanelRight className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -322,12 +367,14 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                   </TooltipContent>
                 </Tooltip>
 
+                <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="border-border hover:bg-accent hover:text-accent-foreground"
+                      className="h-9 w-9 border-border hover:bg-accent hover:text-accent-foreground"
                       onClick={handleShare}
                     >
                       <Share2 className="h-4 w-4" />
@@ -365,6 +412,14 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Toggle Fullscreen</span>
                         <Kbd>F</Kbd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Toggle Left Panel</span>
+                        <Kbd>[</Kbd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Toggle Right Chat</span>
+                        <Kbd>]</Kbd>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Toggle Compact View</span>
@@ -444,6 +499,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                             className="h-full"
                             activeTab={activeArtifactTab}
                             onTabChange={setActiveArtifactTab}
+                            sidebarMode={isLeftPanelOpen}
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">

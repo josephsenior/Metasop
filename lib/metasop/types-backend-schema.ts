@@ -25,6 +25,9 @@ export * from "./artifacts/devops/types";
 export type { SecurityBackendArtifact } from "./artifacts/security/types";
 export * from "./artifacts/security/types";
 
+export type { UIDesignerBackendArtifact } from "./artifacts/ui-designer/types";
+export * from "./artifacts/ui-designer/types";
+
 // Re-export BackendArtifactData from types.ts is not possible if types.ts imports from here (circular)
 // But types.ts implementation does NOT import from here anymore.
 // However, types.ts defines BackendArtifactData.
