@@ -13,11 +13,18 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    // Single source of truth: all tests live in tests/ folder
     include: [
-      "**/*.{test,spec}.{ts,tsx}",
       "tests/**/*.{test,spec}.{ts,tsx}",
     ],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "scripts/**"],
+    exclude: [
+      "**/node_modules/**", 
+      "**/dist/**", 
+      "**/.next/**", 
+      "scripts/**",
+      "tests/integration/**",  // Integration tests run separately
+      "tests/e2e/**",          // E2E tests run separately
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
@@ -35,7 +42,6 @@ export default defineConfig({
         "**/dist/**",
         "**/.next/**",
         "**/types/**",
-        "**/__tests__/**",
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
       ],

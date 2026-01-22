@@ -75,7 +75,11 @@ export interface DevOpsBackendArtifact {
     }; // REQUIRED
     monitoring: {
         tools: string[]; // REQUIRED: minItems: 1
-        metrics: string[]; // REQUIRED: minItems: 3
+        metrics: Array<{
+            name: string; // Metric name (e.g., "cpu_usage", "request_latency")
+            threshold: string; // SLO threshold (e.g., "<80%", "<200ms")
+            action?: string; // Action when threshold breached
+        }>; // REQUIRED: Key performance metrics and SLOs
         alerts?: Array<{
             name: string; // REQUIRED: minLength: 1
             condition: string; // REQUIRED: minLength: 1

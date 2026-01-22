@@ -12,6 +12,13 @@ import { generateWithLLM, createCacheWithLLM } from "./utils/llm-helper";
 import { ExecutionService } from "./services/execution-service";
 import { RetryService, RetryPolicy } from "./services/retry-service";
 import { FailureHandler } from "./services/failure-handler";
+import { 
+  createDebugSession, 
+  writeDebugArtifact, 
+  writeSessionSummary, 
+  setCurrentSession,
+  type DebugSession 
+} from "./utils/debug-session";
 import * as fs from "fs";
 import * as path from "path";
 import {
@@ -40,6 +47,7 @@ export class MetaSOPOrchestrator {
   private retryService: RetryService;
   private failureHandler: FailureHandler;
   private cacheId: string | undefined = undefined;
+  private debugSession: DebugSession | null = null;
 
   // A2A Protocol State
   private a2aTasks: A2ATask[] = [];
@@ -123,10 +131,16 @@ export class MetaSOPOrchestrator {
     documents?: any[]
   ): Promise<MetaSOPResult> {
     const startTime = Date.now();
+    
+    // Create debug session for this generation run
+    this.debugSession = createDebugSession(user_request);
+    setCurrentSession(this.debugSession);
+    
     logger.info("Starting MetaSOP Orchestration", {
       agents: this.config.agents.enabled.length,
       model: this.config.llm.model,
-      reasoning: options?.reasoning ?? false
+      reasoning: options?.reasoning ?? false,
+      debugSessionId: this.debugSession.sessionId
     });
     this.steps = [];
     this.artifacts = {};
@@ -217,13 +231,17 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         }
       }
 
-      // Step 3: DevOps
-      await this.executeStep("devops_infrastructure", "DevOps", devopsAgent, context, onProgress);
-      context.previous_artifacts.devops_infrastructure = this.artifacts.devops_infrastructure;
-
-      // Step 4: Security
+      // Step 3: Security (runs BEFORE DevOps - security defines policy, DevOps implements it)
+      // Security needs: PM spec (what to secure), Architect (tech stack, APIs, database)
+      // Security produces: Auth requirements, threat model, encryption policy, compliance needs
       await this.executeStep("security_architecture", "Security", securityAgent, context, onProgress);
       context.previous_artifacts.security_architecture = this.artifacts.security_architecture;
+
+      // Step 4: DevOps (runs AFTER Security - implements security requirements)
+      // DevOps needs: Security (auth method, encryption, compliance) to configure infrastructure correctly
+      // Examples: OAuth2 → identity provider setup, PCI-DSS → network segmentation, WAF → CDN config
+      await this.executeStep("devops_infrastructure", "DevOps", devopsAgent, context, onProgress);
+      context.previous_artifacts.devops_infrastructure = this.artifacts.devops_infrastructure;
 
       // Step 5: UI Designer
       await this.executeStep("ui_design", "UI Designer", uiDesignerAgent, context, onProgress);
@@ -237,6 +255,20 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       await this.executeStep("qa_verification", "QA", qaAgent, context, onProgress);
 
       const success = this.steps.every((step) => step.status === "success");
+      const duration = Date.now() - startTime;
+
+      // Write debug session summary
+      if (this.debugSession) {
+        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.step_id);
+        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.step_id);
+        writeSessionSummary(this.debugSession, {
+          success,
+          duration,
+          agentsCompleted: completedAgents,
+          agentsFailed: failedAgents,
+        });
+        setCurrentSession(null);
+      }
 
       return {
         success,
@@ -249,6 +281,21 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     } catch (error: any) {
       const duration = Date.now() - startTime;
       logger.error("Orchestration error", { error: error.message, duration: `${duration}ms` });
+
+      // Write debug session summary for failed run
+      if (this.debugSession) {
+        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.step_id);
+        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.step_id);
+        writeSessionSummary(this.debugSession, {
+          success: false,
+          duration,
+          agentsCompleted: completedAgents,
+          agentsFailed: failedAgents,
+          error: error.message,
+        });
+        setCurrentSession(null);
+      }
+
       return {
         success: false,
         artifacts: this.artifacts,
@@ -653,26 +700,15 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
       step.timestamp = new Date().toISOString();
       this.addStepToReport(stepId, role, "success", result.artifact);
 
-      // DEBUG: Dump raw artifact to file for inspection
-      try {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const agentRole = stepId.toLowerCase().replace(/\s+/g, '_');
-        const debugDir = path.join(process.cwd(), 'debug_logs');
-        
-        if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-
-        const dumpPath = path.join(debugDir, `${timestamp}_${agentRole}_artifact.json`);
+      // DEBUG: Dump raw artifact to session folder for inspection
+      if (this.debugSession) {
         const dumpContent = {
           step_id: stepId,
           role: role,
           timestamp: new Date().toISOString(),
           content: result.artifact.content
         };
-        // Use synchronous write to ensure it's written before moving on
-        fs.writeFileSync(dumpPath, JSON.stringify(dumpContent, null, 2));
-        logger.info(`[DEBUG] Dumped raw artifact to ${dumpPath}`);
-      } catch (dumpError: any) {
-        logger.warn(`[DEBUG] Failed to dump artifact for ${stepId}: ${dumpError.message}`);
+        writeDebugArtifact(this.debugSession, stepId, 'artifact', dumpContent);
       }
 
       // --- A2A: Mark task completed and send completion message ---

@@ -5,6 +5,7 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { TECHNICAL_STANDARDS, FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
 
 /**
  * Security Agent
@@ -31,7 +32,7 @@ export async function securityAgent(
         securitySchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("security_architecture")
         }
       );
     } else {
@@ -146,7 +147,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.2, // Lower for high-precision security analysis
+            temperature: getAgentTemperature("security_architecture"),
             cacheId: context.cacheId,
             role: "Security"
           }
@@ -182,7 +183,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         compliance: llmSecurity.compliance,
         vulnerability_management: llmSecurity.vulnerability_management,
         security_monitoring: llmSecurity.security_monitoring,
-        network_security: llmSecurity.network_security,
       };
     }
 

@@ -41,8 +41,11 @@ prisma/migrations
 # test results and logs
 /test_results/
 *_raw_response.json
-*.txt
+*_error_response_*.json
 *.log
 .debug/
 temp/
 tsconfig.tsbuildinfo
+
+# debug session logs (each generation run creates a folder)
+/debug_logs/

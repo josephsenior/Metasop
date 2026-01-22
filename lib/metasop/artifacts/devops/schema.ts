@@ -130,23 +130,25 @@ export const devopsSchema = {
             properties: {
                 dockerfile: {
                     type: "string",
+                    maxLength: 200,
                     description: "Dockerfile content or path",
                 },
                 docker_compose: {
                     type: "string",
+                    maxLength: 200,
                     description: "Docker Compose configuration",
                 },
                 kubernetes: {
                     type: "object",
                     properties: {
-                        namespace: { type: "string", description: "Kubernetes namespace" },
+                        namespace: { type: "string", maxLength: 30, description: "Kubernetes namespace" },
                         deployments: {
                             type: "array",
                             items: {
                                 type: "object",
                                 required: ["name"],
                                 properties: {
-                                    name: { type: "string", description: "Deployment name" },
+                                    name: { type: "string", maxLength: 50, description: "Deployment name" },
                                     replicas: {
                                         type: "number",
                                         minimum: 1,
@@ -157,10 +159,12 @@ export const devopsSchema = {
                                         properties: {
                                             cpu: {
                                                 type: "string",
+                                                maxLength: 20,
                                                 description: "CPU resource (e.g., '500m', '1')",
                                             },
                                             memory: {
                                                 type: "string",
+                                                maxLength: 20,
                                                 description: "Memory resource (e.g., '512Mi', '1Gi')",
                                             },
                                         },
@@ -174,7 +178,7 @@ export const devopsSchema = {
                                 type: "object",
                                 required: ["name"],
                                 properties: {
-                                    name: { type: "string", description: "Service name" },
+                                    name: { type: "string", maxLength: 50, description: "Service name" },
                                     type: {
                                         type: "string",
                                         enum: ["ClusterIP", "NodePort", "LoadBalancer"],
@@ -222,24 +226,26 @@ export const devopsSchema = {
                             name: {
                                 type: "string",
                                 minLength: 1,
+                                maxLength: 30,
                                 description: "Environment name",
                             },
                             configuration: {
                                 type: "object",
                                 properties: {
-                                    key: { type: "string" },
-                                    value: { type: "string" },
+                                    key: { type: "string", maxLength: 50 },
+                                    value: { type: "string", maxLength: 200 },
                                 },
                                 description: "Environment-specific configuration",
                             },
                             description: {
                                 type: "string",
+                                maxLength: 150,
                                 description: "Environment description",
                             },
                         },
                     },
                 },
-                rollback_strategy: { type: "string", description: "Rollback strategy" },
+                rollback_strategy: { type: "string", maxLength: 200, description: "Rollback strategy" },
             },
         },
         monitoring: {
@@ -355,10 +361,10 @@ export const devopsSchema = {
             type: "object",
             required: ["rpo", "rto", "backup_strategy"],
             properties: {
-                rpo: { type: "string", description: "Recovery Point Objective" },
-                rto: { type: "string", description: "Recovery Time Objective" },
-                backup_strategy: { type: "string", description: "Detailed backup strategy" },
-                failover_plan: { type: "string", description: "Automated or manual failover steps" },
+                rpo: { type: "string", maxLength: 50, description: "Recovery Point Objective" },
+                rto: { type: "string", maxLength: 50, description: "Recovery Time Objective" },
+                backup_strategy: { type: "string", maxLength: 300, description: "Detailed backup strategy" },
+                failover_plan: { type: "string", maxLength: 300, description: "Automated or manual failover steps" },
             },
             description: "Disaster recovery and business continuity plan",
         },

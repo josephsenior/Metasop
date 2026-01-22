@@ -5,6 +5,7 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { TECHNICAL_STANDARDS, FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
 
 /**
  * Architect Agent
@@ -30,7 +31,7 @@ export async function architectAgent(
         architectSchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("arch_design")
         }
       );
     } else {
@@ -127,7 +128,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.2, // Lowered for technical precision
+            temperature: getAgentTemperature("arch_design"),
             cacheId: context.cacheId,
             role: "Architect"
           }

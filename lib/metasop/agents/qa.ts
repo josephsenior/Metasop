@@ -6,6 +6,7 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
 
 /**
  * QA Agent
@@ -33,7 +34,7 @@ export async function qaAgent(
         qaSchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("qa_verification")
         }
       );
     } else {
@@ -51,6 +52,12 @@ export async function qaAgent(
       const qaPrompt = `You are a Lead QA Engineer and ISTQB-certified Test Architect with 10+ years of experience in test automation, quality strategy, and continuous testing. Design a comprehensive verification strategy for:
 
 "${projectTitle}"
+
+=== CRITICAL OUTPUT RULES (MUST FOLLOW) ===
+1. **UNIQUE TEST CASES ONLY**: Generate 8-15 test cases maximum. Each MUST have a unique ID (TC-001, TC-002, etc.) and unique name.
+2. **NEVER REPEAT**: Do NOT generate the same test case twice. If you've written "TC-001 Tenant Registration", do NOT write it again.
+3. **DIVERSE COVERAGE**: Cover different aspects - auth, CRUD, validation, error handling, security, performance.
+4. **STOP WHEN DONE**: After generating ~10-15 diverse test cases, STOP. Do not keep generating more.
 
 ${pmArtifact ? `
 Project Context:
@@ -98,11 +105,19 @@ ${domainContext ? `\n${domainContext}\n` : ""}
      * Focus: Smoke tests, regression tests, user flows
      * Environment: Staging environment with production-like data
 
-2. **BDD Test Cases (Gherkin Format)**
+2. **Test Cases**
    - Map each user story to test scenarios
-   - Use Given/When/Then format consistently
    - Include positive, negative, and edge case scenarios
    - Link test cases to acceptance criteria
+   - Use clear, descriptive names and detailed descriptions
+   
+   **COMPLEX FLOWS - Use Test Case Chaining:**
+   Instead of cramming multiple steps into one test case, break into chained tests:
+   - TC-001: Initiate OAuth flow → depends_on: null
+   - TC-002: Complete OAuth approval → depends_on: "TC-001"
+   - TC-003: Verify account connected → depends_on: "TC-002"
+   
+   Put detailed test steps and setup requirements in the 'description' field.
 
 3. **Coverage & Quality Gates**
    - Define coverage thresholds:
@@ -185,6 +200,10 @@ ${FEW_SHOT_EXAMPLES.testCase}
 
 ${qualityCheck}
 
+=== FINAL REMINDERS ===
+- Each test case ID must be UNIQUE (TC-001, TC-002, TC-003... never repeat)
+- Each test case name must be DIFFERENT (cover registration, login, CRUD, errors, security, etc.)
+
 Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmQA: QABackendArtifact | null = null;
@@ -200,7 +219,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.2, 
+            temperature: getAgentTemperature("qa_verification"),
             cacheId: context.cacheId,
             role: "QA"
           }

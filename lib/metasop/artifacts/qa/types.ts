@@ -9,12 +9,13 @@
 // ============================================================================
 
 export interface TestCase {
-    name: string; // REQUIRED
-    description?: string;
+    id?: string;    // Test case ID (e.g., TC-001)
+    name: string;   // REQUIRED - Descriptive test case name
+    description?: string; // Detailed implementation notes
     priority: "critical" | "high" | "medium" | "low"; // REQUIRED
-    type: "unit" | "integration" | "e2e" | "performance" | "security"; // REQUIRED
-    gherkin?: string; // BDD Gherkin-style steps (Given/When/Then)
+    type: "unit" | "integration" | "e2e" | "performance" | "security" | "accessibility"; // REQUIRED
     expected_result?: string;
+    depends_on?: string;      // ID of prerequisite test case for chained flows
 }
 
 export interface QABackendArtifact {

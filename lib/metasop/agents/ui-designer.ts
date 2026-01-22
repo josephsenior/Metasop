@@ -5,6 +5,51 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
+
+/**
+ * Sanitizes a color value to ensure it's a valid hex code.
+ * Extracts the first valid hex code from malformed strings.
+ */
+function sanitizeColorValue(colorValue: string | undefined): string {
+  if (!colorValue || typeof colorValue !== "string") {
+    return colorValue || "";
+  }
+
+  // If already valid hex code, return it
+  const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+  if (hexPattern.test(colorValue)) {
+    return colorValue;
+  }
+
+  // Try to extract a valid hex code from the string
+  const hexMatch = colorValue.match(/#[0-9A-Fa-f]{6}/i);
+  if (hexMatch) {
+    return hexMatch[0].toUpperCase();
+  }
+
+  // Return original value if no valid hex found
+  return colorValue;
+}
+
+/**
+ * Sanitizes all color values in design_tokens.colors
+ */
+function sanitizeDesignTokensColors(colors: any): any {
+  if (!colors || typeof colors !== "object") {
+    return colors;
+  }
+
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(colors)) {
+    if (typeof value === "string") {
+      sanitized[key] = sanitizeColorValue(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
 
 /**
  * UI Designer Agent
@@ -29,9 +74,14 @@ export async function uiDesignerAgent(
         uiSchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("ui_design")
         }
       );
+      
+      // Sanitize color values after refinement
+      if (content?.design_tokens?.colors) {
+        content.design_tokens.colors = sanitizeDesignTokensColors(content.design_tokens.colors);
+      }
     } else {
       const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
       const archArtifact = context.previous_artifacts?.arch_design?.content as any;
@@ -63,6 +113,22 @@ Technical Context:
 ${projectContext}
 ${techContext}
 ${domainContext ? `\n${domainContext}\n` : ""}
+
+=== CRITICAL OUTPUT CONSTRAINTS ===
+1. **BE CONCISE**: Generate only what's necessary. Avoid exhaustive lists.
+2. **component_specs**: Maximum 10-15 components. Focus on unique, essential components only.
+3. **website_layout.pages**: Maximum 5-8 pages. One entry per distinct page.
+4. **ui_patterns**: Maximum 8-10 patterns.
+5. **DO NOT REPEAT**: Each component/page/pattern should be unique. Never duplicate entries.
+6. **STOP WHEN DONE**: After covering the essentials, stop. Don't keep adding more.
+
+=== COLOR FORMAT - CRITICAL ===
+**ALL color values MUST be exactly 7 characters: a '#' followed by 6 hex digits (0-9, A-F).**
+- ✅ CORRECT: "#4F46E5", "#0EA5E9", "#F59E0B", "#D97706"
+- ❌ WRONG: "#F59E0B_INVALID_HEX", "#D97706_IS_VALID_HEX", any text after hex code
+- **DO NOT** include reasoning, validation, or any text in color fields
+- **DO NOT** repeat hex codes or add explanations
+- Output ONLY the hex code itself (e.g., "#D97706" - nothing else)
 
 === ADAPTIVE DEPTH GUIDELINE ===
 - **Simple apps (MVP, utilities)**: Minimal design tokens, 10-15 components, focus on usability
@@ -150,6 +216,12 @@ ${FEW_SHOT_EXAMPLES.component}
 
 ${qualityCheck}
 
+=== FINAL REMINDER ===
+- Keep component_specs to 10-15 unique components max
+- Keep website_layout.pages to 5-8 pages max  
+- Keep ui_patterns to 8-10 items max
+- BE CONCISE. Quality over quantity.
+
 Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmUIDesign: any = null;
@@ -165,7 +237,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.4, // Slightly higher for creative design decisions
+            temperature: getAgentTemperature("ui_design"),
             cacheId: context.cacheId,
             role: "UI Designer",
           }
@@ -177,6 +249,11 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
 
       if (!llmUIDesign) {
         throw new Error("UI Designer agent failed: No structured data received from LLM");
+      }
+
+      // Sanitize color values to prevent malformed hex codes
+      if (llmUIDesign.design_tokens?.colors) {
+        llmUIDesign.design_tokens.colors = sanitizeDesignTokensColors(llmUIDesign.design_tokens.colors);
       }
 
       content = {

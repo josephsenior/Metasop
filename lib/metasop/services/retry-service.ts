@@ -177,53 +177,27 @@ export class RetryService {
   }
 
   /**
-   * Create default retry policy
+   * Create default retry policy - NO RETRIES (fail fast)
    */
   static createDefaultPolicy(): RetryPolicy {
     return {
-      maxRetries: 2,
-      initialDelay: 1000, // 1 second
-      maxDelay: 30000, // 30 seconds
-      backoffMultiplier: 2,
-      jitter: true,
+      maxRetries: 0, // No retries - fail immediately on error
+      initialDelay: 0,
+      maxDelay: 0,
+      backoffMultiplier: 1,
+      jitter: false,
     };
   }
 
   /**
-   * Create aggressive retry policy (more retries, longer delays)
+   * Create no-retry policy (explicit fail-fast)
    */
-  static createAggressivePolicy(): RetryPolicy {
+  static createNoRetryPolicy(): RetryPolicy {
     return {
-      maxRetries: 5,
-      initialDelay: 2000, // 2 seconds
-      maxDelay: 60000, // 60 seconds
-      backoffMultiplier: 2,
-      jitter: true,
-    };
-  }
-
-  /**
-   * Create rate limit specific retry policy (very long delays for API rate limits)
-   */
-  static createRateLimitPolicy(): RetryPolicy {
-    return {
-      maxRetries: 8, // Many retries for rate limits
-      initialDelay: 25000, // 25 seconds (longer than OpenAI's suggestion)
-      maxDelay: 180000, // 3 minutes max delay
-      backoffMultiplier: 1.5, // Slower growth for rate limits
-      jitter: true,
-    };
-  }
-
-  /**
-   * Create fast retry policy (fewer retries, shorter delays)
-   */
-  static createFastPolicy(): RetryPolicy {
-    return {
-      maxRetries: 1,
-      initialDelay: 500, // 0.5 seconds
-      maxDelay: 5000, // 5 seconds
-      backoffMultiplier: 1.5,
+      maxRetries: 0,
+      initialDelay: 0,
+      maxDelay: 0,
+      backoffMultiplier: 1,
       jitter: false,
     };
   }

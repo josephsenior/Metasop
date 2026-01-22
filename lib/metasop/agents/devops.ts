@@ -5,6 +5,7 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
 
 /**
  * DevOps Agent
@@ -17,6 +18,7 @@ export async function devopsAgent(
   const { user_request, previous_artifacts } = context;
   const archDesign = previous_artifacts.arch_design;
   const pmSpec = previous_artifacts.pm_spec;
+  const securityArch = previous_artifacts.security_architecture;
 
   logger.info("DevOps agent starting", { user_request: user_request.substring(0, 100) });
 
@@ -31,12 +33,13 @@ export async function devopsAgent(
         devopsSchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("devops_infrastructure")
         }
       );
     } else {
       const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
+      const securityArtifact = securityArch?.content as any;
       const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
       
       const domainContext = getDomainContext(user_request);
@@ -53,6 +56,14 @@ Architecture Context:
 - Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 8).join(", ")}
 - Database: ${archArtifact.technology_stack?.database?.join(", ") || "PostgreSQL"}
 - Scalability Target: ${archArtifact.scalability_approach?.performance_targets || "Standard web application"}` : ""}
+${securityArtifact ? `
+Security Requirements (MUST IMPLEMENT):
+- Authentication: ${securityArtifact.security_architecture?.authentication?.method || "JWT"} ${securityArtifact.security_architecture?.authentication?.mfa ? "with MFA" : ""}
+- Authorization: ${securityArtifact.security_architecture?.authorization?.model || "RBAC"}
+- Encryption: ${securityArtifact.security_architecture?.encryption?.at_rest || "AES-256"} at rest, ${securityArtifact.security_architecture?.encryption?.in_transit || "TLS 1.3"} in transit
+- Compliance: ${securityArtifact.compliance?.frameworks?.join(", ") || "Standard security practices"}
+- Key Threats: ${securityArtifact.threat_model?.slice(0, 3).map((t: any) => t.threat).join(", ") || "N/A"}
+- Secrets Management: ${securityArtifact.security_architecture?.secrets_management || "Required"}` : ""}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
 === MISSION OBJECTIVES ===
@@ -157,7 +168,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.3,
+            temperature: getAgentTemperature("devops_infrastructure"),
             cacheId: context.cacheId,
             role: "DevOps"
           }

@@ -9,6 +9,7 @@ import axios from "axios";
 import type { LLMProvider, LLMOptions } from "./llm-adapter";
 import { logger } from "../utils/logger";
 import { MetaSOPEvent } from "../types";
+import { getSessionDebugDir } from "../utils/debug-session";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -136,12 +137,11 @@ ${prompt}`
         console.log(`   Latency: ${Date.now() - startTime}ms`);
         console.log("-".repeat(40) + "\n");
 
-        // DEBUG: ALWAYS DUMP FULL CONTEXT FOR DEBUGGING (as requested by user)
+        // DEBUG: Dump full context to session folder
         if (options?.role) {
           try {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-            const debugDir = path.join(process.cwd(), 'debug_logs');
+            const debugDir = getSessionDebugDir();
             
             if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
 
@@ -166,11 +166,9 @@ ${prompt}`
             };
 
             fs.writeFileSync(
-              path.join(debugDir, `${timestamp}_${agentRole}_full.json`), 
+              path.join(debugDir, `${agentRole}_llm_response.json`), 
               JSON.stringify(debugPayload, null, 2)
             );
-
-            console.log(`\n[DEBUG] ${options.role} response captured to debug_logs/`);
           } catch (dumpErr) {
             logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
           }
@@ -420,12 +418,11 @@ ${prompt}`
         if (axiosErr.response) {
           const errorData = axiosErr.response.data;
           
-          // DEBUG: DUMP DETAILED ERROR RESPONSE (as requested by user)
+          // DEBUG: Dump error response to session folder
           if (options?.role) {
             try {
-              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
               const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-              const debugDir = path.join(process.cwd(), 'debug_logs');
+              const debugDir = getSessionDebugDir();
               
               if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
 
@@ -444,10 +441,10 @@ ${prompt}`
               };
 
               fs.writeFileSync(
-                path.join(debugDir, `${timestamp}_${agentRole}_API_ERROR.json`), 
+                path.join(debugDir, `${agentRole}_API_ERROR.json`), 
                 JSON.stringify(errorPayload, null, 2)
               );
-              console.error(`\n[DEBUG] ${options.role} API ERROR captured to debug_logs/`);
+              console.error(`\n[DEBUG] ${options.role} API ERROR captured to session folder`);
             } catch (dumpErr) {
               // ignore
             }
@@ -518,6 +515,38 @@ ${prompt}`
         }
 
         logger.info("Token usage metadata", { usage, model, cost });
+
+        // ALWAYS dump response when MAX_TOKENS is hit (truncated output)
+        if (finishReason === "MAX_TOKENS" && options?.role) {
+          try {
+            const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+            const debugDir = getSessionDebugDir();
+            
+            if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+            
+            const debugPayload = {
+              agent: options.role,
+              model: model,
+              timestamp: new Date().toISOString(),
+              finishReason: "MAX_TOKENS",
+              tokenUsage: {
+                prompt: usage.promptTokenCount,
+                response: usage.candidatesTokenCount,
+                thoughts: usage.thoughtsTokenCount,
+                total: total
+              },
+              truncatedResponse: jsonText,
+              responseLength: jsonText.length
+            };
+            
+            const debugFilePath = path.join(debugDir, `${agentRole}_MAX_TOKENS_truncated.json`);
+            fs.writeFileSync(debugFilePath, JSON.stringify(debugPayload, null, 2));
+            logger.error(`[DEBUG] MAX_TOKENS TRUNCATION DUMPED TO: ${debugFilePath}`);
+            logger.error(`[DEBUG] Response size: ${jsonText.length} chars, ${usage.candidatesTokenCount} tokens`);
+          } catch (dumpErr) {
+            // ignore dump errors
+          }
+        }
       }
 
       if (!jsonText) {
@@ -612,13 +641,17 @@ ${prompt}`
         } catch (repairError: any) {
           logger.error("Reliability repair failed", { error: repairError.message, text: cleaned.substring(0, 100) });
 
-          // DUMP MALFORMED RESPONSE FOR DEBUGGING
+          // Dump malformed response to session folder
           if (options?.role) {
             try {
-              const debugFileName = `${options.role.toLowerCase().replace(/\s+/g, '_')}_error_response_${Date.now()}.json`;
-              const debugFilePath = path.join(process.cwd(), debugFileName);
+              const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+              const debugDir = getSessionDebugDir();
+              
+              if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+              
+              const debugFilePath = path.join(debugDir, `${agentRole}_malformed_response.json`);
               fs.writeFileSync(debugFilePath, jsonText);
-              logger.error(`\n[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
+              logger.error(`[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
               logger.error(`[DEBUG] Size: ${jsonText.length} characters`);
             } catch (dumpErr) {
               logger.error("Failed to dump error response", { error: (dumpErr as Error).message });

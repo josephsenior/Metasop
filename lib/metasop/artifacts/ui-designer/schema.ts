@@ -4,7 +4,7 @@ export const uiDesignerSchema = {
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
     properties: {
         summary: { type: "string", maxLength: 300, description: "A technical, 1-2 sentence summary of the UI strategy and design system approach. No conversational filler." },
-        description: { type: "string", maxLength: 800, description: "Detailed visual design philosophy, brand alignment, and design principles." },
+        description: { type: "string", maxLength: 600, description: "Detailed visual design philosophy, brand alignment, and design principles." },
         component_hierarchy: {
             type: "object",
             required: ["root"],
@@ -145,7 +145,7 @@ export const uiDesignerSchema = {
                 properties: {
                     name: { type: "string", maxLength: 50, description: "Component name (e.g., 'Button', 'Modal')." },
                     category: { type: "string", enum: ["atom", "molecule", "organism", "template"], description: "Atomic design category." },
-                    description: { type: "string", maxLength: 300, description: "Component purpose and usage guidelines." },
+                    description: { type: "string", maxLength: 200, description: "Component purpose and usage guidelines." },
                     props: {
                         type: "array",
                         items: {
@@ -203,9 +203,9 @@ export const uiDesignerSchema = {
         atomic_structure: {
             type: "object",
             properties: {
-                atoms: { type: "array", items: { type: "string" } },
-                molecules: { type: "array", items: { type: "string" } },
-                organisms: { type: "array", items: { type: "string" } },
+                atoms: { type: "array", items: { type: "string", maxLength: 50 } },
+                molecules: { type: "array", items: { type: "string", maxLength: 50 } },
+                organisms: { type: "array", items: { type: "string", maxLength: 50 } },
             }
         },
         website_layout: {
@@ -238,9 +238,9 @@ export const uiDesignerSchema = {
             },
             description: "Information architecture/Sitemap for the application."
         },
-        layout_strategy: { type: "string", maxLength: 500, description: "Grid system, container widths, and layout patterns." },
-        visual_philosophy: { type: "string", maxLength: 500, description: "Core design principles, aesthetic direction, and brand alignment." },
-        information_architecture: { type: "string", maxLength: 500, description: "Navigation hierarchy, user flows, and content organization." },
-        responsive_strategy: { type: "string", maxLength: 500, description: "Mobile-first approach, breakpoint behavior, and adaptive patterns." }
+        layout_strategy: { type: "string", maxLength: 400, description: "Grid system, container widths, and layout patterns." },
+        visual_philosophy: { type: "string", maxLength: 400, description: "Core design principles, aesthetic direction, and brand alignment." },
+        information_architecture: { type: "string", maxLength: 400, description: "Navigation hierarchy, user flows, and content organization." },
+        responsive_strategy: { type: "string", maxLength: 400, description: "Mobile-first approach, breakpoint behavior, and adaptive patterns." }
     },
 };

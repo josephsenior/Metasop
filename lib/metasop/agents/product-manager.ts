@@ -5,6 +5,7 @@ import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
 import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
+import { getAgentTemperature } from "../config";
 
 /**
  * Product Manager Agent
@@ -31,7 +32,7 @@ export async function productManagerAgent(
         pmSchema,
         { 
           cacheId: context.cacheId,
-          temperature: 0.2 
+          temperature: getAgentTemperature("pm_spec")
         }
       );
     } else {
@@ -111,7 +112,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           },
           {
             reasoning: context.options?.reasoning ?? false,
-            temperature: 0.4, // Slightly higher for creative opportunity identification
+            temperature: getAgentTemperature("pm_spec"),
             cacheId: context.cacheId,
             role: "Product Manager"
           }

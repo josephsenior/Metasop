@@ -66,6 +66,7 @@ export async function generateStructuredWithLLM<T>(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    model?: string;
   }
 ): Promise<T> {
   const provider = getLLMProvider();
@@ -74,7 +75,7 @@ export async function generateStructuredWithLLM<T>(
   return provider.generateStructured<T>(prompt, schema, {
     temperature: options?.temperature ?? config.llm.temperature,
     maxTokens: options?.maxTokens ?? config.llm.maxTokens,
-    model: config.llm.model,
+    model: options?.model ?? config.llm.model,
     reasoning: options?.reasoning,
     cacheId: options?.cacheId,
     role: options?.role,
@@ -94,16 +95,20 @@ export async function generateStreamingStructuredWithLLM<T>(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    model?: string; // Per-agent model override
   }
 ): Promise<T> {
   const provider = getLLMProvider();
   const config = getConfig();
 
+  // Use per-agent model override if provided, otherwise use global config
+  const modelToUse = options?.model || config.llm.model;
+
   if (provider.generateStreamingStructured) {
     return provider.generateStreamingStructured<T>(prompt, schema, onProgress, {
       temperature: options?.temperature ?? config.llm.temperature,
       maxTokens: options?.maxTokens ?? config.llm.maxTokens,
-      model: config.llm.model,
+      model: modelToUse,
       reasoning: options?.reasoning,
       cacheId: options?.cacheId,
       role: options?.role,

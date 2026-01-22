@@ -7,6 +7,7 @@ export interface AgentConfig {
   stepId: string;
   timeout: number; // Timeout in ms
   retries: number; // Number of retries
+  temperature: number; // LLM temperature (0.0-1.0)
   model?: string; // Optional per-agent model override
   retryPolicy?: {
     initialDelay: number;
@@ -52,44 +53,51 @@ export const defaultConfig: MetaSOPConfig = {
   agents: {
     enabled: ["pm_spec", "arch_design", "devops_infrastructure", "security_architecture", "engineer_impl", "ui_design", "qa_verification"],
     defaultTimeout: 180000, // 180 seconds (3 minutes)
-    defaultRetries: 2,
+    defaultRetries: 0, // No retries - fail fast
     agentConfigs: {
-      // Per-agent timeouts (can override defaults)
-      // Increased timeouts for LLM calls which can take longer
+      // Per-agent configuration: timeout, retries, temperature
+      // Temperature guide: 0.2 = precise/technical, 0.3-0.4 = balanced/creative
       pm_spec: {
         stepId: "pm_spec",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 180000,
         retries: 0,
+        temperature: 0.4, // Slightly higher for creative opportunity identification
       },
       arch_design: {
         stepId: "arch_design",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 180000,
         retries: 0,
+        temperature: 0.2, // Lower for technical precision
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 180000,
         retries: 0,
+        temperature: 0.3, // Balanced
       },
       security_architecture: {
         stepId: "security_architecture",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 180000,
         retries: 0,
+        temperature: 0.2, // Lower for high-precision security analysis
       },
       engineer_impl: {
         stepId: "engineer_impl",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 180000,
         retries: 0,
+        temperature: 0.3, // Balanced to avoid deterministic loops
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 86400000, // 24 hours - effectively no timeout for debugging root cause
         retries: 0,
+        temperature: 0.4, // Slightly higher for creative design decisions
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 180000, // 180 seconds (3 minutes)
+        timeout: 86400000, // 24 hours - effectively no timeout for debugging root cause
         retries: 0,
+        temperature: 0.2, // Lower for precise test specifications
       },
     },
   },
@@ -109,6 +117,16 @@ export const defaultConfig: MetaSOPConfig = {
     enabled: true,
   },
 };
+
+/**
+ * Get temperature for a specific agent step
+ * Single source of truth for all agent temperatures
+ */
+export function getAgentTemperature(stepId: string): number {
+  const config = getConfig();
+  const agentConfig = config.agents.agentConfigs[stepId];
+  return agentConfig?.temperature ?? config.llm.temperature ?? 0.2;
+}
 
 /**
  * Get configuration from environment variables

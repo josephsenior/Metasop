@@ -23,28 +23,15 @@ export const qaSchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["name", "priority", "type"],
+                required: ["id", "name", "expected_result"],
                 properties: {
-                    id: { type: "string", maxLength: 15, description: "Test case ID (e.g., TC-001)." },
-                    name: { type: "string", maxLength: 80, description: "Descriptive test case name." },
-                    description: { type: "string", maxLength: 250, description: "What is verified and why it's important." },
-                    priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
-                    type: { type: "string", enum: ["unit", "integration", "e2e", "performance", "security", "accessibility"] },
-                    preconditions: { type: "array", items: { type: "string", maxLength: 100 }, description: "Required setup before test." },
-                    gherkin: { 
-                        type: "object",
-                        properties: {
-                            given: { type: "string", maxLength: 200 },
-                            when: { type: "string", maxLength: 200 },
-                            then: { type: "string", maxLength: 200 }
-                        },
-                        description: "BDD format: Given/When/Then steps."
-                    },
-                    expected_result: { type: "string", maxLength: 200, description: "Clear success criteria." },
-                    user_story_ref: { type: "string", maxLength: 10, description: "Reference to user story (e.g., US-1)." }
+                    id: { type: "string", maxLength: 10, description: "Short ID (e.g., TC-1)." },
+                    name: { type: "string", maxLength: 60, description: "Test case name." },
+                    priority: { type: "string", enum: ["high", "medium", "low"] },
+                    expected_result: { type: "string", maxLength: 100, description: "Success criteria." }
                 }
             },
-            description: "Critical business flow test cases. Cover happy paths, error cases, and edge cases proportional to complexity."
+            description: "Core test cases. Keep it focused and minimal."
         },
         security_plan: {
             type: "object",

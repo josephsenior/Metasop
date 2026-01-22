@@ -273,12 +273,13 @@ export const QAArtifactSchema = z.object({
   }),
   test_cases: z.array(
     z.object({
+      id: z.string().optional(),
       name: z.string().min(5, "Test case name must be at least 5 characters"),
       description: z.string().optional(),
       priority: z.enum(["critical", "high", "medium", "low"]),
-      type: z.enum(["unit", "integration", "e2e", "performance", "security"]),
-      gherkin: z.string().optional(),
+      type: z.enum(["unit", "integration", "e2e", "performance", "security", "accessibility"]),
       expected_result: z.string().optional(),
+      depends_on: z.string().optional(),
     })
   ).min(1, "At least one test case is required"),
   security_plan: z.object({
@@ -433,9 +434,15 @@ const MonitoringLoggingSchema = z.object({
   retention: z.string().optional(),
 });
 
+const MonitoringMetricSchema = z.object({
+  name: z.string().min(1, "Metric name is required"),
+  threshold: z.string().min(1, "Metric threshold is required"),
+  action: z.string().optional(),
+});
+
 const MonitoringSchema = z.object({
   tools: z.array(z.string()).min(1, "At least one monitoring tool is required"),
-  metrics: z.array(z.string()).min(1, "At least one metric is required"),
+  metrics: z.array(MonitoringMetricSchema).min(1, "At least one metric is required"),
   alerts: z.array(MonitoringAlertSchema).optional(),
   logging: MonitoringLoggingSchema.optional(),
 });

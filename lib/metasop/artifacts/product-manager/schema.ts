@@ -180,7 +180,7 @@ export const pmSchema = {
                 type: "object",
                 required: ["user_story_id", "independent", "negotiable", "valuable", "estimatable", "small", "testable", "score"],
                 properties: {
-                    user_story_id: { type: "string", description: "ID of the user story" },
+                    user_story_id: { type: "string", maxLength: 20, description: "ID of the user story" },
                     independent: { type: "boolean" },
                     negotiable: { type: "boolean" },
                     valuable: { type: "boolean" },

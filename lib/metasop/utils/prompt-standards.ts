@@ -131,21 +131,33 @@ EXAMPLE STRIDE THREAT:
 }`,
 
   testCase: `
-EXAMPLE BDD TEST CASE:
+EXAMPLE TEST CASES (Note: Complex flow split into chained tests):
+
+TEST 1 - Registration submission:
 {
   "id": "TC-001",
-  "title": "Successful user registration with valid credentials",
+  "name": "User submits registration form",
   "type": "integration",
   "priority": "critical",
-  "preconditions": ["Database is accessible", "Email service is configured"],
-  "gherkin": {
-    "given": "a new user with email 'test@example.com' and valid password 'SecurePass123'",
-    "when": "the user submits the registration form",
-    "then": "the system creates a new user record AND sends a verification email AND returns 201 with user data (excluding password)"
-  },
-  "expected_result": "User created, verification email sent, 201 response",
-  "test_data": { "email": "test@example.com", "password": "SecurePass123" }
-}`,
+  "description": "Verifies registration API creates user record. Password hashed, email stored. Requires database accessible and email service configured.",
+  "expected_result": "201 response with user ID, email verified=false",
+  "depends_on": null
+}
+
+TEST 2 - Email verification sent (chained):
+{
+  "id": "TC-002",
+  "name": "Verification email sent after registration",
+  "type": "integration",
+  "priority": "critical",
+  "description": "After TC-001 passes and email service is configured, verifies that a verification email is sent within 30 seconds of registration completion.",
+  "expected_result": "Email queued and sent with valid verification token",
+  "depends_on": "TC-001"
+}
+
+KEY RULES:
+- Complex flows use depends_on to chain test cases
+- Put all test setup requirements and detailed steps in the description field`,
 
   component: `
 EXAMPLE COMPONENT SPEC:
