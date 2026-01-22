@@ -278,8 +278,6 @@ export const QAArtifactSchema = z.object({
       priority: z.enum(["high", "medium", "low"]),
       expected_result: z.string().min(5).max(100),
     })
-  ),
-    })
   ).min(1, "At least one test case is required"),
   security_plan: z.object({
     auth_verification_steps: z.array(z.string()).optional(),
