@@ -273,13 +273,12 @@ export const QAArtifactSchema = z.object({
   }),
   test_cases: z.array(
     z.object({
-      id: z.string().optional(),
-      name: z.string().min(5, "Test case name must be at least 5 characters"),
-      description: z.string().optional(),
-      priority: z.enum(["critical", "high", "medium", "low"]),
-      type: z.enum(["unit", "integration", "e2e", "performance", "security", "accessibility"]),
-      expected_result: z.string().optional(),
-      depends_on: z.string().optional(),
+      id: z.string().max(10),
+      name: z.string().min(5).max(60),
+      priority: z.enum(["high", "medium", "low"]),
+      expected_result: z.string().min(5).max(100),
+    })
+  ),
     })
   ).min(1, "At least one test case is required"),
   security_plan: z.object({

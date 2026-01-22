@@ -9,13 +9,10 @@
 // ============================================================================
 
 export interface TestCase {
-    id?: string;    // Test case ID (e.g., TC-001)
-    name: string;   // REQUIRED - Descriptive test case name
-    description?: string; // Detailed implementation notes
-    priority: "critical" | "high" | "medium" | "low"; // REQUIRED
-    type: "unit" | "integration" | "e2e" | "performance" | "security" | "accessibility"; // REQUIRED
-    expected_result?: string;
-    depends_on?: string;      // ID of prerequisite test case for chained flows
+    id: string;      // REQUIRED - Short ID (e.g., TC-1)
+    name: string;    // REQUIRED - Test case name
+    priority: "high" | "medium" | "low"; // REQUIRED
+    expected_result: string; // REQUIRED
 }
 
 export interface QABackendArtifact {

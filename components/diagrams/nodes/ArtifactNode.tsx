@@ -351,13 +351,21 @@ export const TestReport = ({ data }: { data: any }) => {
 
                     return (
                         <div key={i} className="px-3 py-2 flex items-center justify-between rounded-lg hover:bg-slate-50 transition-colors group">
-                            <span className="text-[10px] font-bold text-slate-600 group-hover:text-slate-900">{name}</span>
+                            <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5">
+                                    {item.id && <span className="text-[8px] font-mono text-indigo-400 font-bold">{item.id}</span>}
+                                    <span className="text-[10px] font-bold text-slate-600 group-hover:text-slate-900">{name}</span>
+                                </div>
+                                {item.expected_result && (
+                                    <span className="text-[8px] text-slate-400 line-clamp-1 group-hover:text-slate-500">{item.expected_result}</span>
+                                )}
+                            </div>
                             {status && (
                                 <div className={cn(
-                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase",
+                                    "px-1.5 py-0.5 rounded text-[8px] font-black uppercase shrink-0",
                                     status === 'pass' || status === 'passed' ? "bg-emerald-100 text-emerald-600" :
-                                    status === 'warning' ? "bg-amber-100 text-amber-600" :
-                                    status === 'fail' || status === 'failed' ? "bg-red-100 text-red-600" :
+                                    status === 'warning' || status === 'medium' ? "bg-amber-100 text-amber-600" :
+                                    status === 'fail' || status === 'failed' || status === 'high' ? "bg-red-100 text-red-600" :
                                     "bg-indigo-100 text-indigo-600"
                                 )}>
                                     {status}
