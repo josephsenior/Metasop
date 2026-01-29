@@ -210,12 +210,3 @@ async function handleStreamingRefinement(body: any) {
         },
     });
 }
-
-function sendEvent(
-    controller: ReadableStreamDefaultController,
-    encoder: TextEncoder,
-    data: any
-) {
-    const event = `data: ${JSON.stringify(data)}\n\n`;
-    controller.enqueue(encoder.encode(event));
-}
