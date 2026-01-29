@@ -43,7 +43,7 @@ describe("ExecutionService", () => {
       expect(result.success).toBe(true);
       expect(result.artifact).toEqual(artifact);
       expect(result.attempts).toBe(1);
-      expect(mockAgentFn).toHaveBeenCalledWith(context);
+      expect(mockAgentFn).toHaveBeenCalledWith(context, undefined);
     });
 
     it("should handle timeout", async () => {
@@ -283,7 +283,7 @@ describe("ExecutionService", () => {
   describe("edge cases", () => {
     it("should handle retry result with success but undefined result", async () => {
       // Mock retry service to return success but no result
-      const retryServiceModule = await import("../retry-service");
+      const retryServiceModule = await import("@/lib/metasop/services/retry-service");
       const mockExecuteWithRetry = vi.fn().mockResolvedValue({
         success: true,
         result: undefined,

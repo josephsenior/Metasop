@@ -733,7 +733,7 @@ export default function DevOpsInfrastructurePanel({
                                 <Clock className="h-4 w-4 text-blue-500" />
                                 RTO
                               </div>
-                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rto || "N/A"}</div>
+                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rto || "—"}</div>
                               <div className="text-[10px] text-muted-foreground">Recovery Time Objective</div>
                             </div>
                             <div className="bg-background/80 p-4 rounded-xl border border-border/50 shadow-sm flex flex-col gap-2">
@@ -741,7 +741,7 @@ export default function DevOpsInfrastructurePanel({
                                 <HardDrive className="h-4 w-4 text-emerald-500" />
                                 RPO
                               </div>
-                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rpo || "N/A"}</div>
+                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rpo || "—"}</div>
                               <div className="text-[10px] text-muted-foreground">Recovery Point Objective</div>
                             </div>
                           </div>

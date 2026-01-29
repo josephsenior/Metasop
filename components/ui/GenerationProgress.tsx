@@ -16,8 +16,8 @@ interface GenerationProgressProps {
 const agentOrder = [
   "pm_spec",
   "arch_design",
-  "devops_infrastructure",
   "security_architecture",
+  "devops_infrastructure",
   "ui_design",
   "engineer_impl",
   "qa_verification"

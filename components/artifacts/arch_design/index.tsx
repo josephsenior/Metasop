@@ -293,7 +293,27 @@ function DecisionCard({ decision, index }: { decision: any, index: number }) {
   )
 }
 
-function PhilosophySection({ title, content, icon: Icon, color }: { title: string, content: string, icon: any, color: string }) {
+function PhilosophySection({ title, content, icon: Icon, color }: { title: string, content?: string, icon: any, color: string }) {
+  if (!content || !content.trim()) {
+    return (
+      <motion.div variants={item} className="mb-4">
+        <Card className="border-border/50 shadow-sm overflow-hidden">
+          <div className={cn("px-4 py-3 border-b flex items-center gap-2 bg-muted/20", styles.colors.borderMuted)}>
+            <Icon className={cn("h-4 w-4", color)} />
+            <h4 className={cn("font-bold text-sm", color)}>
+              {title}
+            </h4>
+          </div>
+          <div className="p-4 bg-card">
+            <p className={cn("text-sm text-muted-foreground italic", styles.typography.bodySmall)}>
+              Refer to sub-sections for details.
+            </p>
+          </div>
+        </Card>
+      </motion.div>
+    )
+  }
+  
   return (
     <motion.div variants={item} className="mb-4">
       <Card className="border-border/50 shadow-sm overflow-hidden">
@@ -515,7 +535,7 @@ export default function ArchDesignPanel({
                                 <PhilosophySection
                                   key={idx}
                                   title={title}
-                                  content={content || "Refer to sub-sections for details."}
+                                  content={content}
                                   icon={icon}
                                   color={color}
                                 />
@@ -683,7 +703,7 @@ export default function ArchDesignPanel({
                                 </div>
                               </div>
                               
-                              <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-[2.5rem]">
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-10">
                                 {point.purpose || point.description || "External system integration."}
                               </p>
 

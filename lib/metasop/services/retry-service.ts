@@ -201,5 +201,31 @@ export class RetryService {
       jitter: false,
     };
   }
+
+  /**
+   * Create fast policy (1 retry, short delays) for tests or low-latency paths
+   */
+  static createFastPolicy(): RetryPolicy {
+    return {
+      maxRetries: 1,
+      initialDelay: 500,
+      maxDelay: 5000,
+      backoffMultiplier: 2,
+      jitter: false,
+    };
+  }
+
+  /**
+   * Create aggressive policy (more retries, longer delays) for critical operations
+   */
+  static createAggressivePolicy(): RetryPolicy {
+    return {
+      maxRetries: 5,
+      initialDelay: 2000,
+      maxDelay: 60000,
+      backoffMultiplier: 2,
+      jitter: true,
+    };
+  }
 }
 

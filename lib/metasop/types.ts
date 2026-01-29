@@ -110,6 +110,14 @@ export interface AgentContext {
     target_step_id: string;
     previous_artifact_content: any;
     isAtomicAction?: boolean;
+    /** Specific schema paths to update (for surgical refinement) */
+    targetPaths?: string[];
+    /** Additional context for the refinement */
+    context?: {
+      upstreamChange: string;
+      reason: string;
+      referenceValues?: Record<string, any>;
+    };
   };
 }
 

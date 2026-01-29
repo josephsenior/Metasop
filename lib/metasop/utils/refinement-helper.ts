@@ -44,8 +44,7 @@ export function buildRefinementPrompt(
     // Get PROJECTED related artifacts (not full dumps)
     const relatedContext = buildProjectedContext(
         refinement.target_step_id,
-        previous_artifacts,
-        isCascading
+        previous_artifacts
     );
 
     // Smart-compress the current artifact
@@ -133,8 +132,7 @@ function extractChangeSummary(instruction: string, artifacts: Record<string, any
  */
 function buildProjectedContext(
     targetStepId: string,
-    allArtifacts: Record<string, any>,
-    isCascading: boolean
+    allArtifacts: Record<string, any>
 ): string {
     // Define what each artifact type ACTUALLY needs from its dependencies
     const projections: Record<string, Record<string, (content: any) => string>> = {
@@ -309,6 +307,7 @@ export const ARTIFACT_DEPENDENCIES: Record<string, string[]> = {
  * Get artifacts that are related to the target artifact based on dependencies
  * @deprecated Use buildProjectedContext for refinement prompts instead
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRelatedArtifacts(
     targetStepId: string,
     allArtifacts: Record<string, any>,
@@ -335,28 +334,107 @@ function getRelatedArtifacts(
 }
 
 /**
+ * Validates an atomic action before execution
+ */
+export function validateAtomicAction(content: any, action: string, params: any): { valid: boolean; error?: string } {
+    if (!params.path) {
+        return { valid: false, error: "Action missing required 'path' parameter" };
+    }
+
+    const path = params.path;
+    const parts = path.split('.');
+
+    // Validate path structure
+    if (parts.length === 0) {
+        return { valid: false, error: `Invalid path: empty path string` };
+    }
+
+    // Check if path exists (except for upsert_node which can create)
+    if (action !== "upsert_node") {
+        let current = content;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!(part in current)) {
+                return { valid: false, error: `Path does not exist: ${parts.slice(0, i + 1).join('.')}` };
+            }
+            current = current[part];
+            if (current === null || current === undefined) {
+                return { valid: false, error: `Path points to null/undefined at: ${parts.slice(0, i + 1).join('.')}` };
+            }
+        }
+    }
+
+    // Action-specific validation
+    switch (action) {
+        case "upsert_node":
+            if (!params.content) {
+                return { valid: false, error: "upsert_node requires 'content' parameter" };
+            }
+            break;
+        case "append_to_list":
+            if (!params.item) {
+                return { valid: false, error: "append_to_list requires 'item' parameter" };
+            }
+            // Check if target is an array (or can be converted)
+            if (path) {
+                let current = content;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    current = current?.[parts[i]];
+                }
+                const lastKey = parts[parts.length - 1];
+                if (current && current[lastKey] !== undefined && !Array.isArray(current[lastKey])) {
+                    return { valid: false, error: `Path '${path}' does not point to an array` };
+                }
+            }
+            break;
+        case "delete_node":
+            // Path existence already checked above
+            break;
+        default:
+            return { valid: false, error: `Unknown action type: ${action}` };
+    }
+
+    return { valid: true };
+}
+
+/**
  * Applies an atomic action to a JSON object
+ * Throws errors instead of silently failing
  */
 export function applyAtomicAction(content: any, action: string, params: any): any {
+    // Validate action before applying
+    const validation = validateAtomicAction(content, action, params);
+    if (!validation.valid) {
+        throw new Error(`Invalid atomic action: ${validation.error}`);
+    }
+
     const newContent = JSON.parse(JSON.stringify(content)); // Deep clone
     const path = params.path;
 
-    // Helper to resolve nested path
-    const resolvePath = (obj: any, path: string) => {
+    // Helper to resolve nested path (creates missing nodes only for upsert_node)
+    const resolvePath = (obj: any, path: string, createMissing: boolean = false) => {
         const parts = path.split('.');
         let current = obj;
         for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i];
             if (!(part in current)) {
+                if (!createMissing) {
+                    throw new Error(`Path does not exist: ${parts.slice(0, i + 1).join('.')}`);
+                }
+                // Only create missing nodes for upsert_node
                 current[part] = isNaN(Number(parts[i+1])) ? {} : [];
             }
             current = current[part];
+            if (current === null || current === undefined) {
+                throw new Error(`Path points to null/undefined at: ${parts.slice(0, i + 1).join('.')}`);
+            }
         }
         return { parent: current, lastKey: parts[parts.length - 1] };
     };
 
     try {
-        const { parent, lastKey } = resolvePath(newContent, path);
+        const createMissing = action === "upsert_node";
+        const { parent, lastKey } = resolvePath(newContent, path, createMissing);
 
         switch (action) {
             case "upsert_node":
@@ -364,27 +442,76 @@ export function applyAtomicAction(content: any, action: string, params: any): an
                 break;
             case "append_to_list":
                 if (!Array.isArray(parent[lastKey])) {
-                    parent[lastKey] = [];
+                    if (parent[lastKey] === undefined) {
+                        parent[lastKey] = [];
+                    } else {
+                        throw new Error(`Cannot append to non-array at path '${path}'. Found: ${typeof parent[lastKey]}`);
+                    }
                 }
                 parent[lastKey].push(params.item);
                 break;
             case "delete_node":
                 if (Array.isArray(parent)) {
-                    parent.splice(Number(lastKey), 1);
+                    const index = Number(lastKey);
+                    if (isNaN(index) || index < 0 || index >= parent.length) {
+                        throw new Error(`Invalid array index '${lastKey}' for path '${path}'. Array length: ${parent.length}`);
+                    }
+                    parent.splice(index, 1);
                 } else {
+                    if (!(lastKey in parent)) {
+                        throw new Error(`Cannot delete non-existent key '${lastKey}' at path '${path}'`);
+                    }
                     delete parent[lastKey];
                 }
                 break;
+            default:
+                throw new Error(`Unknown action type: ${action}`);
         }
         return newContent;
     } catch (error: any) {
-        logger.error(`Failed to apply atomic action ${action} at ${path}: ${error.message}`);
-        return content; // Return original on failure
+        logger.error(`Failed to apply atomic action ${action} at ${path}`, { 
+            error: error.message,
+            params: JSON.stringify(params).substring(0, 200)
+        });
+        throw new Error(`Failed to apply atomic action '${action}' at path '${path}': ${error.message}`);
     }
 }
 
 /**
+ * Validates action sequence for conflicts and logical errors
+ */
+function validateActionSequence(actions: Array<{ action: string; parameters: any }>): { valid: boolean; error?: string } {
+    const paths = new Set<string>();
+    const deletedPaths = new Set<string>();
+
+    for (let i = 0; i < actions.length; i++) {
+        const action = actions[i];
+        const path = action.parameters?.path;
+
+        if (!path) {
+            return { valid: false, error: `Action ${i + 1} missing 'path' parameter` };
+        }
+
+        // Check for conflicting operations on same path
+        if (action.action === "delete_node") {
+            if (paths.has(path)) {
+                return { valid: false, error: `Action ${i + 1}: Cannot delete path '${path}' after it was modified` };
+            }
+            deletedPaths.add(path);
+        } else {
+            if (deletedPaths.has(path)) {
+                return { valid: false, error: `Action ${i + 1}: Cannot modify path '${path}' after it was deleted` };
+            }
+            paths.add(path);
+        }
+    }
+
+    return { valid: true };
+}
+
+/**
  * Orchestrates refinement using atomic actions for maximum reliability
+ * Uses transaction-like approach: validate all actions, apply to copy, validate result, then return
  */
 export async function refineWithAtomicActions<T>(
     context: AgentContext,
@@ -397,6 +524,16 @@ export async function refineWithAtomicActions<T>(
 
     const { generateStructuredWithLLM } = await import("./llm-helper");
 
+    // Get full artifact content (no truncation - LLM needs complete context)
+    const fullArtifactJson = JSON.stringify(refinement.previous_artifact_content, null, 2);
+    const artifactSize = fullArtifactJson.length;
+    
+    logger.info(`Refinement starting with full artifact context`, {
+        role,
+        artifactSize,
+        instruction: refinement.instruction.substring(0, 100)
+    });
+
     const actionPrompt = `
 You are a ${role} refining a JSON artifact.
 Instead of rewriting the whole file, you must provide a sequence of ATOMIC ACTIONS to apply the changes.
@@ -404,17 +541,29 @@ This ensures 100% reliability and prevents data loss.
 
 USER INSTRUCTION: "${refinement.instruction}"
 
-CURRENT ARTIFACT CONTENT (PREVIEW):
-${JSON.stringify(refinement.previous_artifact_content, null, 2).substring(0, 2000)}${JSON.stringify(refinement.previous_artifact_content).length > 2000 ? "... (truncated for prompt)" : ""}
+CURRENT ARTIFACT CONTENT (FULL - NO TRUNCATION):
+${fullArtifactJson}
 
 AVAILABLE ACTIONS:
 1. **upsert_node**: Update/insert an object at a path (e.g., "user_stories.0")
+   - Parameters: { "path": "dot.notation.path", "content": {...} }
+   - Creates missing intermediate paths if needed
 2. **append_to_list**: Add a new item to an array (e.g., "apis")
+   - Parameters: { "path": "array.path", "item": {...} }
+   - Creates array if it doesn't exist
 3. **delete_node**: Remove a node at a path
+   - Parameters: { "path": "dot.notation.path" }
+   - For arrays, use numeric index (e.g., "user_stories.0")
+
+CRITICAL REQUIREMENTS:
+- Provide actions in the correct order (e.g., don't delete then update same path)
+- Use exact paths from the artifact above
+- Ensure all required parameters are included
+- Actions must be minimal and targeted - only change what's needed
 
 TASK:
 Analyze the instruction and determine the minimum set of actions needed to implement the change.
-Return a list of actions and a summary.
+Return a list of actions and a summary explaining what will change.
 `.trim();
 
     const ActionSchema = {
@@ -426,7 +575,15 @@ Return a list of actions and a summary.
                     type: "object",
                     properties: {
                         action: { type: "string", enum: ["upsert_node", "append_to_list", "delete_node"] },
-                        parameters: { type: "object" }
+                        parameters: { 
+                            type: "object",
+                            properties: {
+                                path: { type: "string" },
+                                content: { type: "object" },
+                                item: { type: "object" }
+                            },
+                            required: ["path"]
+                        }
                     },
                     required: ["action", "parameters"]
                 }
@@ -436,23 +593,72 @@ Return a list of actions and a summary.
         required: ["actions", "summary"]
     };
 
-    const response = await generateStructuredWithLLM<{ actions: any[]; summary: string }>(
-        actionPrompt,
-        ActionSchema,
-        {
-            temperature: options?.temperature ?? 0.2,
-            cacheId: options?.cacheId,
-            role: `${role} Refiner`,
-            model: options?.model
-        }
-    );
-
-    let refinedContent = JSON.parse(JSON.stringify(refinement.previous_artifact_content));
-    
-    for (const actionItem of response.actions) {
-        logger.info(`Applying atomic action: ${actionItem.action}`, { path: actionItem.parameters.path });
-        refinedContent = applyAtomicAction(refinedContent, actionItem.action, actionItem.parameters);
+    let response: { actions: any[]; summary: string };
+    try {
+        response = await generateStructuredWithLLM<{ actions: any[]; summary: string }>(
+            actionPrompt,
+            ActionSchema,
+            {
+                temperature: options?.temperature ?? 0.2,
+                cacheId: options?.cacheId,
+                role: `${role} Refiner`,
+                model: options?.model
+            }
+        );
+    } catch (error: any) {
+        logger.error("Failed to generate atomic actions", { error: error.message });
+        throw new Error(`Failed to generate refinement actions: ${error.message}`);
     }
+
+    // Validate action sequence before applying
+    const sequenceValidation = validateActionSequence(response.actions);
+    if (!sequenceValidation.valid) {
+        throw new Error(`Invalid action sequence: ${sequenceValidation.error}`);
+    }
+
+    // Validate each action before applying (transaction-like approach)
+    const originalContent = refinement.previous_artifact_content;
+    const actionErrors: string[] = [];
+
+    for (let i = 0; i < response.actions.length; i++) {
+        const actionItem = response.actions[i];
+        const validation = validateAtomicAction(originalContent, actionItem.action, actionItem.parameters);
+        if (!validation.valid) {
+            actionErrors.push(`Action ${i + 1} (${actionItem.action} at '${actionItem.parameters?.path}'): ${validation.error}`);
+        }
+    }
+
+    if (actionErrors.length > 0) {
+        throw new Error(`Action validation failed:\n${actionErrors.join('\n')}`);
+    }
+
+    // Apply all actions to a copy (transaction-like)
+    let refinedContent = JSON.parse(JSON.stringify(originalContent));
+    const appliedActions: Array<{ action: string; path: string; success: boolean; error?: string }> = [];
+    
+    for (let i = 0; i < response.actions.length; i++) {
+        const actionItem = response.actions[i];
+        const path = actionItem.parameters?.path || 'unknown';
+        
+        try {
+            logger.info(`Applying atomic action ${i + 1}/${response.actions.length}`, { 
+                action: actionItem.action, 
+                path 
+            });
+            refinedContent = applyAtomicAction(refinedContent, actionItem.action, actionItem.parameters);
+            appliedActions.push({ action: actionItem.action, path, success: true });
+        } catch (error: any) {
+            const errorMsg = `Action ${i + 1} failed: ${error.message}`;
+            logger.error(errorMsg, { action: actionItem.action, path, params: actionItem.parameters });
+            appliedActions.push({ action: actionItem.action, path, success: false, error: error.message });
+            throw new Error(`${errorMsg}\nApplied ${i} actions successfully before failure.`);
+        }
+    }
+
+    logger.info(`All ${response.actions.length} atomic actions applied successfully`, {
+        summary: response.summary,
+        appliedActions: appliedActions.map(a => `${a.action}@${a.path}`)
+    });
 
     return refinedContent as T;
 }

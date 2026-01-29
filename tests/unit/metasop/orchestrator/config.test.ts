@@ -23,8 +23,8 @@ describe("MetaSOP Config", () => {
 
     it("should have default agent configurations", () => {
       expect(defaultConfig.agents.enabled.length).toBeGreaterThan(0);
-      expect(defaultConfig.agents.defaultTimeout).toBe(120000);
-      expect(defaultConfig.agents.defaultRetries).toBe(2);
+      expect(defaultConfig.agents.defaultTimeout).toBe(180000);
+      expect(defaultConfig.agents.defaultRetries).toBe(0);
       expect(Object.keys(defaultConfig.agents.agentConfigs).length).toBeGreaterThan(0);
     });
 
@@ -48,9 +48,11 @@ describe("MetaSOP Config", () => {
 
   describe("getConfig", () => {
     it("should return default config when no env vars", () => {
+      delete process.env.METASOP_AGENT_TIMEOUT;
+      delete process.env.METASOP_AGENT_RETRIES;
       const config = getConfig();
-      expect(config.agents.defaultTimeout).toBe(120000);
-      expect(config.agents.defaultRetries).toBe(2);
+      expect(config.agents.defaultTimeout).toBe(180000);
+      expect(config.agents.defaultRetries).toBe(0);
     });
 
     it("should override timeout from env", () => {
@@ -66,9 +68,9 @@ describe("MetaSOP Config", () => {
     });
 
     it("should override LLM provider from env", () => {
-      process.env.METASOP_LLM_PROVIDER = "openai";
+      process.env.METASOP_LLM_PROVIDER = "gemini";
       const config = getConfig();
-      expect(config.llm.provider).toBe("openai");
+      expect(config.llm.provider).toBe("gemini");
     });
 
     it("should override LLM model from env", () => {

@@ -30,6 +30,7 @@ export default function MyDiagramsPage() {
   const { toast } = useToast()
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"date" | "name">("date")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
@@ -42,16 +43,65 @@ export default function MyDiagramsPage() {
   const loadDiagrams = async () => {
     try {
       setIsLoading(true)
-      const result = await diagramsApi.getAll({
-        status: statusFilter !== "all" ? statusFilter as Diagram["status"] : undefined,
-      })
-      setDiagrams(result.diagrams)
+      setError(null)
+      
+      // Build options object - only include status if it's not "all"
+      const options: { status?: Diagram["status"] } = {}
+      if (statusFilter !== "all") {
+        options.status = statusFilter as Diagram["status"]
+      }
+      
+      console.log("[Diagrams Page] Loading diagrams with options:", options)
+      const result = await diagramsApi.getAll(options)
+      
+      // Debug logging
+      console.log("[Diagrams Page] API Response:", result)
+      console.log("[Diagrams Page] Response type:", typeof result)
+      console.log("[Diagrams Page] Has diagrams property:", "diagrams" in (result || {}))
+      console.log("[Diagrams Page] Diagrams count:", result?.diagrams?.length || 0)
+      console.log("[Diagrams Page] Total:", result?.total || 0)
+      console.log("[Diagrams Page] User:", user?.id || "guest")
+      
+      // Handle different possible response structures
+      let diagramsToSet: Diagram[] = []
+      
+      if (result) {
+        if (Array.isArray(result)) {
+          // If result is directly an array
+          diagramsToSet = result
+        } else if (result.diagrams && Array.isArray(result.diagrams)) {
+          // If result has a diagrams property
+          diagramsToSet = result.diagrams
+        } else {
+          console.warn("[Diagrams Page] Unexpected response structure:", result)
+          setError("Unexpected response format from server. Check console for details.")
+        }
+      }
+      
+      setDiagrams(diagramsToSet)
+      setError(null)
+      
+      if (diagramsToSet.length === 0 && !isLoading) {
+        console.log("[Diagrams Page] No diagrams found. This might be expected if you haven't created any yet.")
+      }
     } catch (error: any) {
+      console.error("[Diagrams Page] Error loading diagrams:", error)
+      console.error("[Diagrams Page] Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack,
+      })
+      
+      const errorMessage = error.response?.data?.message || error.message || "Failed to load diagrams"
+      setError(errorMessage)
+      
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to load diagrams",
+        description: errorMessage,
         variant: "destructive",
       })
+      setDiagrams([]) // Ensure diagrams is set to empty array on error
     } finally {
       setIsLoading(false)
     }
@@ -90,14 +140,43 @@ export default function MyDiagramsPage() {
     return date.toLocaleDateString()
   }
 
+  // Debug: Log diagrams state changes
+  useEffect(() => {
+    console.log("[Diagrams Page] Diagrams state updated:", {
+      count: diagrams.length,
+      diagrams: diagrams.map(d => ({ id: d.id, title: d.title, status: d.status }))
+    })
+  }, [diagrams])
+
   const filteredAndSortedDiagrams = useMemo(() => {
+    console.log("[Diagrams Page] Filtering diagrams:", {
+      total: diagrams.length,
+      searchQuery,
+      statusFilter,
+      diagramStatuses: diagrams.map(d => ({ id: d.id, status: d.status, title: d.title?.substring(0, 30) }))
+    })
+    
     let filtered = diagrams.filter((diagram) => {
       const matchesSearch =
         (diagram.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (diagram.description || "").toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "all" || diagram.status === statusFilter
+      
+      // Debug individual filter results
+      if (diagrams.length <= 10) { // Only log for small sets
+        console.log(`[Diagrams Page] Diagram "${diagram.title?.substring(0, 30)}":`, {
+          status: diagram.status,
+          statusFilter,
+          matchesStatus,
+          matchesSearch,
+          passes: matchesSearch && matchesStatus
+        })
+      }
+      
       return matchesSearch && matchesStatus
     })
+    
+    console.log("[Diagrams Page] Filtered count:", filtered.length, "out of", diagrams.length)
 
     filtered.sort((a, b) => {
       if (sortBy === "date") {
@@ -112,7 +191,7 @@ export default function MyDiagramsPage() {
     })
 
     return filtered
-  }, [searchQuery, sortBy, sortOrder, statusFilter])
+  }, [diagrams, searchQuery, sortBy, sortOrder, statusFilter])
 
   return (
     <AuthGuard requireAuth={false}>
@@ -130,6 +209,24 @@ export default function MyDiagramsPage() {
                   Sign up
                 </Link>{" "}
                 to save them permanently.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Error notice */}
+          {error && (
+            <Alert className="border-red-600/30 bg-red-600/10 mb-8">
+              <AlertCircle className="h-4 w-4 text-red-700 dark:text-red-400" />
+              <AlertDescription className="text-sm">
+                <span className="font-medium">Error loading diagrams:</span> {error}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-4"
+                  onClick={() => loadDiagrams()}
+                >
+                  Retry
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -213,6 +310,7 @@ export default function MyDiagramsPage() {
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-3 text-sm text-muted-foreground">Loading diagrams...</span>
             </div>
           ) : filteredAndSortedDiagrams.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -169,8 +169,8 @@ ${prompt}`
               path.join(debugDir, `${agentRole}_llm_response.json`), 
               JSON.stringify(debugPayload, null, 2)
             );
-          } catch (dumpErr) {
-            logger.error(`Failed to dump ${options?.role} debug artifacts`, { error: (dumpErr as Error).message });
+            } catch {
+              // Failed to dump debug artifacts - continue silently
           }
         }
 
@@ -181,6 +181,209 @@ ${prompt}`
       return content;
     } catch (error: any) {
       logger.error("Gemini generation failed", { error: error.message, model });
+      throw error;
+    }
+  }
+
+  /**
+   * Stream text generation using Gemini's streamGenerateContent API
+   * Provides real-time token-by-token streaming
+   */
+  async generateStream(
+    prompt: string,
+    onChunk: (chunk: string) => void,
+    options?: LLMOptions
+  ): Promise<string> {
+    const startTime = Date.now();
+    const model = options?.model || this.defaultModel;
+
+    try {
+      // If using cache, the prompt should be concise as most context is already cached
+      const finalPrompt = options?.cacheId
+        ? `Based on the cached context, please perform your task as ${options.role || 'an agent'}.
+      
+${prompt}`
+        : prompt;
+
+      const requestBody: any = {
+        contents: [
+          {
+            parts: [
+              {
+                text: finalPrompt,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: options?.temperature ?? 0.1,
+          maxOutputTokens: options?.maxTokens ?? 65000,
+          ...(options?.reasoning ? { thinkingConfig: { includeThoughts: true } } : {}),
+        },
+      };
+
+      // Apply context cache if provided
+      if (options?.cacheId) {
+        requestBody.cachedContent = options.cacheId;
+      }
+
+      // Use streamGenerateContent endpoint with SSE format
+      // Note: Gemini uses ?alt=sse for Server-Sent Events format
+      const apiUrl = `${this.baseUrl}/models/${model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
+      
+      const response = await axios.post(apiUrl, requestBody, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        responseType: "stream", // Important: use stream response type for SSE
+      });
+
+      let fullText = "";
+      let buffer = "";
+
+      // Handle streaming response
+      return new Promise((resolve, reject) => {
+        response.data.on("data", (chunk: Buffer) => {
+          buffer += chunk.toString();
+          
+          // Process complete JSON objects from the stream
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            
+            // Skip SSE event type lines (e.g., "event: ...")
+            if (line.startsWith("event:") || line === "[DONE]") continue;
+            
+            // Gemini streaming format: each line is a JSON object prefixed with "data: "
+            let jsonStr = "";
+            if (line.startsWith("data: ")) {
+              jsonStr = line.slice(6).trim(); // Remove "data: " prefix
+            } else if (line.trim().startsWith("{")) {
+              // Try parsing as direct JSON (fallback)
+              jsonStr = line.trim();
+            } else {
+              continue; // Skip non-JSON lines
+            }
+
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            try {
+              const data = JSON.parse(jsonStr);
+              
+              // Extract text from candidates
+              const candidates = data.candidates || [];
+              for (const candidate of candidates) {
+                // Check if this is a finish reason (stream ended)
+                if (candidate.finishReason && candidate.finishReason !== "STOP") {
+                  logger.warn("Gemini stream finished with reason", { 
+                    finishReason: candidate.finishReason,
+                    finishMessage: candidate.finishMessage 
+                  });
+                }
+
+                const content = candidate.content;
+                if (content?.parts) {
+                  for (const part of content.parts) {
+                    if (part.text) {
+                      // Gemini sends cumulative text, extract delta
+                      const newText = part.text;
+                      if (newText.length >= fullText.length) {
+                        // Normal case: new text is longer (cumulative)
+                        const delta = newText.slice(fullText.length);
+                        fullText = newText;
+                        if (delta) {
+                          onChunk(delta);
+                        }
+                      } else {
+                        // Edge case: text was reset (shouldn't happen, but handle gracefully)
+                        logger.warn("Gemini stream text reset detected", {
+                          oldLength: fullText.length,
+                          newLength: newText.length
+                        });
+                        // Send the new text as-is
+                        fullText = newText;
+                        onChunk(newText);
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (parseError: any) {
+              // Log parse errors for debugging but don't crash
+              logger.debug("Failed to parse Gemini stream line", {
+                line: line.substring(0, 100),
+                error: parseError.message
+              });
+              continue;
+            }
+          }
+        });
+
+        response.data.on("end", () => {
+          // Process any remaining buffer to ensure we don't lose final chunks
+          if (buffer.trim()) {
+            const lines = buffer.split("\n").filter(l => l.trim());
+            for (const line of lines) {
+              if (!line.trim() || line === "[DONE]") continue;
+              
+              let jsonStr = "";
+              if (line.startsWith("data: ")) {
+                jsonStr = line.slice(6).trim();
+              } else if (line.trim().startsWith("{")) {
+                jsonStr = line.trim();
+              } else {
+                continue;
+              }
+
+              try {
+                const data = JSON.parse(jsonStr);
+                const candidates = data.candidates || [];
+                for (const candidate of candidates) {
+                  const content = candidate.content;
+                  if (content?.parts) {
+                    for (const part of content.parts) {
+                      if (part.text) {
+                        const newText = part.text;
+                        if (newText.length >= fullText.length) {
+                          const delta = newText.slice(fullText.length);
+                          fullText = newText;
+                          if (delta) {
+                            onChunk(delta);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (parseError: any) {
+                logger.debug("Failed to parse final buffer line", {
+                  line: line.substring(0, 100),
+                  error: parseError.message
+                });
+              }
+            }
+          }
+
+          const latency = Date.now() - startTime;
+          logger.info("Gemini streaming generation completed", { 
+            model, 
+            latency,
+            finalLength: fullText.length,
+            chunksProcessed: true
+          });
+
+          resolve(fullText);
+        });
+
+        response.data.on("error", (error: Error) => {
+          logger.error("Gemini streaming error", { error: error.message, model });
+          reject(error);
+        });
+      });
+    } catch (error: any) {
+      logger.error("Gemini streaming generation failed", { error: error.message, model });
       throw error;
     }
   }
@@ -445,7 +648,7 @@ ${prompt}`
                 JSON.stringify(errorPayload, null, 2)
               );
               console.error(`\n[DEBUG] ${options.role} API ERROR captured to session folder`);
-            } catch (dumpErr) {
+            } catch {
               // ignore
             }
           }
@@ -543,7 +746,7 @@ ${prompt}`
             fs.writeFileSync(debugFilePath, JSON.stringify(debugPayload, null, 2));
             logger.error(`[DEBUG] MAX_TOKENS TRUNCATION DUMPED TO: ${debugFilePath}`);
             logger.error(`[DEBUG] Response size: ${jsonText.length} chars, ${usage.candidatesTokenCount} tokens`);
-          } catch (dumpErr) {
+          } catch {
             // ignore dump errors
           }
         }
@@ -653,8 +856,8 @@ ${prompt}`
               fs.writeFileSync(debugFilePath, jsonText);
               logger.error(`[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
               logger.error(`[DEBUG] Size: ${jsonText.length} characters`);
-            } catch (dumpErr) {
-              logger.error("Failed to dump error response", { error: (dumpErr as Error).message });
+            } catch {
+              // Failed to dump error response - continue silently
             }
           }
 

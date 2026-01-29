@@ -38,8 +38,17 @@ export interface QABackendArtifact {
     }>;
     summary?: string;
     description?: string;
-    accessibility_plan?: string;
-    manual_uat_plan?: string;
+    accessibility_plan?: {
+        standard?: string;
+        automated_tools?: string[];
+        manual_checks?: string[];
+        screen_readers?: string[];
+    };
+    manual_uat_plan?: {
+        scenarios?: string[];
+        acceptance_criteria?: string[];
+        stakeholders?: string[];
+    };
     coverage?: {
         percentage?: number;
         threshold?: number;

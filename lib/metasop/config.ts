@@ -71,7 +71,7 @@ export const defaultConfig: MetaSOPConfig = {
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 180000,
+        timeout: 600000, // 600 seconds (10 minutes) - longer timeout for complex infrastructure setup
         retries: 0,
         temperature: 0.3, // Balanced
       },
@@ -89,13 +89,13 @@ export const defaultConfig: MetaSOPConfig = {
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 86400000, // 24 hours - effectively no timeout for debugging root cause
+        timeout: 180000, // 180 seconds (3 minutes) - same as other agents
         retries: 0,
         temperature: 0.4, // Slightly higher for creative design decisions
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 86400000, // 24 hours - effectively no timeout for debugging root cause
+        timeout: 180000, // 180 seconds (3 minutes) - same as other agents
         retries: 0,
         temperature: 0.2, // Lower for precise test specifications
       },

@@ -107,7 +107,7 @@ export default function SecurityArchitecturePanel({
           <StatsCard
             icon={UserCheck}
             label="Auth"
-            value={auth?.method || "N/A"}
+            value={auth?.method || "—"}
             color="text-blue-600 dark:text-blue-400"
             bg="bg-blue-500/10"
             isText={true}
@@ -156,7 +156,7 @@ export default function SecurityArchitecturePanel({
                         <div className={cn("p-3 border-b flex justify-between items-center bg-muted/30", styles.colors.borderMuted)}>
                           <div className="flex items-center gap-2">
                             <ShieldAlert className="h-4 w-4 text-red-500" />
-                            <span className="font-semibold text-sm">{threat.threat || "Unknown Threat"}</span>
+                            <span className="font-semibold text-sm">{threat.threat}</span>
                           </div>
                           <Badge variant="outline" className={cn("text-[9px] uppercase font-mono px-1.5", getSeverityStyles(threat.severity))}>
                             {threat.severity}
@@ -334,7 +334,7 @@ export default function SecurityArchitecturePanel({
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-muted-foreground">Strategy</span>
                             <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                              {security_architecture.session_management.strategy || "stateless"}
+                              {security_architecture.session_management?.strategy || "Not specified"}
                             </Badge>
                           </div>
                           {security_architecture.session_management.session_timeout && (
@@ -396,7 +396,7 @@ export default function SecurityArchitecturePanel({
                       <CardContent className="space-y-4">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
                           <div className="text-[10px] uppercase text-muted-foreground font-bold mb-1">Model</div>
-                          <div className="text-sm font-medium">{authz?.model || "RBAC"}</div>
+                          <div className="text-sm font-medium">{authz?.model || "Not specified"}</div>
                         </div>
                         {Array.isArray((authz as any)?.roles) && (
                           <div className="space-y-2 pb-2">
@@ -478,7 +478,7 @@ export default function SecurityArchitecturePanel({
                             At Rest
                           </div>
                           <div className="p-3 bg-muted/30 rounded-lg border border-border/40">
-                            <div className="text-xs font-mono">{encryption?.data_at_rest?.method || "AES-256"}</div>
+                            <div className="text-xs font-mono">{encryption?.data_at_rest?.method || "Not specified"}</div>
                             {encryption?.data_at_rest?.key_management && (
                               <div className="mt-1 text-[10px] text-muted-foreground">
                                 KMS: {encryption.data_at_rest.key_management}
@@ -498,7 +498,7 @@ export default function SecurityArchitecturePanel({
                             In Transit
                           </div>
                           <div className="p-3 bg-muted/30 rounded-lg border border-border/40">
-                            <div className="text-xs font-mono">{encryption?.data_in_transit?.method || "TLS 1.3"}</div>
+                            <div className="text-xs font-mono">{encryption?.data_in_transit?.method || "Not specified"}</div>
                             {encryption?.data_in_transit?.certificate_management && (
                               <div className="mt-1 text-[10px] text-muted-foreground truncate">
                                 Certs: {encryption.data_in_transit.certificate_management}
@@ -566,7 +566,7 @@ export default function SecurityArchitecturePanel({
                         <CardContent>
                           <div className="flex flex-col gap-3">
                             {compliance.map((std: any, i: number) => {
-                              const stdName = typeof std === "string" ? std : (std.standard || "standard")
+                              const stdName = typeof std === "string" ? std : std.standard
                               const isExpanded = activeStandard === stdName
 
                               return (
@@ -644,7 +644,7 @@ export default function SecurityArchitecturePanel({
                           <CardContent className="space-y-3">
                             <div className="flex justify-between items-center text-sm border-b border-border/40 pb-2">
                               <span className="text-muted-foreground">Scan Frequency</span>
-                              <span className="font-medium">{vulnerability_management.scanning_frequency || "Weekly"}</span>
+                              <span className="font-medium">{vulnerability_management.scanning_frequency || "Not specified"}</span>
                             </div>
                             {vulnerability_management.remediation_sla && (
                               <div className="flex justify-between items-center text-sm border-b border-border/40 pb-2">

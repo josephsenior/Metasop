@@ -4,10 +4,12 @@ import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from
 import { checkGuestDiagramLimit, recordGuestDiagramCreation } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 import { runMetaSOPOrchestration } from "@/lib/metasop/orchestrator";
-import type { CreateDiagramRequest, DiagramNode, DiagramEdge } from "@/types/diagram";
-import type { ArchitectBackendArtifact } from "@/lib/metasop/types";
+import type { MetaSOPEvent } from "@/lib/metasop/types";
+import type { CreateDiagramRequest } from "@/types/diagram";
 import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
-import { ensureUniqueNodeIds, ensureEdgeIds, validateEdgeReferences } from "@/lib/diagrams/validation";
+import { rateLimit, rateLimiters, addRateLimitHeaders } from "@/lib/middleware/rate-limit";
+import { createRequestLogger } from "@/lib/monitoring/logger";
+import { metrics, MetricNames, trackPerformance } from "@/lib/monitoring/metrics";
 
 /**
  * POST /api/diagrams/generate - Generate diagrams using MetaSOP multi-agent system
@@ -20,11 +22,46 @@ import { ensureUniqueNodeIds, ensureEdgeIds, validateEdgeReferences } from "@/li
 export const maxDuration = 900; // 15 minutes
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger(request);
+  const startTime = Date.now();
+  
   try {
+    // Rate limiting - stricter for guests
+    let userId: string | undefined;
+    let isGuest = false;
+    
+    try {
+      const user = await getAuthenticatedUser(request);
+      userId = user.userId;
+      isGuest = false;
+    } catch {
+      isGuest = true;
+    }
+
+    // Apply rate limiting based on user type
+    const rateLimitConfig = isGuest 
+      ? rateLimiters.diagramGeneration()
+      : rateLimiters.api();
+
+    const rateLimitResult = await rateLimit(request, {
+      ...rateLimitConfig,
+      identifier: async (req) => {
+        if (userId) return `user:${userId}`;
+        const forwarded = req.headers.get("x-forwarded-for");
+        return forwarded?.split(",")[0].trim() || "unknown";
+      },
+    });
+
+    // If rate limit check returned a response (429), return it
+    if (rateLimitResult instanceof NextResponse) {
+      metrics.increment(MetricNames.RATE_LIMIT_EXCEEDED, 1, { endpoint: "diagrams.generate" });
+      return rateLimitResult;
+    }
+
     const rawBody = await request.json();
 
     if (rawBody?.options?.model) {
-      console.log(`[API Route] Overriding LLM model to: ${rawBody.options.model}`);
+      requestLogger.info("LLM model override", { model: rawBody.options.model });
       process.env.METASOP_LLM_MODEL = rawBody.options.model;
     } else {
       delete process.env.METASOP_LLM_MODEL;
@@ -35,31 +72,27 @@ export async function POST(request: NextRequest) {
       body = validateCreateDiagramRequest(rawBody);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
+        metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "validation" });
         return createErrorResponse(
           `Invalid request: ${error.errors.map((e) => e.message).join(", ")}`,
           400
         );
       }
+      metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "parse" });
       return createErrorResponse("Invalid request format", 400);
     }
 
-    let userId: string;
-    let isGuest = false;
     let guestSessionId: string | undefined;
 
-    try {
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
-      isGuest = false;
-    } catch {
+    if (isGuest) {
       const guestCheck = await checkGuestDiagramLimit(request);
       if (!guestCheck.allowed) {
+        metrics.increment(MetricNames.RATE_LIMIT_EXCEEDED, 1, { endpoint: "diagrams.generate", type: "guest_limit" });
         return createErrorResponse(
           guestCheck.reason || "Please sign up to create more diagrams",
           403
         );
       }
-      isGuest = true;
       guestSessionId = guestCheck.sessionId;
       userId = `guest_${guestSessionId}`;
     }
@@ -82,7 +115,7 @@ export async function POST(request: NextRequest) {
               } catch (e: any) {
                 const isAlreadyClosed = e instanceof TypeError && e.message.includes("already closed");
                 if (!isAlreadyClosed) {
-                  console.error("[Backend] Error closing controller:", e);
+                  requestLogger.error("Error closing stream controller", e);
                 }
               }
             }
@@ -98,250 +131,169 @@ export async function POST(request: NextRequest) {
               if (heartbeatInterval) clearInterval(heartbeatInterval);
               const isAlreadyClosed = e instanceof TypeError && e.message.includes("already closed");
               if (!isAlreadyClosed) {
-                console.warn("[Backend] Failed to enqueue, stream might be closed:", e.message);
+                requestLogger.error("Error enqueueing stream data", e);
               }
               return false;
             }
           };
 
-          safeEnqueue({ type: "stream_open", timestamp: new Date().toISOString() });
-
-          heartbeatInterval = setInterval(() => {
-            const ok = safeEnqueue({ type: "heartbeat", timestamp: new Date().toISOString() });
-            if (!ok) {
-              if (heartbeatInterval) clearInterval(heartbeatInterval);
-            }
-          }, 15000);
-
           try {
-            const metasopResult = await runMetaSOPOrchestration(
-              body.prompt,
-              body.options,
-              (event) => {
-                const ok = safeEnqueue(event);
-                if (!ok && isStreamClosed) {
-                  throw new Error("STREAM_CLOSED");
-                }
-              },
-              body.documents
-            );
+            requestLogger.info("Starting diagram generation with streaming", { userId, isGuest });
 
-            clearInterval(heartbeatInterval);
-
-            try {
-              const transformedDiagram = transformMetaSOPToDiagram(metasopResult);
-
-              transformedDiagram.nodes = ensureUniqueNodeIds(transformedDiagram.nodes);
-              transformedDiagram.edges = ensureEdgeIds(transformedDiagram.edges);
-
-              const refValidation = validateEdgeReferences(transformedDiagram.nodes, transformedDiagram.edges);
-              if (!refValidation.valid) {
-                const nodeIds = new Set(transformedDiagram.nodes.map((n) => n.id));
-                transformedDiagram.edges = transformedDiagram.edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to));
+            // Forward progress events from orchestrator to the stream
+            const onProgress = (event: any) => {
+              try {
+                safeEnqueue(event);
+              } catch (e) {
+                // Stream might be closed, ignore
               }
+            };
 
-              // Always return a temporary diagram object to avoid autosaving
-              const diagramWithMetadata = {
-                id: `temp_${Date.now()}`,
-                userId: userId,
-                title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-                description: body.prompt,
-                nodes: transformedDiagram.nodes,
-                edges: transformedDiagram.edges,
-                status: "completed" as const,
-                metadata: {
-                  prompt: body.prompt,
-                  options: body.options,
-                  metasop_artifacts: metasopResult.artifacts,
-                  metasop_report: metasopResult.report,
-                  metasop_steps: metasopResult.steps,
-                  is_temporary: true,
-                  is_guest: isGuest,
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              };
+            const orchestrationFn = trackPerformance(
+              async () => runMetaSOPOrchestration(body.prompt, body.options || {}, onProgress),
+              MetricNames.DIAGRAM_GENERATION_TIME,
+              { streaming: "true", isGuest: isGuest ? "true" : "false" }
+            );
+            const orchestrationResult = await orchestrationFn();
 
-              safeEnqueue({
-                type: "orchestration_complete",
-                diagram: diagramWithMetadata,
-                success: true,
-                timestamp: new Date().toISOString()
-              });
-            } catch (transformError: any) {
-              console.error("[Backend] Transformation error:", transformError);
-              safeEnqueue({
-                type: "orchestration_failed",
-                error: transformError.message || "Failed to process results",
-                timestamp: new Date().toISOString()
-              });
-            } finally {
-              safeClose();
-            }
-          } catch (error: any) {
-            clearInterval(heartbeatInterval);
-            if (error.message === "STREAM_CLOSED") {
+            if (!orchestrationResult.success) {
+              const errorMessage = orchestrationResult.steps.find((s: any) => s.error)?.error || "Orchestration failed";
+              safeEnqueue({ type: "error", message: errorMessage });
               safeClose();
               return;
             }
-            console.error("[Backend] Streaming error:", error);
-            try {
-              safeEnqueue({
-                type: "orchestration_failed",
-                error: error.message || "Orchestration failed",
-                timestamp: new Date().toISOString()
-              });
-            } finally {
-              safeClose();
+
+            // Extract title from PM spec or use prompt
+            const pmArtifact = orchestrationResult.artifacts.pm_spec?.content;
+            const title = (pmArtifact as any)?.project_name || body.prompt.split('\n')[0].substring(0, 50) || "New Diagram";
+            const description = (pmArtifact as any)?.summary || body.prompt.substring(0, 200) || "";
+
+            // Create diagram first
+            const createdDiagram = await diagramDb.create(userId!, {
+              prompt: body.prompt,
+              options: body.options,
+            });
+
+            // Update with artifacts metadata
+            const savedDiagram = await diagramDb.update(createdDiagram.id, userId!, {
+              title,
+              description,
+              status: "completed",
+              metadata: {
+                prompt: body.prompt,
+                options: body.options,
+                metasop_artifacts: orchestrationResult.artifacts,
+                generated_at: new Date().toISOString(),
+              },
+            });
+
+            if (isGuest && guestSessionId) {
+              recordGuestDiagramCreation(guestSessionId);
             }
+
+            // Send orchestration_complete event with full diagram data
+            const diagramPayload = {
+              type: "orchestration_complete" as const,
+              diagram: {
+                id: savedDiagram.id,
+                title: savedDiagram.title,
+                description: savedDiagram.description,
+                nodes: [],
+                edges: [],
+                metadata: savedDiagram.metadata,
+              }
+            };
+
+            requestLogger.info("Sending orchestration_complete event", {
+              diagramId: savedDiagram.id,
+            });
+
+            safeEnqueue(diagramPayload);
+            safeClose();
+          } catch (error: any) {
+            requestLogger.error("Diagram generation failed", error, { userId, isGuest });
+            safeEnqueue({ type: "error", message: error.message || "Generation failed" });
+            safeClose();
           }
         },
-        cancel() {
-          isStreamClosed = true;
-          if (heartbeatInterval) clearInterval(heartbeatInterval);
-        }
       });
 
       return new NextResponse(customReadable, {
         headers: {
-          "Content-Type": "application/x-ndjson; charset=utf-8",
-          "Cache-Control": "no-cache, no-transform",
-          "X-Accel-Buffering": "no",
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
         },
       });
     }
 
-    // NON-STREAMING MODE
-    let metasopResult = await runMetaSOPOrchestration(body.prompt, body.options, undefined, body.documents);
-    const transformedDiagram = transformMetaSOPToDiagram(metasopResult);
+    // Non-streaming path
+    requestLogger.info("Starting diagram generation", { userId, isGuest });
 
-    transformedDiagram.nodes = ensureUniqueNodeIds(transformedDiagram.nodes);
-    transformedDiagram.edges = ensureEdgeIds(transformedDiagram.edges);
-
-    const refValidation = validateEdgeReferences(transformedDiagram.nodes, transformedDiagram.edges);
-    if (!refValidation.valid) {
-      const nodeIds = new Set(transformedDiagram.nodes.map((n) => n.id));
-      transformedDiagram.edges = transformedDiagram.edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to));
-    }
-
-    // Always return a temporary diagram object to avoid autosaving
-     const diagramWithMetadata = {
-       id: `temp_${Date.now()}`,
-       userId: userId,
-       title: body.prompt.substring(0, 50) + (body.prompt.length > 50 ? "..." : ""),
-       description: body.prompt,
-       nodes: transformedDiagram.nodes,
-       edges: transformedDiagram.edges,
-       status: "completed" as const,
-       metadata: {
-         prompt: body.prompt,
-         options: body.options,
-         metasop_artifacts: metasopResult.artifacts,
-         metasop_report: metasopResult.report,
-         metasop_steps: metasopResult.steps,
-         is_temporary: true,
-         is_guest: isGuest,
-       },
-       createdAt: new Date().toISOString(),
-       updatedAt: new Date().toISOString(),
-     };
-
-    return createSuccessResponse(
-      { 
-        diagram: diagramWithMetadata, 
-        orchestration: {
-          status: metasopResult.success ? "success" : "failed",
-          artifacts: metasopResult.artifacts,
-          report: metasopResult.report,
-          steps: metasopResult.steps,
-        }
-      },
-      "Diagram generated successfully"
+    const orchestrationFn = trackPerformance(
+      async () => runMetaSOPOrchestration(body.prompt, body.options || {}),
+      MetricNames.DIAGRAM_GENERATION_TIME,
+      { streaming: "false", isGuest: isGuest ? "true" : "false" }
     );
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
-      return createErrorResponse("Unauthorized", 401);
+    const orchestrationResult = await orchestrationFn();
+
+    if (!orchestrationResult.success) {
+      metrics.increment(MetricNames.DIAGRAM_GENERATED, 0, { success: "false" });
+      const errorMessage = orchestrationResult.steps.find(s => s.error)?.error || "Orchestration failed";
+      requestLogger.error("Orchestration failed", new Error(errorMessage), { userId });
+      return createErrorResponse(errorMessage, 500);
     }
-    console.error("Diagram error:", error);
-    return createErrorResponse(error.message || "Failed to generate diagram", 500);
+
+    // Extract title from PM spec or use prompt
+    const pmArtifact = orchestrationResult.artifacts.pm_spec?.content;
+    const title = (pmArtifact as any)?.project_name || body.prompt.split('\n')[0].substring(0, 50) || "New Diagram";
+    const description = (pmArtifact as any)?.summary || body.prompt.substring(0, 200) || "";
+
+    // Create diagram first
+    const createdDiagram = await diagramDb.create(userId!, {
+      prompt: body.prompt,
+      options: body.options,
+    });
+
+    // Update with artifacts metadata
+    const savedDiagram = await diagramDb.update(createdDiagram.id, userId!, {
+      title,
+      description,
+      status: "completed",
+      metadata: {
+        prompt: body.prompt,
+        options: body.options,
+        metasop_artifacts: orchestrationResult.artifacts,
+        generated_at: new Date().toISOString(),
+      },
+    });
+
+    if (isGuest && guestSessionId) {
+      recordGuestDiagramCreation(guestSessionId);
+    }
+
+    metrics.increment(MetricNames.DIAGRAM_GENERATED, 1, { success: "true", isGuest: isGuest ? "true" : "false" });
+    
+    const responseTime = Date.now() - startTime;
+    metrics.timing(MetricNames.API_RESPONSE_TIME, responseTime, { endpoint: "diagrams.generate" });
+
+    const response = createSuccessResponse({
+      id: savedDiagram.id,
+      title: savedDiagram.title,
+      description: savedDiagram.description,
+      nodes: [],
+      edges: [],
+      metadata: savedDiagram.metadata,
+    });
+
+    // Add rate limit headers
+    return addRateLimitHeaders(response, rateLimitResult);
+  } catch (error: any) {
+    metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "unexpected" });
+    requestLogger.error("Unexpected error in diagram generation", error);
+    return createErrorResponse(
+      error.message || "An unexpected error occurred",
+      500
+    );
   }
 }
-
-/**
- * Transform MetaSOP orchestration artifacts to Diagram format
- */
-function transformMetaSOPToDiagram(
-  metasopResult: any
-): { nodes: DiagramNode[]; edges: DiagramEdge[] } {
-  const artifacts = metasopResult.artifacts || {};
-  const nodes: DiagramNode[] = [];
-  const edges: DiagramEdge[] = [];
-
-  const agentNodes = [
-    { id: "agent-pm", label: "Product Manager", type: "agent", role: "pm", pos: { x: 0, y: 0 } },
-    { id: "agent-arch", label: "Architect", type: "agent", role: "arch", pos: { x: 250, y: 0 } },
-    { id: "agent-devops", label: "DevOps", type: "agent", role: "devops", pos: { x: 500, y: 0 } },
-    { id: "agent-security", label: "Security", type: "agent", role: "security", pos: { x: 750, y: 0 } },
-    { id: "agent-eng", label: "Engineer", type: "agent", role: "engineer", pos: { x: 1000, y: 0 } },
-    { id: "agent-ui", label: "UI Designer", type: "agent", role: "ui", pos: { x: 1250, y: 0 } },
-    { id: "agent-qa", label: "QA Engineer", type: "agent", role: "qa", pos: { x: 1500, y: 0 } },
-  ];
-
-  agentNodes.forEach(agent => {
-    nodes.push({
-      id: agent.id,
-      label: agent.label,
-      type: "agent",
-      position: agent.pos,
-      data: { agentRole: agent.role, label: agent.label }
-    });
-  });
-
-  const pmSpec = artifacts.pm_spec?.content || {};
-  if (pmSpec.user_stories && Array.isArray(pmSpec.user_stories)) {
-    const storyId = "artifact-user-stories";
-    nodes.push({
-      id: storyId,
-      type: "user_story",
-      position: { x: 0, y: 250 },
-      label: "User Stories",
-      data: {
-        label: "User Stories",
-        items: pmSpec.user_stories.map((s: any) => ({
-          title: s.title,
-          description: s.description || s.story,
-          priority: s.priority
-        }))
-      }
-    });
-    edges.push({ id: `pm-stories`, from: "agent-pm", to: storyId, label: "defines", animated: true });
-  }
-
-  const archContent = (artifacts.arch_design?.content || {}) as ArchitectBackendArtifact;
-  if (archContent.database_schema?.tables) {
-    const schemaId = "artifact-schema";
-    nodes.push({
-      id: schemaId,
-      type: "database_schema",
-      position: { x: 300, y: 250 },
-      label: "Database Schema",
-      data: { label: "Data Schema", items: archContent.database_schema.tables }
-    });
-    edges.push({ id: `arch-schema`, from: "agent-arch", to: schemaId, label: "specifies", animated: true });
-  }
-
-  if (archContent.apis && Array.isArray(archContent.apis)) {
-    const apisId = "artifact-apis";
-    nodes.push({
-      id: apisId,
-      type: "apis",
-      position: { x: 450, y: 250 },
-      label: "API Definitions",
-      data: { label: "API Endpoints", items: archContent.apis }
-    });
-    edges.push({ id: `arch-apis`, from: "agent-arch", to: apisId, label: "defines", animated: true });
-  }
-
-  return { nodes, edges };
-}
-

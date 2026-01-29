@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![AI Orchestration](https://img.shields.io/badge/AI-Orchestration-orange.svg)](#)
 
 **MetaSOP** is a high-fidelity, multi-agent orchestration platform designed to automate the end-to-end software development lifecycle. By coordinating specialized AI agents—Product Managers, Architects, Engineers, Security Experts, and DevOps—MetaSOP generates synchronized, production-ready system designs and implementation plans from simple natural language requests.
@@ -60,6 +60,21 @@ METASOP_LLM_MODEL=gemini-1.5-pro-latest
 ```bash
 npx tsx scripts/test_cascading_refinement.ts
 ```
+
+### Tests
+
+The project uses [Vitest](https://vitest.dev/) for unit tests. The suite covers the MetaSOP pipeline: orchestrator, agents, services, adapters, and utilities.
+
+```bash
+pnpm test              # Run unit tests once
+pnpm test:watch        # Run tests in watch mode
+pnpm test:coverage     # Run tests with coverage report (lib/, components/, app/api/)
+pnpm test:ui           # Open Vitest UI
+```
+
+Integration tests under `tests/integration/` are excluded from the default run and can be executed separately. Coverage reports are written to `./coverage` (HTML, LCOV, text).
+
+If `pnpm test` fails with **spawn EPERM** in Cursor's terminal (common on Windows), see [Tests: spawn EPERM](docs/TROUBLESHOOTING.md#tests-spawn-eperm-in-cursor-terminal).
 
 ## 📜 License
 

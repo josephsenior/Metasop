@@ -179,6 +179,25 @@ DATABASE_URL="postgresql://postgres.xxxxx:password@aws-0-region.pooler.supabase.
 
 **Note:** This won't work for migrations. Use Direct connection for `db:push`.
 
+## Tests: spawn EPERM in Cursor terminal
+
+If `pnpm test` fails with **Error: spawn EPERM** (common in Cursor's integrated terminal on Windows), the terminal sandbox is blocking child processes that Vitest/esbuild use.
+
+**Options (try in order):**
+
+1. **Use legacy terminal mode (recommended for this workspace)**  
+   The project includes `.vscode/settings.json` with `"experimental.legacyTerminalMode": true` so the integrated terminal may run without the sandbox. Reload the window (Ctrl+Shift+P → "Developer: Reload Window") after opening the project, then run `pnpm test` again.
+
+2. **Run tests from an external terminal**  
+   Open PowerShell or Command Prompt, `cd` to the project root, and run:
+   ```bash
+   pnpm test
+   ```
+   This avoids Cursor's sandbox entirely.
+
+3. **Windows Defender / antivirus**  
+   If EPERM persists, add the project folder to your antivirus exclusions; some tools block Node from spawning subprocesses.
+
 ## Getting Help
 
 If issues persist:

@@ -19,8 +19,6 @@ import {
   setCurrentSession,
   type DebugSession 
 } from "./utils/debug-session";
-import * as fs from "fs";
-import * as path from "path";
 import {
   safeValidateProductManagerArtifact,
   safeValidateArchitectArtifact,
@@ -31,6 +29,7 @@ import {
   safeValidateUIDesignerArtifact,
 } from "./schemas/artifact-validation";
 import type { A2ATask, A2AMessage } from "./a2a-types";
+import { SchemaKnowledgeGraph, RefinementPlanner } from "./knowledge-graph";
 
 /**
  * MetaSOP Orchestrator
@@ -53,10 +52,16 @@ export class MetaSOPOrchestrator {
   private a2aTasks: A2ATask[] = [];
   private a2aMessages: A2AMessage[] = [];
 
+  // Schema Knowledge Graph for surgical refinement
+  private knowledgeGraph: SchemaKnowledgeGraph;
+  private refinementPlanner: RefinementPlanner;
+
   constructor() {
     this.executionService = new ExecutionService();
     this.retryService = new RetryService();
     this.failureHandler = new FailureHandler();
+    this.knowledgeGraph = new SchemaKnowledgeGraph();
+    this.refinementPlanner = new RefinementPlanner(this.knowledgeGraph);
   }
 
   /**
@@ -259,8 +264,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
 
       // Write debug session summary
       if (this.debugSession) {
-        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.step_id);
-        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.step_id);
+        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.id);
+        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.id);
         writeSessionSummary(this.debugSession, {
           success,
           duration,
@@ -268,6 +273,15 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
           agentsFailed: failedAgents,
         });
         setCurrentSession(null);
+      }
+
+      // Build schema knowledge graph for surgical refinement
+      try {
+        await this.knowledgeGraph.build(this.artifacts);
+        const graphStats = this.knowledgeGraph.getStats();
+        logger.info("Schema Knowledge Graph built after orchestration", graphStats);
+      } catch (error: any) {
+        logger.warn("Failed to build knowledge graph, continuing without it", { error: error.message });
       }
 
       return {
@@ -284,8 +298,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
 
       // Write debug session summary for failed run
       if (this.debugSession) {
-        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.step_id);
-        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.step_id);
+        const completedAgents = this.steps.filter(s => s.status === "success").map(s => s.id);
+        const failedAgents = this.steps.filter(s => s.status === "failed").map(s => s.id);
         writeSessionSummary(this.debugSession, {
           success: false,
           duration,
@@ -490,8 +504,113 @@ Do not provide any explanation, just the IDs.
   }
 
   /**
+   * Refine an artifact using schema-aware surgical updates.
+   * Uses the Knowledge Graph to determine exactly what needs to change.
+   */
+  async surgicalRefinement(
+    stepId: string,
+    schemaPath: string,
+    newValue: any,
+    instruction: string,
+    onProgress?: (event: MetaSOPEvent) => void
+  ): Promise<MetaSOPResult> {
+    logger.info("Starting surgical refinement", { stepId, schemaPath, instruction });
+
+    // Ensure knowledge graph is built
+    await this.knowledgeGraph.build(this.artifacts);
+
+    // Create refinement plan using the planner
+    const plan = this.refinementPlanner.createPlan(
+      instruction,
+      stepId,
+      schemaPath,
+      newValue
+    );
+
+    // Validate the plan
+    const validation = this.refinementPlanner.validatePlan(plan);
+    if (!validation.valid) {
+      logger.error("Refinement plan validation failed", { errors: validation.errors });
+      throw new Error(`Invalid refinement plan: ${validation.errors.join(', ')}`);
+    }
+
+    logger.info("Surgical refinement plan created", {
+      impactScore: plan.impactScore,
+      updates: plan.updates.length,
+      unaffected: plan.unaffectedArtifacts,
+    });
+
+    // Execute each surgical update in order
+    for (const update of plan.updates) {
+      logger.info(`Executing surgical update for ${update.artifactType}`, {
+        paths: update.targetPaths,
+        priority: update.priority,
+      });
+
+      const context: AgentContext = {
+        user_request: update.instruction,
+        previous_artifacts: { ...this.artifacts },
+        refinement: {
+          instruction: update.instruction,
+          target_step_id: update.artifactType,
+          previous_artifact_content: this.artifacts[update.artifactType]?.content,
+          isAtomicAction: true,
+          targetPaths: update.targetPaths,
+          context: update.context,
+        },
+      };
+
+      if (this.cacheId) context.cacheId = this.cacheId;
+
+      const agentMap: Record<string, any> = {
+        pm_spec: productManagerAgent,
+        arch_design: architectAgent,
+        devops_infrastructure: devopsAgent,
+        security_architecture: securityAgent,
+        engineer_impl: engineerAgent,
+        ui_design: uiDesignerAgent,
+        qa_verification: qaAgent,
+      };
+
+      const agentFn = agentMap[update.artifactType];
+      if (!agentFn) {
+        logger.warn(`No agent found for ${update.artifactType}, skipping`);
+        continue;
+      }
+
+      // Remove old step if exists
+      this.steps = this.steps.filter(s => s.id !== update.artifactType);
+
+      // Execute the surgical update
+      await this.executeStep(
+        update.artifactType,
+        update.artifactType.replace(/_/g, ' '),
+        agentFn,
+        context,
+        onProgress
+      );
+
+      // Rebuild knowledge graph after each update
+      this.knowledgeGraph.build(this.artifacts);
+    }
+
+    logger.info("Surgical refinement completed successfully");
+
+    return {
+      success: this.steps.every(s => s.status === 'success'),
+      artifacts: { ...this.artifacts } as any,
+      report: this.report,
+      steps: this.steps,
+      graph: this.buildKnowledgeGraph(),
+      a2a: this.getA2AState(),
+    };
+  }
+
+  /**
    * Refine an artifact and then propagate changes to all downstream dependencies.
    * This ensures system-wide consistency after an update.
+   * 
+   * @deprecated Use surgicalRefinement for schema-aware updates
    */
   async cascadeRefinement(
     stepId: string,
@@ -501,6 +620,17 @@ Do not provide any explanation, just the IDs.
     isAtomicAction: boolean = false
   ): Promise<MetaSOPResult> {
     logger.info("Starting cascading refinement", { stepId, instruction, depth, isAtomicAction });
+
+    // If we have a knowledge graph built, try to use surgical refinement
+    if (Object.keys(this.artifacts).length > 0) {
+      try {
+        // Build knowledge graph to analyze dependencies
+        await this.knowledgeGraph.build(this.artifacts);
+        logger.info("Knowledge graph built for cascade refinement");
+      } catch (error: any) {
+        logger.warn("Knowledge graph build failed, continuing with cascade", { error: error.message });
+      }
+    }
 
     // 1. Refine the initial target
     const result = await this.refineArtifact(stepId, instruction, onProgress, depth, isAtomicAction);
@@ -684,12 +814,55 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
       const validationResult = this.validateArtifact(stepId, result.artifact);
 
       if (!validationResult.valid) {
-        logger.warn(`Artifact validation failed for ${stepId}`, {
+        const errorMessage = `Artifact validation failed: ${validationResult.errors.join("; ")}`;
+        
+        // Log full artifact content for debugging
+        const artifactContent = result.artifact?.content || result.artifact;
+        logger.error(`Artifact validation failed for ${stepId}`, {
           errors: validationResult.errors,
-          artifactPreview: JSON.stringify(result.artifact).substring(0, 500),
+          artifactContent: artifactContent, // Full artifact content
+          artifactStringified: JSON.stringify(result.artifact, null, 2), // Full artifact as JSON string
         });
-        // Continue with artifact even if validation fails (lenient approach)
-        // Log warnings but don't fail the step
+        
+        // Save failed artifact to debug session for inspection
+        if (this.debugSession) {
+          const dumpContent = {
+            step_id: stepId,
+            role: role,
+            timestamp: new Date().toISOString(),
+            content: artifactContent,
+            validation_errors: validationResult.errors,
+            full_artifact: result.artifact,
+          };
+          const debugPath = writeDebugArtifact(this.debugSession, stepId, 'artifact', dumpContent);
+          logger.info(`Failed artifact saved to debug session: ${debugPath}`);
+        }
+        
+        // Validation errors block the artifact - fail the step
+        step.status = "failed";
+        step.error = errorMessage;
+        step.timestamp = new Date().toISOString();
+        this.addStepToReport(stepId, role, "failed", undefined, errorMessage);
+        
+        // --- A2A: Mark task failed ---
+        this.updateA2ATask(a2aTask.id, "failed");
+        this.sendA2AMessage(a2aTask.id, agentName, "Orchestrator", `${agentName} failed ${stepId}: ${errorMessage}`);
+        logger.info(`[A2A] ${agentName} failed ${stepId}`, { taskId: a2aTask.id });
+        
+        // Emit failure event with artifact content for UI display
+        if (onProgress) {
+          onProgress({
+            type: "step_failed",
+            step_id: stepId,
+            role: role,
+            error: errorMessage,
+            artifact: result.artifact, // Include artifact in failure event
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Throw error to prevent artifact from being stored
+        throw new Error(errorMessage);
       } else {
         logger.info(`Artifact validation passed for ${stepId}`);
       }
@@ -733,6 +906,18 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
       const analysis = this.failureHandler.analyzeFailure(error, { stepId, role });
       this.failureHandler.logFailure(error, analysis, { stepId, role, attempt: result.attempts });
 
+      // Log full error details including any partial artifact if available
+      logger.error(`Step ${stepId} (${role}) failed after ${result.attempts} attempts`, {
+        error: error.message,
+        stack: error.stack,
+        executionTime: result.executionTime,
+        errorDetails: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        } : error,
+      });
+
       step.status = "failed";
       step.error = error.message;
       step.timestamp = new Date().toISOString();
@@ -743,23 +928,17 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
       this.sendA2AMessage(a2aTask.id, agentName, "Orchestrator", `${agentName} failed ${stepId}: ${error.message}`);
       logger.info(`[A2A] ${agentName} failed ${stepId}`, { taskId: a2aTask.id, error: error.message });
 
-      // Emit failure event
+      // Emit failure event with full error details
       if (onProgress) {
         onProgress({
           type: "step_failed",
           step_id: stepId,
           role: role,
           error: error.message,
+          message: error.message, // Include in message field for compatibility
           timestamp: new Date().toISOString()
         });
       }
-
-      // Log detailed error for debugging
-      logger.error(`Step ${stepId} (${role}) failed after ${result.attempts} attempts`, {
-        error: error.message,
-        stack: error.stack,
-        executionTime: result.executionTime,
-      });
 
       throw error;
     }
@@ -960,5 +1139,30 @@ export async function refineMetaSOPArtifact(
   } else {
     return orchestrator.refineArtifact(stepId, instruction, onProgress, 0, isAtomicAction);
   }
+}
+
+/**
+ * Convenience function for surgical refinement using schema paths
+ */
+export async function surgicallyRefineArtifact(
+  stepId: string,
+  schemaPath: string,
+  newValue: any,
+  instruction: string,
+  previousArtifacts: Record<string, any>,
+  onProgress?: (event: MetaSOPEvent) => void
+): Promise<MetaSOPResult> {
+  const orchestrator = new MetaSOPOrchestrator();
+  // Hydrate orchestrator with previous state
+  (orchestrator as any).artifacts = previousArtifacts;
+  // Create dummy steps for the previous artifacts to maintain consistency
+  (orchestrator as any).steps = Object.keys(previousArtifacts).map(id => ({
+    id,
+    name: id.replace(/_/g, " "),
+    status: "success",
+    role: id.replace(/_impl|_spec|_design/g, "")
+  }));
+
+  return orchestrator.surgicalRefinement(stepId, schemaPath, newValue, instruction, onProgress);
 }
 

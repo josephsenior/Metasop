@@ -130,6 +130,12 @@ ${domainContext ? `\n${domainContext}\n` : ""}
 - **DO NOT** repeat hex codes or add explanations
 - Output ONLY the hex code itself (e.g., "#D97706" - nothing else)
 
+=== REQUIRED DESIGN TOKEN FIELDS - CRITICAL ===
+**The following fields are MANDATORY and MUST be included in every response:**
+1. **design_tokens.colors.background** - REQUIRED: Main background color (6-digit hex, e.g., "#FFFFFF")
+2. **design_tokens.typography.fontSize** - REQUIRED: Font size scale object with at least xs, sm, base, lg (e.g., { "xs": "0.75rem", "sm": "0.875rem", "base": "1rem", "lg": "1.125rem" })
+**These fields are NOT optional. Your response will be rejected if they are missing.**
+
 === ADAPTIVE DEPTH GUIDELINE ===
 - **Simple apps (MVP, utilities)**: Minimal design tokens, 10-15 components, focus on usability
 - **Medium apps (SaaS, dashboards)**: Full design system, 20-30 components, responsive patterns

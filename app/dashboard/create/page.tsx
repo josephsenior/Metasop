@@ -32,7 +32,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Kbd } from "@/components/ui/kbd"
 import { GenerationProgress } from "@/components/ui/GenerationProgress"
 import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
-import type { DiagramNode, DiagramEdge } from "@/types/diagram"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Select,
@@ -117,8 +116,6 @@ function CreateDiagramContent() {
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [currentDiagram, setCurrentDiagram] = useState<{
-    nodes: DiagramNode[]
-    edges: DiagramEdge[]
     id?: string
     title?: string
     description?: string
@@ -380,49 +377,70 @@ function CreateDiagramContent() {
               })
             } else if (event.type === "step_failed") {
               setGenerationSteps(prev => prev.map(s =>
-                s.step_id === event.step_id ? { ...s, status: "failed" } : s
+                s.step_id === event.step_id ? { ...s, status: "failed", error: event.error } : s
               ))
+              
+              // Log full artifact content for debugging root cause analysis
+              if (event.artifact) {
+                const artifactContent = event.artifact.content || event.artifact;
+                console.group(`🔴 [Step Failed] ${event.role} (${event.step_id})`);
+                console.error("Validation Errors:", event.error);
+                console.error("Full Artifact Content:", artifactContent);
+                console.error("Full Artifact (JSON):", JSON.stringify(event.artifact, null, 2));
+                console.groupEnd();
+              } else {
+                console.error(`[Step Failed] ${event.role} (${event.step_id}):`, event.error);
+              }
+              
               toast({
                 title: "Step Failed",
-                description: `Agent ${event.role} encountered an error: ${event.error}`,
-                variant: "destructive"
+                description: `Agent ${event.role} encountered an error: ${event.error}${event.artifact ? ' (Check browser console for full artifact content)' : ''}`,
+                variant: "destructive",
+                duration: 10000, // Show longer so user can read it
               })
             } else if (event.type === "orchestration_complete") {
               console.log("[Frontend] Orchestration complete, diagram:", {
                 id: event.diagram?.id,
-                nodesCount: event.diagram?.nodes?.length || 0,
-                edgesCount: event.diagram?.edges?.length || 0,
-                hasMetadata: !!event.diagram?.metadata
+                hasMetadata: !!event.diagram?.metadata,
+                hasArtifacts: !!event.diagram?.metadata?.metasop_artifacts
               })
 
             const diagram = event.diagram
-            const isGuestDiagram = diagram.metadata?.is_guest || diagram.id.startsWith("guest_") || false
-
-            if (!diagram.nodes || diagram.nodes.length === 0) {
-                console.error("[Frontend] ERROR: Diagram has no nodes!", diagram)
-                toast({
-                  title: "Generation Warning",
-                  description: "Diagram was generated but contains no nodes. Check console for details.",
-                  variant: "destructive"
-                })
-              }
-
-              setCurrentDiagram({
-                nodes: diagram.nodes || [],
-                edges: diagram.edges || [],
-                id: diagram.id,
-                title: diagram.title,
-                description: diagram.description,
-                isGuest: isGuestDiagram,
-                metadata: diagram.metadata,  // Contains metasop_artifacts with all agent data
-              })
-
-              console.log("[Frontend] Diagram set, nodes:", diagram.nodes?.length || 0, "edges:", diagram.edges?.length || 0)
-
+            if (!diagram) {
+              console.error("[Frontend] ERROR: orchestration_complete event missing diagram!", event)
               toast({
-                title: "Diagram generated!",
-                description: "Your architecture diagram has been generated successfully. Don't forget to save it if you want to keep it.",
+                title: "Generation Error",
+                description: "Diagram data was not received. Please try again.",
+                variant: "destructive"
               })
+              return
+            }
+
+            const isGuestDiagram = diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false
+
+            if (!diagram.metadata?.metasop_artifacts) {
+              console.error("[Frontend] ERROR: Diagram has no artifacts!", diagram)
+              toast({
+                title: "Generation Warning",
+                description: "Diagram was generated but contains no artifacts. Check console for details.",
+                variant: "destructive"
+              })
+            }
+
+            setCurrentDiagram({
+              id: diagram.id,
+              title: diagram.title,
+              description: diagram.description,
+              isGuest: isGuestDiagram,
+              metadata: diagram.metadata,  // Contains metasop_artifacts with all agent data
+            })
+
+            console.log("[Frontend] Diagram set, has artifacts:", !!diagram.metadata?.metasop_artifacts)
+
+            toast({
+              title: "Diagram generated!",
+              description: "Your architecture diagram has been generated successfully. Don't forget to save it if you want to keep it.",
+            })
 
               // Automatically mark first steps as success if they weren't matched in stream
               // (Keep existing completion logic)
@@ -472,7 +490,7 @@ function CreateDiagramContent() {
   }
 
   const handleSave = async () => {
-    if (!currentDiagram || !currentDiagram.nodes || currentDiagram.nodes.length === 0) {
+    if (!currentDiagram || !currentDiagram.metadata?.metasop_artifacts) {
       toast({
         title: "No diagram to save",
         description: "Please generate a diagram first",
@@ -487,8 +505,6 @@ function CreateDiagramContent() {
       if (currentDiagram.id && !currentDiagram.id.startsWith("temp_")) {
         // Update existing diagram
         await diagramsApi.update(currentDiagram.id, {
-          nodes: currentDiagram.nodes,
-          edges: currentDiagram.edges,
           title: currentDiagram.title || prompt.substring(0, 50),
           description: currentDiagram.description || prompt,
           metadata: {
@@ -519,10 +535,8 @@ function CreateDiagramContent() {
           },
         })
 
-        // Update with nodes and edges
+        // Update with metadata
         await diagramsApi.update(savedDiagram.id, {
-          nodes: currentDiagram.nodes,
-          edges: currentDiagram.edges,
           title: currentDiagram.title || prompt.substring(0, 50),
           description: currentDiagram.description || prompt,
           metadata: {
@@ -920,7 +934,7 @@ function CreateDiagramContent() {
                         onTabChange={setActiveArtifactTab}
                       />
                     </div>
-                  ) : currentDiagram && (!currentDiagram.nodes || currentDiagram.nodes.length === 0) ? (
+                  ) : currentDiagram && !currentDiagram.metadata?.metasop_artifacts ? (
                     <div className="absolute inset-0 flex items-center justify-center bg-background">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}

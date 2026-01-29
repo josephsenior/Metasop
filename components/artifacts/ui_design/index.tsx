@@ -23,7 +23,6 @@ import {
   Laptop,
   Monitor,
   Zap,
-  FileJson,
   Target,
   Search
 } from "lucide-react"
@@ -675,7 +674,11 @@ export default function UIDesignPanel({
                             <div className="space-y-3">
                               <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/40">
                                 <span className="text-xs font-medium">Compliance Standard</span>
-                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">{(accessibility as any).standard || `WCAG ${accessibility.wcag_level || "AA"}`}</Badge>
+                                {((accessibility as any).standard || accessibility.wcag_level) && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                                    {(accessibility as any).standard || `WCAG ${accessibility.wcag_level}`}
+                                  </Badge>
+                                )}
                               </div>
 
                               {Array.isArray((accessibility as any).guidelines) && (

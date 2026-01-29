@@ -1,8 +1,8 @@
-import { defineConfig } from "vitest/config";
-import path from "path";
-import react from "@vitejs/plugin-react";
+const { defineConfig } = require("vitest/config");
+const path = require("path");
+const react = require("@vitejs/plugin-react");
 
-export default defineConfig({
+module.exports = defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
@@ -13,27 +13,22 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    // Single source of truth: all tests live in tests/ folder
-    include: [
-      "tests/**/*.{test,spec}.{ts,tsx}",
-    ],
+    pool: "threads",
+    maxWorkers: 1,
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
     exclude: [
-      "**/node_modules/**", 
-      "**/dist/**", 
-      "**/.next/**", 
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
       "scripts/**",
-      "tests/integration/**",  // Integration tests run separately
-      "tests/e2e/**",          // E2E tests run separately
+      "tests/integration/**",
+      "tests/e2e/**",
     ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
       reportsDirectory: "./coverage",
-      include: [
-        "lib/**/*.{ts,tsx}",
-        "components/**/*.{ts,tsx}",
-        "app/api/**/*.{ts,tsx}",
-      ],
+      include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "app/api/**/*.{ts,tsx}"],
       exclude: [
         "**/*.d.ts",
         "**/*.config.{ts,tsx}",
@@ -45,18 +40,14 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
       ],
-      // Thresholds for 95% coverage
       thresholds: {
         lines: 95,
         functions: 95,
         branches: 95,
         statements: 95,
       },
-      // Report uncovered lines
       reportOnFailure: true,
-      // Skip full coverage for now, but enforce thresholds
       skipFull: false,
     },
   },
 });
-

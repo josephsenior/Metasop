@@ -134,6 +134,45 @@ export async function createCacheWithLLM(content: string, systemInstruction?: st
 }
 
 /**
+ * Generate text with streaming using LLM
+ */
+export async function generateStreamWithLLM(
+  prompt: string,
+  onChunk: (chunk: string) => void,
+  options?: {
+    temperature?: number;
+    maxTokens?: number;
+    reasoning?: boolean;
+    cacheId?: string;
+    role?: string;
+  }
+): Promise<string> {
+  const provider = getLLMProvider();
+  
+  if (!provider.generateStream) {
+    // Fallback to non-streaming if provider doesn't support streaming
+    const result = await generateWithLLM(prompt, options);
+    // Simulate streaming by chunking the result
+    const chunkSize = 10;
+    for (let i = 0; i < result.length; i += chunkSize) {
+      onChunk(result.slice(i, i + chunkSize));
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    return result;
+  }
+
+  const config = getConfig();
+  return provider.generateStream(prompt, onChunk, {
+    temperature: options?.temperature ?? config.llm.temperature,
+    maxTokens: options?.maxTokens ?? config.llm.maxTokens,
+    model: config.llm.model,
+    reasoning: options?.reasoning,
+    cacheId: options?.cacheId,
+    role: options?.role,
+  });
+}
+
+/**
  * Reset LLM provider instance (useful for testing)
  */
 export function resetLLMProvider(): void {

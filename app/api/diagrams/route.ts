@@ -12,7 +12,6 @@ import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
 export async function GET(request: NextRequest) {
   try {
     let userId: string;
-    let authenticatedUser: any = null;
     
     const guestAuth = await handleGuestAuth(request);
     

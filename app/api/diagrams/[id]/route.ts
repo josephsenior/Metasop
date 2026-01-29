@@ -1,17 +1,14 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
 import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
-import type { UpdateDiagramRequest } from "@/types/diagram";
-import { validateUpdateDiagramRequest } from "@/lib/diagrams/schemas";
 
 /**
  * GET /api/diagrams/[id] - Get a specific diagram
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     let userId: string;
@@ -46,7 +43,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     let userId: string;
@@ -81,7 +78,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     let userId: string;

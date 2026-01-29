@@ -69,7 +69,7 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
                 priority === 'low' ? "text-blue-500 border-blue-500/20 bg-blue-500/5" :
                   "text-amber-500 border-amber-500/20 bg-amber-500/5"
             )}>
-              {priority?.toUpperCase() || 'NORMAL'}
+              {priority?.toUpperCase() || 'MEDIUM'}
             </Badge>
           </div>
           {points && (

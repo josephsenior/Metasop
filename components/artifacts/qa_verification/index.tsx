@@ -114,7 +114,7 @@ function RiskCard({ risk }: { risk: any }) {
           <div className="absolute left-2.5 top-3">
             <Zap className="h-3 w-3 text-amber-500/70" />
           </div>
-          <div className="text-[8px] uppercase font-black text-muted-foreground/40 tracking-[0.1em] mb-1">Mitigation Strategy</div>
+          <div className="text-[8px] uppercase font-black text-muted-foreground/40 tracking-widest mb-1">Mitigation Strategy</div>
           <p className="text-[11px] text-muted-foreground leading-relaxed font-medium italic">
             {risk.mitigation}
           </p>
@@ -171,7 +171,7 @@ export default function QAVerificationPanel({
               </Badge>
               {Object.keys(coverage).length > 0 && (
                 <Badge variant="outline" className="text-[10px] font-mono text-green-600 border-green-500/30 uppercase px-1.5 h-5">
-                  Coverage: {coveragePercent ?? 'N/A'}% {coverageThreshold && `(Goal: ${coverageThreshold}%)`}
+                  Coverage: {coveragePercent !== undefined ? `${coveragePercent}%` : '—'} {coverageThreshold && `(Goal: ${coverageThreshold}%)`}
                 </Badge>
               )}
             </div>
@@ -204,7 +204,7 @@ export default function QAVerificationPanel({
           <StatsCard
             icon={Activity}
             label="Coverage"
-            value={coveragePercent !== undefined ? `${coveragePercent}%` : "N/A"}
+            value={coveragePercent !== undefined ? `${coveragePercent}%` : "—"}
             subValue={coverageThreshold ? `Target: ${coverageThreshold}%` : undefined}
             color="text-emerald-600 dark:text-emerald-400"
             bg="bg-emerald-500/10"
@@ -392,7 +392,7 @@ export default function QAVerificationPanel({
                                   <FileText className="h-3.5 w-3.5" />
                                   <span>Lines</span>
                                 </div>
-                                <span className="font-mono font-bold">{(coverage as any).lines ?? 'N/A'}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).lines !== undefined ? `${(coverage as any).lines}%` : '—'}</span>
                               </div>
                               <Progress value={(coverage as any).lines ?? 0} className="h-1.5" />
                             </div>
@@ -403,7 +403,7 @@ export default function QAVerificationPanel({
                                   <Code2 className="h-3.5 w-3.5" />
                                   <span>Statements</span>
                                 </div>
-                                <span className="font-mono font-bold">{(coverage as any).statements ?? 'N/A'}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).statements !== undefined ? `${(coverage as any).statements}%` : '—'}</span>
                               </div>
                               <Progress value={(coverage as any).statements ?? 0} className="h-1.5" />
                             </div>
@@ -414,7 +414,7 @@ export default function QAVerificationPanel({
                                   <FunctionSquare className="h-3.5 w-3.5" />
                                   <span>Functions</span>
                                 </div>
-                                <span className="font-mono font-bold">{(coverage as any).functions ?? 'N/A'}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).functions !== undefined ? `${(coverage as any).functions}%` : '—'}</span>
                               </div>
                               <Progress value={(coverage as any).functions ?? 0} className="h-1.5" />
                             </div>
@@ -425,7 +425,7 @@ export default function QAVerificationPanel({
                                   <GitBranch className="h-3.5 w-3.5" />
                                   <span>Branches</span>
                                 </div>
-                                <span className="font-mono font-bold">{(coverage as any).branches ?? 'N/A'}%</span>
+                                <span className="font-mono font-bold">{(coverage as any).branches !== undefined ? `${(coverage as any).branches}%` : '—'}</span>
                               </div>
                               <Progress value={(coverage as any).branches ?? 0} className="h-1.5" />
                             </div>

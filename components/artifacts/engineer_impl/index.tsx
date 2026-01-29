@@ -80,7 +80,9 @@ function FileSystemNode({ node, depth = 0 }: { node: any, depth?: number }) {
     )
   }
 
-  const name = node.name || "unnamed"
+  if (!node.name) return null
+  
+  const name = node.name
   const isDir = node.type === 'directory' || node.type === 'folder' || (node.children && Array.isArray(node.children) && node.children.length > 0)
 
   return (
@@ -118,7 +120,9 @@ const generateProjectZip = (node: any, zip: JSZip, path: string = "") => {
     return;
   }
 
-  const name = node.name || "unnamed";
+  if (!node.name) return;
+  
+  const name = node.name;
   const currentPath = path + name;
   const isDir = node.type === 'directory' || node.type === 'folder' || (node.children && Array.isArray(node.children));
 
@@ -232,7 +236,7 @@ export default function EngineerImplPanel({
           <StatsCard
             icon={Database}
             label="State"
-            value={stateManagement?.tool || "N/A"}
+            value={stateManagement?.tool || "—"}
             color="text-pink-600 dark:text-pink-400"
             bg="bg-pink-500/10"
           />

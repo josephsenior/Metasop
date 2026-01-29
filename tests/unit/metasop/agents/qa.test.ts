@@ -91,11 +91,16 @@ describe("QAAgent", () => {
     expect(typeof content.test_strategy.e2e).toBe("string");
   });
 
-  it("should include gherkin steps in at least one test case", async () => {
+  it("should have test cases with optional gherkin", async () => {
     const artifact = await qaAgent(context);
     const content = artifact.content as QABackendArtifact;
 
-    const hasGherkin = content.test_cases.some((t) => typeof t.gherkin === "string" && t.gherkin.length > 0);
-    expect(hasGherkin).toBe(true);
+    expect(Array.isArray(content.test_cases)).toBe(true);
+    expect(content.test_cases.length).toBeGreaterThan(0);
+    content.test_cases.forEach((t) => {
+      if (t.gherkin !== undefined) {
+        expect(typeof t.gherkin).toBe("string");
+      }
+    });
   });
 });

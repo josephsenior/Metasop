@@ -12,6 +12,18 @@ export interface LLMProvider {
     onProgress: (event: any) => void,
     options?: LLMOptions
   ): Promise<T>;
+  /**
+   * Stream text generation token-by-token
+   * @param prompt The input prompt
+   * @param onChunk Callback for each text chunk received
+   * @param options LLM options
+   * @returns The complete generated text
+   */
+  generateStream?(
+    prompt: string,
+    onChunk: (chunk: string) => void,
+    options?: LLMOptions
+  ): Promise<string>;
   createCache?(content: string, systemInstruction?: string, ttlSeconds?: number, model?: string): Promise<string>;
 }
 
@@ -73,6 +85,22 @@ export class MockLLMProvider implements LLMProvider {
     }
 
     return this.generateStructured<T>(prompt, schema);
+  }
+
+  async generateStream(
+    prompt: string,
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
+    // Simulate streaming by chunking the mock response
+    const response = `Mock LLM response for: ${prompt.substring(0, 50)}...`;
+    const chunkSize = 5;
+    
+    for (let i = 0; i < response.length; i += chunkSize) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      onChunk(response.slice(i, i + chunkSize));
+    }
+    
+    return response;
   }
 }
 

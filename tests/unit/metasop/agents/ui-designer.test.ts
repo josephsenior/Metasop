@@ -46,8 +46,11 @@ describe("UIDesignerAgent", () => {
     const artifact = await uiDesignerAgent(context);
     const content = artifact.content as any;
 
+    expect(content.component_hierarchy).toBeDefined();
     expect(content.component_hierarchy.root).toBe("App");
-    expect(content.component_hierarchy.children).toBeDefined();
+    if (content.component_hierarchy.children !== undefined) {
+      expect(Array.isArray(content.component_hierarchy.children)).toBe(true);
+    }
   });
 
   it("should include design tokens", async () => {

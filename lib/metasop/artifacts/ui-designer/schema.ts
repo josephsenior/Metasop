@@ -56,12 +56,13 @@ export const uiDesignerSchema = {
             properties: {
                 colors: {
                     type: "object",
-                    description: "Color palette. Use ONLY 6-digit hex codes (e.g., #FFFFFF).",
+                    required: ["primary", "secondary", "background", "text"], // REQUIRED: These fields must always be present
+                    description: "Color palette. Use ONLY 6-digit hex codes (e.g., #FFFFFF). REQUIRED fields: primary, secondary, background, text.",
                     properties: {
-                        primary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary brand color (6-digit hex, e.g. #0F4C81)" },
-                        secondary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Secondary brand color (6-digit hex)" },
-                        background: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Main background color (6-digit hex)" },
-                        text: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary text color (6-digit hex)" },
+                        primary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "REQUIRED: Primary brand color (6-digit hex, e.g. #0F4C81)" },
+                        secondary: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "REQUIRED: Secondary brand color (6-digit hex)" },
+                        background: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "REQUIRED: Main background color (6-digit hex)" },
+                        text: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "REQUIRED: Primary text color (6-digit hex)" },
                         accent: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Accent/Call-to-action color (6-digit hex)" },
                         error: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Error state color (6-digit hex)" },
                         success: { type: "string", minLength: 7, maxLength: 7, pattern: "^#[0-9A-Fa-f]{6}$", description: "Success state color (6-digit hex)" },
@@ -83,13 +84,14 @@ export const uiDesignerSchema = {
                 },
                 typography: {
                     type: "object",
-                    description: "Typography system. Use raw CSS values only.",
+                    required: ["fontFamily", "fontSize"], // REQUIRED: These fields must always be present
+                    description: "Typography system. Use raw CSS values only. REQUIRED fields: fontFamily, fontSize.",
                     properties: {
-                        fontFamily: { type: "string", maxLength: 100, description: "Primary font family (e.g., 'Inter')." },
+                        fontFamily: { type: "string", maxLength: 100, description: "REQUIRED: Primary font family (e.g., 'Inter')." },
                         headingFont: { type: "string", maxLength: 100, description: "Heading font family." },
                         fontSize: {
                             type: "object",
-                            description: "Font size scale (e.g., '0.875rem').",
+                            description: "REQUIRED: Font size scale (e.g., '0.875rem'). Must include at least xs, sm, base, lg.",
                             properties: {
                                 xs: { type: "string", maxLength: 10 },
                                 sm: { type: "string", maxLength: 10 },

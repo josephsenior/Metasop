@@ -71,7 +71,48 @@ export function ArtifactsPanel({
         onTabChange?.(tab)
     }
 
-    const availableTabs = agentTabs.filter((tab) => tab.id === "summary" || !!artifacts[tab.id as keyof typeof artifacts])
+    // Debug: Log artifacts structure
+    const artifactKeys = artifacts ? Object.keys(artifacts) : []
+    console.log("[ArtifactsPanel] Artifacts received:", {
+      artifactKeys,
+      artifactCount: artifactKeys.length,
+      sampleArtifacts: artifacts ? Object.entries(artifacts).slice(0, 2).map(([k, v]: [string, any]) => ({
+        key: k,
+        type: typeof v,
+        isNull: v === null,
+        hasContent: !!v?.content,
+        isObject: typeof v === 'object' && v !== null,
+        keys: typeof v === 'object' && v !== null ? Object.keys(v) : [],
+        contentKeys: v?.content && typeof v.content === 'object' ? Object.keys(v.content) : []
+      })) : []
+    })
+    
+    const availableTabs = agentTabs.filter((tab) => {
+      if (tab.id === "summary") return true // Always show summary
+      const artifact = artifacts?.[tab.id as keyof typeof artifacts]
+      
+      if (!artifact) {
+        console.log(`[ArtifactsPanel] Tab ${tab.id}: No artifact found`)
+        return false
+      }
+      
+      // Handle MetaSOPArtifact structure (has .content) or direct content
+      const hasContent = artifact?.content !== undefined
+      const hasData = typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0
+      const isValid = hasContent || hasData
+      
+      console.log(`[ArtifactsPanel] Tab ${tab.id}:`, {
+        hasContent,
+        hasData,
+        isValid,
+        artifactType: typeof artifact,
+        artifactKeys: typeof artifact === 'object' && artifact !== null ? Object.keys(artifact) : []
+      })
+      
+      return isValid
+    })
+    
+    console.log("[ArtifactsPanel] Available tabs:", availableTabs.map(t => t.id), "from artifact keys:", artifactKeys)
     const currentTab = agentTabs.find(t => t.id === activeTab) || agentTabs[0]
     const Icon = currentTab.icon
 
@@ -126,7 +167,7 @@ export function ArtifactsPanel({
                 
                 {/* Sidebar Mode Tabs */}
                 {sidebarMode && (
-                    <div className="w-48 shrink-0 border-r border-border bg-muted/10 flex flex-col hidden lg:flex">
+                    <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
                         <div className="p-4 border-b border-border">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
                                 Agent Reports
@@ -135,7 +176,8 @@ export function ArtifactsPanel({
                         <TabsList className="flex flex-col items-stretch w-full h-auto gap-1 bg-transparent p-2 rounded-none overflow-y-auto custom-scrollbar">
                             {agentTabs.map((tab) => {
                                 const TabIcon = tab.icon
-                                const hasData = tab.id === "summary" || tab.id === "documents" || !!artifacts[tab.id as keyof typeof artifacts]
+                                const artifact = artifacts?.[tab.id as keyof typeof artifacts]
+                                const hasData = tab.id === "summary" || tab.id === "documents" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
                                 return (
                                     <TabsTrigger
                                         key={tab.id}
@@ -190,7 +232,8 @@ export function ArtifactsPanel({
                             <TabsList className="flex items-center w-full h-auto gap-0.5 bg-muted/30 p-0.5 rounded-md overflow-x-auto custom-scrollbar">
                                 {agentTabs.map((tab) => {
                                     const TabIcon = tab.icon
-                                    const hasData = tab.id === "summary" || tab.id === "documents" || !!artifacts[tab.id as keyof typeof artifacts]
+                                    const artifact = artifacts?.[tab.id as keyof typeof artifacts]
+                                    const hasData = tab.id === "summary" || tab.id === "documents" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
                                     return (
                                         <TabsTrigger
                                             key={tab.id}
@@ -219,7 +262,7 @@ export function ArtifactsPanel({
                                 >
                                     {(() => {
                                         const artifact = artifacts[activeTab as keyof typeof artifacts]
-                                        if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} />
+                                        if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} onTabChange={setActiveTab} />
                                         if (!artifact) return <div className="text-xs text-muted-foreground p-4">No artifact data available</div>
 
                                         switch (activeTab) {

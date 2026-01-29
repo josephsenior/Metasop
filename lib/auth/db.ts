@@ -3,14 +3,27 @@ import bcrypt from "bcryptjs";
 import type { User } from "@/types/auth";
 
 // Fallback in-memory storage for development when database is unavailable
+// DISABLED in production - database is required
+const isProduction = process.env.NODE_ENV === "production";
 let useInMemoryFallback = false;
 const inMemoryUsers = new Map<string, any>();
 const inMemoryResetTokens = new Map<string, any>();
 
 /**
- * Check if database is available, fallback to in-memory if not
+ * Check if database is available, fallback to in-memory if not (development only)
  */
 async function checkDatabaseConnection(): Promise<boolean> {
+  // In production, database is required - no fallback
+  if (isProduction) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      throw new Error(`Database connection required in production: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  // Development: allow fallback
   if (useInMemoryFallback) return false;
 
   try {

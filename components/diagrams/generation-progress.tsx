@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { CheckCircle2, Loader2, Circle, AlertCircle, Clock } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 
 interface GenerationProgressProps {
@@ -36,22 +36,47 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0)
   const [startTime] = useState(Date.now())
 
-  // Create a map of steps by step_id
-  const stepsMap = new Map(steps.map((step) => [step.step_id, step]))
+  // Memoize step mapping to ensure re-renders when steps change
+  const { orderedSteps, progress } = useMemo(() => {
+    // Create a map of steps by step_id
+    const stepsMap = new Map(steps.map((step) => [step.step_id, step]))
 
-  // Get ordered steps
-  const orderedSteps = agentOrder
-    .filter((stepId) => stepsMap.has(stepId))
-    .map((stepId) => ({
-      stepId,
-      label: agentLabels[stepId] || stepId,
-      status: stepsMap.get(stepId)?.status || "pending",
-    }))
+    // Get ordered steps - ensure all steps from agentOrder are included
+    const ordered = agentOrder.map((stepId) => {
+      const step = stepsMap.get(stepId)
+      return {
+        stepId,
+        label: agentLabels[stepId] || stepId,
+        status: step?.status || "pending",
+      }
+    })
 
-  // Calculate overall progress
-  const completedSteps = orderedSteps.filter((s) => s.status === "success").length
-  const totalSteps = orderedSteps.length
-  const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0
+    // Calculate overall progress
+    // Include running steps as partial progress (50% of their weight)
+    const completedSteps = ordered.filter((s) => s.status === "success").length
+    const runningSteps = ordered.filter((s) => s.status === "running").length
+    const totalSteps = ordered.length
+    // Progress = completed steps (100%) + running steps (50%) / total steps
+    const calculatedProgress = totalSteps > 0 
+      ? ((completedSteps + (runningSteps * 0.5)) / totalSteps) * 100 
+      : 0
+
+    return { orderedSteps: ordered, progress: calculatedProgress }
+  }, [steps])
+
+  // Debug logging - only log when steps actually change
+  useEffect(() => {
+    if (steps.length > 0) {
+      console.log("[GenerationProgress] Steps updated:", {
+        stepsCount: steps.length,
+        steps: steps.map(s => `${s.step_id}:${s.status}`),
+        orderedSteps: orderedSteps.map(s => `${s.stepId}:${s.status}`),
+        completed: orderedSteps.filter(s => s.status === "success").length,
+        running: orderedSteps.filter(s => s.status === "running").length,
+        progress: Math.round(progress)
+      })
+    }
+  }, [steps, orderedSteps, progress])
 
   // Find current step
   const currentStep = orderedSteps.find((s) => s.status === "running")
@@ -71,7 +96,8 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
     return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`
   }
 
-  if (orderedSteps.length === 0) return null
+  // Always show progress bar if steps exist, even if all are pending
+  if (steps.length === 0) return null
 
   return (
     <motion.div
@@ -152,16 +178,19 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
 
       {/* Right: Progress percentage */}
       <div className="flex items-center gap-2 shrink-0">
-        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden relative">
           <motion.div
-            className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
+            className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full absolute top-0 left-0"
+            initial={{ width: "0%" }}
+            animate={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+            transition={{ 
+              duration: 0.3, 
+              ease: "easeOut"
+            }}
           />
         </div>
-        <span className="text-xs font-medium text-muted-foreground w-8">
-          {Math.round(progress)}%
+        <span className="text-xs font-medium text-muted-foreground w-8 tabular-nums min-w-8 text-right">
+          {Math.round(Math.max(0, Math.min(progress, 100)))}%
         </span>
       </div>
     </motion.div>

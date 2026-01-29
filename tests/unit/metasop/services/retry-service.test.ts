@@ -138,11 +138,11 @@ describe("RetryService", () => {
     it("should create default policy with correct values", () => {
       const policy = RetryService.createDefaultPolicy();
 
-      expect(policy.maxRetries).toBe(2);
-      expect(policy.initialDelay).toBe(1000);
-      expect(policy.maxDelay).toBe(30000);
-      expect(policy.backoffMultiplier).toBe(2);
-      expect(policy.jitter).toBe(true);
+      expect(policy.maxRetries).toBe(0);
+      expect(policy.initialDelay).toBe(0);
+      expect(policy.maxDelay).toBe(0);
+      expect(policy.backoffMultiplier).toBe(1);
+      expect(policy.jitter).toBe(false);
     });
   });
 

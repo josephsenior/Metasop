@@ -48,6 +48,7 @@ export const AskQuestionSchema = z.object({
     contextMarkdown: z.string(),
     activeTab: z.string().optional(),
     cacheId: z.string().optional(),
+    conversationHistory: z.string().optional(),
 });
 
 export function validateAskQuestionRequest(data: any) {

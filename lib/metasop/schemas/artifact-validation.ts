@@ -48,7 +48,6 @@ export const ProductManagerArtifactSchema = z.object({
     feasibility: z.enum(["high", "medium", "low"]),
   })),
   ui_multi_section: z.boolean().optional().default(false),
-  ui_sections: z.number().int().min(0).max(20).optional().default(1),
   assumptions: z.array(z.string()),
   out_of_scope: z.array(z.string()),
   swot: z.object({
@@ -197,9 +196,11 @@ const FileNodeSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const RunResultsSchema = z.object({
-  setup_commands: z.array(z.string()).optional(),
-  test_commands: z.array(z.string()).optional(),
-  dev_commands: z.array(z.string()).optional(),
+  setup_commands: z.array(z.string()), // REQUIRED: Setup commands (e.g., 'npm install')
+  test_commands: z.array(z.string()), // REQUIRED: Test commands (e.g., 'npm test')
+  dev_commands: z.array(z.string()), // REQUIRED: Dev commands (e.g., 'npm run dev')
+  build_commands: z.array(z.string()).optional(),
+  notes: z.string().optional(),
 });
 
 const TechnicalDecisionSchema = z.object({
@@ -216,24 +217,33 @@ const EnvironmentVariableSchema = z.object({
 
 export const EngineerArtifactSchema = z.object({
   artifact_path: z.string().min(1, "Artifact path is required"),
-  tests_added: z.boolean().optional(),
-  run_results: RunResultsSchema,
+  run_results: RunResultsSchema, // REQUIRED: Must have setup_commands, test_commands, dev_commands
   files: z.array(FileNodeSchema).optional(),
   file_changes: z.array(FileNodeSchema).optional(),
   components: z.array(FileNodeSchema).optional(),
-  file_structure: FileNodeSchema,
+  file_structure: FileNodeSchema, // REQUIRED: Complete file structure
   implementation_plan: z.string().min(50, "Implementation plan must be at least 50 characters"),
   plan: z.string().min(50, "Plan must be at least 50 characters").optional(),
-  dependencies: z.array(z.string().min(1, "Dependency must not be empty")),
-  technical_decisions: z.array(TechnicalDecisionSchema),
-  environment_variables: z.array(EnvironmentVariableSchema),
-  technical_patterns: z.array(z.string()),
+  phases: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tasks: z.array(z.string()),
+  })).optional(),
+  implementation_plan_phases: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tasks: z.array(z.string()),
+  })).optional(),
+  dependencies: z.array(z.string().min(1, "Dependency must not be empty")), // REQUIRED
+  technical_decisions: z.array(TechnicalDecisionSchema), // REQUIRED
+  environment_variables: z.array(EnvironmentVariableSchema), // REQUIRED
+  technical_patterns: z.array(z.string()), // REQUIRED
   state_management: z.object({
     tool: z.string(),
     strategy: z.string(),
-  }),
-  summary: z.string(),
-  description: z.string(),
+  }), // REQUIRED
+  summary: z.string(), // REQUIRED
+  description: z.string(), // REQUIRED
 });
 
 // ============================================================================
@@ -262,41 +272,50 @@ const PerformanceMetricsSchema = z.object({
 });
 
 export const QAArtifactSchema = z.object({
-  ok: z.boolean(),
+  ok: z.boolean(), // REQUIRED
   test_strategy: z.object({
-    unit: z.string().min(10, "Unit test strategy must be descriptive"),
-    integration: z.string().min(10, "Integration test strategy must be descriptive"),
-    e2e: z.string().min(10, "E2E test strategy must be descriptive"),
+    unit: z.string().min(10, "Unit test strategy must be descriptive"), // REQUIRED
+    integration: z.string().min(10, "Integration test strategy must be descriptive"), // REQUIRED
+    e2e: z.string().min(10, "E2E test strategy must be descriptive"), // REQUIRED
     approach: z.string().optional(),
     types: z.array(z.string()).optional(),
     tools: z.array(z.string()).optional(),
-  }),
+  }), // REQUIRED
   test_cases: z.array(
     z.object({
-      id: z.string().max(10),
-      name: z.string().min(5).max(60),
-      priority: z.enum(["high", "medium", "low"]),
-      expected_result: z.string().min(5).max(100),
+      id: z.string().max(10), // REQUIRED
+      name: z.string().min(5).max(60), // REQUIRED
+      priority: z.enum(["high", "medium", "low"]), // REQUIRED
+      expected_result: z.string().min(5).max(100), // REQUIRED
     })
-  ).min(1, "At least one test case is required"),
+  ).min(1, "At least one test case is required"), // REQUIRED
   security_plan: z.object({
     auth_verification_steps: z.array(z.string()).optional(),
     vulnerability_scan_strategy: z.string().optional(),
-  }),
-  manual_verification_steps: z.array(z.string()),
+  }), // REQUIRED (object must exist, but fields inside are optional)
+  manual_verification_steps: z.array(z.string()), // REQUIRED
   risk_analysis: z.array(
     z.object({
-      risk: z.string(),
-      impact: z.enum(["high", "medium", "low"]),
-      mitigation: z.string(),
+      risk: z.string(), // REQUIRED
+      impact: z.enum(["high", "medium", "low"]), // REQUIRED
+      mitigation: z.string(), // REQUIRED
     })
-  ),
-  summary: z.string(),
-  description: z.string(),
-  coverage: CoverageSchema,
-  performance_metrics: PerformanceMetricsSchema,
-  accessibility_plan: z.string().optional(),
-  manual_uat_plan: z.string().optional(),
+  ), // REQUIRED
+  summary: z.string(), // REQUIRED
+  description: z.string(), // REQUIRED
+  coverage: CoverageSchema, // REQUIRED (can be null/undefined but field must exist)
+  performance_metrics: PerformanceMetricsSchema, // REQUIRED (object must exist, but fields inside are optional)
+  accessibility_plan: z.object({
+    standard: z.string().max(30).optional(),
+    automated_tools: z.array(z.string().max(30)).optional(),
+    manual_checks: z.array(z.string().max(100)).optional(),
+    screen_readers: z.array(z.string().max(20)).optional(),
+  }).optional(),
+  manual_uat_plan: z.object({
+    scenarios: z.array(z.string().max(150)).optional(),
+    acceptance_criteria: z.array(z.string().max(150)).optional(),
+    stakeholders: z.array(z.string().max(50)).optional(),
+  }).optional(),
 });
 
 // ============================================================================
@@ -462,20 +481,20 @@ const ScalingSchema = z.object({
 });
 
 export const DevOpsArtifactSchema = z.object({
-  infrastructure: InfrastructureSchema,
-  cicd: CICDSchema,
-  containerization: ContainerizationSchema,
-  deployment: DeploymentSchema,
-  monitoring: MonitoringSchema,
-  scaling: ScalingSchema,
+  infrastructure: InfrastructureSchema, // REQUIRED
+  cicd: CICDSchema, // REQUIRED
+  containerization: ContainerizationSchema, // REQUIRED
+  deployment: DeploymentSchema, // REQUIRED
+  monitoring: MonitoringSchema, // REQUIRED
+  scaling: ScalingSchema, // REQUIRED
   disaster_recovery: z.object({
-    rpo: z.string(),
-    rto: z.string(),
-    backup_strategy: z.string(),
+    rpo: z.string(), // REQUIRED: Recovery Point Objective
+    rto: z.string(), // REQUIRED: Recovery Time Objective
+    backup_strategy: z.string(), // REQUIRED: Backup strategy description
     failover_plan: z.string().optional(),
-  }),
-  summary: z.string(),
-  description: z.string(),
+  }), // REQUIRED
+  summary: z.string(), // REQUIRED
+  description: z.string(), // REQUIRED
   cloud_provider: z.string().optional(),
   infra_components: z.number().optional(),
 });
@@ -631,7 +650,13 @@ const WebsiteLayoutSchema = z.object({
   pages: z.array(z.object({
     name: z.string(),
     route: z.string(),
-    sections: z.array(z.string()).optional(),
+    sections: z.array(z.union([
+      z.string(), // Simple string section name
+      z.object({
+        name: z.string(),
+        components: z.array(z.string()),
+      })
+    ])).optional(),
   })).min(1, "At least one page is required"),
 });
 
@@ -649,7 +674,7 @@ const DesignTokensSchema = z.object({
   colors: z.object({
     primary: z.string(),
     secondary: z.string(),
-    background: z.string().optional(),
+    background: z.string(), // REQUIRED: Main background color
     text: z.string().optional(),
     accent: z.string().optional(),
     error: z.string().optional(),
@@ -659,7 +684,7 @@ const DesignTokensSchema = z.object({
   spacing: z.record(z.string(), z.string()),
   typography: z.object({
     fontFamily: z.string(),
-    fontSize: z.record(z.string(), z.string()).optional(),
+    fontSize: z.record(z.string(), z.string()), // REQUIRED: Font size scale
     fontWeight: z.record(z.string(), z.string()).optional(),
     lineHeight: z.record(z.string(), z.string()).optional(),
   }),

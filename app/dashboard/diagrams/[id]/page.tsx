@@ -125,6 +125,16 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
       // Load from API (now supports both auth and guest)
       const data = await diagramsApi.getById(resolvedParams.id)
+      
+      // Debug: Log artifact structure
+      console.log("[Diagram View] Loaded diagram:", {
+        id: data.id,
+        hasMetadata: !!data.metadata,
+        hasArtifacts: !!data.metadata?.metasop_artifacts,
+        artifactKeys: data.metadata?.metasop_artifacts ? Object.keys(data.metadata.metasop_artifacts) : [],
+        artifacts: data.metadata?.metasop_artifacts
+      })
+      
       setDiagram(data)
       
       // Check if this is a guest diagram based on ID or metadata
@@ -461,21 +471,25 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                   <Card className="border-border bg-card/80 backdrop-blur-sm overflow-hidden h-full">
                     <CardContent className="p-0 h-full min-h-[600px] max-h-[1000px]">
                       <div className="w-full h-full">
-                        {diagram.metadata?.metasop_artifacts ? (
-                          <ArtifactsPanel
-                            diagramId={diagram.id}
-                            artifacts={diagram.metadata.metasop_artifacts}
-                            className="h-full"
-                            activeTab={activeArtifactTab}
-                            onTabChange={setActiveArtifactTab}
-                            sidebarMode={isLeftPanelOpen}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
-                            <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                            <p>Loading agent artifacts...</p>
-                          </div>
-                        )}
+                        {(() => {
+                          // Handle both nested structures: metadata.metasop_artifacts.metasop_artifacts or metadata.metasop_artifacts
+                          const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+                          return artifacts ? (
+                            <ArtifactsPanel
+                              diagramId={diagram.id}
+                              artifacts={artifacts}
+                              className="h-full"
+                              activeTab={activeArtifactTab}
+                              onTabChange={setActiveArtifactTab}
+                              sidebarMode={isLeftPanelOpen}
+                            />
+                            ) : (
+                            <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
+                              <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                              <p>Loading agent artifacts...</p>
+                            </div>
+                          )
+                        })()}
                       </div>
                     </CardContent>
                   </Card>
@@ -494,12 +508,13 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                           <StatusBadge status={diagram.status as "completed" | "processing" | "failed" | "pending"} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-foreground mb-1">Components</p>
-                          <p className="text-sm text-muted-foreground">{diagram.nodes.length} nodes</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground mb-1">Connections</p>
-                          <p className="text-sm text-muted-foreground">{diagram.edges.length} edges</p>
+                          <p className="text-sm font-medium text-foreground mb-1">Artifacts</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(() => {
+                              const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+                              return artifacts ? Object.keys(artifacts).length : 0
+                            })()} agents
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground mb-1">Created</p>
@@ -531,38 +546,44 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Desktop Chat Panel */}
-             {diagram.metadata?.metasop_artifacts && isChatOpen && (
-               <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
-                <ProjectChatPanel
-                  diagramId={diagram.id}
-                  artifacts={diagram.metadata.metasop_artifacts}
-                  activeTab={activeArtifactTab}
-                  onRefineComplete={handleRefineComplete}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Chat Sheet */}
-          {diagram.metadata?.metasop_artifacts && (
-            <div className="lg:hidden fixed bottom-6 right-6 z-50">
-              <Sheet>
-                <SheetTrigger asChild>
-                   <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
-                     <MessageSquare className="h-6 w-6" />
-                   </Button>
-                 </SheetTrigger>
-                <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+             {(() => {
+               const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+               return artifacts && isChatOpen ? (
+                 <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
                   <ProjectChatPanel
                     diagramId={diagram.id}
-                    artifacts={diagram.metadata.metasop_artifacts}
+                    artifacts={artifacts}
                     activeTab={activeArtifactTab}
                     onRefineComplete={handleRefineComplete}
                   />
-                </SheetContent>
-              </Sheet>
-            </div>
-          )}
+                </div>
+               ) : null
+             })()}
+          </div>
+
+          {/* Mobile Chat Sheet */}
+          {(() => {
+            const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+            return artifacts ? (
+              <div className="lg:hidden fixed bottom-6 right-6 z-50">
+                <Sheet>
+                  <SheetTrigger asChild>
+                     <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
+                       <MessageSquare className="h-6 w-6" />
+                     </Button>
+                   </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+                    <ProjectChatPanel
+                      diagramId={diagram.id}
+                      artifacts={artifacts}
+                      activeTab={activeArtifactTab}
+                      onRefineComplete={handleRefineComplete}
+                    />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            ) : null
+          })()}
 
         </main>
       </div>

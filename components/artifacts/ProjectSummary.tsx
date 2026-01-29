@@ -63,8 +63,24 @@ const item = {
   show: { opacity: 1, y: 0 }
 }
 
-export default function ProjectSummary({ artifacts }: { artifacts: any }) {
-  const availableArtifacts = Object.entries(artifacts).filter(([, data]) => !!data)
+export default function ProjectSummary({ artifacts, onTabChange }: { artifacts: any; onTabChange?: (tab: string) => void }) {
+  // Debug: Log what we receive
+  console.log("[ProjectSummary] Received artifacts:", {
+    artifacts,
+    keys: artifacts ? Object.keys(artifacts) : [],
+    sample: artifacts ? Object.entries(artifacts).slice(0, 1) : []
+  })
+  
+  // Handle both MetaSOPArtifact structure (with .content) and direct content
+  const availableArtifacts = Object.entries(artifacts || {}).filter(([, data]) => {
+    if (!data) return false
+    // Check if it's a MetaSOPArtifact structure (has content property) or direct content
+    const hasContent = data.content !== undefined
+    const hasData = typeof data === 'object' && Object.keys(data).length > 0
+    return hasContent || hasData
+  })
+  
+  console.log("[ProjectSummary] Available artifacts:", availableArtifacts.length, availableArtifacts.map(([k]) => k))
 
   return (
     <div className={cn("h-full flex flex-col p-4", styles.colors.bg)}>
@@ -87,9 +103,22 @@ export default function ProjectSummary({ artifacts }: { artifacts: any }) {
         {availableArtifacts.map(([key, artifact]: [string, any]) => {
           const Icon = agentIcons[key] || FileText
           const colorClass = agentColors[key] || "text-gray-600 bg-gray-500/10 border-gray-200"
-          const data = artifact.content || artifact
-          const summary = data.summary || data.description || "No summary provided."
-          const title = data.title || agentLabels[key]
+          
+          // Extract content: MetaSOPArtifact has .content, otherwise use artifact directly
+          const data = artifact?.content || artifact
+          
+          // Extract summary/description - only use if exists
+          const summary = data?.summary || 
+                         data?.description || 
+                         (typeof data === 'string' ? data.substring(0, 150) : null) ||
+                         (data?.project_name ? `Project: ${data.project_name}` : null)
+          
+          // Extract title - fallback to agent label if no specific title
+          const title = data?.project_name || 
+                       data?.title || 
+                       data?.name ||
+                       agentLabels[key] ||
+                       key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 
           return (
             <motion.div key={key} variants={item}>
@@ -115,12 +144,15 @@ export default function ProjectSummary({ artifacts }: { artifacts: any }) {
                 </CardHeader>
                 <CardContent className="p-4 pt-2 flex-1 flex flex-col">
                   <p className={cn("flex-1 mb-4 line-clamp-3", styles.typography.bodySmall, styles.colors.textMuted)}>
-                    {summary}
+                    {summary || "No summary provided."}
                   </p>
-                  <div className="flex items-center text-[10px] font-medium text-primary/80 group-hover:text-primary transition-colors mt-auto pt-3 border-t border-border/30">
+                  <button
+                    onClick={() => onTabChange?.(key)}
+                    className="flex items-center text-[10px] font-medium text-primary/80 group-hover:text-primary transition-colors mt-auto pt-3 border-t border-border/30 cursor-pointer hover:underline"
+                  >
                     <span className="mr-1">View Details</span>
                     <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                  </div>
+                  </button>
                 </CardContent>
               </Card>
             </motion.div>

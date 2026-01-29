@@ -16,7 +16,7 @@ export async function GET(
     try {
       const user = await getAuthenticatedUser(request);
       userId = user.userId;
-    } catch (authError) {
+    } catch {
       const guestAuth = await handleGuestAuth(request);
       if (guestAuth.isGuest && guestAuth.sessionId) {
         userId = `guest_${guestAuth.sessionId}`;

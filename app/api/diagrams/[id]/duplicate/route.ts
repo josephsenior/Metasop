@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
-import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 
 /**
@@ -16,7 +15,7 @@ export async function POST(
     try {
       const user = await getAuthenticatedUser(request);
       userId = user.userId;
-    } catch (authError) {
+    } catch {
       return createErrorResponse("Unauthorized", 401);
     }
 
