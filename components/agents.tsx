@@ -81,7 +81,7 @@ export function Agents() {
   return (
     <section id="agents" className="py-20 md:py-32 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-b from-transparent via-indigo-500/5 to-transparent pointer-events-none" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto">
@@ -105,7 +105,7 @@ export function Agents() {
               className="group relative overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/20"
             >
               {/* Gradient overlay on hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${agent.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
+              <div className={`absolute inset-0 bg-linear-to-br ${agent.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
 
               <CardHeader className="relative pb-4">
                 <div className={`flex h-14 w-14 items-center justify-center rounded-xl ${agent.iconBg} ${agent.iconColor} mb-4 group-hover:scale-110 transition-transform duration-300`}>

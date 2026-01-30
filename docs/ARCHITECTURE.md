@@ -1,303 +1,449 @@
-# Architecture Documentation
+# MetaSOP Architecture
 
-This document describes the system architecture, including the TypeScript-based full-stack structure and the robust MetaSOP multi-agent system.
+This document provides a comprehensive overview of MetaSOP's architecture, design decisions, and system components.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [System Architecture](#system-architecture)
+- [Core Components](#core-components)
+- [Data Flow](#data-flow)
+- [Design Principles](#design-principles)
+- [Technology Stack](#technology-stack)
+- [Scalability](#scalability)
+
+---
 
 ## Overview
 
-This application uses **TypeScript** for both frontend and backend, creating a unified and consistent architecture. The system includes a MetaSOP multi-agent orchestration system for generating architecture diagrams using AI agents.
+MetaSOP is a multi-agent orchestration platform that automates the software development lifecycle. The system coordinates specialized AI agents to generate synchronized, production-ready artifacts from natural language requests.
 
-## Project Structure
+### Key Architectural Goals
 
-```
-saa-s-landing-page/
-├── app/                          # Next.js App Router
-│   ├── api/                      # Backend API Routes (TypeScript)
-│   │   ├── auth/                 # Authentication routes
-│   │   └── diagrams/             # Diagram routes
-│   │       └── generate/         # MetaSOP generation
-│   ├── dashboard/                # Frontend pages (TypeScript)
-│   ├── login/                    # Authentication pages
-│   └── ...
-│
-├── lib/                          # Shared business logic (TypeScript)
-│   ├── metasop/                  # MetaSOP multi-agent system
-│   │   ├── agents/               # AI agents (PM, Architect, Engineer, UI, QA)
-│   │   ├── services/             # Core services
-│   │   │   ├── retry-service.ts  # Retry with exponential backoff
-│   │   │   ├── execution-service.ts # Execution with timeout
-│   │   │   └── failure-handler.ts   # Error analysis
-│   │   ├── orchestrator.ts       # Main orchestrator
-│   │   ├── config.ts             # Configuration
-│   │   ├── types.ts              # TypeScript types
-│   │   └── utils/                # Utilities (logger, parser)
-│   ├── diagrams/                 # Diagram management
-│   ├── auth/                     # Authentication
-│   └── api/                      # API clients
-│
-├── components/                   # React components (TypeScript)
-│   ├── diagrams/                 # Diagram components
-│   ├── auth/                     # Auth components
-│   └── ui/                       # Reusable UI components
-│
-├── hooks/                        # React Hooks (TypeScript)
-├── types/                        # Shared TypeScript types
-└── prisma/                       # Database schema
-```
+1. **Modularity**: Each component is independent and replaceable
+2. **Scalability**: System can handle multiple concurrent orchestrations
+3. **Extensibility**: Easy to add new agents and features
+4. **Reliability**: Robust error handling and recovery
+5. **Performance**: Optimized for speed and resource efficiency
 
-## Data Flow
+---
 
-### Diagram Generation Flow
+## System Architecture
 
 ```
-1. User Input (Frontend)
-   ↓
-2. POST /api/diagrams/generate
-   ├── Authenticated: Verify JWT & User ID
-   └── Guest: Check rate limits & session ID
-   ↓
-3. MetaSOP Orchestrator (Backend TypeScript)
-   ├── Product Manager Agent
-   ├── Architect Agent
-   ├── Engineer Agent (parallel)
-   ├── UI Designer Agent (parallel)
-   └── QA Agent
-   ↓
-4. Transform to React Flow Diagram
-   ↓
-5. Save to Database (mapped to user or guest session)
-   ↓
-6. Return to Frontend (optional streaming support)
-   ↓
-7. Display with React Flow
+┌─────────────────────────────────────────────────────────────────┐
+│                         User Interface                        │
+│                    (Next.js Web Application)                  │
+└────────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      API Layer                               │
+│              (Next.js API Routes + Middleware)                │
+└────────────────────┬────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Orchestrator                              │
+│         (Coordinates agent execution & workflow)                │
+└─────┬───────────────┬───────────────┬───────────────────┘
+      │               │               │
+      ▼               ▼               ▼
+┌──────────┐    ┌──────────┐    ┌──────────┐
+│ Knowledge│    │Execution │    │ Refinement│
+│  Graph   │    │ Service  │    │ Planner  │
+└──────────┘    └──────────┘    └──────────┘
+      │               │               │
+      └───────────────┴───────────────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │    Agents     │
+              │  (7 Specialized│
+              │   AI Agents)  │
+              └───────┬───────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │  LLM Adapter  │
+              │  (Gemini, etc)│
+              └───────────────┘
 ```
 
-## Technologies
+---
 
-### Frontend
-- **Next.js 14+** (App Router)
-- **React 18+**
-- **TypeScript**
-- **Tailwind CSS**
-- **React Flow** (diagram visualization)
-- **next-themes** (dark mode)
+## Core Components
 
-### Backend
-- **Next.js API Routes** (TypeScript)
-- **MetaSOP Orchestrator** (TypeScript)
-- **JWT** (authentication)
-- **Prisma** (database ORM)
-- **PostgreSQL** (via Supabase/Neon)
+### 1. Orchestrator
 
-### Shared
-- **TypeScript** (shared types)
-- **Axios** (HTTP client)
-- **UUID** (ID generation)
+**Location**: [`lib/metasop/orchestrator.ts`](../lib/metasop/orchestrator.ts)
 
-## MetaSOP Architecture
+The orchestrator is the central coordinator that manages the entire workflow:
 
-### Robust Architecture Features
+**Responsibilities**:
+- Execute agents in the correct order
+- Handle agent dependencies
+- Manage cascading refinement
+- Track progress and emit events
+- Handle errors and retries
 
-The MetaSOP system implements a robust architecture inspired by Forge, with comprehensive error handling, retry logic, timeouts, and parallel execution.
-
-#### 1. Retry Service (`lib/metasop/services/retry-service.ts`)
-
-**Features:**
-- ✅ Retry with exponential backoff
-- ✅ Jitter to prevent thundering herd
-- ✅ Configurable retry policies (default, aggressive, fast)
-- ✅ Detailed attempt logging
-
-**Example:**
+**Key Methods**:
 ```typescript
-const retryService = new RetryService();
-const result = await retryService.executeWithRetry(
-  async () => agentFn(),
-  RetryService.createDefaultPolicy(),
-  { stepId: "pm_spec", role: "Product Manager" }
-);
-```
-
-#### 2. Execution Service (`lib/metasop/services/execution-service.ts`)
-
-**Features:**
-- ✅ Configurable timeout per agent
-- ✅ Integration with retry service
-- ✅ Parallel execution with `Promise.allSettled`
-- ✅ Robust error handling
-- ✅ Performance measurement
-
-**Example:**
-```typescript
-const executionService = new ExecutionService();
-const result = await executionService.executeStep(
-  architectAgent,
-  context,
-  {
-    timeout: 30000,
-    retryPolicy: RetryService.createDefaultPolicy(),
-    stepId: "arch_design",
-    role: "Architect",
-  }
-);
-```
-
-#### 3. Failure Handler (`lib/metasop/services/failure-handler.ts`)
-
-**Features:**
-- ✅ Error type analysis (timeout, network, validation, execution)
-- ✅ Detection of retryable vs non-retryable errors
-- ✅ Structured failure logging
-- ✅ Intelligent error classification
-
-**Error Types:**
-- `TIMEOUT` - Retryable
-- `NETWORK` - Retryable
-- `VALIDATION` - Non-retryable
-- `EXECUTION` - Retryable
-- `UNKNOWN` - Retryable by default
-
-#### 4. Configuration (`lib/metasop/config.ts`)
-
-**Features:**
-- ✅ Per-agent configuration (timeout, retries)
-- ✅ Customizable retry policies
-- ✅ Centralized configuration
-- ✅ Environment variable support
-
-**Example:**
-```typescript
-agentConfigs: {
-  engineer_impl: {
-    stepId: "engineer_impl",
-    timeout: 40000, // 40 seconds
-    retries: 3,
-    retryPolicy: {
-      initialDelay: 1000,
-      maxDelay: 30000,
-      backoffMultiplier: 2,
-      jitter: true,
-    },
-  },
+class Orchestrator {
+  async orchestrate(request: string, options: Options): Promise<MetaSOPResult>
+  async refineArtifact(artifactId: string, instruction: string): Promise<MetaSOPArtifact>
+  async getProgress(sessionId: string): Promise<Progress>
 }
 ```
 
-### Orchestrator Features
+### 2. Knowledge Graph
 
-1. **Sequential or Parallel Execution**
-   - Configurable via `config.performance.parallelExecution`
-   - Parallel execution for Engineer + UI Designer
-   - Configurable concurrency limit
+**Location**: [`lib/metasop/knowledge-graph/`](../lib/metasop/knowledge-graph/)
 
-2. **Robust Error Handling**
-   - Automatic error analysis
-   - Intelligent retry based on error type
-   - Structured logging
+The knowledge graph tracks dependencies between artifacts:
 
-3. **Configurable Timeouts**
-   - Per-agent timeout
-   - Global default timeout
-   - Timeout management with retry
+**Responsibilities**:
+- Store artifact relationships
+- Query dependencies
+- Calculate impact of changes
+- Plan refinement updates
 
-4. **Structured Logging**
-   - Log levels (debug, info, warn, error)
-   - Complete context (stepId, role, duration, attempts)
-   - Can be disabled in production
+**Key Components**:
+- `SchemaKnowledgeGraph` - Main graph implementation
+- `RefinementPlanner` - Plans surgical updates
+- `SchemaNode` - Represents artifact properties
 
-### Execution Flow
+### 3. Execution Service
+
+**Location**: [`lib/metasop/services/execution-service.ts`](../lib/metasop/services/execution-service.ts)
+
+Handles agent execution with timeout and retry logic:
+
+**Responsibilities**:
+- Execute agents with timeout protection
+- Implement retry policies
+- Handle errors gracefully
+- Track execution metrics
+
+**Key Features**:
+- Configurable timeouts per agent
+- Exponential backoff for retries
+- Detailed error reporting
+- Execution time tracking
+
+### 4. Agents
+
+**Location**: [`lib/metasop/agents/`](../lib/metasop/agents/)
+
+Specialized AI agents for different roles:
+
+| Agent | Responsibility | Output |
+|--------|---------------|---------|
+| Product Manager | User stories, acceptance criteria | PM Spec |
+| Architect | API contracts, database schemas | Arch Design |
+| Security | Threat modeling, security controls | Security Architecture |
+| DevOps | CI/CD pipelines, infrastructure | DevOps Infrastructure |
+| Engineer | File structures, implementation plans | Engineer Implementation |
+| UI Designer | Design tokens, components | UI Design |
+| QA | Test strategies, test cases | QA Verification |
+
+### 5. LLM Adapter
+
+**Location**: [`lib/metasop/adapters/`](../lib/metasop/adapters/)
+
+Abstracts LLM provider interactions:
+
+**Responsibilities**:
+- Provide unified interface for different LLMs
+- Handle context caching
+- Manage rate limiting
+- Format requests and responses
+
+**Supported Providers**:
+- Google Gemini
+- Vercel AI SDK
+- Token Factory (Llama 3.1)
+
+### 6. Refinement System
+
+**Location**: [`lib/metasop/utils/refinement-helper.ts`](../lib/metasop/utils/refinement-helper.ts)
+
+Implements cascading refinement:
+
+**Responsibilities**:
+- Parse user refinement requests
+- Calculate affected artifacts
+- Generate refinement prompts
+- Execute refinement updates
+
+**Key Features**:
+- Surgical updates (target specific paths)
+- Cascading changes (propagate to dependents)
+- Atomic actions (single property updates)
+- Context-aware (includes upstream changes)
+
+---
+
+## Data Flow
+
+### Orchestration Flow
 
 ```
-1. Orchestrator.run()
-   ↓
-2. For each step:
-   ├─ Check if agent is enabled
-   ├─ Create step tracking
-   ├─ ExecutionService.executeStep()
-   │  ├─ RetryService.executeWithRetry()
-   │  │  ├─ Attempt 1
-   │  │  ├─ If failure → Exponential backoff
-   │  │  ├─ Attempt 2
-   │  │  └─ ...
-   │  └─ Timeout wrapper
-   ├─ FailureHandler.analyzeFailure()
-   └─ Structured logging
-   ↓
-3. Final result with all artifacts
+User Request
+    │
+    ▼
+Parse Request
+    │
+    ▼
+Create Agent Context
+    │
+    ▼
+Execute PM Agent
+    │
+    ▼
+Store Artifact in Knowledge Graph
+    │
+    ▼
+Execute Architect Agent (with PM artifact)
+    │
+    ▼
+Store Artifact in Knowledge Graph
+    │
+    ▼
+Execute Security Agent (with Architect artifact)
+    │
+    ▼
+... (continue for all agents)
+    │
+    ▼
+Return Complete Result
 ```
 
-### Agent Execution Order
+### Refinement Flow
 
-1. **Product Manager** → Generates user stories and requirements
-2. **Architect** → Designs architecture based on PM specs
-3. **Engineer** + **UI Designer** → Run in parallel
-4. **QA** → Generates test plans based on all previous artifacts
-
-## Environment Configuration
-
-```env
-# Timeouts and retries
-METASOP_AGENT_TIMEOUT=30000
-METASOP_AGENT_RETRIES=2
-
-# LLM Configuration
-METASOP_LLM_PROVIDER=mock
-METASOP_LLM_MODEL=default
-METASOP_LLM_API_KEY=your-key-here
+```
+User Refinement Request
+    │
+    ▼
+Parse Request (identify target artifact and changes)
+    │
+    ▼
+Query Knowledge Graph (find dependents)
+    │
+    ▼
+Create Refinement Plan
+    │
+    ▼
+Execute Target Agent Update
+    │
+    ▼
+Propagate Changes to Dependents
+    │
+    ▼
+Update Knowledge Graph
+    │
+    ▼
+Return Updated Artifacts
 ```
 
-## Advantages of This Architecture
+---
 
-1. **Robustness**: Retry, timeout, error handling
-2. **Flexibility**: Per-agent configuration
-3. **Observability**: Complete structured logging
-4. **Performance**: Configurable parallel execution
-5. **Maintainability**: Separated, testable services
-6. **Type Safety**: Shared types between frontend and backend
-7. **Unified Stack**: Single language for entire project
-8. **Productivity**: Autocompletion and refactoring facilitated
+## Design Principles
 
-## Adding New Agents
+### 1. Separation of Concerns
 
-1. Create `lib/metasop/agents/my-agent.ts`
-2. Implement the agent function following the `AgentFunction` type
-3. Add the agent to the orchestrator in `lib/metasop/orchestrator.ts`
+Each component has a single, well-defined responsibility:
 
-## Development
+- **Orchestrator**: Workflow coordination
+- **Knowledge Graph**: Dependency management
+- **Execution Service**: Agent execution
+- **Agents**: Domain-specific logic
+- **Adapters**: LLM abstraction
 
-### Start the project
+### 2. Dependency Injection
 
-```bash
-npm run dev
-# or
-pnpm dev
+Components receive dependencies through constructors:
+
+```typescript
+class Orchestrator {
+  constructor(
+    private knowledgeGraph: SchemaKnowledgeGraph,
+    private executionService: ExecutionService,
+    private refinementPlanner: RefinementPlanner
+  ) {}
+}
 ```
 
-### Agent Structure
+### 3. Event-Driven Architecture
 
-Each agent is a TypeScript function that:
-1. Receives a context (user request, previous artifacts)
-2. Generates a structured artifact
-3. Returns a `MetaSOPArtifact`
+Components communicate through events:
 
-## Next Steps
+```typescript
+onProgress({
+  type: "step_complete",
+  step_id: "arch_design",
+  artifact: {...}
+})
+```
 
-### Short Term
-- [ ] Improve diagram generation
-- [ ] Add unit tests
-- [ ] Enhance error handling
+### 4. Immutable Data
 
-### Medium Term
-- [ ] Integrate real LLMs (OpenAI, Anthropic)
-- [ ] Add persistent database
-- [ ] Implement real-time streaming
+Artifacts are immutable - updates create new versions:
 
-### Long Term
-- [ ] Optimize performance
-- [ ] Add caching
-- [ ] Horizontal scaling
+```typescript
+const updatedArtifact = {
+  ...originalArtifact,
+  content: newContent
+}
+```
 
-## Related Documentation
+### 5. Type Safety
 
-- [INTEGRATION-METASOP.md](./INTEGRATION-METASOP.md) - MetaSOP integration details
-- [TESTING.md](./TESTING.md) - Testing documentation
-- [MIGRATION-GUIDE.md](./MIGRATION-GUIDE.md) - Future migration considerations
+Strong TypeScript typing throughout:
 
+```typescript
+interface MetaSOPArtifact {
+  step_id: string;
+  role: string;
+  content: BackendArtifactData;
+  timestamp: string;
+}
+```
+
+---
+
+## Technology Stack
+
+### Frontend
+- **Next.js 16** - React framework
+- **React 19** - UI library
+- **TypeScript 5** - Type safety
+- **Tailwind CSS 4** - Styling
+- **Radix UI** - Component library
+
+### Backend
+- **Next.js API Routes** - Serverless API
+- **Prisma** - Database ORM
+- **Zod** - Schema validation
+- **Vitest** - Testing framework
+
+### AI/ML
+- **Google Gemini** - Primary LLM
+- **Vercel AI SDK** - AI utilities
+- **Context Caching** - Performance optimization
+
+### Infrastructure
+- **Node.js 18+** - Runtime
+- **pnpm** - Package manager
+- **GitHub Actions** - CI/CD
+
+---
+
+## Scalability
+
+### Horizontal Scaling
+
+The system can scale horizontally by:
+
+1. **Multiple Orchestrator Instances**: Run multiple orchestrators behind a load balancer
+2. **Stateless Design**: Orchestrators don't maintain state between requests
+3. **Database Backing**: Knowledge graph stored in database for shared access
+
+### Vertical Scaling
+
+Performance optimizations:
+
+1. **Context Caching**: Reuse LLM context across requests
+2. **Parallel Execution**: Run independent agents in parallel
+3. **Lazy Loading**: Load agents only when needed
+4. **Connection Pooling**: Reuse database connections
+
+### Caching Strategy
+
+```
+┌─────────────┐
+│   Request   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Cache     │ ◄─── Hit? Return cached result
+└──────┬──────┘
+       │ Miss
+       ▼
+┌─────────────┐
+│  Execute    │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Cache     │ ◄─── Store result
+└─────────────┘
+```
+
+---
+
+## Security Considerations
+
+### Input Validation
+- All user inputs validated with Zod schemas
+- Sanitization of user-generated content
+- Type checking prevents injection attacks
+
+### API Security
+- Rate limiting on all endpoints
+- CORS configuration
+- Secure HTTP headers
+- JWT token validation
+
+### Data Protection
+- Environment variables for sensitive data
+- No hardcoded credentials
+- Encrypted database connections
+- Secure session management
+
+---
+
+## Monitoring & Observability
+
+### Logging
+- Structured logging with context
+- Log levels: debug, info, warn, error
+- Request/response logging
+- Error stack traces
+
+### Metrics
+- Agent execution time
+- Success/failure rates
+- Cache hit rates
+- Resource usage
+
+### Tracing
+- Request tracing across components
+- Distributed tracing support
+- Performance profiling
+
+---
+
+## Future Enhancements
+
+### Planned Improvements
+
+1. **Streaming Responses**: Real-time agent output
+2. **Advanced Caching**: Multi-level caching strategy
+3. **Parallel Execution**: Run independent agents concurrently
+4. **Plugin System**: Extensible architecture for custom agents
+5. **Event Sourcing**: Immutable event log for audit trails
+
+### Research Areas
+
+1. **Self-Optimizing Agents**: Agents that learn from past executions
+2. **Cross-Project Learning**: Share knowledge across projects
+3. **Predictive Caching**: Pre-cache likely requests
+4. **Adaptive Timeouts**: Dynamic timeout based on complexity
+
+---
+
+**Last Updated**: January 2025

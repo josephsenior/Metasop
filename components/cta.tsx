@@ -7,7 +7,7 @@ export function CTA() {
   return (
     <section className="relative py-12 md:py-16 bg-secondary/50 dark:bg-secondary/30 text-foreground overflow-hidden border-y border-border/50">
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-cyan-500/5 to-purple-500/5 dark:from-blue-500/10 dark:via-cyan-500/10 dark:to-purple-500/10" />
+      <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 via-cyan-500/5 to-purple-500/5 dark:from-blue-500/10 dark:via-cyan-500/10 dark:to-purple-500/10" />
       
       {/* Decorative elements */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.08),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.12),transparent_50%)]" />

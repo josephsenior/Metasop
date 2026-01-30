@@ -928,6 +928,26 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
       this.sendA2AMessage(a2aTask.id, agentName, "Orchestrator", `${agentName} failed ${stepId}: ${error.message}`);
       logger.info(`[A2A] ${agentName} failed ${stepId}`, { taskId: a2aTask.id, error: error.message });
 
+      // DEBUG: Write failed agent response to debug session
+      if (this.debugSession) {
+        const failedResponse = {
+          step_id: stepId,
+          role: role,
+          timestamp: new Date().toISOString(),
+          error: {
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
+          },
+          executionTime: result.executionTime,
+          attempts: result.attempts,
+          // Include any partial response data if available
+          partialResult: result.artifact || null,
+        };
+        const debugPath = writeDebugArtifact(this.debugSession, stepId, 'error', failedResponse);
+        logger.info(`Failed agent response saved to debug session: ${debugPath}`);
+      }
+
       // Emit failure event with full error details
       if (onProgress) {
         onProgress({

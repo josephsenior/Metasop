@@ -1,233 +1,644 @@
-# API Authentication Endpoints
+# MetaSOP API Reference
 
-Ce document décrit les endpoints d'authentification implémentés dans l'application.
+This document provides a comprehensive reference for the MetaSOP API.
 
-## Configuration
+---
 
-Les variables d'environnement suivantes sont nécessaires (définies dans `.env.local`) :
+## Table of Contents
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=7d
+- [Overview](#overview)
+- [Authentication](#authentication)
+- [Base URL](#base-url)
+- [Endpoints](#endpoints)
+- [Data Models](#data-models)
+- [Error Handling](#error-handling)
+- [Rate Limiting](#rate-limiting)
+
+---
+
+## Overview
+
+The MetaSOP API provides programmatic access to the multi-agent orchestration platform. All endpoints are RESTful and return JSON responses.
+
+### Features
+
+- Create and manage diagrams
+- Execute orchestrations
+- Refine artifacts
+- Query progress
+- Export results
+
+---
+
+## Authentication
+
+MetaSOP uses NextAuth.js for authentication. Most endpoints require authentication.
+
+### Getting an API Key
+
+1. Sign up at [metasop.dev](https://metasop.dev)
+2. Go to Settings > API Keys
+3. Generate a new API key
+4. Include the key in the `Authorization` header
+
+### Using the API Key
+
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.metasop.dev/v1/diagrams
 ```
+
+### Guest Access
+
+Some endpoints support guest access without authentication:
+
+- `POST /api/diagrams/generate` - Limited diagram generation
+- `GET /api/health` - Health check
+
+---
+
+## Base URL
+
+```
+Production: https://api.metasop.dev/v1
+Development: http://localhost:3000/api
+```
+
+---
 
 ## Endpoints
 
-### POST /api/auth/register
+### Diagrams
 
-Crée un nouveau compte utilisateur.
+#### Create Diagram
 
-**Request Body:**
-```json
+```http
+POST /api/diagrams
+```
+
+Creates a new diagram and starts orchestration.
+
+**Request Body**:
+
+```typescript
 {
-  "email": "user@example.com",
-  "username": "johndoe",
-  "name": "John Doe",
-  "password": "password123",
-  "confirm_password": "password123"
+  title: string;
+  description: string;
+  userRequest: string;
+  options?: {
+    includeStateManagement?: boolean;
+    includeAPIs?: boolean;
+    includeDatabase?: boolean;
+    model?: string;
+    reasoning?: boolean;
+  };
 }
 ```
 
-**Response (200):**
-```json
+**Response**:
+
+```typescript
 {
-  "status": "success",
-  "data": {
-    "token": "jwt_token_here",
-    "user": {
-      "id": "user_123",
-      "email": "user@example.com",
-      "username": "johndoe",
-      "name": "John Doe",
-      "role": "user",
-      "email_verified": false,
-      "is_active": true,
-      "created_at": "2024-01-01T00:00:00.000Z",
-      "updated_at": "2024-01-01T00:00:00.000Z",
-      "last_login": null
-    },
-    "expires_in": 604800
-  },
-  "message": "User registered successfully"
+  id: string;
+  title: string;
+  description: string;
+  status: "pending" | "running" | "completed" | "failed";
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
-### POST /api/auth/login
+**Example**:
 
-Connecte un utilisateur existant.
+```bash
+curl -X POST https://api.metasop.dev/v1/diagrams \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "E-commerce Platform",
+    "description": "Full-stack e-commerce application",
+    "userRequest": "Build a modern e-commerce platform with user authentication, product catalog, shopping cart, and payment processing"
+  }'
+```
 
-**Request Body:**
-```json
+#### Get Diagram
+
+```http
+GET /api/diagrams/:id
+```
+
+Retrieves a specific diagram by ID.
+
+**Response**:
+
+```typescript
 {
-  "email": "user@example.com",
-  "password": "password123"
+  id: string;
+  title: string;
+  description: string;
+  status: "pending" | "running" | "completed" | "failed";
+  artifacts: {
+    pm_spec?: MetaSOPArtifact;
+    arch_design?: MetaSOPArtifact;
+    devops_infrastructure?: MetaSOPArtifact;
+    security_architecture?: MetaSOPArtifact;
+    engineer_impl?: MetaSOPArtifact;
+    ui_design?: MetaSOPArtifact;
+    qa_verification?: MetaSOPArtifact;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
-**Response (200):**
-```json
+#### List Diagrams
+
+```http
+GET /api/diagrams
+```
+
+Lists all diagrams for the authenticated user.
+
+**Query Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|-------|---------|-------------|
+| `page` | number | 1 | Page number |
+| `limit` | number | 20 | Items per page |
+| `status` | string | - | Filter by status |
+
+**Response**:
+
+```typescript
 {
-  "status": "success",
-  "data": {
-    "token": "jwt_token_here",
-    "user": { /* user object */ },
-    "expires_in": 604800
-  },
-  "message": "Login successful"
+  diagrams: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
 }
 ```
 
-### POST /api/auth/logout
+#### Update Diagram
 
-Déconnecte l'utilisateur (géré principalement côté client).
-
-**Headers:**
-```
-Authorization: Bearer <token>
+```http
+PUT /api/diagrams/:id
 ```
 
-**Response (200):**
-```json
+Updates diagram metadata.
+
+**Request Body**:
+
+```typescript
 {
-  "status": "success",
-  "message": "Logged out successfully"
+  title?: string;
+  description?: string;
 }
 ```
 
-### GET /api/auth/me
+#### Delete Diagram
 
-Récupère les informations de l'utilisateur actuellement connecté.
-
-**Headers:**
-```
-Authorization: Bearer <token>
+```http
+DELETE /api/diagrams/:id
 ```
 
-**Response (200):**
-```json
+Deletes a diagram.
+
+#### Duplicate Diagram
+
+```http
+POST /api/diagrams/:id/duplicate
+```
+
+Creates a copy of an existing diagram.
+
+**Response**:
+
+```typescript
 {
-  "status": "success",
-  "data": {
-    "user": { /* user object */ }
+  id: string;
+  title: string;
+  description: string;
+  status: "pending";
+  createdAt: string;
+}
+```
+
+#### Export Diagram
+
+```http
+GET /api/diagrams/:id/export
+```
+
+Exports diagram in specified format.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|-------|-----------|-------------|
+| `format` | string | Yes | Export format: `json`, `pdf`, `markdown` |
+
+**Response**: File download
+
+---
+
+### Orchestration
+
+#### Start Orchestration
+
+```http
+POST /api/diagrams/:id/orchestration
+```
+
+Starts orchestration for a diagram.
+
+**Response**:
+
+```typescript
+{
+  sessionId: string;
+  status: "running";
+  startedAt: string;
+}
+```
+
+#### Poll Progress
+
+```http
+GET /api/diagrams/:id/orchestration/poll
+```
+
+Polls orchestration progress.
+
+**Response**:
+
+```typescript
+{
+  sessionId: string;
+  status: "running" | "completed" | "failed";
+  progress: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
+  currentStep?: {
+    stepId: string;
+    role: string;
+    status: string;
+  };
+  events: MetaSOPEvent[];
+}
+```
+
+---
+
+### Refinement
+
+#### Refine Artifact
+
+```http
+POST /api/diagrams/refine
+```
+
+Refines a specific artifact.
+
+**Request Body**:
+
+```typescript
+{
+  diagramId: string;
+  targetStepId: string;
+  instruction: string;
+  isAtomicAction?: boolean;
+  targetPaths?: string[];
+  context?: {
+    upstreamChange: string;
+    reason: string;
+    referenceValues?: Record<string, any>;
+  };
+}
+```
+
+**Response**:
+
+```typescript
+{
+  updatedArtifacts: {
+    [stepId: string]: MetaSOPArtifact;
+  };
+  affectedSteps: string[];
+}
+```
+
+#### Ask Question
+
+```http
+POST /api/diagrams/ask
+```
+
+Asks a question about a diagram.
+
+**Request Body**:
+
+```typescript
+{
+  diagramId: string;
+  question: string;
+}
+```
+
+**Response**:
+
+```typescript
+{
+  answer: string;
+  relevantArtifacts: string[];
+  confidence: number;
+}
+```
+
+---
+
+### Health
+
+#### Health Check
+
+```http
+GET /api/health
+```
+
+Checks API health status.
+
+**Response**:
+
+```typescript
+{
+  status: "healthy" | "degraded" | "unhealthy";
+  version: string;
+  timestamp: string;
+  services: {
+    database: "healthy" | "unhealthy";
+    llm: "healthy" | "unhealthy";
+    cache: "healthy" | "unhealthy";
+  };
+}
+```
+
+---
+
+## Data Models
+
+### MetaSOPArtifact
+
+```typescript
+interface MetaSOPArtifact {
+  step_id: string;
+  role: string;
+  content: BackendArtifactData;
+  timestamp: string;
+}
+```
+
+### MetaSOPEvent
+
+```typescript
+interface MetaSOPEvent {
+  type: "step_start" | "step_thought" | "step_partial_artifact" | 
+         "step_complete" | "step_failed" | "orchestration_complete" | 
+         "orchestration_failed" | "agent_progress";
+  step_id?: string;
+  role?: string;
+  artifact?: MetaSOPArtifact;
+  thought?: string;
+  partial_content?: any;
+  error?: string;
+  status?: string;
+  message?: string;
+  timestamp: string;
+}
+```
+
+### BackendArtifactData
+
+```typescript
+type BackendArtifactData =
+  | ArchitectBackendArtifact
+  | ProductManagerBackendArtifact
+  | EngineerBackendArtifact
+  | QABackendArtifact
+  | DevOpsBackendArtifact
+  | SecurityBackendArtifact
+  | UIDesignerBackendArtifact;
+```
+
+---
+
+## Error Handling
+
+All errors follow a consistent format:
+
+```typescript
+{
+  error: {
+    code: string;
+    message: string;
+    details?: any;
   }
 }
 ```
 
-### POST /api/auth/refresh
+### Error Codes
 
-Rafraîchit le token d'authentification.
+| Code | HTTP Status | Description |
+|-------|-------------|-------------|
+| `UNAUTHORIZED` | 401 | Invalid or missing API key |
+| `FORBIDDEN` | 403 | Insufficient permissions |
+| `NOT_FOUND` | 404 | Resource not found |
+| `VALIDATION_ERROR` | 400 | Invalid request data |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `INTERNAL_ERROR` | 500 | Server error |
+| `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+### Example Error Response
 
-**Response (200):**
 ```json
 {
-  "status": "success",
-  "data": {
-    "token": "new_jwt_token_here",
-    "expires_in": 604800
-  }
-}
-```
-
-### POST /api/auth/forgot-password
-
-Envoie un email de réinitialisation de mot de passe.
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-**Response (200):**
-```json
-{
-  "status": "success",
-  "message": "If an account with that email exists, a password reset link has been sent."
-}
-```
-
-**Note:** En mode développement, le token de réinitialisation est affiché dans la console.
-
-### POST /api/auth/reset-password
-
-Réinitialise le mot de passe avec un token valide.
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "reset_token": "reset_token_here",
-  "new_password": "newpassword123",
-  "confirm_password": "newpassword123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "status": "success",
-  "message": "Password has been reset successfully"
-}
-```
-
-## Diagram Endpoints
-
-### POST /api/diagrams/generate
-
-Generates a system architecture diagram using the MetaSOP multi-agent orchestrator.
-
-**Authentication:** Optional (Supports Guest sessions)
-
-**Query Parameters:**
-- `stream` (boolean, optional): If `true`, enables SSE streaming of agent thoughts and progress.
-
-**Request Body:**
-```json
-{
-  "prompt": "Create a microservices architecture for an e-commerce platform",
-  "options": {
-    "model": "gemini-3-flash-preview",
-    "temperature": 0.2
-  }
-}
-```
-
-**Response (200 - Non-streaming):**
-```json
-{
-  "status": "success",
-  "data": {
-    "id": "diag_123",
-    "title": "E-commerce Platform Architecture",
-    "nodes": [...],
-    "edges": [...],
-    "metadata": {
-      "agents_involved": ["PM", "Architect", "Engineer", "Security", "QA"],
-      "token_usage": 4500
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid user request",
+    "details": {
+      "field": "userRequest",
+      "issue": "Must be at least 10 characters"
     }
   }
 }
 ```
 
-## Security Notes
+---
 
-⚠️ **IMPORTANT:** Cette implémentation utilise une base de données en mémoire pour le développement. Pour la production :
+## Rate Limiting
 
-1. **Remplacez la base de données** : Utilisez PostgreSQL, MongoDB, ou une autre base de données persistante
-2. **Changez JWT_SECRET** : Utilisez une clé secrète forte et unique en production
-3. **Implémentez l'envoi d'emails** : Pour `forgot-password`, utilisez un service d'email (SendGrid, Resend, etc.)
-4. **Ajoutez rate limiting** : Protégez les endpoints contre les attaques par force brute
-5. **Validez les entrées** : Ajoutez une validation plus stricte (Zod, Yup, etc.)
-6. **HTTPS uniquement** : Assurez-vous que toutes les communications sont chiffrées en production
+API requests are rate limited to prevent abuse.
 
-## Base de données
+### Limits
 
-Actuellement, les données sont stockées en mémoire et seront perdues au redémarrage du serveur. Pour une implémentation de production, modifiez `lib/auth/db.ts` pour utiliser une vraie base de données.
+| Plan | Requests per Minute | Requests per Hour |
+|-------|-------------------|-------------------|
+| Free | 10 | 100 |
+| Pro | 100 | 1000 |
+| Enterprise | Unlimited | Unlimited |
 
+### Rate Limit Headers
+
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1640995200
+```
+
+### Handling Rate Limits
+
+When rate limited, the API returns:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+```
+
+Implement exponential backoff:
+
+```typescript
+async function makeRequest(url: string, retries = 3) {
+  try {
+    const response = await fetch(url);
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      await sleep(parseInt(retryAfter) * 1000);
+      return makeRequest(url, retries - 1);
+    }
+    return response.json();
+  } catch (error) {
+    if (retries > 0) {
+      await sleep(1000 * (4 - retries));
+      return makeRequest(url, retries - 1);
+    }
+    throw error;
+  }
+}
+```
+
+---
+
+## SDKs
+
+### JavaScript/TypeScript
+
+```bash
+npm install @metasop/sdk
+```
+
+```typescript
+import { MetaSOPClient } from '@metasop/sdk';
+
+const client = new MetaSOPClient({
+  apiKey: 'YOUR_API_KEY'
+});
+
+const diagram = await client.diagrams.create({
+  title: 'My Project',
+  description: 'Project description',
+  userRequest: 'Build a web application'
+});
+```
+
+### Python
+
+```bash
+pip install metasop-sdk
+```
+
+```python
+from metasop import MetaSOPClient
+
+client = MetaSOPClient(api_key='YOUR_API_KEY')
+
+diagram = client.diagrams.create(
+    title='My Project',
+    description='Project description',
+    user_request='Build a web application'
+)
+```
+
+---
+
+## Webhooks
+
+MetaSOP supports webhooks for real-time notifications.
+
+### Setting Up Webhooks
+
+```http
+POST /api/webhooks
+```
+
+**Request Body**:
+
+```typescript
+{
+  url: string;
+  events: Array<"orchestration.completed" | "orchestration.failed" | "artifact.updated">;
+  secret?: string;
+}
+```
+
+### Webhook Events
+
+#### Orchestration Completed
+
+```json
+{
+  "event": "orchestration.completed",
+  "data": {
+    "diagramId": "abc123",
+    "sessionId": "xyz789",
+    "completedAt": "2025-01-30T00:00:00Z"
+  }
+}
+```
+
+#### Artifact Updated
+
+```json
+{
+  "event": "artifact.updated",
+  "data": {
+    "diagramId": "abc123",
+    "artifactId": "arch_design",
+    "updatedAt": "2025-01-30T00:00:00Z"
+  }
+}
+```
+
+### Verifying Webhooks
+
+Verify webhook signatures using the secret:
+
+```typescript
+import crypto from 'crypto';
+
+function verifyWebhook(payload: string, signature: string, secret: string): boolean {
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(payload);
+  const expectedSignature = hmac.digest('hex');
+  return signature === expectedSignature;
+}
+```
+
+---
+
+**Last Updated**: January 2025
