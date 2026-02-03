@@ -3,7 +3,6 @@ import type { DevOpsBackendArtifact } from "../artifacts/devops/types";
 import { devopsSchema } from "../artifacts/devops/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -25,19 +24,7 @@ export async function devopsAgent(
   try {
     let content: DevOpsBackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("DevOps agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<DevOpsBackendArtifact>(
-        context,
-        "DevOps",
-        devopsSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("devops_infrastructure")
-        }
-      );
-    } else {
-      const pmArtifact = pmSpec?.content as any;
+    const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
       const securityArtifact = securityArch?.content as any;
       const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
@@ -197,7 +184,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         scaling: llmDevOps.scaling,
         disaster_recovery: llmDevOps.disaster_recovery,
       };
-    }
 
     logger.info("DevOps agent completed");
 

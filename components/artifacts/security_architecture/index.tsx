@@ -68,7 +68,7 @@ export default function SecurityArchitecturePanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Security Hub Header */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export default function SecurityArchitecturePanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={AlertTriangle}
             label="Vectors"
@@ -193,6 +193,21 @@ export default function SecurityArchitecturePanel({
                             </div>
                           )}
 
+                          {(threat.owasp_ref || threat.cwe_ref) && (
+                            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/20">
+                              {threat.owasp_ref && (
+                                <Badge variant="outline" className="text-[8px] bg-amber-500/5 text-amber-600 border-amber-500/20 font-mono">
+                                  {threat.owasp_ref}
+                                </Badge>
+                              )}
+                              {threat.cwe_ref && (
+                                <Badge variant="outline" className="text-[8px] bg-indigo-500/5 text-indigo-600 border-indigo-500/20 font-mono">
+                                  {threat.cwe_ref}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
                           {threat.mitigation && (
                             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-2.5">
                               <div className="text-[9px] font-bold text-emerald-600 uppercase flex items-center gap-1 mb-1">
@@ -243,23 +258,23 @@ export default function SecurityArchitecturePanel({
                             <Badge variant="secondary" className="text-[9px] uppercase">{control.type}</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">{control.description}</p>
-                  
-                  {control.implementation && (
-                    <div className="mt-2 p-2 rounded bg-blue-500/5 border border-blue-500/10">
-                      <div className="text-[9px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
-                        <CheckCircle className="h-2.5 w-2.5" /> Implementation Detail
-                      </div>
-                      <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                        {control.implementation}
-                      </p>
-                    </div>
-                  )}
 
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                      {control.id || `CTRL-${i + 1}`}
-                    </span>
-                  </div>
+                          {control.implementation && (
+                            <div className="mt-2 p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                              <div className="text-[9px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
+                                <CheckCircle className="h-2.5 w-2.5" /> Implementation Detail
+                              </div>
+                              <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+                                {control.implementation}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                              {control.id || `CTRL-${i + 1}`}
+                            </span>
+                          </div>
                         </div>
                       </motion.div>
                     ))}
@@ -339,10 +354,10 @@ export default function SecurityArchitecturePanel({
                           </div>
                           {security_architecture.session_management.session_timeout && (
                             <div className="flex justify-between items-center text-xs">
-                            <span className="text-muted-foreground">Timeout</span>
-                            <span className="font-mono">{security_architecture.session_management.session_timeout}</span>
-                          </div>
-                        )}
+                              <span className="text-muted-foreground">Timeout</span>
+                              <span className="font-mono">{security_architecture.session_management.session_timeout}</span>
+                            </div>
+                          )}
                           {security_architecture.audit_logging && (
                             <div className="space-y-2 pt-2 border-t border-border/40">
                               <div className="text-[10px] uppercase text-muted-foreground font-bold flex justify-between">
@@ -370,7 +385,7 @@ export default function SecurityArchitecturePanel({
                               </div>
                             </div>
                           )}
-                        <div className="grid grid-cols-2 gap-2 pt-2">
+                          <div className="grid grid-cols-2 gap-2 pt-2">
                             {security_architecture.session_management.secure_cookies && (
                               <Badge variant="secondary" className="text-[8px] bg-emerald-500/5 text-emerald-600 border-emerald-500/10">SECURE_COOKIE</Badge>
                             )}
@@ -449,13 +464,34 @@ export default function SecurityArchitecturePanel({
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          {['Public', 'DMZ', 'Private'].map((zone) => (
-                            <div key={zone} className="flex flex-col items-center p-3 rounded-lg border border-dashed border-border/60 bg-muted/5">
-                              <span className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">{zone} Zone</span>
-                              <Shield className="h-5 w-5 text-muted-foreground/30" />
-                            </div>
-                          ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {Array.isArray(security_architecture.network_boundaries) && security_architecture.network_boundaries.length > 0 ? (
+                            security_architecture.network_boundaries.map((boundary: any, idx: number) => (
+                              <div key={idx} className="flex flex-col p-3 rounded-lg border border-border/60 bg-muted/5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">{boundary.zone}</span>
+                                  {boundary.level && (
+                                    <Badge variant="outline" className={cn(
+                                      "text-[8px] uppercase",
+                                      boundary.level === 'Private' ? "text-red-500 border-red-500/20 bg-red-500/5" :
+                                        boundary.level === 'DMZ' ? "text-amber-500 border-amber-500/20 bg-amber-500/5" :
+                                          "text-emerald-500 border-emerald-500/20 bg-emerald-500/5"
+                                    )}>
+                                      {boundary.level}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground leading-tight italic">{boundary.description}</p>
+                              </div>
+                            ))
+                          ) : (
+                            ['Public', 'DMZ', 'Private'].map((zone) => (
+                              <div key={zone} className="flex flex-col items-center p-3 rounded-lg border border-dashed border-border/60 bg-muted/5 opacity-40">
+                                <span className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">{zone} Zone</span>
+                                <Shield className="h-4 w-4 text-muted-foreground/30" />
+                              </div>
+                            ))
+                          )}
                         </div>
                       </CardContent>
                     </Card>

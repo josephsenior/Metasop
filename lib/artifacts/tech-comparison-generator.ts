@@ -150,13 +150,11 @@ export class TechComparisonGenerator {
   }
 
   private detectFrontendTechnologies(): TechnologyOption[] {
-    const nodes = this.diagram.nodes || []
-    const frontendNodes = nodes.filter(n => n.type === "component")
     const techs: TechnologyOption[] = []
+    const desc = this.diagram.description.toLowerCase()
 
     // Check for React
-    if (this.diagram.description.toLowerCase().includes("react") ||
-      frontendNodes.some(n => n.label.toLowerCase().includes("react"))) {
+    if (desc.includes("react")) {
       techs.push({
         name: "React",
         category: "Frontend Framework",
@@ -294,13 +292,11 @@ export class TechComparisonGenerator {
   }
 
   private detectDatabaseTechnologies(): TechnologyOption[] {
-    const nodes = this.diagram.nodes || []
-    const dbNodes = nodes.filter(n => n.type === "database")
     const techs: TechnologyOption[] = []
+    const desc = this.diagram.description.toLowerCase()
 
     // PostgreSQL
-    if (dbNodes.some(n => n.label.toLowerCase().includes("postgres")) ||
-      this.diagram.description.toLowerCase().includes("postgres")) {
+    if (desc.includes("postgres")) {
       techs.push({
         name: "PostgreSQL",
         category: "Relational Database",
@@ -330,8 +326,7 @@ export class TechComparisonGenerator {
     }
 
     // MongoDB
-    if (dbNodes.some(n => n.label.toLowerCase().includes("mongo")) ||
-      this.diagram.description.toLowerCase().includes("mongo")) {
+    if (desc.includes("mongo")) {
       techs.push({
         name: "MongoDB",
         category: "NoSQL Database",

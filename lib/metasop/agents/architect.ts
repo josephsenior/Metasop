@@ -3,7 +3,6 @@ import type { ArchitectBackendArtifact } from "../artifacts/architect/types";
 import { architectSchema } from "../artifacts/architect/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { TECHNICAL_STANDARDS, FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -23,19 +22,7 @@ export async function architectAgent(
   try {
     let content: ArchitectBackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("Architect agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<ArchitectBackendArtifact>(
-        context,
-        "Architect",
-        architectSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("arch_design")
-        }
-      );
-    } else {
-      const pmContent = pmSpec?.content as any;
+    const pmContent = pmSpec?.content as any;
       const projectContext = pmContent 
         ? `Project Goals: ${pmContent.summary}\nTarget Audience: ${pmContent.description}\nKey User Stories: ${pmContent.user_stories?.slice(0, 3).map((s: any) => s.title).join(", ") || "N/A"}`
         : `User Request: ${user_request}`;
@@ -50,7 +37,7 @@ export async function architectAgent(
 ${projectContext}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
-=== TECHNICAL STANDARDS (MUST FOLLOW) ===
+=== TECHNICAL STANDARDS ===
 ${TECHNICAL_STANDARDS.naming}
 
 ${TECHNICAL_STANDARDS.api}
@@ -165,7 +152,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         integration_points: llmArchitecture.integration_points,
         next_tasks: llmArchitecture.next_tasks
       };
-    }
 
     logger.info("Architect agent completed");
 

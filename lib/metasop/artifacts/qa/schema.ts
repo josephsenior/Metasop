@@ -21,17 +21,20 @@ export const qaSchema = {
         },
         test_cases: {
             type: "array",
+            minItems: 1,
+            description: "Core test cases. At least one required. Keep it focused and minimal.",
             items: {
                 type: "object",
                 required: ["id", "name", "expected_result"],
                 properties: {
                     id: { type: "string", maxLength: 10, description: "Short ID (e.g., TC-1)." },
                     name: { type: "string", maxLength: 60, description: "Test case name." },
+                    description: { type: "string", maxLength: 200, description: "Detailed test scenario." },
+                    type: { type: "string", enum: ["unit", "integration", "e2e", "manual"], description: "Test category." },
                     priority: { type: "string", enum: ["high", "medium", "low"] },
                     expected_result: { type: "string", maxLength: 100, description: "Success criteria." }
                 }
-            },
-            description: "Core test cases. Keep it focused and minimal."
+            }
         },
         security_plan: {
             type: "object",
@@ -90,7 +93,7 @@ export const qaSchema = {
                 largest_contentful_paint: { type: "string", maxLength: 15 }
             }
         },
-        accessibility_plan: { 
+        accessibility_plan: {
             type: "object",
             properties: {
                 standard: { type: "string", maxLength: 30, description: "WCAG level target (e.g., 'WCAG 2.1 AA')." },
@@ -100,7 +103,7 @@ export const qaSchema = {
             },
             description: "Comprehensive accessibility testing plan for WCAG compliance."
         },
-        manual_uat_plan: { 
+        manual_uat_plan: {
             type: "object",
             properties: {
                 scenarios: { type: "array", items: { type: "string", maxLength: 150 }, description: "UAT scenarios for stakeholder sign-off." },

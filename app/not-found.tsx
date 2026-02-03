@@ -19,8 +19,8 @@ export default function NotFound() {
           <div className="mb-8">
             <h1 className="text-9xl font-bold gradient-primary-text mb-4">404</h1>
             <div className="relative inline-block">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-cyan-500/20 to-blue-600/20 blur-3xl rounded-full" />
-              <div className="relative h-32 w-32 mx-auto rounded-full bg-gradient-to-br from-blue-600/10 to-cyan-500/10 border-2 border-blue-600/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-linear-to-r from-blue-600/20 via-cyan-500/20 to-blue-600/20 blur-3xl rounded-full" />
+              <div className="relative h-32 w-32 mx-auto rounded-full bg-linear-to-br from-blue-600/10 to-cyan-500/10 border-2 border-blue-600/20 flex items-center justify-center">
                 <Home className="h-16 w-16 text-blue-700 dark:text-blue-400" />
               </div>
             </div>
@@ -29,7 +29,7 @@ export default function NotFound() {
           {/* Content */}
           <div className="relative rounded-2xl border border-border bg-card/80 backdrop-blur-xl p-8 md:p-12 shadow-2xl mb-8">
             {/* Decorative gradient */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-600/5 via-cyan-500/5 to-blue-600/5 -z-10" />
+            <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-blue-600/5 via-cyan-500/5 to-blue-600/5 -z-10" />
             
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Page not found
@@ -65,11 +65,8 @@ export default function NotFound() {
               <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Home
               </Link>
-              <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Login
-              </Link>
-              <Link href="/register" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Sign Up
+              <Link href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline">
+                Dashboard
               </Link>
               <Link href="#features" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Features

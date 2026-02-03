@@ -178,7 +178,7 @@ ${prompt}`
         logger.info("Token usage metadata", { usage, model, cost, finishReason });
       }
 
-      return content;
+      return content ?? "";
     } catch (error: any) {
       logger.error("Gemini generation failed", { error: error.message, model });
       throw error;
@@ -585,8 +585,12 @@ ${prompt}`
 
       // ONLY add systemInstruction if NOT using context cache (API restriction)
       if (!options?.cacheId) {
+        const baseInstruction = "You are a specialized JSON generator. You MUST ONLY output valid JSON. No conversational text, no preamble, no markdown, no explanations. Just the raw JSON object.";
+        const uiDesignerAddition = options?.role === "UI Designer"
+          ? " Every string value in the JSON must contain only the intended value (e.g. 0.25rem or 400). Do not append any explanations or extra words to any field."
+          : "";
         requestBody.systemInstruction = {
-          parts: [{ text: "You are a specialized JSON generator. You MUST ONLY output valid JSON. No conversational text, no preamble, no markdown, no explanations. Just the raw JSON object." }]
+          parts: [{ text: baseInstruction + uiDesignerAddition }]
         };
       }
 

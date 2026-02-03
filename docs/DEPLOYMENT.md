@@ -700,6 +700,7 @@ npm audit fix
 Never commit secrets to version control:
 
 ```gitignore
+.env
 .env.local
 .env.production
 .env.*.local

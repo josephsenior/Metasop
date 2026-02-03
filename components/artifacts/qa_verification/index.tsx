@@ -95,7 +95,7 @@ function RiskCard({ risk }: { risk: any }) {
         "absolute top-0 left-0 w-1 h-full rounded-l-xl opacity-20 group-hover:opacity-100 transition-opacity",
         risk.impact === 'high' ? 'bg-red-500' : risk.impact === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
       )} />
-      
+
       <div className="space-y-3">
         <div className="flex justify-between items-start gap-4">
           <div className="flex gap-2.5">
@@ -153,7 +153,7 @@ export default function QAVerificationPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export default function QAVerificationPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={TestTube}
             label="Test Cases"
@@ -594,7 +594,7 @@ export default function QAVerificationPanel({
                                 </Badge>
                               </div>
                             )}
-                            
+
                             {(accessibilityPlan as any).automated_tools && Array.isArray((accessibilityPlan as any).automated_tools) && (accessibilityPlan as any).automated_tools.length > 0 && (
                               <div className="space-y-2">
                                 <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Automated Tools</div>

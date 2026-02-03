@@ -9,9 +9,11 @@ This document provides a comprehensive overview of MetaSOP's architecture, desig
 - [Overview](#overview)
 - [System Architecture](#system-architecture)
 - [Core Components](#core-components)
+- [Diagram model (artifact-centric)](#diagram-model-artifact-centric)
 - [Data Flow](#data-flow)
 - [Design Principles](#design-principles)
 - [Technology Stack](#technology-stack)
+- [Runtime configuration](#runtime-configuration)
 - [Scalability](#scalability)
 
 ---
@@ -48,28 +50,21 @@ MetaSOP is a multi-agent orchestration platform that automates the software deve
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Orchestrator                              │
 │         (Coordinates agent execution & workflow)                │
-└─────┬───────────────┬───────────────┬───────────────────┘
-      │               │               │
-      ▼               ▼               ▼
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│ Knowledge│    │Execution │    │ Refinement│
-│  Graph   │    │ Service  │    │ Planner  │
-└──────────┘    └──────────┘    └──────────┘
-      │               │               │
-      └───────────────┴───────────────┘
-                      │
-                      ▼
-              ┌───────────────┐
-              │    Agents     │
-              │  (7 Specialized│
-              │   AI Agents)  │
-              └───────┬───────┘
-                      │
-                      ▼
-              ┌───────────────┐
-              │  LLM Adapter  │
-              │  (Gemini, etc)│
-              └───────────────┘
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+      ┌──────────────┴──────────────┐
+      ▼                             ▼
+┌──────────────┐             ┌───────────────┐
+│ Execution   │             │    Agents     │
+│ Service     │             │  (7 Specialized│
+│ (timeouts,  │             │   AI Agents)  │
+│  retries)   │             └───────┬───────┘
+└──────────────┘                     │
+                                     ▼
+                             ┌───────────────┐
+                             │  LLM Adapter  │
+                             │  (Gemini, etc)│
+                             └───────────────┘
 ```
 
 ---
@@ -85,37 +80,20 @@ The orchestrator is the central coordinator that manages the entire workflow:
 **Responsibilities**:
 - Execute agents in the correct order
 - Handle agent dependencies
-- Manage cascading refinement
+- Manage workflow (refinement is tool-based; see Edit Artifacts API)
 - Track progress and emit events
 - Handle errors and retries
 
 **Key Methods**:
 ```typescript
 class Orchestrator {
-  async orchestrate(request: string, options: Options): Promise<MetaSOPResult>
-  async refineArtifact(artifactId: string, instruction: string): Promise<MetaSOPArtifact>
-  async getProgress(sessionId: string): Promise<Progress>
+  async run(request: string, options?: Options): Promise<MetaSOPResult>
 }
 ```
 
-### 2. Knowledge Graph
+Refinement is tool-based via `POST /api/diagrams/artifacts/edit`; there is no in-orchestrator refinement or knowledge graph.
 
-**Location**: [`lib/metasop/knowledge-graph/`](../lib/metasop/knowledge-graph/)
-
-The knowledge graph tracks dependencies between artifacts:
-
-**Responsibilities**:
-- Store artifact relationships
-- Query dependencies
-- Calculate impact of changes
-- Plan refinement updates
-
-**Key Components**:
-- `SchemaKnowledgeGraph` - Main graph implementation
-- `RefinementPlanner` - Plans surgical updates
-- `SchemaNode` - Represents artifact properties
-
-### 3. Execution Service
+### 2. Execution Service
 
 **Location**: [`lib/metasop/services/execution-service.ts`](../lib/metasop/services/execution-service.ts)
 
@@ -143,13 +121,13 @@ Specialized AI agents for different roles:
 |--------|---------------|---------|
 | Product Manager | User stories, acceptance criteria | PM Spec |
 | Architect | API contracts, database schemas | Arch Design |
-| Security | Threat modeling, security controls | Security Architecture |
 | DevOps | CI/CD pipelines, infrastructure | DevOps Infrastructure |
-| Engineer | File structures, implementation plans | Engineer Implementation |
+| Security | Threat modeling, security controls | Security Architecture |
 | UI Designer | Design tokens, components | UI Design |
+| Engineer | File structures, implementation plans | Engineer Implementation |
 | QA | Test strategies, test cases | QA Verification |
 
-### 5. LLM Adapter
+### 4. LLM Adapter
 
 **Location**: [`lib/metasop/adapters/`](../lib/metasop/adapters/)
 
@@ -166,86 +144,78 @@ Abstracts LLM provider interactions:
 - Vercel AI SDK
 - Token Factory (Llama 3.1)
 
-### 6. Refinement System
+### 5. Refinement (tool-based)
 
-**Location**: [`lib/metasop/utils/refinement-helper.ts`](../lib/metasop/utils/refinement-helper.ts)
+**Refinement**: Refinement is **tool-based** only. Use **Edit Artifacts** (`POST /api/diagrams/artifacts/edit`): send `previousArtifacts` and an `edits` array of ops (`set_at_path`, `delete_at_path`, `add_array_item`, `remove_array_item`). No agent re-runs; edits are applied deterministically to artifact JSON. See [API.md](API.md) for request/response shape.
 
-Implements cascading refinement:
+---
 
-**Responsibilities**:
-- Parse user refinement requests
-- Calculate affected artifacts
-- Generate refinement prompts
-- Execute refinement updates
+## Diagram model (artifact-centric)
 
-**Key Features**:
-- Surgical updates (target specific paths)
-- Cascading changes (propagate to dependents)
-- Atomic actions (single property updates)
-- Context-aware (includes upstream changes)
+**Diagram (for the user) = metadata + artifacts. No graph in the DB.**
+
+- The database (Prisma) stores only diagram **metadata**: id, userId, title, description, status, metadata JSON, timestamps. It does **not** store nodes or edges.
+- Diagram is artifact-centric: artifacts live in `metadata.metasop_artifacts`; there is no knowledge graph or dependency graph built or returned.
+- Refinement is tool-based (Edit Artifacts API), not graph-based.
 
 ---
 
 ## Data Flow
 
-### Orchestration Flow
+### Orchestration flow
 
 ```
 User Request
     │
     ▼
-Parse Request
+Parse Request (prompt, options, documents)
     │
     ▼
-Create Agent Context
+Create Agent Context (previous_artifacts)
     │
     ▼
-Execute PM Agent
-    │
-    ▼
-Store Artifact in Knowledge Graph
+Execute PM Agent → store in context
     │
     ▼
 Execute Architect Agent (with PM artifact)
     │
     ▼
-Store Artifact in Knowledge Graph
+Execute DevOps Agent (with PM + Architect)
     │
     ▼
-Execute Security Agent (with Architect artifact)
+Execute Security Agent
     │
     ▼
-... (continue for all agents)
+Execute UI Designer Agent
     │
     ▼
-Return Complete Result
+Execute Engineer Agent
+    │
+    ▼
+Execute QA Agent
+    │
+    ▼
+Persist diagram (DB) → Return / stream result
 ```
 
-### Refinement Flow
+### Refinement flow (tool-based only)
+
+Refinement is **not** agent re-run or graph-based. Use the Edit Artifacts API:
 
 ```
-User Refinement Request
+User wants to change an artifact
     │
     ▼
-Parse Request (identify target artifact and changes)
+POST /api/diagrams/artifacts/edit
     │
     ▼
-Query Knowledge Graph (find dependents)
+Request: previousArtifacts + edits (set_at_path, add_array_item, etc.)
     │
     ▼
-Create Refinement Plan
+Apply edits to artifact JSON (validated, deterministic)
     │
     ▼
-Execute Target Agent Update
-    │
-    ▼
-Propagate Changes to Dependents
-    │
-    ▼
-Update Knowledge Graph
-    │
-    ▼
-Return Updated Artifacts
+Return updated artifacts
 ```
 
 ---
@@ -257,7 +227,6 @@ Return Updated Artifacts
 Each component has a single, well-defined responsibility:
 
 - **Orchestrator**: Workflow coordination
-- **Knowledge Graph**: Dependency management
 - **Execution Service**: Agent execution
 - **Agents**: Domain-specific logic
 - **Adapters**: LLM abstraction
@@ -269,9 +238,7 @@ Components receive dependencies through constructors:
 ```typescript
 class Orchestrator {
   constructor(
-    private knowledgeGraph: SchemaKnowledgeGraph,
-    private executionService: ExecutionService,
-    private refinementPlanner: RefinementPlanner
+    private executionService: ExecutionService
   ) {}
 }
 ```
@@ -288,9 +255,9 @@ onProgress({
 })
 ```
 
-### 4. Immutable Data
+### 4. Artifact Updates
 
-Artifacts are immutable - updates create new versions:
+In-memory artifact updates replace content in place; there is no version history or version IDs. Tool-based refinement (Edit Artifacts API) applies ops to a copy of artifacts and returns the updated set.
 
 ```typescript
 const updatedArtifact = {
@@ -341,6 +308,16 @@ interface MetaSOPArtifact {
 
 ---
 
+## Runtime configuration
+
+A single **runtime config** module (`lib/runtime-config.ts`) provides env + defaults + feature flags so behavior is easy to reason about for both API routes and `lib/metasop`. All defaults live there; env vars override.
+
+- **`getRuntimeConfig()`** – full config (llm, agents, performance, logging, featureFlags).
+- **MetaSOP** – `getConfig()` in `lib/metasop/config.ts` reads from `getRuntimeConfig()` and merges into MetaSOP defaults.
+- **Env vars** – `METASOP_LLM_*`, `METASOP_AGENT_*`, etc. See `.env.example` and `lib/runtime-config.ts`.
+
+---
+
 ## Scalability
 
 ### Horizontal Scaling
@@ -349,7 +326,7 @@ The system can scale horizontally by:
 
 1. **Multiple Orchestrator Instances**: Run multiple orchestrators behind a load balancer
 2. **Stateless Design**: Orchestrators don't maintain state between requests
-3. **Database Backing**: Knowledge graph stored in database for shared access
+3. **Stateless orchestration**: No shared in-memory graph; refinement is tool-based (Edit Artifacts API).
 
 ### Vertical Scaling
 
@@ -396,7 +373,7 @@ Performance optimizations:
 - Rate limiting on all endpoints
 - CORS configuration
 - Secure HTTP headers
-- JWT token validation
+- Guest session identification (cookie and `x-guest-session-id` header); no user accounts or JWT
 
 ### Data Protection
 - Environment variables for sensitive data

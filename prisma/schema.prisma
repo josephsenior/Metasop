@@ -1,87 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Local SQLite for open-source / local usage. No remote DB required.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-
-model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  name            String?
-  username        String?  @unique
-  passwordHash    String?  @map("password_hash")
-  image           String?
-  role            String   @default("user") // "admin" | "user"
-  emailVerified   DateTime? @map("email_verified")
-  isActive        Boolean  @default(true) @map("is_active")
-  subscriptionPlan String? @map("subscription_plan")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  lastLogin       DateTime? @map("last_login")
-
-  accounts        Account[]
-  sessions        Session[]
-  resetTokens     ResetToken[]
-  diagrams        Diagram[]
-
-  @@map("users")
-}
-
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model ResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  email     String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [email], references: [email], onDelete: Cascade)
-
-  @@map("reset_tokens")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model Diagram {
@@ -89,18 +14,13 @@ model Diagram {
   userId      String   @map("user_id")
   title       String
   description String
-  nodes       Json     // Array of DiagramNode
-  edges       Json     // Array of DiagramEdge
   status      String   @default("processing") // "processing" | "completed" | "failed"
   metadata    Json?    // Optional metadata (prompt, options, metasop_artifacts, etc.)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
   @@map("diagrams")
 }
-

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { metasopApi, type MetaSOPOrchestrationData } from "@/lib/api/metasop";
-import { tokenStorage } from "@/lib/auth/token-storage";
 
 export interface OrchestrationStep {
   step_id: string;
@@ -25,12 +24,6 @@ export function useMetaSOPOrchestration(diagramId?: string) {
   useEffect(() => {
     if (!diagramId) {
       return;
-    }
-
-    // Check if user is authenticated before making requests
-    const token = tokenStorage.getToken();
-    if (!token) {
-      return; // Don't poll if not authenticated
     }
 
     const pollForUpdates = async () => {
@@ -79,18 +72,12 @@ export function useMetaSOPOrchestration(diagramId?: string) {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [diagramId, isOrchestrating]); // Note: token check happens inside effect, not in deps
+  }, [diagramId, isOrchestrating]);
 
   // Load orchestration data if diagramId is provided
   useEffect(() => {
     if (!diagramId) {
       return;
-    }
-
-    // Check if user is authenticated before making requests
-    const token = tokenStorage.getToken();
-    if (!token) {
-      return; // Don't load if not authenticated
     }
 
     const loadOrchestration = async () => {

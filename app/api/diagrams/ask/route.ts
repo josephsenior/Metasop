@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
+import { createErrorResponse, createSuccessResponse, addGuestCookie } from "@/lib/api/response";
+import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { generateWithLLM, generateStreamWithLLM, createCacheWithLLM } from "@/lib/metasop/utils/llm-helper";
 import { validateAskQuestionRequest } from "@/lib/diagrams/schemas";
 
@@ -8,17 +9,14 @@ export const maxDuration = 60; // 1 minute for Q&A
 export async function POST(request: NextRequest) {
     const useStreaming = request.nextUrl.searchParams.get("stream") === "true";
     try {
+        const guestAuth = await handleGuestAuth(request);
+        const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+        if (!guestAuth.canProceed) {
+            return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
+        }
+
         const rawBody = await request.json();
         const body = validateAskQuestionRequest(rawBody);
-
-        // Authentication: Optional for Q&A, but check if diagram exists/is guest
-        try {
-            await getAuthenticatedUser(request);
-        } catch {
-            if (!body.diagramId.startsWith("guest_") && !body.diagramId.startsWith("diagram_")) {
-                return createErrorResponse("Unauthorized", 401);
-            }
-        }
 
         const systemInstruction = `
 You are an expert Diagram Architect and Project Manager assistant. 
@@ -123,13 +121,15 @@ ANSWER:`.trim();
                 }
             });
 
-            return new NextResponse(stream, {
+            const streamRes = new NextResponse(stream, {
                 headers: {
                     "Content-Type": "text/event-stream",
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
                 },
             });
+            if (cookieOpt?.guestSessionId) addGuestCookie(streamRes, cookieOpt.guestSessionId);
+            return streamRes;
         }
 
         // Non-streaming response
@@ -142,7 +142,8 @@ ANSWER:`.trim();
 
             return createSuccessResponse(
                 { answer, cacheId },
-                "Question answered successfully"
+                "Question answered successfully",
+                cookieOpt
             );
         } catch (error: any) {
             // Check if error is due to cache expiration
@@ -178,7 +179,8 @@ ANSWER:`.trim();
 
                 return createSuccessResponse(
                     { answer, cacheId: undefined },
-                    "Question answered successfully (cache expired, recreated)"
+                    "Question answered successfully (cache expired, recreated)",
+                    cookieOpt
                 );
             }
             throw error;

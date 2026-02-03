@@ -19,6 +19,19 @@ export const securitySchema = {
             type: "object",
             required: ["authentication", "authorization"],
             properties: {
+                network_boundaries: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        required: ["zone", "description"],
+                        properties: {
+                            zone: { type: "string", maxLength: 50, description: "Zone name (e.g., 'Public DMZ')." },
+                            description: { type: "string", maxLength: 200, description: "Zone purpose and access rules." },
+                            level: { type: "string", enum: ["Public", "DMZ", "Private"], description: "Trust level." },
+                        }
+                    },
+                    description: "Network segmentation and trust zones."
+                },
                 authentication: {
                     type: "object",
                     required: ["method"],
@@ -99,8 +112,8 @@ export const securitySchema = {
                             description: "System roles.",
                         },
                         policies: {
-                        type: "array",
-                        items: {
+                            type: "array",
+                            items: {
                                 type: "object",
                                 required: ["resource", "permissions"],
                                 properties: {
@@ -129,27 +142,28 @@ export const securitySchema = {
         },
         threat_model: {
             type: "array",
+            minItems: 2,
+            description: "STRIDE-based threat model. At least 2 threats required. Scale depth to project complexity.",
             items: {
                 type: "object",
                 required: ["threat", "mitigation", "severity"],
                 properties: {
-                        threat: { type: "string", maxLength: 80, description: "STRIDE threat category and specific threat." },
-                        category: { type: "string", enum: ["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"], description: "STRIDE category." },
-                        severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
-                        likelihood: { type: "string", enum: ["high", "medium", "low"] },
-                        impact: { type: "string", maxLength: 200, description: "Technical and business impact description." },
-                        description: { type: "string", maxLength: 300, description: "Detailed threat scenario and attack vector." },
-                        mitigation: { type: "string", maxLength: 300, description: "Specific, implementable mitigation strategy." },
-                        affected_components: { 
-                            type: "array", 
-                            items: { type: "string", maxLength: 50 },
-                            description: "Systems or components impacted."
-                        },
-                        owasp_ref: { type: "string", maxLength: 50, description: "OWASP Top 10 reference (e.g., 'A03:2021 - Injection')." },
-                        cwe_ref: { type: "string", maxLength: 20, description: "CWE reference (e.g., 'CWE-89')." },
-                    }
-            },
-            description: "STRIDE-based threat model with OWASP/CWE references. Scale depth to project complexity."
+                    threat: { type: "string", maxLength: 80, description: "STRIDE threat category and specific threat." },
+                    category: { type: "string", enum: ["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"], description: "STRIDE category." },
+                    severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                    likelihood: { type: "string", enum: ["high", "medium", "low"] },
+                    impact: { type: "string", maxLength: 200, description: "Technical and business impact description." },
+                    description: { type: "string", maxLength: 300, description: "Detailed threat scenario and attack vector." },
+                    mitigation: { type: "string", maxLength: 300, description: "Specific, implementable mitigation strategy." },
+                    affected_components: {
+                        type: "array",
+                        items: { type: "string", maxLength: 50 },
+                        description: "Systems or components impacted."
+                    },
+                    owasp_ref: { type: "string", maxLength: 50, description: "OWASP Top 10 reference (e.g., 'A03:2021 - Injection')." },
+                    cwe_ref: { type: "string", maxLength: 20, description: "CWE reference (e.g., 'CWE-89')." },
+                }
+            }
         },
         encryption: {
             type: "object",
@@ -231,7 +245,6 @@ export const securitySchema = {
         },
         vulnerability_management: {
             type: "object",
-            required: ["scanning_frequency", "tools", "remediation_sla"],
             properties: {
                 scanning_frequency: { type: "string", maxLength: 50 },
                 tools: { type: "array", items: { type: "string", maxLength: 30 } },
@@ -240,7 +253,6 @@ export const securitySchema = {
         },
         security_monitoring: {
             type: "object",
-            required: ["logging_strategy", "siem_solution", "alerting_thresholds"],
             properties: {
                 logging_strategy: { type: "string", maxLength: 200 },
                 siem_solution: { type: "string", maxLength: 50 },
@@ -251,7 +263,6 @@ export const securitySchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["standard", "requirements", "implementation_status"],
                 properties: {
                     standard: {
                         type: "string",
@@ -271,14 +282,17 @@ export const securitySchema = {
         },
         security_controls: {
             type: "array",
+            minItems: 3,
+            description: "At least 3 security controls are required.",
             items: {
                 type: "object",
-                required: ["id", "control", "category", "implementation", "priority"],
+                required: ["control", "implementation"],
                 properties: {
                     id: { type: "string", maxLength: 10 },
-                    control: { type: "string", maxLength: 100 },
+                    control: { type: "string", minLength: 10, maxLength: 100, description: "Control name (min 10 chars)." },
+                    type: { type: "string", maxLength: 30 },
                     category: { type: "string", enum: ["preventive", "detective", "corrective", "compensating"] },
-                    implementation: { type: "string", maxLength: 200 },
+                    implementation: { type: "string", minLength: 10, maxLength: 200, description: "Implementation details (min 10 chars)." },
                     priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
                     description: { type: "string", maxLength: 200 }
                 }

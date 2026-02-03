@@ -1,59 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { z } from "zod";
-import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
+import * as fs from 'fs';
+import * as path from 'path';
+import { createErrorResponse, createSuccessResponse } from "@/lib/api/response";
 import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 import type { CreateDiagramRequest } from "@/types/diagram";
 import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
 
 /**
- * GET /api/diagrams - Get all diagrams for the authenticated user or guest
+ * GET /api/diagrams - Get all diagrams for the current guest session
  */
 export async function GET(request: NextRequest) {
   try {
-    let userId: string;
-    
     const guestAuth = await handleGuestAuth(request);
-    
-    if (guestAuth.isGuest) {
-      if (!guestAuth.canProceed || !guestAuth.userId) {
-        return createErrorResponse(guestAuth.reason || "Unauthorized", 401);
-      }
-      userId = guestAuth.userId;
-    } else {
-      // Authenticated user
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
-
-      // Check for guest session cookie to migrate diagrams if they just logged in
-      const guestSessionCookie = request.cookies.get("guest_session_id");
-      if (guestSessionCookie?.value) {
-        const guestUserId = `guest_${guestSessionCookie.value}`;
-        await diagramDb.migrateGuestDiagrams(guestUserId, userId);
-      }
+    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+    if (!guestAuth.canProceed || !guestAuth.userId) {
+      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
     }
+    const userId = guestAuth.userId;
 
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
     const offset = searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined;
     const status = searchParams.get("status") as "processing" | "completed" | "failed" | undefined;
 
-    let response: NextResponse;
-    const result = await diagramDb.findByUserId(userId, {
-      limit,
-      offset,
-      status,
-    });
-
-    response = createSuccessResponse(result);
-
-    // Clear guest session cookie after migration
-    if (!guestAuth.isGuest && request.cookies.get("guest_session_id")) {
-      response.cookies.set("guest_session_id", "", { maxAge: 0, path: "/" });
-    }
-
-    return response;
+    const result = await diagramDb.findByUserId(userId, { limit, offset, status });
+    return createSuccessResponse(result, undefined, cookieOpt);
   } catch (error: any) {
     if (error.message === "Unauthorized") {
       return createErrorResponse("Unauthorized", 401);
@@ -67,19 +40,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    let userId: string;
-    
     const guestAuth = await handleGuestAuth(request);
-    
-    if (guestAuth.isGuest) {
-      if (!guestAuth.canProceed || !guestAuth.userId) {
-        return createErrorResponse(guestAuth.reason || "Unauthorized", 401);
-      }
-      userId = guestAuth.userId;
-    } else {
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
+    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+    if (!guestAuth.canProceed || !guestAuth.userId) {
+      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
     }
+    const userId = guestAuth.userId;
 
     const rawBody = await request.json();
 
@@ -91,18 +57,35 @@ export async function POST(request: NextRequest) {
       if (error instanceof z.ZodError) {
         return createErrorResponse(
           `Invalid request: ${error.errors.map((e) => e.message).join(", ")}`,
-          400
+          400,
+          cookieOpt
         );
       }
-      return createErrorResponse("Invalid request format", 400);
+      return createErrorResponse("Invalid request format", 400, cookieOpt);
     }
 
     // Create diagram
     const diagram = await diagramDb.create(userId, body);
 
+    // Save to local filesystem (Shadow Persistence)
+    try {
+      const saveDir = path.join(process.cwd(), 'saved_diagrams');
+      if (!fs.existsSync(saveDir)) {
+        fs.mkdirSync(saveDir, { recursive: true });
+      }
+      fs.writeFileSync(
+        path.join(saveDir, `${diagram.id}.json`),
+        JSON.stringify(diagram, null, 2)
+      );
+    } catch (error) {
+      console.error("Failed to save local backup:", error);
+      // Non-blocking error
+    }
+
     return createSuccessResponse(
       { diagram },
-      "Diagram created successfully"
+      "Diagram created successfully",
+      cookieOpt
     );
   } catch (error: any) {
     if (error.message === "Unauthorized") {

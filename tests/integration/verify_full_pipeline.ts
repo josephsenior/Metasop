@@ -1,13 +1,13 @@
 
 import 'dotenv/config';
-import { productManagerAgent } from '../lib/metasop/agents/product-manager';
-import { architectAgent } from '../lib/metasop/agents/architect';
-import { engineerAgent } from '../lib/metasop/agents/engineer';
-import { devopsAgent } from '../lib/metasop/agents/devops';
-import { securityAgent } from '../lib/metasop/agents/security';
-import { uiDesignerAgent } from '../lib/metasop/agents/ui-designer';
-import { qaAgent } from '../lib/metasop/agents/qa';
-import { AgentContext } from '../lib/metasop/types';
+import { productManagerAgent } from '../../lib/metasop/agents/product-manager';
+import { architectAgent } from '../../lib/metasop/agents/architect';
+import { engineerAgent } from '../../lib/metasop/agents/engineer';
+import { devopsAgent } from '../../lib/metasop/agents/devops';
+import { securityAgent } from '../../lib/metasop/agents/security';
+import { uiDesignerAgent } from '../../lib/metasop/agents/ui-designer';
+import { qaAgent } from '../../lib/metasop/agents/qa';
+import { AgentContext } from '../../lib/metasop/types';
 import type {
     ArchitectBackendArtifact,
     DevOpsBackendArtifact,
@@ -16,7 +16,7 @@ import type {
     QABackendArtifact,
     SecurityBackendArtifact,
     UIDesignerBackendArtifact,
-} from '../lib/metasop/types';
+} from '../../lib/metasop/types';
 
 async function runFullVerification() {
     console.log("🚀 Starting Full Agent Pipeline Verification...\n");
@@ -56,19 +56,19 @@ async function runFullVerification() {
         const securityContent = securityResult.content as SecurityBackendArtifact;
         console.log(` ✅ Security: ${securityContent.threat_model?.length} threats identified.\n`);
 
-        // 5. Engineer Agent
-        console.log("⚙️ Running Engineer Agent...");
-        const engineerResult = await engineerAgent(context);
-        context.previous_artifacts.engineer_impl = engineerResult;
-        const engineerContent = engineerResult.content as EngineerBackendArtifact;
-        console.log(` ✅ Engineer: ${engineerContent.dependencies?.length} dependencies.\n`);
-
-        // 6. UI Designer Agent
+        // 5. UI Designer Agent
         console.log("🎨 Running UI Designer Agent...");
         const uiResult = await uiDesignerAgent(context);
         context.previous_artifacts.ui_design = uiResult;
         const uiContent = uiResult.content as UIDesignerBackendArtifact;
         console.log(` ✅ UI Designer: ${uiContent.component_hierarchy ? 'Generated' : 'Missing'}.\n`);
+
+        // 6. Engineer Agent
+        console.log("⚙️ Running Engineer Agent...");
+        const engineerResult = await engineerAgent(context);
+        context.previous_artifacts.engineer_impl = engineerResult;
+        const engineerContent = engineerResult.content as EngineerBackendArtifact;
+        console.log(` ✅ Engineer: ${engineerContent.dependencies?.length} dependencies.\n`);
 
         // 7. QA Agent
         console.log("🧪 Running QA Agent...");

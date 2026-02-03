@@ -81,7 +81,7 @@ function FileSystemNode({ node, depth = 0 }: { node: any, depth?: number }) {
   }
 
   if (!node.name) return null
-  
+
   const name = node.name
   const isDir = node.type === 'directory' || node.type === 'folder' || (node.children && Array.isArray(node.children) && node.children.length > 0)
 
@@ -121,7 +121,7 @@ const generateProjectZip = (node: any, zip: JSZip, path: string = "") => {
   }
 
   if (!node.name) return;
-  
+
   const name = node.name;
   const currentPath = path + name;
   const isDir = node.type === 'directory' || node.type === 'folder' || (node.children && Array.isArray(node.children));
@@ -167,7 +167,7 @@ export default function EngineerImplPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export default function EngineerImplPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Package}
             label="Registry"
@@ -258,7 +258,17 @@ export default function EngineerImplPanel({
               <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
                 <TabTrigger value="plan" icon={ListTodo} label="Roadmap" count={roadmapCount} />
                 <TabTrigger value="tech" icon={Layers} label="Technical" count={technicalCount} />
-                <TabTrigger value="scripts" icon={Terminal} label="CLI Scripts" count={(runResults.setup_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.dev_commands?.length || 0)} />
+                <TabTrigger
+                  value="scripts"
+                  icon={Terminal}
+                  label="CLI Scripts"
+                  count={
+                    (data.run_results?.setup_commands?.length || 0) +
+                    (data.run_results?.dev_commands?.length || 0) +
+                    (data.run_results?.test_commands?.length || 0) +
+                    (data.run_results?.build_commands?.length || 0)
+                  }
+                />
                 <TabTrigger value="deps" icon={Package} label="Registry" count={dependencies.length} />
                 <TabTrigger value="struct" icon={Files} label="FS Tree" />
               </TabsList>

@@ -36,6 +36,31 @@ import {
   itemVariants as item
 } from "../shared-components"
 
+/**
+ * Lightweight markdown renderer for bold text
+ */
+function MarkdownText({ content, className }: { content: string, className?: string }) {
+  if (!content) return null;
+
+  // Handle bold text **bold**
+  const parts = content.split(/(\*\*.*?\*\*)/g);
+
+  return (
+    <span className={className}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <strong key={i} className="font-bold text-foreground">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      })}
+    </span>
+  );
+}
+
 function ApiEndpointCard({ api }: { api: any }) {
   const methodColors = {
     GET: "text-emerald-500 border-emerald-500/20 bg-emerald-500/5",
@@ -294,70 +319,89 @@ function DecisionCard({ decision, index }: { decision: any, index: number }) {
 }
 
 function PhilosophySection({ title, content, icon: Icon, color }: { title: string, content?: string, icon: any, color: string }) {
-  if (!content || !content.trim()) {
-    return (
-      <motion.div variants={item} className="mb-4">
-        <Card className="border-border/50 shadow-sm overflow-hidden">
-          <div className={cn("px-4 py-3 border-b flex items-center gap-2 bg-muted/20", styles.colors.borderMuted)}>
+  const isPending = !content || !content.trim();
+
+  return (
+    <motion.div variants={item} className="mb-4">
+      <Card className="border-border/50 shadow-sm overflow-hidden group relative">
+        {/* Subtle Blueprint Grid Accent */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-size-[15px_15px] group-hover:opacity-[0.05] transition-opacity" />
+
+        <div className={cn("px-4 py-3 border-b flex items-center justify-between bg-muted/20", styles.colors.borderMuted)}>
+          <div className="flex items-center gap-2">
             <Icon className={cn("h-4 w-4", color)} />
-            <h4 className={cn("font-bold text-sm", color)}>
+            <h4 className={cn("font-bold text-sm tracking-tight", color)}>
               {title}
             </h4>
           </div>
-          <div className="p-4 bg-card">
-            <p className={cn("text-sm text-muted-foreground italic", styles.typography.bodySmall)}>
-              Refer to sub-sections for details.
-            </p>
+          <div className="text-[9px] font-mono text-muted-foreground/40 uppercase tracking-tighter hidden sm:block">
+            Spec-{title.slice(0, 3).toUpperCase()}-{(Math.random() * 1000).toFixed(0)}
           </div>
-        </Card>
-      </motion.div>
-    )
-  }
-  
-  return (
-    <motion.div variants={item} className="mb-4">
-      <Card className="border-border/50 shadow-sm overflow-hidden">
-        <div className={cn("px-4 py-3 border-b flex items-center gap-2 bg-muted/20", styles.colors.borderMuted)}>
-          <Icon className={cn("h-4 w-4", color)} />
-          <h4 className={cn("font-bold text-sm", color)}>
-            {title}
-          </h4>
         </div>
-        <div className="p-4 bg-card">
-          <p className={cn("whitespace-pre-wrap leading-relaxed", styles.typography.bodySmall, styles.colors.textMuted)}>
-            {content.trim()}
-          </p>
+
+        <div className="p-4 bg-card relative z-10">
+          {isPending ? (
+            <p className={cn("text-xs text-muted-foreground italic", styles.typography.bodySmall)}>
+              Implementation details pending for this section.
+            </p>
+          ) : (
+            <div className={cn("whitespace-pre-wrap leading-relaxed space-y-2", styles.typography.bodySmall, styles.colors.textMuted)}>
+              {content.trim().split('\n').map((line, i) => (
+                <p key={i}>
+                  <MarkdownText content={line} />
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Technical Corner Indicator */}
+        <div className="absolute bottom-0 right-0 w-8 h-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none">
+          <div className="absolute bottom-1 right-1 w-full h-full border-b border-r border-blue-600 rounded-br-sm" />
         </div>
       </Card>
     </motion.div>
   )
 }
 
-function BlueprintHeader({ summary }: { summary?: string }) {
+function BlueprintHeader({ summary, title }: { summary?: string, title?: string }) {
   return (
     <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 mb-8 group">
       {/* Blueprint Grid Overlay */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-size-[20px_20px]" />
 
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-            <Cpu className="h-4 w-4 text-blue-500 animate-pulse" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400">Architectural Manifesto</h3>
-            <p className="text-[10px] text-blue-500/60 font-mono">CONFIDENTIAL // SYSTEM-LEVEL-SPECS</p>
-          </div>
-        </div>
-        <p className={cn("italic", styles.typography.body, styles.colors.textMuted)}>
-          {summary || "The foundational engineering principles and systemic patterns governing the project's technical evolution."}
-        </p>
+      {/* Decorative Blueprint Corner (Top Right) */}
+      <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
+        <div className="w-16 h-16 border-t-2 border-r-2 border-blue-500 rounded-tr-xl" />
+        <div className="absolute top-1.5 right-1.5 w-10 h-10 border-t border-r border-blue-400 opacity-50" />
       </div>
 
-      {/* Decorative Blueprint Corner */}
-      <div className="absolute top-0 right-0 p-2 opacity-20">
-        <div className="w-12 h-12 border-t border-r border-blue-600 rounded-tr-md" />
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-inner group-hover:scale-105 transition-transform">
+            <Cpu className="h-5 w-5 text-blue-500 animate-pulse" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black tracking-[0.2em] uppercase text-blue-600 dark:text-blue-400">Architectural Manifesto</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-[10px] text-blue-500/60 font-mono tracking-wider">PROJECT-ID: MS-{(Math.random() * 9999).toFixed(0)}</p>
+              <div className="h-1 w-1 rounded-full bg-blue-500/30" />
+              <p className="text-[10px] text-blue-500/60 font-mono tracking-wider">REV: 01.A</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold tracking-tight text-foreground/90">{title || "Foundational Engineering Specs"}</h2>
+          <p className={cn("italic leading-relaxed max-w-2xl", styles.typography.body, styles.colors.textMuted)}>
+            {summary || "The foundational engineering principles and systemic patterns governing the project's technical evolution."}
+          </p>
+        </div>
       </div>
+
+      {/* Measurement Markers */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 border-y border-blue-500/20 opacity-40 ml-1" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 border-x border-blue-500/20 opacity-40 mb-1" />
     </div>
   )
 }
@@ -380,7 +424,7 @@ export default function ArchDesignPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -395,7 +439,7 @@ export default function ArchDesignPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Network}
             label="Endpoints"
@@ -474,43 +518,59 @@ export default function ArchDesignPanel({
                 <TabsContent key="design" value="design" className="m-0 outline-none">
                   <motion.div variants={container} initial="hidden" animate="show">
                     <div className="w-full py-2">
-                      <BlueprintHeader summary={data.summary || data.description} />
+                      <BlueprintHeader
+                        summary={data.summary || data.description}
+                        title={(data as any).title || artifact?.title}
+                      />
 
                       {data.design_doc ? (
                         <div className="space-y-4">
                           {(() => {
-                            // Normalize literal \n or \\n sequences if they exist
                             const normalizedDoc = data.design_doc
                               .replace(/\\n/g, '\n')
                               .trim();
 
-                            // Split by any level of markdown header (#, ##, ###, etc.)
-                            // Regex looks for headers at the start of original or normalized lines
-                            const sections = normalizedDoc
+                            // Split by any level of markdown header
+                            const rawSections = normalizedDoc
                               .split(/\n(?=#+ )|^#+ /m)
                               .filter(s => s.trim().length > 0);
 
-                            if (sections.length <= 1 && !normalizedDoc.includes('# ')) {
-                              return (
-                                <PhilosophySection
-                                  title="System Vision"
-                                  content={normalizedDoc}
-                                  icon={BookOpen}
-                                  color="text-blue-600"
-                                />
-                              );
-                            }
+                            // Smart processing: merge empty parent titles into the next child
+                            const processedSections: { title: string; content: string }[] = [];
+                            let pendingTitles: string[] = [];
 
-                            return sections.map((section, idx) => {
+                            rawSections.forEach(section => {
                               const lines = section.trim().split('\n');
                               const title = lines[0].replace(/^#+ /, '').trim();
                               const content = lines.slice(1).join('\n').trim();
 
-                              // Map icons based on title keywords
+                              if (!content) {
+                                // Just a header with no content, queue it
+                                pendingTitles.push(title);
+                              } else {
+                                // Content exists, merge with pending titles
+                                const fullTitle = pendingTitles.length > 0
+                                  ? `${pendingTitles.join(' › ')} › ${title}`
+                                  : title;
+
+                                processedSections.push({ title: fullTitle, content });
+                                pendingTitles = []; // Clear queue
+                              }
+                            });
+
+                            // Handle remaining title only if none was added (fallback)
+                            if (processedSections.length === 0 && pendingTitles.length > 0) {
+                              processedSections.push({
+                                title: pendingTitles.join(' › '),
+                                content: normalizedDoc.replace(/^#+ .*\n?/gm, '').trim() || "Details pending documentation."
+                              });
+                            }
+
+                            return processedSections.map((section, idx) => {
                               let icon = Layers;
                               let color = "text-blue-600";
 
-                              const lowerTitle = title.toLowerCase();
+                              const lowerTitle = section.title.toLowerCase();
                               if (lowerTitle.includes('pattern') || lowerTitle.includes('style')) {
                                 icon = Share2;
                                 color = "text-purple-600";
@@ -534,8 +594,8 @@ export default function ArchDesignPanel({
                               return (
                                 <PhilosophySection
                                   key={idx}
-                                  title={title}
-                                  content={content}
+                                  title={section.title}
+                                  content={section.content}
                                   icon={icon}
                                   color={color}
                                 />
@@ -702,7 +762,7 @@ export default function ArchDesignPanel({
                                   )}
                                 </div>
                               </div>
-                              
+
                               <p className="text-xs text-muted-foreground leading-relaxed mb-4 min-h-10">
                                 {point.purpose || point.description || "External system integration."}
                               </p>
@@ -723,9 +783,9 @@ export default function ArchDesignPanel({
                                       <BookOpen className="h-2.5 w-2.5" />
                                       <span className="uppercase tracking-tight">Docs:</span>
                                     </div>
-                                    <a 
-                                      href={point.api_docs} 
-                                      target="_blank" 
+                                    <a
+                                      href={point.api_docs}
+                                      target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-blue-500 hover:underline font-mono truncate max-w-[150px]"
                                     >
@@ -774,7 +834,7 @@ export default function ArchDesignPanel({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {Object.entries(scalabilityApproach || {}).map(([key, val]) => {
                             if (!val) return null;
-                            
+
                             const icons: Record<string, any> = {
                               horizontal_scaling: Layers,
                               database_scaling: Database,

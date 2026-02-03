@@ -1,143 +1,62 @@
 # Setup Guide
 
-This guide covers the complete setup process for the application, including environment configuration and database setup.
+This guide covers setup for **local open-source usage** — no remote database or auth required.
 
 ## Quick Start (3 Steps)
 
-### Step 1: Get Database Connection String
-
-1. Go to [supabase.com](https://supabase.com) and create an account
-2. Create a new project:
-   - Choose a name (e.g., `architectai`)
-   - **IMPORTANT**: Create a strong database password and **SAVE IT**
-   - Select the region closest to you
-   - Choose the Free plan
-3. Wait for project creation (2-3 minutes)
-4. Get the connection string:
-   - Go to **Settings** → **Database**
-   - Scroll to **Connection string** section
-   - Select **Direct connection** (port 5432)
-   - Copy the connection string exactly as shown
-
-### Step 2: Create `.env.local`
-
-Create a `.env.local` file in the project root:
-
-```env
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=7d
-```
-
-**Important:**
-- Replace `[YOUR-PASSWORD]` with your actual database password
-- Keep the connection string in quotes
-- `DIRECT_URL` is optional and not needed initially
-
-### Step 3: Initialize Database
+### Step 1: Clone and install
 
 ```bash
-# Generate Prisma client
-pnpm db:generate
-
-# Create database tables
-pnpm db:push
+git clone <repo-url>
+cd MultiAGentPLatform
+pnpm install
 ```
 
-That's it! Your database is now configured.
+### Step 2: Environment
 
-## Alternative: Neon Database
-
-If you prefer Neon over Supabase:
-
-1. Go to [neon.tech](https://neon.tech) and sign up
-2. Create a new project
-3. Copy the connection string from the dashboard
-4. Add it to `.env.local`:
+Create a `.env` file in the project root (or copy from `.env.example`):
 
 ```env
-DATABASE_URL="postgresql://user:password@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
-DIRECT_URL="postgresql://user:password@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+# Required: Gemini/LLM (for diagram generation)
+GOOGLE_AI_API_KEY="your-google-ai-api-key"
+
+# Database (local SQLite — no remote server)
+DATABASE_URL="file:./prisma/local.db"
+
+# App URLs (defaults for local)
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
+
+### Step 3: Database and run
+
+```bash
+pnpm db:generate
+pnpm db:push
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Diagrams are stored locally in `prisma/local.db`; no login or remote DB needed.
 
 ## Environment Variables
 
-### Required Variables
+### Required
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `NEXT_PUBLIC_API_URL`: API base URL (default: `http://localhost:3000/api`)
-- `JWT_SECRET`: Secret key for JWT tokens (change in production!)
-- `JWT_EXPIRES_IN`: Token expiration time (default: `7d`)
+- **`GOOGLE_AI_API_KEY`** – For Gemini (diagram generation). Get one at [Google AI Studio](https://aistudio.google.com/apikey).
+- **`DATABASE_URL`** – For local SQLite use `file:./prisma/local.db`.
 
-### Optional Variables
+### Optional
 
-- `DIRECT_URL`: Direct database connection (for migrations, optional)
-- `METASOP_LLM_PROVIDER`: LLM provider (e.g., `openai`, `anthropic`, `openrouter`)
-- `METASOP_LLM_MODEL`: LLM model name
-- `OPENAI_API_KEY`: OpenAI API key (if using OpenAI)
-- `ANTHROPIC_API_KEY`: Anthropic API key (if using Anthropic)
-- `OPENROUTER_API_KEY`: OpenRouter API key (if using OpenRouter)
+- **`NEXT_PUBLIC_API_URL`** – API base URL (default: `http://localhost:3000/api`).
+- **`NEXT_PUBLIC_APP_URL`** – App URL (default: `http://localhost:3000`).
+- **`METASOP_LLM_MODEL`** – Override LLM model (e.g. `gemini-3-flash-preview`).
+- **`DEV_MODE`** – Set to `"true"` for development.
 
-## Database Commands
+## Database (Local SQLite)
 
-```bash
-# Generate Prisma client (after schema changes)
-pnpm db:generate
+- No account or remote server. A file `prisma/local.db` is created on first `pnpm db:push`.
+- To reset: delete `prisma/local.db` and run `pnpm db:push` again.
 
-# Push schema to database (development)
-pnpm db:push
+## Troubleshooting
 
-# Create migration (production)
-pnpm db:migrate
-
-# Open Prisma Studio (database GUI)
-pnpm db:studio
-```
-
-## Verification
-
-To verify everything is working:
-
-```bash
-# Open Prisma Studio to view your database
-pnpm db:studio
-```
-
-This opens a web interface at `http://localhost:5555` where you can view and manage your data.
-
-## Common Issues
-
-### Connection String Format
-
-**Correct format:**
-```env
-DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
-```
-
-**Common mistakes:**
-- ❌ Missing quotes around the connection string
-- ❌ Brackets around password: `[password]` (remove brackets)
-- ❌ Wrong port: using 6543 (pooler) instead of 5432 (direct) for migrations
-- ❌ Spaces before/after the `=` sign
-
-### Project Status
-
-If you get connection errors:
-1. Check that your Supabase project status is **Active** (not Paused)
-2. If paused, click "Resume" and wait 1-2 minutes
-3. Verify the connection string is copied exactly from Supabase
-
-### Direct vs Pooler Connection
-
-- **Direct connection** (port 5432): Required for migrations (`db:push`, `db:migrate`)
-- **Pooler connection** (port 6543): Can be used for application connections, but not for migrations
-
-For `.env.local`, always use the **Direct connection** string.
-
-## Next Steps
-
-- See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues
-- See [ARCHITECTURE.md](./ARCHITECTURE.md) for system architecture
-- See [API.md](./API.md) for API documentation
-
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues.

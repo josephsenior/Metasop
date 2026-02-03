@@ -14,22 +14,25 @@ import { useToast } from "@/components/ui/use-toast"
 import { ArtifactsPanel } from "@/components/artifacts/ArtifactsPanel"
 import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
 import type { Diagram } from "@/types/diagram"
-import { 
-  ArrowLeft, 
-  Share2, 
-  Edit, 
-  MoreVertical, 
-  Copy, 
-  Trash2, 
-  Maximize2, 
-  Info, 
-  Code2, 
-  Loader2, 
-  AlertCircle, 
-  Keyboard, 
+import {
+  ArrowLeft,
+  Share2,
+  Edit,
+  MoreVertical,
+  Copy,
+  Trash2,
+  Maximize2,
+  Info,
+  Code2,
+  Loader2,
+  AlertCircle,
+  Keyboard,
   MessageSquare,
   PanelLeft,
-  PanelRight
+  PanelRight,
+  Download,
+  FileText,
+  Presentation
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useFullscreen } from "@/hooks/use-fullscreen"
@@ -39,6 +42,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -125,7 +131,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
       // Load from API (now supports both auth and guest)
       const data = await diagramsApi.getById(resolvedParams.id)
-      
+
       // Debug: Log artifact structure
       console.log("[Diagram View] Loaded diagram:", {
         id: data.id,
@@ -134,24 +140,16 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
         artifactKeys: data.metadata?.metasop_artifacts ? Object.keys(data.metadata.metasop_artifacts) : [],
         artifacts: data.metadata?.metasop_artifacts
       })
-      
+
       setDiagram(data)
-      
+
       // Check if this is a guest diagram based on ID or metadata
       if (resolvedParams.id.startsWith("guest_") || data.metadata?.is_guest) {
         setIsGuestDiagram(true)
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to load diagram",
-        variant: "destructive",
-      })
-      if (isAuthenticated) {
-        router.push("/dashboard/diagrams")
-      } else {
-        router.push("/dashboard/create")
-      }
+      setDiagram(null)
+      // Don'tredirect automatically - show error state
     } finally {
       setIsLoading(false)
     }
@@ -198,16 +196,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const handleCopy = async () => {
     if (!diagram) return
 
-    if (isGuestDiagram) {
-      toast({
-        title: "Sign up required",
-        description: "Please sign up to duplicate and save diagrams.",
-        variant: "destructive",
-      })
-      router.push("/register")
-      return
-    }
-
     try {
       const duplicated = await diagramsApi.duplicate(resolvedParams.id)
       toast({
@@ -238,7 +226,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
         description: "The diagram has been permanently deleted.",
         variant: "destructive",
       })
-      
+
       if (isAuthenticated) {
         router.push("/dashboard/diagrams")
       } else {
@@ -253,7 +241,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  if (isLoading || !diagram) {
+  if (isLoading) {
     return (
       <AuthGuard requireAuth={!isGuestDiagram}>
         <div className="min-h-screen bg-background">
@@ -261,6 +249,30 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
           <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          </main>
+        </div>
+      </AuthGuard>
+    )
+  }
+
+  if (!diagram) {
+    return (
+      <AuthGuard requireAuth={!isGuestDiagram}>
+        <div className="min-h-screen bg-background">
+          <DashboardHeader />
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-md mx-auto text-center space-y-4 pt-16">
+              <div className="h-16 w-16 mx-auto rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-xl font-semibold">Diagram Not Found</h2>
+              <p className="text-muted-foreground">
+                The diagram you are looking for could not be found or you don't have permission to view it.
+              </p>
+              <Button onClick={() => router.push(isAuthenticated ? "/dashboard/diagrams" : "/dashboard/create")}>
+                Go Back
+              </Button>
             </div>
           </main>
         </div>
@@ -283,19 +295,13 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
             {isAuthenticated ? "Back to Diagrams" : "Back to Create"}
           </Link>
 
-          {/* Guest diagram notice */}
-          {isGuestDiagram && (
-            <Alert className="border-blue-600/30 bg-blue-600/10 mb-6">
-              <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-              <AlertDescription className="text-sm">
-                <span className="font-medium">This is a guest diagram and is not saved.</span>{" "}
-                <Link href="/register" className="underline hover:no-underline font-medium">
-                  Sign up
-                </Link>{" "}
-                to save your diagrams and access them anytime.
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Session notice */}
+          <Alert className="border-blue-600/30 bg-blue-600/10 mb-6">
+            <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+            <AlertDescription className="text-sm">
+              <span className="font-medium">Local storage.</span> Diagrams are saved to your device and persist across sessions.
+            </AlertDescription>
+          </Alert>
 
           {/* Header Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -315,7 +321,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       size="icon"
                       className={cn(
                         "h-9 w-9 transition-all",
-                        isLeftPanelOpen ? "bg-blue-600 hover:bg-blue-700" : ""
+                        isLeftPanelOpen ? "bg-blue-600 hover:bg-blue-700" : "text-foreground"
                       )}
                       onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
                     >
@@ -334,11 +340,14 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       size="icon"
                       className={cn(
                         "h-9 w-9 transition-all",
-                        isChatOpen ? "bg-blue-600 hover:bg-blue-700" : ""
+                        isChatOpen ? "bg-blue-600 hover:bg-blue-700" : "text-foreground"
                       )}
                       onClick={() => setIsChatOpen(!isChatOpen)}
                     >
-                      <PanelRight className="h-4 w-4" />
+                      <div className="relative">
+                        <PanelRight className="h-4 w-4" />
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-background animate-pulse" />
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -353,7 +362,23 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-9 w-9 border-border hover:bg-accent hover:text-accent-foreground"
+                      className="h-9 w-9 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => router.push(`/dashboard/create?id=${diagram.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Edit Diagram
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={handleShare}
                     >
                       <Share2 className="h-4 w-4" />
@@ -363,6 +388,9 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     Share diagram link
                   </TooltipContent>
                 </Tooltip>
+
+
+
                 <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
                   <DialogTrigger asChild>
                     <Tooltip>
@@ -370,7 +398,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                         <Button
                           variant="outline"
                           size="icon"
-                          className="border-border hover:bg-accent hover:text-accent-foreground"
+                          className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                         >
                           <Keyboard className="h-4 w-4" />
                         </Button>
@@ -426,12 +454,12 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
               </TooltipProvider>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="border-border hover:bg-accent hover:text-accent-foreground">
+                  <Button variant="outline" size="icon" className="border-border text-foreground hover:bg-accent hover:text-accent-foreground">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push(`/dashboard/create?id=${diagram.id}`)}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </DropdownMenuItem>
@@ -439,6 +467,38 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     <Copy className="mr-2 h-4 w-4" />
                     Duplicate
                   </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => {
+                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
+                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : '';
+                        window.open(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation${query}`, "_blank")
+                      }}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Markdown
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
+                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : '';
+                        window.open(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation${query}`, "_blank")
+                      }}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
+                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : ''; // append to existing query params
+                        window.open(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation${query}`, "_blank")
+                      }}>
+                        <Presentation className="mr-2 h-4 w-4" />
+                        PowerPoint (.pptx)
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                   <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
@@ -483,7 +543,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                               onTabChange={setActiveArtifactTab}
                               sidebarMode={isLeftPanelOpen}
                             />
-                            ) : (
+                          ) : (
                             <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">
                               <Loader2 className="h-8 w-8 animate-spin mb-4" />
                               <p>Loading agent artifacts...</p>
@@ -546,10 +606,10 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Desktop Chat Panel */}
-             {(() => {
-               const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
-               return artifacts && isChatOpen ? (
-                 <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
+            {(() => {
+              const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+              return artifacts && isChatOpen ? (
+                <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
                   <ProjectChatPanel
                     diagramId={diagram.id}
                     artifacts={artifacts}
@@ -557,8 +617,8 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     onRefineComplete={handleRefineComplete}
                   />
                 </div>
-               ) : null
-             })()}
+              ) : null
+            })()}
           </div>
 
           {/* Mobile Chat Sheet */}
@@ -568,10 +628,10 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
               <div className="lg:hidden fixed bottom-6 right-6 z-50">
                 <Sheet>
                   <SheetTrigger asChild>
-                     <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
-                       <MessageSquare className="h-6 w-6" />
-                     </Button>
-                   </SheetTrigger>
+                    <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
+                      <MessageSquare className="h-6 w-6" />
+                    </Button>
+                  </SheetTrigger>
                   <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
                     <ProjectChatPanel
                       diagramId={diagram.id}

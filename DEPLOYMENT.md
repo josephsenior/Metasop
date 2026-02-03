@@ -2,6 +2,13 @@
 
 This guide provides instructions for deploying MetaSOP in a production environment.
 
+## ✅ Before pushing to GitHub
+
+- **Never commit `.env`** — it’s in `.gitignore`; use `.env.example` as a template.
+- **No secrets in code** — API keys and `DATABASE_URL` must come from environment variables only.
+- **Optional**: Delete the mistaken folder `prisma/prisma/` if it exists (DB should live at `prisma/local.db`).
+- Run `pnpm db:push` after clone/deploy so the database and schema exist.
+
 ## 🚀 Deployment Options
 
 ### 1. Docker (Recommended)
@@ -16,9 +23,8 @@ docker build -t metasop .
 #### Run the container
 ```bash
 docker run -p 3000:3000 \
-  -e DATABASE_URL="your_db_url" \
+  -e DATABASE_URL="file:./prisma/local.db" \
   -e GOOGLE_AI_API_KEY="your_api_key" \
-  -e JWT_SECRET="your_secret" \
   metasop
 ```
 
@@ -36,9 +42,8 @@ Ensure the following environment variables are set in your production environmen
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `DATABASE_URL` | Database URL (SQLite for local) | `file:./prisma/local.db` |
 | `GOOGLE_AI_API_KEY` | Gemini API Key | `AIza...` |
-| `JWT_SECRET` | Secret for signing JWT tokens | `your-long-random-secret` |
 | `NODE_ENV` | Environment mode | `production` |
 
 ## 🗄️ Database Setup
@@ -55,7 +60,6 @@ pnpm db:push
 
 ## 🔐 Security Considerations
 
-- Always use a strong `JWT_SECRET` in production.
-- Ensure your database is not publicly accessible.
-- Use HTTPS for all communications.
-- Rotate your API keys regularly.
+- Ensure your database file (if SQLite) is not exposed publicly.
+- Use HTTPS for all communications in production.
+- Keep `GOOGLE_AI_API_KEY` secret.

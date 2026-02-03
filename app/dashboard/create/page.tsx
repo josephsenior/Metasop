@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-// Label removed - unused
 import { Badge } from "@/components/ui/badge"
 import { AuthGuard } from "@/components/auth/auth-guard"
 // DashboardHeader removed for full-screen design
@@ -23,9 +22,31 @@ import {
   Save,
   Download,
   FileText,
-  Paperclip
+  Paperclip,
+  User,
+  Layers,
+  Server,
+  Shield,
+  Palette,
+  Code,
+  CheckCircle2,
+  MoreHorizontal,
+  MoreVertical,
+  PanelLeft,
+  PanelRight,
+  MessageSquare,
+  Brain,
+  Cpu,
+  Zap,
+  Search,
+  Tag,
+  HelpCircle,
+  Plus,
+  Monitor,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { generateAgentContextMarkdown } from "@/lib/metasop/utils/export-context"
+import { fetchDiagramApi } from "@/lib/api/diagram-fetch"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -40,7 +61,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Brain, Cpu, Zap, Search, Tag, Palette } from "lucide-react"
+
 import { promptTemplates, templateCategories } from "@/lib/data/prompt-templates"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
@@ -49,10 +70,125 @@ import { Label } from "@/components/ui/label"
 import { VoiceInputButton } from "@/components/ui/voice-input-button"
 
 import { ProjectChatPanel } from "@/components/chat/ProjectChatPanel"
-import { MessageSquare } from "lucide-react"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export const dynamic = 'force-dynamic'
+
+/** Hero-style diagram: grid positions (col, row) -> (x, y). Order: PM, ARCH, Security, DevOps, UI, Engineer, QA. Larger spacing = longer edges. */
+const PIPELINE_GRID = { W: 380, H: 400, GRID_X: [50, 190, 330], GRID_Y: [50, 195, 340], bend: 72 }
+// QA edge: smooth curve Engineer (right) → QA (bottom-left); control points stay in bounds (no negative x)
+const QA_EDGE_MID_Y = (PIPELINE_GRID.GRID_Y[1] + PIPELINE_GRID.GRID_Y[2]) / 2
+const PIPELINE_STEP_IDS = ["pm_spec", "arch_design", "security_architecture", "devops_infrastructure", "ui_design", "engineer_impl", "qa_verification"] as const
+// Middle row (indices 3,4,5) strictly left→right: DevOps, UI, Engineer — path and visual order match
+const PIPELINE_POSITIONS: { col: number; row: number }[] = [
+  { col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 },
+  { col: 0, row: 1 }, { col: 1, row: 1 }, { col: 2, row: 1 },
+  { col: 0, row: 2 },
+]
+const PIPELINE_POINTS = PIPELINE_POSITIONS.map(({ col, row }) => ({
+  x: PIPELINE_GRID.GRID_X[col],
+  y: PIPELINE_GRID.GRID_Y[row],
+}))
+
+const AGENT_NODE_CONFIG: Record<string, { label: string; icon: typeof User; borderClass: string; color: string; bg: string }> = {
+  pm_spec: { label: "PM", icon: User, borderClass: "border-purple-500/70", color: "text-purple-400", bg: "bg-purple-500/10" },
+  arch_design: { label: "ARCH", icon: Layers, borderClass: "border-blue-500/70", color: "text-blue-400", bg: "bg-blue-500/10" },
+  devops_infrastructure: { label: "DEVOPS", icon: Server, borderClass: "border-emerald-500/70", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+  security_architecture: { label: "SEC", icon: Shield, borderClass: "border-red-500/70", color: "text-red-400", bg: "bg-red-500/10" },
+  ui_design: { label: "UI", icon: Palette, borderClass: "border-pink-500/70", color: "text-pink-400", bg: "bg-pink-500/10" },
+  engineer_impl: { label: "ENG", icon: Code, borderClass: "border-orange-500/70", color: "text-orange-400", bg: "bg-orange-500/10" },
+  qa_verification: { label: "QA", icon: CheckCircle2, borderClass: "border-cyan-500/70", color: "text-cyan-400", bg: "bg-cyan-500/10" },
+}
+
+/** Short narrative under each node while that step is running (e.g. "Defining user stories…"). */
+const STEP_NARRATIVES: Record<string, string> = {
+  pm_spec: "Defining user stories and scope…",
+  arch_design: "Designing APIs and database schema…",
+  security_architecture: "Defining threat model and controls…",
+  devops_infrastructure: "Planning CI/CD and infrastructure…",
+  ui_design: "Defining design tokens and components…",
+  engineer_impl: "Planning file structure and implementation…",
+  qa_verification: "Defining test strategy and cases…",
+}
+
+function getStepCompletionSummary(stepId: string, artifact: any): string {
+  const content = artifact?.content ?? artifact
+  switch (stepId) {
+    case "pm_spec": {
+      if (!content) return "Done"
+      const us = content.user_stories
+      const ac = content.acceptance_criteria
+      const n = Array.isArray(us) ? us.length : 0
+      const m = Array.isArray(ac) ? ac.length : 0
+      if (n || m) return `${n} user stories, ${m} acceptance criteria`
+      return "Requirements defined"
+    }
+    case "arch_design": {
+      if (!content) return "Done"
+      const apis = content.apis
+      const tables = content.database_schema?.tables
+      const a = Array.isArray(apis) ? apis.length : 0
+      const t = Array.isArray(tables) ? tables.length : 0
+      if (a || t) return `${a} APIs, ${t} tables`
+      return "Architecture defined"
+    }
+    case "security_architecture": {
+      if (!content) return "Threat model and controls defined"
+      const threats = content.threat_model
+      const controls = content.security_controls
+      const t = Array.isArray(threats) ? threats.length : 0
+      const c = Array.isArray(controls) ? controls.length : 0
+      if (t || c) return `${t} threats, ${c} controls`
+      return "Threat model and controls defined"
+    }
+    case "devops_infrastructure": {
+      if (!content) return "CI/CD and infrastructure planned"
+      const stages = content.cicd?.pipeline_stages
+      const services = content.infrastructure?.services
+      const s = Array.isArray(stages) ? stages.length : 0
+      const v = Array.isArray(services) ? services.length : 0
+      if (s || v) return `${s} pipeline stages, ${v} services`
+      return "CI/CD and infrastructure planned"
+    }
+    case "ui_design": {
+      if (!content) return "Design system defined"
+      const pages = content.website_layout?.pages
+      const specs = content.component_specs
+      const p = Array.isArray(pages) ? pages.length : 0
+      const c = Array.isArray(specs) ? specs.length : 0
+      if (p || c) return `${p} pages, ${c} component specs`
+      return "Design system and components defined"
+    }
+    case "engineer_impl": {
+      if (!content) return "Implementation planned"
+      const deps = content.dependencies
+      const files = content.file_structure
+      const d = Array.isArray(deps) ? deps.length : 0
+      if (d) return `${d} dependencies, file structure`
+      if (files) return "File structure and implementation planned"
+      return "Implementation planned"
+    }
+    case "qa_verification": {
+      if (!content) return "Test strategy defined"
+      const cases = content.test_cases
+      const c = Array.isArray(cases) ? cases.length : 0
+      if (c) return `${c} test cases`
+      return "Test strategy and cases defined"
+    }
+    default:
+      return "Done"
+  }
+}
 
 function CreateDiagramContent() {
   const router = useRouter()
@@ -68,9 +204,39 @@ function CreateDiagramContent() {
     if (queryPrompt && !isGenerating && !currentDiagram) {
       const decodedPrompt = decodeURIComponent(queryPrompt)
       setPrompt(decodedPrompt)
+    }
+  }, [searchParams])
 
-      // We need to wait for a tick so handleGenerate uses the latest prompt
-      // Or just pass the prompt directly to a new function
+  // Handle diagram ID from URL (for editing/viewing)
+  useEffect(() => {
+    const diagramId = searchParams.get("id")
+    if (diagramId && !currentDiagram && !isGenerating) {
+      const loadDiagram = async () => {
+        try {
+          const data = await diagramsApi.getById(diagramId)
+          if (data) {
+            setCurrentDiagram({
+              id: data.id,
+              title: data.title,
+              description: data.description,
+              isGuest: data.metadata?.is_guest,
+              metadata: data.metadata
+            })
+            // Also set prompt for context
+            if (data.metadata?.prompt) {
+              setPrompt(data.metadata.prompt)
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load diagram:", error)
+          toast({
+            title: "Error loading diagram",
+            description: "Could not load the requested diagram.",
+            variant: "destructive"
+          })
+        }
+      }
+      loadDiagram()
     }
   }, [searchParams])
 
@@ -79,6 +245,7 @@ function CreateDiagramContent() {
   const [includeDatabase] = useState(true)
   const [selectedModel, setSelectedModel] = useState("gemini-3-flash-preview")
   const [isReasoningEnabled, setIsReasoningEnabled] = useState(false)
+  const [guidedMode, setGuidedMode] = useState(false)
 
   // Load persisted state on mount
   useEffect(() => {
@@ -88,6 +255,9 @@ function CreateDiagramContent() {
 
       const savedReasoning = localStorage.getItem("metasop_reasoning_enabled")
       if (savedReasoning !== null) setIsReasoningEnabled(savedReasoning === "true")
+
+      const savedGuided = localStorage.getItem("metasop_guided_mode")
+      if (savedGuided !== null) setGuidedMode(savedGuided === "true")
     }
   }, [])
 
@@ -103,8 +273,21 @@ function CreateDiagramContent() {
       localStorage.setItem("metasop_reasoning_enabled", String(isReasoningEnabled))
     }
   }, [isReasoningEnabled])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("metasop_guided_mode", String(guidedMode))
+    }
+  }, [guidedMode])
+
   const [activeCategory, setActiveCategory] = useState("All")
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Guided clarification: when guided mode is ON and agent asks questions before generation
+  const [clarificationQuestions, setClarificationQuestions] = useState<Array<{ id: string; label: string; options: string[] }> | null>(null)
+  const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({})
+  const [showClarificationPanel, setShowClarificationPanel] = useState(false)
+  const [isScoping, setIsScoping] = useState(false)
 
   // Document upload state
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
@@ -128,7 +311,11 @@ function CreateDiagramContent() {
     step_id: string
     role: string
     status: "pending" | "running" | "success" | "failed"
+    error?: string
+    partial_response?: unknown
   }>>([])
+  /** Per-step completion summaries for diagram pipeline (e.g. step_id -> "5 APIs, 3 tables"). */
+  const [stepSummaries, setStepSummaries] = useState<Record<string, string>>({})
 
   // Agent thoughts and partial artifacts state
   const activeStepIdRef = useRef<string | null>(null)
@@ -139,6 +326,7 @@ function CreateDiagramContent() {
   // Track pending timeouts to clean them up if component unmounts or generation is cancelled
   const pendingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const thoughtScrollRef = useRef<HTMLDivElement>(null)
+  const clarificationPanelRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll thoughts to bottom
   useEffect(() => {
@@ -146,6 +334,13 @@ function CreateDiagramContent() {
       thoughtScrollRef.current.scrollTop = thoughtScrollRef.current.scrollHeight
     }
   }, [agentThoughts])
+
+  // Scroll clarification panel into view when it appears (guided mode questions)
+  useEffect(() => {
+    if (showClarificationPanel && clarificationPanelRef.current) {
+      clarificationPanelRef.current.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+  }, [showClarificationPanel])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -173,7 +368,7 @@ function CreateDiagramContent() {
           type: file.name.split('.').pop() || 'txt',
           content: content,
         }
-        
+
         setUploadedDocuments(prev => [...prev, newDoc])
         toast({
           title: "Document Added",
@@ -182,8 +377,8 @@ function CreateDiagramContent() {
         setIsUploading(false)
       }
       reader.readAsText(file)
-      } catch {
-        setIsUploading(false)
+    } catch {
+      setIsUploading(false)
       toast({
         title: "File Error",
         description: "Failed to read the file.",
@@ -194,7 +389,6 @@ function CreateDiagramContent() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
-
     if (prompt.length < 20) {
       toast({
         title: "Prompt too short",
@@ -203,35 +397,75 @@ function CreateDiagramContent() {
       })
       return
     }
+    // Guided mode OFF: skip scope and generate directly (original behavior)
+    if (!guidedMode) {
+      await doStartGeneration(undefined)
+      return
+    }
+    // Guided mode ON: call scope; agent may return questions or proceed
+    setIsScoping(true)
+    try {
+      const scopeRes = await fetchDiagramApi("/api/diagrams/scope", {
+        method: "POST",
+        body: JSON.stringify({ prompt: prompt.trim() }),
+        headers: { "Content-Type": "application/json" },
+      })
+      const scopeJson = await scopeRes.json().catch(() => ({}))
+      const data = scopeJson?.data
+      if (!scopeRes.ok) {
+        toast({ title: "Scoping failed", description: scopeJson?.message || scopeRes.statusText, variant: "destructive" })
+        return
+      }
+      if (data?.proceed === true) {
+        await doStartGeneration(undefined)
+        return
+      }
+      if (data?.needClarification === true && Array.isArray(data?.questions) && data.questions.length > 0) {
+        setClarificationQuestions(data.questions)
+        setClarificationAnswers({})
+        setShowClarificationPanel(true)
+        toast({
+          title: "A few questions first",
+          description: "Answer above or click Skip to start generation.",
+        })
+        return
+      }
+      await doStartGeneration(undefined)
+    } catch (e: any) {
+      toast({ title: "Scoping failed", description: e?.message || "Could not check scope", variant: "destructive" })
+    } finally {
+      setIsScoping(false)
+    }
+  }
 
+  /** Start generation (optionally with clarification answers). Called after scope says proceed or after user answers. */
+  const doStartGeneration = async (answers?: Record<string, string>) => {
     setIsGenerating(true)
-    setCurrentDiagram(null) // Clear previous diagram
+    setCurrentDiagram(null)
+    setStepSummaries({})
+    setShowClarificationPanel(false)
+    setClarificationQuestions(null)
+    setClarificationAnswers({})
 
-    // Clear all pending timeouts and reset tracking
     pendingTimeoutsRef.current.forEach(timeout => clearTimeout(timeout))
     pendingTimeoutsRef.current.clear()
     stepStartTimesRef.current.clear()
 
-    // Initialize progress steps based on enabled agents
     const initialSteps: Array<{ step_id: string; role: string; status: "pending" | "running" | "success" | "failed" }> = [
       { step_id: "pm_spec", role: "Product Manager", status: "pending" },
       { step_id: "arch_design", role: "Architect", status: "pending" },
-      { step_id: "devops_infrastructure", role: "DevOps", status: "pending" },
       { step_id: "security_architecture", role: "Security", status: "pending" },
-      { step_id: "engineer_impl", role: "Engineer", status: "pending" },
+      { step_id: "devops_infrastructure", role: "DevOps", status: "pending" },
       { step_id: "ui_design", role: "UI Designer", status: "pending" },
+      { step_id: "engineer_impl", role: "Engineer", status: "pending" },
       { step_id: "qa_verification", role: "QA", status: "pending" },
     ]
     setGenerationSteps(initialSteps)
-    console.log("[Frontend] Generation started, initialized", initialSteps.length, "steps")
+    setStepSummaries({})
 
     try {
-      // Don't set first step to running - wait for step_start event from stream
-      // This ensures the animation only shows running when the agent actually starts
-
-      const response = await fetch("/api/diagrams/generate?stream=true", {
+      const response = await fetchDiagramApi("/api/diagrams/generate?stream=true", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: prompt.trim(),
           options: {
@@ -242,6 +476,7 @@ function CreateDiagramContent() {
             reasoning: isReasoningEnabled,
           },
           documents: uploadedDocuments,
+          ...(answers && Object.keys(answers).length > 0 ? { clarificationAnswers: answers } : {}),
         }),
       })
 
@@ -296,6 +531,8 @@ function CreateDiagramContent() {
                 return updated
               })
             } else if (event.type === "step_complete") {
+              const summary = getStepCompletionSummary(event.step_id, event.artifact)
+              setStepSummaries(prev => ({ ...prev, [event.step_id]: summary }))
               // CRITICAL: Only process step_complete if step was actually started (running)
               // If step is still pending, it means step_start never fired - mark as running first
               setGenerationSteps(prev => {
@@ -377,9 +614,11 @@ function CreateDiagramContent() {
               })
             } else if (event.type === "step_failed") {
               setGenerationSteps(prev => prev.map(s =>
-                s.step_id === event.step_id ? { ...s, status: "failed", error: event.error } : s
+                s.step_id === event.step_id
+                  ? { ...s, status: "failed", error: event.error, partial_response: event.partial_response }
+                  : s
               ))
-              
+
               // Log full artifact content for debugging root cause analysis
               if (event.artifact) {
                 const artifactContent = event.artifact.content || event.artifact;
@@ -391,12 +630,15 @@ function CreateDiagramContent() {
               } else {
                 console.error(`[Step Failed] ${event.role} (${event.step_id}):`, event.error);
               }
-              
+              const isTimeout = event.error?.toLowerCase().includes("timeout");
+              const hasPartial = isTimeout && event.partial_response != null;
               toast({
                 title: "Step Failed",
-                description: `Agent ${event.role} encountered an error: ${event.error}${event.artifact ? ' (Check browser console for full artifact content)' : ''}`,
+                description: hasPartial
+                  ? `Agent ${event.role} timed out. Partial response is shown under the step (hover/expand).`
+                  : `Agent ${event.role} encountered an error: ${event.error}${event.artifact ? " (Check browser console for full artifact content)" : ""}`,
                 variant: "destructive",
-                duration: 10000, // Show longer so user can read it
+                duration: 10000,
               })
             } else if (event.type === "orchestration_complete") {
               console.log("[Frontend] Orchestration complete, diagram:", {
@@ -405,42 +647,42 @@ function CreateDiagramContent() {
                 hasArtifacts: !!event.diagram?.metadata?.metasop_artifacts
               })
 
-            const diagram = event.diagram
-            if (!diagram) {
-              console.error("[Frontend] ERROR: orchestration_complete event missing diagram!", event)
-              toast({
-                title: "Generation Error",
-                description: "Diagram data was not received. Please try again.",
-                variant: "destructive"
+              const diagram = event.diagram
+              if (!diagram) {
+                console.error("[Frontend] ERROR: orchestration_complete event missing diagram!", event)
+                toast({
+                  title: "Generation Error",
+                  description: "Diagram data was not received. Please try again.",
+                  variant: "destructive"
+                })
+                return
+              }
+
+              const isGuestDiagram = diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false
+
+              if (!diagram.metadata?.metasop_artifacts) {
+                console.error("[Frontend] ERROR: Diagram has no artifacts!", diagram)
+                toast({
+                  title: "Generation Warning",
+                  description: "Diagram was generated but contains no artifacts. Check console for details.",
+                  variant: "destructive"
+                })
+              }
+
+              setCurrentDiagram({
+                id: diagram.id,
+                title: diagram.title,
+                description: diagram.description,
+                isGuest: isGuestDiagram,
+                metadata: diagram.metadata,  // Contains metasop_artifacts with all agent data
               })
-              return
-            }
 
-            const isGuestDiagram = diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false
+              console.log("[Frontend] Diagram set, has artifacts:", !!diagram.metadata?.metasop_artifacts)
 
-            if (!diagram.metadata?.metasop_artifacts) {
-              console.error("[Frontend] ERROR: Diagram has no artifacts!", diagram)
               toast({
-                title: "Generation Warning",
-                description: "Diagram was generated but contains no artifacts. Check console for details.",
-                variant: "destructive"
+                title: "Diagram generated!",
+                description: "Your architecture diagram has been generated successfully. Don't forget to save it if you want to keep it.",
               })
-            }
-
-            setCurrentDiagram({
-              id: diagram.id,
-              title: diagram.title,
-              description: diagram.description,
-              isGuest: isGuestDiagram,
-              metadata: diagram.metadata,  // Contains metasop_artifacts with all agent data
-            })
-
-            console.log("[Frontend] Diagram set, has artifacts:", !!diagram.metadata?.metasop_artifacts)
-
-            toast({
-              title: "Diagram generated!",
-              description: "Your architecture diagram has been generated successfully. Don't forget to save it if you want to keep it.",
-            })
 
               // Automatically mark first steps as success if they weren't matched in stream
               // (Keep existing completion logic)
@@ -514,16 +756,11 @@ function CreateDiagramContent() {
         })
 
         toast({
-          title: isAuthenticated ? "Diagram updated!" : "Saved to session",
-          description: isAuthenticated 
-            ? "Your changes have been saved successfully."
-            : "Your changes are saved for this session. Sign up to keep them forever!",
+          title: "Saved",
+          description: "Your changes are saved for this session.",
         })
 
-        // Only navigate to view page if authenticated
-        if (isAuthenticated) {
-          router.push(`/dashboard/diagrams/${currentDiagram.id}`)
-        }
+        // router.push(`/dashboard/diagrams/${currentDiagram.id}`)
       } else {
         // Create new diagram (since autosave is removed, even authenticated users start with a temp ID)
         const savedDiagram = await diagramsApi.create({
@@ -553,16 +790,12 @@ function CreateDiagramContent() {
         })
 
         toast({
-          title: isAuthenticated ? "Diagram saved!" : "Saved to session",
-          description: isAuthenticated
-            ? "Your diagram has been saved successfully."
-            : "Your diagram is saved for this session. Sign up to keep it forever!",
+          title: "Saved",
+          description: "Your diagram is saved for this session.",
         })
 
-        // Navigate to view page for authenticated users
-        if (isAuthenticated) {
-          router.push(`/dashboard/diagrams/${savedDiagram.id}`)
-        }
+        // Redirect removed to allow staying on the page
+        // router.push(`/dashboard/diagrams/${savedDiagram.id}`)
       }
     } catch (error: any) {
       console.error("[Create Page] Error saving diagram:", error)
@@ -632,7 +865,100 @@ function CreateDiagramContent() {
     }
   }
 
+  const sidebarContent = (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Palette className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-semibold">Templates</h3>
+        </div>
+        <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">
+          {promptTemplates.length} Available
+        </Badge>
+      </div>
+
+      <ScrollArea className="w-full whitespace-nowrap" type="hover">
+        <div className="flex gap-1.5 pb-2 no-scrollbar">
+          {templateCategories.map((category) => (
+            <Button
+              key={category}
+              variant={activeCategory === category ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveCategory(category)}
+              className={`h-7 px-3 text-[10px] rounded-full transition-all duration-300 ${activeCategory === category
+                ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                : "hover:bg-blue-50 hover:text-blue-600 border-border/50"
+                }`}
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
+
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+        <Input
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-8 pl-8 text-[11px] bg-background/50 border-border/50 focus-visible:ring-blue-500/30"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2.5 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+        {promptTemplates
+          .filter(t => (activeCategory === "All" || t.category === activeCategory) &&
+            (t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              t.description.toLowerCase().includes(searchQuery.toLowerCase()))).map((template) => (
+                <motion.button
+                  key={template.id}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setPrompt(template.prompt)}
+                  className="group text-left p-3 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 hover:bg-linear-to-br hover:from-blue-500/2 hover:to-purple-500/2 transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h4 className="text-[11px] font-bold text-foreground group-hover:text-blue-600 transition-colors">
+                      {template.title}
+                    </h4>
+                    <div className="p-1 rounded-md bg-muted/50 group-hover:bg-blue-500/10 group-hover:text-blue-600 transition-colors">
+                      <Tag className="h-3 w-3" />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 mb-2 group-hover:text-muted-foreground/80 transition-colors">
+                    {template.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {template.tags.slice(0, 3).map(tag => (
+                      <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground group-hover:bg-blue-500/5 group-hover:text-blue-600/70 transition-colors">
+                        {tag}
+                      </span>
+                    ))}
+                    {template.tags.length > 3 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground/50">
+                        +{template.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </motion.button>
+              ))}
+      </div>
+
+      <div className="p-3 rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 to-purple-500/5">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Brain className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold">Pro Tip</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          Templates provide a solid foundation. Refine your diagram with instructions at the bottom.
+        </p>
+      </div>
+    </div>
+  )
+
   return (
+
     <AuthGuard requireAuth={false}>
       <div className="h-screen flex flex-col bg-background overflow-hidden">
         {/* Top Toolbar */}
@@ -649,282 +975,311 @@ function CreateDiagramContent() {
             <h1 className="text-sm font-semibold text-foreground truncate">Create Diagram</h1>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {currentDiagram && (
-              <>
-                {currentDiagram.id && !currentDiagram.id.startsWith("temp_") ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(`/dashboard/diagrams/${currentDiagram.id}`)}
-                          className="gap-1 sm:gap-2"
-                        >
-                          <Save className="h-4 w-4" />
-                          <span className="hidden sm:inline">
-                            {isAuthenticated ? "View Saved" : "View in Session"}
-                          </span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Diagram is saved. Click to view <Kbd>V</Kbd>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSave}
-                          className="gap-1 sm:gap-2"
-                        >
-                          <Save className="h-4 w-4" />
-                          <span className="hidden sm:inline">
-                            {isAuthenticated ? "Save Diagram" : "Save"}
-                          </span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {isAuthenticated
-                          ? "Save diagram to your account"
-                          : "Save to current session"}
-                        {" "}
-                        <Kbd>S</Kbd>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </>
-            )}
-
-            {currentDiagram && (
-              <div className="flex items-center gap-1.5">
-                <TooltipProvider>
+              <TooltipProvider>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/20 rounded-xl border border-border/40 backdrop-blur-md">
+                  {/* Left Panel Toggle (Menu) */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={isChatOpen ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setIsChatOpen(!isChatOpen)}
-                        className={`gap-1 sm:gap-2 ${isChatOpen ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                        variant={isLeftPanelOpen ? "default" : "ghost"}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8 rounded-lg transition-all",
+                          isLeftPanelOpen ? "bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20" : "text-foreground hover:bg-muted"
+                        )}
+                        onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
                       >
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="hidden sm:inline">Chat</span>
+                        <PanelLeft className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {isChatOpen ? "Close chat" : "Open chat"} <Kbd>C</Kbd>
+                      {isLeftPanelOpen ? "Close Menu" : "Open Menu"}
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
 
-                <TooltipProvider>
+                  {/* Chat Toggle */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isChatOpen ? "default" : "ghost"}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8 rounded-lg transition-all relative",
+                          isChatOpen ? "bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20" : "text-foreground hover:bg-muted"
+                        )}
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                      >
+                        <div className="relative">
+                          <PanelRight className="h-4 w-4" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-background animate-pulse" />
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isChatOpen ? "Close Chat" : "Open Chat"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+                  {/* Save Button */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="sm"
-                        onClick={handleExportContext}
-                        className="gap-1 sm:gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50/50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-400/10"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg text-foreground hover:bg-muted transition-all"
+                        onClick={handleSave}
                       >
-                        <FileText className="h-4 w-4" />
-                        <span className="hidden sm:inline">Export Context</span>
+                        <Save className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Export for AI Coding Assistants <Kbd>E</Kbd>
+                      {currentDiagram?.id && !currentDiagram.id.startsWith("temp_") ? "Update Diagram" : "Save Diagram"}
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
 
-                <TooltipProvider>
+                  <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+                  {/* Create New Button */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDownloadSpecs}
-                        className="gap-1 sm:gap-2 border-dashed"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg text-foreground hover:bg-muted transition-all"
+                        onClick={() => {
+                          router.push('/dashboard/create')
+                          window.location.reload()
+                        }}
                       >
-                        <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">Download Specs</span>
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Download diagram JSON specs <Kbd>D</Kbd>
+                      Create New Diagram
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
-              </div>
+
+                  <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+                  {/* More Actions Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 p-0 rounded-lg text-foreground hover:bg-muted/50 transition-all">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">More actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 bg-card/98 backdrop-blur-xl border-border/50 shadow-xl rounded-xl p-1.5 animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2">
+
+                      {/* Primary Action: Save/View */}
+                      {currentDiagram.id && !currentDiagram.id.startsWith("temp_") ? (
+                        <DropdownMenuItem
+                          onClick={() => router.push(`/dashboard/diagrams/${currentDiagram.id}`)}
+                          className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-blue-500/10 hover:text-blue-600 focus:bg-blue-500/10 focus:text-blue-600 focus:outline-hidden transition-colors"
+                        >
+                          <Save className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+                          <span>{isAuthenticated ? "View Saved Version" : "View in Session"}</span>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={handleSave}
+                          className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-blue-500/10 hover:text-blue-600 focus:bg-blue-500/10 focus:text-blue-600 focus:outline-hidden transition-colors"
+                        >
+                          <Save className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+                          <span>{isAuthenticated ? "Save to Account" : "Save to Session"}</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator className="bg-border/50 my-1.5" />
+
+                      {/* Secondary Actions */}
+                      <DropdownMenuItem
+                        onClick={handleExportContext}
+                        className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
+                      >
+                        <FileText className="h-4 w-4 text-muted-foreground group-hover:text-orange-500 transition-colors" />
+                        <span>Export Context</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="bg-border/50 my-1.5" />
+
+                      {/* Downloads */}
+                      <div className="px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Downloads
+                      </div>
+
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const guestSessionId = document.cookie
+                            .split('; ')
+                            .find(row => row.startsWith('guest_session_id='))
+                            ?.split('=')[1];
+
+                          const query = guestSessionId ? `?guestSessionId=${guestSessionId}` : '';
+                          window.location.href = `/api/diagrams/${currentDiagram.id}/export/pptx${query}`;
+                        }}
+                        disabled={!currentDiagram.id}
+                        className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
+                      >
+                        <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
+                        <span>PowerPoint (.pptx)</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={handleDownloadSpecs}
+                        className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
+                      >
+                        <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                        <span>Download JSON Specs</span>
+                      </DropdownMenuItem>
+
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipProvider>
             )}
           </div>
+
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Left Sidebar - Creation Panel */}
-          <AnimatePresence>
+          <ResizablePanelGroup direction="horizontal" className="flex-1">
+            {/* Left Sidebar - Creation Panel */}
             {isLeftPanelOpen && (
-              <motion.div
-                initial={{ x: -320, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -320, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="w-full sm:w-80 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col shrink-0 z-40 shadow-lg"
-              >
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                  {/* Guest user notice */}
-                  {!isAuthenticated && (
-                    <Alert className="border-blue-600/30 bg-blue-600/10">
-                      <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-                      <AlertDescription className="text-xs">
-                        <span className="font-medium">Guest mode.</span> Create up to 2 diagrams.{" "}
-                        <Link href="/register" className="underline hover:no-underline font-medium">
-                          Sign up
-                        </Link>{" "}
-                        for unlimited access.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <h3 className="text-sm font-semibold">Templates</h3>
-                      </div>
-                      <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/20">
-                        {promptTemplates.length} Available
-                      </Badge>
-                    </div>
-
-                    {/* Category Filter */}
-                    <ScrollArea className="w-full whitespace-nowrap pb-4" type="always">
-                      <div className="flex gap-1.5">
-                        {templateCategories.map((category) => (
-                          <Button
-                            key={category}
-                            variant={activeCategory === category ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setActiveCategory(category)}
-                            className={`h-7 px-3 text-[10px] rounded-full transition-all duration-300 ${activeCategory === category
-                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                              : "hover:bg-blue-50 hover:text-blue-600 border-border/50"
-                              }`}
-                          >
-                            {category}
-                          </Button>
-                        ))}
-                      </div>
-                      <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-
-                    {/* Search Templates */}
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                      <Input
-                        placeholder="Search templates..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8 pl-8 text-[11px] bg-background/50 border-border/50 focus-visible:ring-blue-500/30"
-                      />
-                    </div>
-
-                    {/* Template List */}
-                    <div className="grid grid-cols-1 gap-2.5 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                      {promptTemplates
-                        .filter(t => (activeCategory === "All" || t.category === activeCategory) &&
-                          (t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            t.description.toLowerCase().includes(searchQuery.toLowerCase())))
-                        .map((template) => (
-                          <motion.button
-                            key={template.id}
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setPrompt(template.prompt)}
-                            className="group text-left p-3 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 hover:bg-linear-to-br hover:from-blue-500/2 hover:to-purple-500/2 transition-all duration-300 shadow-sm hover:shadow-md"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <h4 className="text-[11px] font-bold text-foreground group-hover:text-blue-600 transition-colors">
-                                {template.title}
-                              </h4>
-                              <div className="p-1 rounded-md bg-muted/50 group-hover:bg-blue-500/10 group-hover:text-blue-600 transition-colors">
-                                <Tag className="h-3 w-3" />
-                              </div>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 mb-2 group-hover:text-muted-foreground/80 transition-colors">
-                              {template.description}
-                            </p>
-                            <div className="flex flex-wrap gap-1">
-                              {template.tags.slice(0, 3).map(tag => (
-                                <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground group-hover:bg-blue-500/5 group-hover:text-blue-600/70 transition-colors">
-                                  {tag}
-                                </span>
-                              ))}
-                              {template.tags.length > 3 && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground/50">
-                                  +{template.tags.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          </motion.button>
-                        ))}
-                    </div>
-
-                    <div className="p-3 rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 to-purple-500/5">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Brain className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                        <p className="text-[11px] text-blue-700 dark:text-blue-300 font-bold">
-                          Pro Tip
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        Templates provide a solid foundation. You can always refine the generated diagram by giving specific instructions at the bottom.
-                      </p>
+              <>
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={40} className="hidden lg:block relative">
+                  <div className="h-full border-r border-border bg-card/98 backdrop-blur-xl flex flex-col shrink-0">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                      {sidebarContent}
                     </div>
                   </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle className="hidden lg:flex" />
 
-
-
-                </div>
-              </motion.div>
+                {/* Mobile Fallback (Unchanged logic for small screens) */}
+                <AnimatePresence>
+                  <motion.div
+                    key="mobile-sidebar-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-background/40 backdrop-blur-[2px] z-40 lg:hidden"
+                    onClick={() => setIsLeftPanelOpen(false)}
+                  />
+                  <motion.div
+                    key="mobile-sidebar-panel"
+                    initial={{ x: "-100%", opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: "-100%", opacity: 0 }}
+                    transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+                    className="fixed inset-y-0 left-0 w-full sm:w-80 border-r border-border bg-card/98 backdrop-blur-xl flex flex-col shrink-0 z-50 shadow-2xl lg:hidden"
+                  >
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                      {sidebarContent}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </>
             )}
-          </AnimatePresence>
 
-          {/* Toggle Button for Left Panel */}
-          {!isLeftPanelOpen && (
-            <button
-              onClick={() => setIsLeftPanelOpen(true)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-card border border-border border-l-0 rounded-r-lg p-2 shadow-lg hover:bg-accent transition-colors"
-              aria-label="Open creation panel"
-            >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          )}
-
-          {/* Center Canvas - React Flow */}
-          <div className="flex-1 relative bg-background flex flex-col min-h-0">
-            {/* Progress Bar at Top */}
-            {isGenerating && generationSteps.length > 0 && (
-              <div className="absolute top-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-md border-b border-border shadow-lg">
-                <div className="p-4">
-                  <GenerationProgress steps={generationSteps} />
+            {/* Main Area: Combined Diagram and Chat */}
+            <ResizablePanel defaultSize={isLeftPanelOpen ? 80 : 100} className="flex flex-col relative bg-background min-h-0">
+              {/* Progress Bar at Top */}
+              {isGenerating && generationSteps.length > 0 && (
+                <div className="absolute top-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-md border-b border-border shadow-lg">
+                  <div className="p-4">
+                    <GenerationProgress steps={generationSteps} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-              <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-                <div className="flex-1 overflow-hidden" style={{ paddingTop: isGenerating && generationSteps.length > 0 ? '180px' : '0' }}>
+              {/* Guided clarification panel - rendered here to avoid overflow-hidden clipping */}
+              {showClarificationPanel && clarificationQuestions && clarificationQuestions.length > 0 && (
+                <div
+                  ref={clarificationPanelRef}
+                  className="absolute bottom-28 left-0 right-0 z-50 p-4 pointer-events-auto"
+                >
+                  <div className="max-w-2xl mx-auto">
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-blue-500/30 bg-card/98 backdrop-blur-md shadow-xl p-5 space-y-5"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <HelpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        A few questions to tailor the result
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Pick one option per question — your choices will be sent to the agent before generation.
+                      </p>
+                      <div className="space-y-4">
+                        {clarificationQuestions.map((q) => (
+                          <div key={q.id} className="space-y-2">
+                            <Label className="text-sm font-medium text-foreground">{q.label}</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {q.options.map((opt) => {
+                                const isSelected = clarificationAnswers[q.id] === opt
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => setClarificationAnswers((prev) => ({ ...prev, [q.id]: opt }))}
+                                    className={`inline-flex items-center rounded-lg border px-3 py-2 text-sm transition-colors ${isSelected
+                                      ? "border-blue-500 bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                                      : "border-border/60 bg-muted/50 text-muted-foreground hover:border-border hover:bg-muted"
+                                      }`}
+                                  >
+                                    {opt}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => doStartGeneration(undefined)}
+                        >
+                          Skip
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="gap-2 bg-blue-600 hover:bg-blue-700"
+                          onClick={() => {
+                            const allAnswered = clarificationQuestions.every((q) => clarificationAnswers[q.id]?.trim())
+                            if (allAnswered) {
+                              doStartGeneration(clarificationAnswers)
+                            } else {
+                              toast({
+                                title: "Answer all questions",
+                                description: "Pick one option per question, or click Skip to generate without them.",
+                                variant: "destructive",
+                              })
+                            }
+                          }}
+                        >
+                          <Play className="h-3.5 w-3.5" />
+                          Continue to generate
+                        </Button>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              )}
+
+              {/* Center Area: Artifacts or Generation flow */}
+              <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+                <div className="flex-1 overflow-hidden" style={{ paddingTop: isGenerating && generationSteps.length > 0 ? '72px' : '0' }}>
                   {currentDiagram && currentDiagram.metadata?.metasop_artifacts ? (
-                    <div className="h-full">
+                    <div className="h-full pb-6">
                       <ArtifactsPanel
                         diagramId={currentDiagram.id || ""}
                         artifacts={currentDiagram.metadata.metasop_artifacts}
@@ -949,7 +1304,7 @@ function CreateDiagramContent() {
                             Diagram Generated but Empty
                           </h3>
                           <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-                            The diagram was created but no nodes were generated. This might happen if the prompt was too vague or the AI couldn't extract enough information.
+                            The diagram was created but no artifacts were generated. This might happen if the prompt was too vague or the AI couldn't extract enough information.
                           </p>
                           <p className="text-xs text-muted-foreground">
                             💡 Try being more specific about features, technologies, or architecture patterns.
@@ -977,6 +1332,165 @@ function CreateDiagramContent() {
                         </div>
                       </motion.div>
                     </div>
+                  ) : isGenerating && generationSteps.length > 0 ? (
+                    (() => {
+                      const { W, H, bend } = PIPELINE_GRID
+                      const p = PIPELINE_POINTS
+                      const completedCount = generationSteps.filter(s => s.status === "success").length
+                      const hasRunning = generationSteps.some(s => s.status === "running")
+                      const visibleCount = Math.min(completedCount + (hasRunning ? 1 : 0), 7)
+                      const visibleStepIds = PIPELINE_STEP_IDS.slice(0, visibleCount)
+                      const visibleSteps = visibleStepIds.map(id => generationSteps.find(s => s.step_id === id)!).filter(Boolean)
+                      const pathParts: string[] = []
+                      if (visibleCount >= 1) pathParts.push(`M ${p[0].x} ${p[0].y}`)
+                      if (visibleCount >= 2) pathParts.push(`L ${p[1].x} ${p[1].y}`)
+                      if (visibleCount >= 3) pathParts.push(`L ${p[2].x} ${p[2].y}`)
+                      if (visibleCount >= 4) pathParts.push(`C ${p[2].x + bend} ${p[2].y}, ${p[3].x + bend} ${p[3].y}, ${p[3].x} ${p[3].y}`)
+                      if (visibleCount >= 5) pathParts.push(`L ${p[4].x} ${p[4].y}`)
+                      if (visibleCount >= 6) pathParts.push(`L ${p[5].x} ${p[5].y}`)
+                      if (visibleCount >= 7) pathParts.push(`C ${p[5].x} ${QA_EDGE_MID_Y}, ${p[6].x} ${QA_EDGE_MID_Y}, ${p[6].x} ${p[6].y}`)
+                      const pathProgressive = pathParts.join(" ")
+                      const pathTraceUpToVisible = pathProgressive
+                      const scale = 1.1
+                      const displayW = W * scale
+                      const displayH = H * scale
+                      return (
+                        <div className="flex flex-col items-center -mt-2">
+                          <p className="text-sm font-medium text-muted-foreground text-center mb-1 mt-6">
+                            Step {completedCount + (hasRunning ? 1 : 0)} of 7
+                          </p>
+                          <div
+                            className="relative overflow-visible"
+                            style={{ width: displayW, height: displayH, transform: `scale(${scale})`, transformOrigin: "center top" }}
+                          >
+                            <div className="relative" style={{ width: W, height: H }}>
+                              <svg
+                                width={W}
+                                height={H}
+                                viewBox={`0 0 ${W} ${H}`}
+                                className="absolute inset-0 pointer-events-none overflow-visible z-10"
+                              >
+                                <defs>
+                                  <linearGradient id="create-flow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#a855f7" />
+                                    <stop offset="50%" stopColor="#3b82f6" />
+                                    <stop offset="100%" stopColor="#22d3ee" />
+                                  </linearGradient>
+                                  <filter id="create-neon-blur">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                                  </filter>
+                                </defs>
+                                <path d={pathTraceUpToVisible} fill="none" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" strokeLinecap="round" className="text-foreground" />
+                                <motion.path
+                                  key={pathProgressive}
+                                  d={pathProgressive}
+                                  fill="none"
+                                  stroke="url(#create-flow-grad)"
+                                  strokeWidth={visibleCount === 1 ? 4.5 : 3.5}
+                                  strokeLinecap="round"
+                                  strokeDasharray="4, 16"
+                                  initial={{ strokeDashoffset: 0 }}
+                                  animate={{ strokeDashoffset: [-40, 0] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                  filter="url(#create-neon-blur)"
+                                />
+                              </svg>
+                              {visibleSteps.map((step, i) => {
+                                const pt = PIPELINE_POINTS[i]
+                                const config = AGENT_NODE_CONFIG[step.step_id]
+                                const isRunning = step.status === "running"
+                                const isSuccess = step.status === "success"
+                                const isFailed = step.status === "failed"
+                                const summary = stepSummaries[step.step_id]
+                                const Icon = config?.icon ?? FileText
+                                return (
+                                  <div
+                                    key={step.step_id}
+                                    className="absolute z-20 flex items-center justify-center"
+                                    style={{ left: pt.x - 28, top: pt.y - 28, width: 112, height: 100 }}
+                                  >
+                                    <motion.div
+                                      initial={{ opacity: 0, scale: 0 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                                      className="relative flex flex-col items-center"
+                                    >
+                                      <motion.div
+                                        animate={isRunning ? { opacity: [0.7, 1, 0.7] } : {}}
+                                        transition={{ duration: 1.2, repeat: isRunning ? Infinity : 0 }}
+                                        className={cn(
+                                          "w-14 h-14 rounded-2xl border-2 backdrop-blur-xl flex items-center justify-center shadow-xl",
+                                          config?.bg,
+                                          config?.borderClass,
+                                          isSuccess && "border-opacity-100",
+                                          isRunning && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
+                                          isFailed && "border-red-500 bg-red-500/20"
+                                        )}
+                                      >
+                                        <Icon className={cn("h-7 w-7 shrink-0", config?.color, isRunning && "drop-shadow-sm")} />
+                                      </motion.div>
+                                      <div className="mt-1 w-28 text-center shrink-0">
+                                        <span className="text-[10px] font-black tracking-tight text-foreground uppercase">
+                                          {config?.label ?? step.role}
+                                        </span>
+                                      </div>
+                                      <div className="mt-1 w-36 min-h-10 flex items-center justify-center">
+                                        {isSuccess ? (
+                                          summary ? (
+                                            <motion.p
+                                              initial={{ opacity: 0, y: 4 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className="text-[10px] text-muted-foreground text-center leading-tight line-clamp-3 px-1 font-medium"
+                                              title={summary}
+                                            >
+                                              {summary}
+                                            </motion.p>
+                                          ) : (
+                                            <span className="text-[10px] text-muted-foreground">Done</span>
+                                          )
+                                        ) : isRunning ? (
+                                          <motion.p
+                                            animate={{ opacity: [0.7, 1, 0.7] }}
+                                            transition={{ duration: 1, repeat: Infinity }}
+                                            className="text-[10px] text-primary text-center leading-tight line-clamp-2 px-1 font-medium"
+                                          >
+                                            {STEP_NARRATIVES[step.step_id] ?? `${step.role} working…`}
+                                          </motion.p>
+                                        ) : isFailed ? (
+                                          (() => {
+                                            const isTimeout = step.error?.toLowerCase().includes("timeout");
+                                            const partial = step.partial_response;
+                                            const hasPartial = isTimeout && partial != null;
+                                            const raw = hasPartial ? (typeof partial === "string" ? partial : JSON.stringify(partial, null, 2)) : "";
+                                            const partialStr = raw.slice(0, 800) + (raw.length > 800 ? "…" : "");
+                                            return hasPartial && partialStr ? (
+                                              <TooltipProvider>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <span className="text-[10px] text-red-500 font-medium cursor-help">Timed out (hover)</span>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent side="top" className="max-w-sm max-h-64 overflow-auto text-xs font-mono whitespace-pre-wrap wrap-break-word p-2">
+                                                    <p className="font-semibold text-foreground mb-1">Partial response (timeout):</p>
+                                                    <pre className="text-muted-foreground">{partialStr}</pre>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              </TooltipProvider>
+                                            ) : (
+                                              <span className="text-[10px] text-red-500 font-medium" title={step.error}>Failed</span>
+                                            );
+                                          })()
+                                        ) : null}
+                                      </div>
+                                    </motion.div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()
                   ) : (
                     <div className="h-full flex items-center justify-center bg-background">
                       <div className="text-center space-y-6 max-w-lg px-6">
@@ -1008,177 +1522,227 @@ function CreateDiagramContent() {
                   )}
                 </div>
 
-                {/* Simple Input Area - Only show if NO diagram or left panel open */}
+                {/* Input Area (Absolute positioned within center panel) */}
                 {(!currentDiagram || isLeftPanelOpen) && (
                   <div className="absolute bottom-0 left-0 right-0 z-40 p-4">
-                    <div className="max-w-4xl mx-auto">
-                      <div className="relative">
+                    <div className="max-w-3xl mx-auto">
+                      <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-lg overflow-hidden">
                         <Textarea
                           id="prompt"
-                          placeholder="Describe your application..."
+                          placeholder="Describe your application in plain English…"
                           value={prompt}
                           onChange={(e) => setPrompt(e.target.value)}
-                          className="min-h-[50px] max-h-[150px] resize-none text-sm pl-60 sm:pl-72 pr-40 sm:pr-48 shadow-xl"
-                          disabled={isGenerating}
+                          className="min-h-[52px] max-h-[140px] resize-none text-sm rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 pt-3 pb-2 placeholder:text-muted-foreground/70"
+                          disabled={isGenerating || isScoping}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault()
-                              if (prompt.trim().length >= 20 && !isGenerating) {
+                              if (prompt.trim().length >= 20 && !isGenerating && !isScoping) {
                                 handleGenerate()
                               }
                             }
                           }}
                         />
-                        {/* Model Selector - Left Side */}
-                        <div className="absolute bottom-2 left-2 z-50 flex items-center bg-background/50 backdrop-blur-md border border-white/10 rounded-lg shadow-sm hover:bg-white/5 transition-all duration-300 divide-x divide-white/10">
-                          {/* Model Selector Section */}
-                          <Select value={selectedModel} onValueChange={setSelectedModel}>
-                            <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 focus:ring-offset-0 gap-2 text-[10px] font-medium opacity-80 hover:opacity-100 rounded-none rounded-l-lg px-3">
-                              <SelectValue placeholder="Model" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
-                              <SelectItem value="gemini-3-flash-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
-                                <div className="flex items-center gap-2">
-                                  <Zap className="h-3 w-3 text-amber-500" />
-                                  <span>Gemini 3 Flash</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="gemini-3-pro-preview" className="text-[10px] cursor-pointer focus:bg-white/10 hover:bg-white/5">
-                                <div className="flex items-center gap-2">
-                                  <Cpu className="h-3 w-3 text-purple-500" />
-                                  <span>Gemini 3 Pro</span>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-
-                          {/* Thinking Toggle Section */}
-                          <div className="flex items-center gap-2 px-3 h-8">
-                            <Switch
-                              id="reasoning-mode"
-                              checked={isReasoningEnabled}
-                              onCheckedChange={setIsReasoningEnabled}
-                              className="scale-75 data-[state=checked]:bg-blue-600"
-                            />
-                            <Label
-                              htmlFor="reasoning-mode"
-                              className="text-[10px] font-medium text-muted-foreground cursor-pointer select-none flex items-center gap-1.5"
-                            >
-                              Thinking
-                              {isReasoningEnabled && (
-                                <Brain className="h-3 w-3 text-blue-500 animate-pulse" />
-                              )}
-                            </Label>
+                        <div className="flex items-center justify-between gap-4 px-3 py-2 border-t border-border/50 bg-muted/30">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-muted-foreground hover:text-foreground transition-colors">
+                                    <Switch
+                                      id="guided-mode"
+                                      checked={guidedMode}
+                                      onCheckedChange={setGuidedMode}
+                                      className="scale-90 data-[state=checked]:bg-blue-600"
+                                    />
+                                    <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="text-xs font-medium hidden sm:inline">Guided</span>
+                                  </label>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[220px]">
+                                  <p className="text-xs">
+                                    {guidedMode
+                                      ? "On: AI may ask questions before generating."
+                                      : "Off: Generate directly from your prompt."}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Select value={selectedModel} onValueChange={setSelectedModel}>
+                              <SelectTrigger className="h-7 min-w-[168px] w-auto border-0 bg-transparent focus:ring-0 shadow-none text-xs font-medium text-muted-foreground hover:text-foreground">
+                                <SelectValue placeholder="Model" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
+                                <SelectItem value="gemini-3-flash-preview" className="text-xs cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <Zap className="h-3 w-3 text-amber-500" />
+                                    Gemini 3 Flash
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="gemini-3-pro-preview" className="text-xs cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <Cpu className="h-3 w-3 text-purple-500" />
+                                    Gemini 3 Pro
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-muted-foreground hover:text-foreground transition-colors">
+                                    <Switch
+                                      id="reasoning-mode"
+                                      checked={isReasoningEnabled}
+                                      onCheckedChange={setIsReasoningEnabled}
+                                      className="scale-90 data-[state=checked]:bg-blue-600"
+                                    />
+                                    <Brain className={cn("h-3.5 w-3.5 shrink-0", isReasoningEnabled && "text-blue-500")} />
+                                    <span className="text-xs font-medium hidden sm:inline">Thinking</span>
+                                  </label>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[200px]">
+                                  <p className="text-xs">Extended reasoning (slower, more thorough).</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
-                        </div>
-
-                        <div className="absolute bottom-2 right-2 flex items-center gap-3">
-                          {uploadedDocuments.length > 0 && (
-                            <div className="flex items-center gap-1.5 mr-2">
-                              <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] py-0 h-6">
-                                {uploadedDocuments.length} docs
+                          <div className="flex items-center gap-2 shrink-0">
+                            {uploadedDocuments.length > 0 && (
+                              <Badge variant="secondary" className="text-[10px] py-0.5 px-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0">
+                                {uploadedDocuments.length}
                               </Badge>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                onClick={() => setUploadedDocuments([])}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 rounded-lg border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/10"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isGenerating || isUploading}
-                          >
-                            {isUploading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Paperclip className="h-4 w-4" />
                             )}
-                          </Button>
-                          <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept=".txt,.md,.json,.csv,.pdf"
-                            onChange={handleFileChange}
-                          />
-                          <VoiceInputButton 
-                            onTranscription={(text) => setPrompt(prev => prev + (prev ? " " : "") + text)}
-                            disabled={isGenerating}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 rounded-lg border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/10"
-                          />
-                          <span className="text-xs text-muted-foreground mr-1">
-                            {prompt.length}/20
-                          </span>
-                          <Button
-                            onClick={handleGenerate}
-                            disabled={!prompt.trim() || prompt.length < 20 || isGenerating}
-                            size="sm"
-                            className="h-8 px-4 shrink-0 transition-all duration-300 flex items-center gap-2 bg-white text-black hover:bg-white/90 border-0 shadow-sm font-bold"
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span className="text-xs">Generating...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="h-4 w-4" />
-                                <span className="text-xs">Generate</span>
-                              </>
-                            )}
-                          </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isGenerating || isUploading}
+                                  >
+                                    {isUploading ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Paperclip className="h-3.5 w-3.5" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Attach documents</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept=".txt,.md,.json,.csv,.pdf"
+                              onChange={handleFileChange}
+                            />
+                            <VoiceInputButton
+                              onTranscription={(text) => setPrompt(prev => prev + (prev ? " " : "") + text)}
+                              disabled={isGenerating || isScoping}
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
+                            />
+                            <span
+                              className={cn(
+                                "text-[10px] tabular-nums w-6 text-right",
+                                prompt.length < 20 ? "text-muted-foreground" : "text-green-600 dark:text-green-400"
+                              )}
+                              title="Minimum 20 characters"
+                            >
+                              {prompt.length}/20
+                            </span>
+                            <Button
+                              onClick={handleGenerate}
+                              disabled={!prompt.trim() || prompt.length < 20 || isGenerating || isScoping}
+                              size="sm"
+                              className="h-7 px-3 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold rounded-md"
+                            >
+                              {isScoping || isGenerating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-3.5 w-3.5" />
+                              )}
+                              <span className="hidden sm:inline">
+                                {isScoping ? "Checking…" : isGenerating ? "Generating…" : "Generate"}
+                              </span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+            </ResizablePanel>
 
-              {/* Desktop Chat Panel */}
-              {currentDiagram && currentDiagram.metadata?.metasop_artifacts && isChatOpen && (
-                <div className="hidden lg:block w-96 shrink-0 border-l border-border bg-card/50 backdrop-blur-sm h-full relative z-40">
-                  <ProjectChatPanel
-                    diagramId={currentDiagram.id || ""}
-                    artifacts={currentDiagram.metadata.metasop_artifacts}
-                    activeTab={activeArtifactTab}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Chat Sheet */}
-            {currentDiagram && currentDiagram.metadata?.metasop_artifacts && (
-              <div className="lg:hidden fixed bottom-6 right-6 z-50">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
-                      <MessageSquare className="h-6 w-6" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+            {/* Right Sidebar - Chat Panel (Desktop Resizable) */}
+            {currentDiagram && currentDiagram.metadata?.metasop_artifacts && isChatOpen && (
+              <>
+                <ResizableHandle withHandle className="hidden lg:flex w-1 bg-border/60 hover:bg-primary/60 transition-all duration-200" />
+                <ResizablePanel defaultSize={22} minSize={18} maxSize={40} collapsible className="hidden lg:block">
+                  <div className="h-full border-l border-border/80 bg-linear-to-br from-card/60 via-card/50 to-background/40 backdrop-blur-md relative z-40 shadow-lg">
                     <ProjectChatPanel
                       diagramId={currentDiagram.id || ""}
                       artifacts={currentDiagram.metadata.metasop_artifacts}
                       activeTab={activeArtifactTab}
+                      onRefineComplete={(result) => {
+                        if (result?.artifacts && currentDiagram) {
+                          setCurrentDiagram({
+                            ...currentDiagram,
+                            metadata: {
+                              ...currentDiagram.metadata,
+                              metasop_artifacts: result.artifacts,
+                            },
+                          })
+                        }
+                      }}
                     />
-                  </SheetContent>
-                </Sheet>
-              </div>
+                  </div>
+                </ResizablePanel>
+              </>
             )}
-          </div>
+          </ResizablePanelGroup>
+
+          {/* Mobile Chat Sheet */}
+          {currentDiagram && currentDiagram.metadata?.metasop_artifacts && (
+            <div className="lg:hidden fixed bottom-6 right-6 z-50">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button size="icon" className="h-14 w-14 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white">
+                    <MessageSquare className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
+                  <ProjectChatPanel
+                    diagramId={currentDiagram.id || ""}
+                    artifacts={currentDiagram.metadata.metasop_artifacts}
+                    activeTab={activeArtifactTab}
+                    onRefineComplete={(result) => {
+                      if (result?.artifacts && currentDiagram) {
+                        setCurrentDiagram({
+                          ...currentDiagram,
+                          metadata: {
+                            ...currentDiagram.metadata,
+                            metasop_artifacts: result.artifacts,
+                          },
+                        })
+                      }
+                    }}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          )}
         </div>
       </div>
-    </AuthGuard >
+    </AuthGuard>
   )
+
 }
 
 export default function CreateDiagramPage() {

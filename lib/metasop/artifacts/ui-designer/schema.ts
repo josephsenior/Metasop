@@ -72,44 +72,44 @@ export const uiDesignerSchema = {
                 },
                 spacing: {
                     type: "object",
-                    description: "Spacing scale. Use ONLY raw CSS values (e.g., '0.5rem'). No descriptions.",
+                    description: "Spacing scale. CSS length per key, e.g. 0.25rem.",
                     properties: {
-                        xs: { type: "string", maxLength: 10 },
-                        sm: { type: "string", maxLength: 10 },
-                        md: { type: "string", maxLength: 10 },
-                        lg: { type: "string", maxLength: 10 },
-                        xl: { type: "string", maxLength: 10 },
-                        "2xl": { type: "string", maxLength: 10 },
+                        xs: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        md: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        xl: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        "2xl": { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
                     },
                 },
                 typography: {
                     type: "object",
-                    required: ["fontFamily", "fontSize"], // REQUIRED: These fields must always be present
-                    description: "Typography system. Use raw CSS values only. REQUIRED fields: fontFamily, fontSize.",
+                    required: ["fontFamily", "fontSize"],
+                    description: "Typography. fontFamily and fontSize are mandatory. Font size: CSS length per key, e.g. 0.875rem.",
                     properties: {
-                        fontFamily: { type: "string", maxLength: 100, description: "REQUIRED: Primary font family (e.g., 'Inter')." },
+                        fontFamily: { type: "string", maxLength: 100, description: "Primary font family, e.g. Inter." },
                         headingFont: { type: "string", maxLength: 100, description: "Heading font family." },
                         fontSize: {
                             type: "object",
-                            description: "REQUIRED: Font size scale (e.g., '0.875rem'). Must include at least xs, sm, base, lg.",
+                            description: "Font size scale. CSS length per key, e.g. 0.875rem. Include xs, sm, base, lg.",
                             properties: {
-                                xs: { type: "string", maxLength: 10 },
-                                sm: { type: "string", maxLength: 10 },
-                                base: { type: "string", maxLength: 10 },
-                                lg: { type: "string", maxLength: 10 },
-                                xl: { type: "string", maxLength: 10 },
-                                "2xl": { type: "string", maxLength: 10 },
+                                xs: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                base: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                xl: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                "2xl": { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
                             },
                         },
                         fontWeight: {
                             type: "object",
                             description: "Font weights (e.g., '400').",
                             properties: {
-                                light: { type: "string", maxLength: 10 },
-                                normal: { type: "string", maxLength: 10 },
-                                medium: { type: "string", maxLength: 10 },
-                                semibold: { type: "string", maxLength: 10 },
-                                bold: { type: "string", maxLength: 10 },
+                                light: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
+                                normal: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
+                                medium: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
+                                semibold: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
+                                bold: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
                             }
                         }
                     },
@@ -117,11 +117,11 @@ export const uiDesignerSchema = {
                 borderRadius: {
                     type: "object",
                     properties: {
-                        none: { type: "string", maxLength: 10 },
-                        sm: { type: "string", maxLength: 10 },
-                        md: { type: "string", maxLength: 10 },
-                        lg: { type: "string", maxLength: 10 },
-                        full: { type: "string", maxLength: 20 },
+                        none: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        md: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        full: { type: "string", maxLength: 20, pattern: "^[0-9.]*(rem|px|em|%)?$" },
                     }
                 },
                 shadows: {
@@ -143,7 +143,7 @@ export const uiDesignerSchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["name", "description", "category"],
+                required: ["name", "description"],
                 properties: {
                     name: { type: "string", maxLength: 50, description: "Component name (e.g., 'Button', 'Modal')." },
                     category: { type: "string", enum: ["atom", "molecule", "organism", "template"], description: "Atomic design category." },
@@ -204,6 +204,7 @@ export const uiDesignerSchema = {
         },
         atomic_structure: {
             type: "object",
+            required: ["atoms", "molecules", "organisms"],
             properties: {
                 atoms: { type: "array", items: { type: "string", maxLength: 50 } },
                 molecules: { type: "array", items: { type: "string", maxLength: 50 } },
@@ -227,7 +228,7 @@ export const uiDesignerSchema = {
                                 type: "array",
                                 items: {
                                     type: "object",
-                                    required: ["name", "components"],
+                                    required: ["name"],
                                     properties: {
                                         name: { type: "string", maxLength: 50, description: "Section name (e.g., 'Hero')." },
                                         components: { type: "array", items: { type: "string", maxLength: 50 } },

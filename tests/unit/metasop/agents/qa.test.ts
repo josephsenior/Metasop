@@ -98,8 +98,8 @@ describe("QAAgent", () => {
     expect(Array.isArray(content.test_cases)).toBe(true);
     expect(content.test_cases.length).toBeGreaterThan(0);
     content.test_cases.forEach((t) => {
-      if (t.gherkin !== undefined) {
-        expect(typeof t.gherkin).toBe("string");
+      if (t.expected_result !== undefined) {
+        expect(typeof t.expected_result).toBe("string");
       }
     });
   });

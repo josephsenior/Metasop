@@ -73,10 +73,10 @@ export default function ProjectSummary({ artifacts, onTabChange }: { artifacts: 
   
   // Handle both MetaSOPArtifact structure (with .content) and direct content
   const availableArtifacts = Object.entries(artifacts || {}).filter(([, data]) => {
-    if (!data) return false
-    // Check if it's a MetaSOPArtifact structure (has content property) or direct content
-    const hasContent = data.content !== undefined
-    const hasData = typeof data === 'object' && Object.keys(data).length > 0
+    if (!data || typeof data !== "object") return false
+    const d = data as Record<string, unknown>
+    const hasContent = d.content !== undefined
+    const hasData = Object.keys(d).length > 0
     return hasContent || hasData
   })
   

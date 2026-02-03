@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -6,6 +8,13 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+  },
+  // Resolve DB path at config load (cwd = project root). Same idea as debug_logs: data in a folder in the codebase.
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL || (() => {
+      const p = path.resolve(process.cwd(), 'prisma/local.db').replace(/\\/g, '/');
+      return p.startsWith('/') ? `file://${p}` : `file:///${p}`;
+    })(),
   },
 }
 

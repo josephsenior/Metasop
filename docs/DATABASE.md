@@ -1,54 +1,51 @@
 # Database Configuration
 
-This document describes the database setup and configuration using PostgreSQL with Prisma ORM.
+This document describes the database setup for **local open-source usage**.
 
 ## Overview
 
-The application uses **PostgreSQL** as the database, managed through **Prisma ORM**. The database can be hosted on Supabase (recommended) or Neon.
+The application uses **SQLite** with **Prisma ORM** for local storage. No remote database server or account is required — everything runs locally at no extra cost.
 
 ## What's Configured
 
 ### 1. Prisma Schema (`prisma/schema.prisma`)
 
-- `User` model with all required fields
-- `ResetToken` model for password reset functionality
-- PostgreSQL configuration
+- **Provider:** SQLite (single file, no server)
+- **Diagram** model: stores diagram metadata (id, userId, title, description, status, metadata JSON, timestamps). **No nodes or edges** are stored.
 
-### 2. Prisma Client (`lib/prisma.ts`)
+#### Diagram model: artifact-centric, no graph in DB
 
-- Prisma instance configured for Next.js
-- Singleton pattern to avoid multiple connections
-- Development logging enabled
+**Diagram = metadata + artifacts.** Stored fields: `id`, `userId`, `title`, `description`, `status`, `metadata`, `createdAt`, `updatedAt`. Artifacts live in `metadata.metasop_artifacts`; there is no knowledge graph.
 
-### 3. Data Layer (`lib/auth/db.ts`)
+### 2. Prisma Client (`lib/database/prisma.ts`)
 
-- Complete migration from in-memory database to PostgreSQL
-- All functions now use Prisma
-- Password hashing with bcrypt
+- Singleton pattern for Next.js
+- Development logging when `NODE_ENV === "development"`
+- Resolves relative `DATABASE_URL` paths to absolute file URLs (avoids "Unable to open the database file" on Windows/Next.js)
+- Creates the database directory automatically if missing (`prisma/` for `file:./prisma/local.db`)
 
-### 4. NPM Scripts
+### 3. NPM Scripts
 
 - `pnpm db:generate` - Generate Prisma client
-- `pnpm db:push` - Push schema to database (development)
-- `pnpm db:migrate` - Create migration (production)
+- `pnpm db:push` - Create/update local SQLite file and tables
 - `pnpm db:studio` - Open Prisma Studio GUI
 
-## Setup
+## Setup (Local)
 
-See [SETUP.md](./SETUP.md) for complete setup instructions.
+1. Add to `.env` (or copy from `.env.example`):
 
-### Quick Setup
-
-1. Create a Supabase or Neon account
-2. Get your connection string
-3. Add to `.env.local`:
    ```env
-   DATABASE_URL="postgresql://..."
+   DATABASE_URL="file:./prisma/local.db"
    ```
-4. Run:
+
+2. Run:
+
    ```bash
+   pnpm db:generate
    pnpm db:push
    ```
+
+The file `prisma/local.db` will be created in your project. Add `prisma/*.db` to `.gitignore` if you don't want to commit the database.
 
 ## Database Commands
 
@@ -56,36 +53,19 @@ See [SETUP.md](./SETUP.md) for complete setup instructions.
 # Generate Prisma client (after schema changes)
 pnpm db:generate
 
-# Push schema to database (development)
+# Create/update local database and tables
 pnpm db:push
-
-# Create migration (production)
-pnpm db:migrate
 
 # Open Prisma Studio (database GUI)
 pnpm db:studio
 ```
 
-## Migration from In-Memory Database
-
-Data from the in-memory database will be lost. This is expected as it was temporary. New users will be stored permanently in PostgreSQL.
-
 ## Security Notes
 
-⚠️ **IMPORTANT:**
-
-1. **Never commit `.env.local`** (already in `.gitignore`)
-2. **Change JWT_SECRET** in production - use a strong, unique secret key
-3. **Use strong passwords** for database access
-4. **Enable SSL** in production connections
-5. **Use connection pooling** for production workloads
-
-## Troubleshooting
-
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common database connection issues.
+- **Never commit `.env`** if it contains secrets (API keys). `.env` is often in `.gitignore`.
+- The SQLite file (`prisma/local.db`) is local to your machine; no network exposure by default.
 
 ## Related Documentation
 
-- [SETUP.md](./SETUP.md) - Complete setup guide
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and solutions
-- [Prisma Docs](https://www.prisma.io/docs) - Official Prisma documentation
+- [SETUP.md](./SETUP.md) - Full setup guide
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues

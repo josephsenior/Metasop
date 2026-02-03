@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthenticatedUser, createErrorResponse } from "@/lib/auth/middleware"
+import { createErrorResponse, addGuestCookie } from "@/lib/api/response"
 import { handleGuestAuth } from "@/lib/middleware/guest-auth"
 import { diagramDb } from "@/lib/diagrams/db"
 import { DocumentationGenerator } from "@/lib/artifacts/documentation-generator"
@@ -17,20 +17,19 @@ import { TestPlanGenerator } from "@/lib/artifacts/test-plan-generator"
 import { SecurityAuditGenerator } from "@/lib/artifacts/security-audit-generator"
 import { APIClientGenerator } from "@/lib/artifacts/api-client-generator"
 import { MermaidGenerator } from "@/lib/artifacts/mermaid-generator"
+import { PPTXGenerator } from "@/lib/artifacts/pptx-generator"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    let userId: string;
-    
-    try {
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
-    } catch {
-      return createErrorResponse("Unauthorized", 401);
+    const guestAuth = await handleGuestAuth(request);
+    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+    if (!guestAuth.canProceed || !guestAuth.userId) {
+      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
     }
+    const userId = guestAuth.userId;
 
     const resolvedParams = await params
     const { searchParams } = new URL(request.url)
@@ -40,15 +39,25 @@ export async function GET(
     // Get diagram
     const diagram = await diagramDb.findById(resolvedParams.id, userId)
     if (!diagram) {
-      return createErrorResponse("Diagram not found", 404)
+      return createErrorResponse("Diagram not found", 404, cookieOpt)
     }
 
     // Check if user has access (or if it's a guest diagram)
     if (diagram.userId !== userId && !diagram.id.startsWith("guest_")) {
-      return createErrorResponse("Unauthorized", 403)
+      // Fallback: Check query param for guest session
+      const paramSessionId = searchParams.get('guestSessionId');
+
+      if (paramSessionId) {
+        const paramUserId = paramSessionId.startsWith("guest_") ? paramSessionId : `guest_${paramSessionId}`;
+        if (paramUserId !== diagram.userId) {
+          return createErrorResponse("Unauthorized", 403, cookieOpt)
+        }
+      } else {
+        return createErrorResponse("Unauthorized", 403, cookieOpt)
+      }
     }
 
-    let content: string | Blob
+    let content: string | Blob | Buffer
     let contentType: string
     let filename: string
 
@@ -71,8 +80,14 @@ export async function GET(
           content = markdownToHtml(markdown)
           contentType = "text/html"
           filename = `${diagram.title.replace(/\s+/g, "-")}-documentation.html`
+        } else if (format === "pptx") {
+          const pptxGen = new PPTXGenerator(diagram)
+          const buffer = await pptxGen.generate()
+          content = buffer
+          contentType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          filename = `${diagram.title.replace(/\s+/g, "-")}-presentation.pptx`
         } else {
-          return createErrorResponse("Unsupported format for documentation. Use 'markdown', 'pdf', or 'html'", 400)
+          return createErrorResponse("Unsupported format for documentation. Use 'markdown', 'pdf', 'html', or 'pptx'", 400, cookieOpt)
         }
         break
 
@@ -94,7 +109,7 @@ export async function GET(
           contentType = "text/plain"
           filename = `${diagram.title.replace(/\s+/g, "-")}-seed.sql`
         } else {
-          return createErrorResponse("Unsupported format for SQL. Use 'migration' or 'seed'", 400)
+          return createErrorResponse("Unsupported format for SQL. Use 'migration' or 'seed'", 400, cookieOpt)
         }
         break
 
@@ -142,7 +157,7 @@ export async function GET(
           contentType = "text/markdown"
           filename = `${diagram.title.replace(/\s+/g, "-")}-erd.md`
         } else {
-          return createErrorResponse("Unsupported format for ERD. Use 'mermaid', 'plantuml', or 'markdown'", 400)
+          return createErrorResponse("Unsupported format for ERD. Use 'mermaid', 'plantuml', or 'markdown'", 400, cookieOpt)
         }
         break
 
@@ -178,21 +193,23 @@ export async function GET(
           contentType = "text/plain"
           filename = `${diagram.title.replace(/\s+/g, "-")}-sequence.mmd`
         } else {
-          return createErrorResponse("Unsupported format for Mermaid. Use 'flowchart' or 'sequence'", 400)
+          return createErrorResponse("Unsupported format for Mermaid. Use 'flowchart' or 'sequence'", 400, cookieOpt)
         }
         break
 
       default:
-        return createErrorResponse(`Unknown artifact type: ${artifact}`, 400)
+        return createErrorResponse(`Unknown artifact type: ${artifact}`, 400, cookieOpt)
     }
 
     // Return file
-    return new NextResponse(content, {
+    const res = new NextResponse(content as any, {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
-    })
+    });
+    if (cookieOpt?.guestSessionId) addGuestCookie(res, cookieOpt.guestSessionId);
+    return res;
   } catch (error: any) {
     if (error.message === "Unauthorized") {
       return createErrorResponse("Unauthorized", 401)
@@ -210,19 +227,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    let userId: string;
-    
-    try {
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
-    } catch {
-      const guestAuth = await handleGuestAuth(request);
-      if (guestAuth.isGuest && guestAuth.sessionId) {
-        userId = `guest_${guestAuth.sessionId}`;
-      } else {
-        return createErrorResponse("Unauthorized", 401);
-      }
+    const guestAuth = await handleGuestAuth(request);
+    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+    if (!guestAuth.canProceed || !guestAuth.userId) {
+      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
     }
+    const userId = guestAuth.userId;
 
     const resolvedParams = await params
     const body = await request.json()
@@ -231,11 +241,22 @@ export async function POST(
     // Get diagram
     const diagram = await diagramDb.findById(resolvedParams.id, userId)
     if (!diagram) {
-      return createErrorResponse("Diagram not found", 404)
+      return createErrorResponse("Diagram not found", 404, cookieOpt)
     }
 
     if (diagram.userId !== userId && !diagram.id.startsWith("guest_")) {
-      return createErrorResponse("Unauthorized", 403)
+      // Fallback: Check query param for guest session (params are in url for POST too usually, or check body but URL is safer for consistency)
+      const { searchParams } = new URL(request.url);
+      const paramSessionId = searchParams.get('guestSessionId');
+
+      if (paramSessionId) {
+        const paramUserId = paramSessionId.startsWith("guest_") ? paramSessionId : `guest_${paramSessionId}`;
+        if (paramUserId !== diagram.userId) {
+          return createErrorResponse("Unauthorized", 403, cookieOpt)
+        }
+      } else {
+        return createErrorResponse("Unauthorized", 403, cookieOpt)
+      }
     }
 
     if (artifact === "scaffold") {
@@ -244,12 +265,14 @@ export async function POST(
 
       const filename = `${diagram.title.replace(/\s+/g, "-")}-scaffold.zip`
 
-      return new NextResponse(zipBlob, {
+      const res = new NextResponse(zipBlob, {
         headers: {
           "Content-Type": "application/zip",
           "Content-Disposition": `attachment; filename="${filename}"`,
         },
-      })
+      });
+      if (cookieOpt?.guestSessionId) addGuestCookie(res, cookieOpt.guestSessionId);
+      return res;
     }
 
     if (artifact === "api-client") {
@@ -287,12 +310,14 @@ export async function POST(
       const zipBlob = await zip.generateAsync({ type: "blob" })
       const filename = `${diagram.title.replace(/\s+/g, "-")}-api-client-sdk.zip`
 
-      return new NextResponse(zipBlob, {
+      const resApi = new NextResponse(zipBlob, {
         headers: {
           "Content-Type": "application/zip",
           "Content-Disposition": `attachment; filename="${filename}"`,
         },
-      })
+      });
+      if (cookieOpt?.guestSessionId) addGuestCookie(resApi, cookieOpt.guestSessionId);
+      return resApi;
     }
 
     if (artifact === "iac") {
@@ -315,18 +340,20 @@ export async function POST(
         content = iacGen.generateTerraform()
         filename = "main.tf"
       } else {
-        return createErrorResponse("Unsupported IaC format. Use 'docker-compose', 'kubernetes', or 'terraform'", 400)
+        return createErrorResponse("Unsupported IaC format. Use 'docker-compose', 'kubernetes', or 'terraform'", 400, cookieOpt)
       }
 
-      return new NextResponse(content, {
+      const resIac = new NextResponse(content, {
         headers: {
           "Content-Type": contentType,
           "Content-Disposition": `attachment; filename="${filename}"`,
         },
-      })
+      });
+      if (cookieOpt?.guestSessionId) addGuestCookie(resIac, cookieOpt.guestSessionId);
+      return resIac;
     }
 
-    return createErrorResponse(`Unknown artifact type: ${artifact}`, 400)
+    return createErrorResponse(`Unknown artifact type: ${artifact}`, 400, cookieOpt)
   } catch (error: any) {
     if (error.message === "Unauthorized") {
       return createErrorResponse("Unauthorized", 401)

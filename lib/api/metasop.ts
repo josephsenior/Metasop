@@ -90,20 +90,24 @@ export const metasopApi = {
   },
 
   /**
-   * Refine a specific artifact
+   * Edit artifacts via predefined tools (set_at_path, delete_at_path, add_array_item, remove_array_item).
+   * Tool-based refinement; no agent re-runs.
    */
-  async refineArtifact(data: {
-    diagramId: string;
-    stepId: string;
-    instruction: string;
+  async editArtifacts(data: {
+    diagramId?: string;
     previousArtifacts: Record<string, any>;
-    cascade?: boolean;
-  }): Promise<any> {
+    edits: Array<
+      | { tool: "set_at_path"; artifactId: string; path: string; value: any }
+      | { tool: "delete_at_path"; artifactId: string; path: string }
+      | { tool: "add_array_item"; artifactId: string; path: string; value: any }
+      | { tool: "remove_array_item"; artifactId: string; path: string; index?: number }
+    >;
+  }): Promise<{ success: boolean; artifacts: Record<string, any>; applied: number; errors?: Array<{ op: any; error: string }> }> {
     const response = await apiClient.post<{
       status: string;
-      data: any;
+      data: { success: boolean; artifacts: Record<string, any>; applied: number; errors?: Array<{ op: any; error: string }> };
       message: string;
-    }>("/diagrams/refine", data);
+    }>("/diagrams/artifacts/edit", data);
     return response.data.data;
   },
 

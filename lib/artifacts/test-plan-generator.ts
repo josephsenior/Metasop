@@ -16,7 +16,10 @@ export class TestPlanGenerator {
     const qaArtifact = this.artifacts.qa_verification?.content || {}
     const pmSpec = this.artifacts.pm_spec?.content || {}
     const archContent = this.artifacts.arch_design?.content || {}
-    const nodes = this.diagram.nodes || []
+    const apis = archContent.apis || []
+    const apiArray = Array.isArray(apis) ? apis : []
+    const tables = archContent.database_schema?.tables || []
+    const tablesArray = Array.isArray(tables) ? tables : []
 
     let markdown = `# Test Plan\n\n`
     markdown += `**Project:** ${this.diagram.title}\n\n`
@@ -61,36 +64,28 @@ export class TestPlanGenerator {
 
     // Unit Test Cases
     markdown += `### 3.1 Unit Test Cases\n\n`
-    const componentCount = nodes.filter(n => n.type === "component").length
-    const serviceCount = nodes.filter(n => n.type === "service").length
-
-    if (componentCount > 0) {
-      markdown += `#### Frontend Components\n\n`
-      nodes.filter(n => n.type === "component").forEach((node, idx) => {
-        markdown += `**TC-UNIT-${idx + 1}:** Test ${node.label} Component\n`
+    if (apiArray.length > 0) {
+      markdown += `#### API Endpoints\n\n`
+      apiArray.forEach((api: any, idx: number) => {
+        const name = api.path || api.endpoint || `API-${idx + 1}`
+        markdown += `**TC-UNIT-${idx + 1}:** Test ${name}\n`
         markdown += `- **Priority:** High\n`
-        markdown += `- **Description:** Verify ${node.label} component renders correctly and handles props\n`
+        markdown += `- **Description:** Verify ${api.method || "GET"} ${name} responds correctly\n`
         markdown += `- **Steps:**\n`
-        markdown += `  1. Render component with valid props\n`
-        markdown += `  2. Verify component displays correctly\n`
-        markdown += `  3. Test prop changes trigger re-renders\n`
-        markdown += `  4. Test error states\n`
-        markdown += `- **Expected Result:** Component renders and behaves as expected\n\n`
+        markdown += `  1. Send request with valid payload\n`
+        markdown += `  2. Verify response status and schema\n`
+        markdown += `  3. Test error handling\n`
+        markdown += `- **Expected Result:** API responds as specified\n\n`
       })
     }
-
-    if (serviceCount > 0) {
-      markdown += `#### Backend Services\n\n`
-      nodes.filter(n => n.type === "service").forEach((node, idx) => {
-        markdown += `**TC-UNIT-${idx + 1}:** Test ${node.label} Service\n`
+    if (tablesArray.length > 0) {
+      markdown += `#### Database Tables\n\n`
+      tablesArray.forEach((table: any, idx: number) => {
+        const tableName = table.table_name || table.name || `Table-${idx + 1}`
+        markdown += `**TC-UNIT-DB-${idx + 1}:** Test ${tableName} schema\n`
         markdown += `- **Priority:** High\n`
-        markdown += `- **Description:** Verify ${node.label} service functions correctly\n`
-        markdown += `- **Steps:**\n`
-        markdown += `  1. Test service initialization\n`
-        markdown += `  2. Test core business logic\n`
-        markdown += `  3. Test error handling\n`
-        markdown += `  4. Test edge cases\n`
-        markdown += `- **Expected Result:** Service functions correctly in all scenarios\n\n`
+        markdown += `- **Description:** Verify ${tableName} CRUD operations\n`
+        markdown += `- **Expected Result:** Data persists and validates correctly\n\n`
       })
     }
 

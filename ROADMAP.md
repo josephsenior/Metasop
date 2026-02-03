@@ -14,7 +14,7 @@ To become the leading open-source platform for AI-powered software development a
 
 - [x] Multi-agent orchestration system
 - [x] 7 specialized agents (PM, Architect, Security, DevOps, Engineer, UI, QA)
-- [x] Cascading refinement system
+- [x] Tool-based refinement (Edit Artifacts API)
 - [x] Knowledge graph for dependency tracking
 - [x] Agent-to-Agent (A2A) communication protocol
 - [x] Web interface with Next.js
@@ -34,7 +34,7 @@ To become the leading open-source platform for AI-powered software development a
 
 ### User Experience
 - [ ] Better progress visualization
-- [ ] Interactive refinement interface
+- [ ] Intent-to-tool (natural language → edit ops) for refinement
 - [ ] Export to multiple formats (PDF, Markdown, JSON)
 - [ ] Dark mode support
 

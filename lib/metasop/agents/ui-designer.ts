@@ -3,9 +3,8 @@ import type { UIDesignerBackendArtifact } from "../artifacts/ui-designer/types";
 import { uiDesignerSchema as uiSchema } from "../artifacts/ui-designer/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
-import { getAgentTemperature } from "../config";
+import { getAgentTemperature, getAgentMaxTokens } from "../config";
 
 /**
  * Sanitizes a color value to ensure it's a valid hex code.
@@ -51,6 +50,76 @@ function sanitizeDesignTokensColors(colors: any): any {
   return sanitized;
 }
 
+const CSS_VALUE_PATTERN = /^[0-9.]*(rem|px|em|%)?$/;
+const FONT_WEIGHT_PATTERN = /^[0-9]+$/;
+
+/**
+ * Sanitizes a spacing/typography CSS-like value. Strips instruction text (INVALID, FIX, REQUIRED, etc.) and returns only the value.
+ */
+function sanitizeCssLikeValue(value: string | undefined, fallback: string): string {
+  if (value == null || typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  if (CSS_VALUE_PATTERN.test(trimmed)) return trimmed;
+  const match = trimmed.match(/^([0-9.]*(?:rem|px|em|%)?)/);
+  if (match?.[1]) return match[1];
+  if (/INVALID|FIX|REQUIRED|FIXED_BELOW/i.test(trimmed)) return fallback;
+  return trimmed.length <= 10 ? trimmed : fallback;
+}
+
+/**
+ * Sanitizes a font weight value (digits only).
+ */
+function sanitizeFontWeightValue(value: string | undefined, fallback: string): string {
+  if (value == null || typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  if (FONT_WEIGHT_PATTERN.test(trimmed)) return trimmed;
+  const match = trimmed.match(/^([0-9]+)/);
+  return match?.[1] ?? fallback;
+}
+
+/**
+ * Sanitizes design_tokens.spacing, typography.fontSize, typography.fontWeight, and borderRadius so values contain only raw CSS (no INVALID/FIX/REQUIRED text).
+ */
+function sanitizeDesignTokensSpacingAndTypography(designTokens: any): void {
+  if (!designTokens || typeof designTokens !== "object") return;
+
+  const spacingDefaults: Record<string, string> = { xs: "0.25rem", sm: "0.5rem", md: "0.75rem", lg: "1rem", xl: "1.25rem", "2xl": "1.5rem" };
+  if (designTokens.spacing && typeof designTokens.spacing === "object") {
+    for (const [key, value] of Object.entries(designTokens.spacing)) {
+      if (typeof value === "string") {
+        designTokens.spacing[key] = sanitizeCssLikeValue(value, spacingDefaults[key as keyof typeof spacingDefaults] ?? "0.5rem");
+      }
+    }
+  }
+
+  if (designTokens.typography?.fontSize && typeof designTokens.typography.fontSize === "object") {
+    const fontSizeDefaults: Record<string, string> = { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem", xl: "1.25rem", "2xl": "1.5rem" };
+    for (const [key, value] of Object.entries(designTokens.typography.fontSize)) {
+      if (typeof value === "string") {
+        designTokens.typography.fontSize[key] = sanitizeCssLikeValue(value, fontSizeDefaults[key as keyof typeof fontSizeDefaults] ?? "1rem");
+      }
+    }
+  }
+
+  if (designTokens.typography?.fontWeight && typeof designTokens.typography.fontWeight === "object") {
+    const weightDefaults: Record<string, string> = { light: "300", normal: "400", medium: "500", semibold: "600", bold: "700" };
+    for (const [key, value] of Object.entries(designTokens.typography.fontWeight)) {
+      if (typeof value === "string") {
+        designTokens.typography.fontWeight[key] = sanitizeFontWeightValue(value, weightDefaults[key as keyof typeof weightDefaults] ?? "400");
+      }
+    }
+  }
+
+  if (designTokens.borderRadius && typeof designTokens.borderRadius === "object") {
+    const radiusDefaults: Record<string, string> = { none: "0", sm: "0.125rem", md: "0.25rem", lg: "0.5rem", full: "9999px" };
+    for (const [key, value] of Object.entries(designTokens.borderRadius)) {
+      if (typeof value === "string") {
+        designTokens.borderRadius[key] = sanitizeCssLikeValue(value, radiusDefaults[key as keyof typeof radiusDefaults] ?? "0.25rem");
+      }
+    }
+  }
+}
+
 /**
  * UI Designer Agent
  * Generates UI component hierarchy and design tokens
@@ -66,24 +135,7 @@ export async function uiDesignerAgent(
   try {
     let content: UIDesignerBackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("UI Designer agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<UIDesignerBackendArtifact>(
-        context,
-        "UI Designer",
-        uiSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("ui_design")
-        }
-      );
-      
-      // Sanitize color values after refinement
-      if (content?.design_tokens?.colors) {
-        content.design_tokens.colors = sanitizeDesignTokensColors(content.design_tokens.colors);
-      }
-    } else {
-      const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
+    const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
       const archArtifact = context.previous_artifacts?.arch_design?.content as any;
       const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
 
@@ -106,7 +158,7 @@ Technical Context:
 - Database Entities: ${archArtifact.database_schema?.tables?.slice(0, 5).map((t: any) => t.name).join(", ") || "N/A"}`
         : "";
 
-      const uiPrompt = `You are a Principal UI/UX Designer with 12+ years of experience in design systems, accessibility, and modern web interfaces. Create a comprehensive design system and UI architecture for:
+      const uiPrompt = `You are a Principal UI/UX Designer with 12+ years of experience in design systems, accessibility, and modern web interfaces. Create a design system and UI architecture for:
 
 "${projectTitle}"
 
@@ -114,119 +166,25 @@ ${projectContext}
 ${techContext}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
-=== CRITICAL OUTPUT CONSTRAINTS ===
-1. **BE CONCISE**: Generate only what's necessary. Avoid exhaustive lists.
-2. **component_specs**: Maximum 10-15 components. Focus on unique, essential components only.
-3. **website_layout.pages**: Maximum 5-8 pages. One entry per distinct page.
-4. **ui_patterns**: Maximum 8-10 patterns.
-5. **DO NOT REPEAT**: Each component/page/pattern should be unique. Never duplicate entries.
-6. **STOP WHEN DONE**: After covering the essentials, stop. Don't keep adding more.
+=== OUTPUT RULES (follow exactly) ===
+- **Output order** (so required fields survive truncation): Put summary, description, design_tokens, then component_hierarchy, then the rest. Within design_tokens always include colors, spacing, and typography (typography is required).
+- **design_tokens.colors**: Required keys primary, secondary, background, text. Values exactly 7 chars: # plus 6 hex digits (e.g. "#4F46E5"). No extra text.
+- **design_tokens.spacing**: Required. Use CSS values only, e.g. "xs": "0.25rem", "sm": "0.5rem", "md": "0.75rem", "lg": "1rem", "xl": "1.25rem", "2xl": "1.5rem".
+- **design_tokens.typography**: Required. Include fontFamily (e.g. "Inter") and fontSize (e.g. "xs": "0.75rem", "sm": "0.875rem", "base": "1rem", "lg": "1.125rem"). Optionally fontWeight ("light": "300", "normal": "400", "medium": "500", "semibold": "600", "bold": "700"). CSS values only.
+- **Other required top-level keys**: component_hierarchy, ui_patterns, component_specs, layout_breakpoints, accessibility, atomic_structure, website_layout. Keep each section short; one item per component/pattern.
+- **Response**: Output only the JSON object. No markdown, no explanations.
 
-=== COLOR FORMAT - CRITICAL ===
-**ALL color values MUST be exactly 7 characters: a '#' followed by 6 hex digits (0-9, A-F).**
-- ✅ CORRECT: "#4F46E5", "#0EA5E9", "#F59E0B", "#D97706"
-- ❌ WRONG: "#F59E0B_INVALID_HEX", "#D97706_IS_VALID_HEX", any text after hex code
-- **DO NOT** include reasoning, validation, or any text in color fields
-- **DO NOT** repeat hex codes or add explanations
-- Output ONLY the hex code itself (e.g., "#D97706" - nothing else)
+=== MISSION ===
+1. **Design tokens**: Colors (primary, secondary, background, text + semantic/surface as needed), typography (fontSize, fontWeight), spacing, borderRadius. Keep values to the format above.
+2. **Atomic hierarchy**: Atoms (Button, Input, Label, Icon, etc.), molecules (Form Field, Search Bar, etc.), organisms (Navigation, Card, Modal, Table, etc.), then templates and pages.
+3. **Component specs**: For key components include props, variants, sizes, states, accessibility (ARIA, keyboard).
+4. **Accessibility**: WCAG 2.1 AA—contrast 4.5:1, focus rings, keyboard access, ARIA roles/labels, prefers-reduced-motion.
+5. **Responsive**: Breakpoints sm/md/lg/xl/2xl (640–1536px), mobile-first, touch targets ≥44px.
 
-=== REQUIRED DESIGN TOKEN FIELDS - CRITICAL ===
-**The following fields are MANDATORY and MUST be included in every response:**
-1. **design_tokens.colors.background** - REQUIRED: Main background color (6-digit hex, e.g., "#FFFFFF")
-2. **design_tokens.typography.fontSize** - REQUIRED: Font size scale object with at least xs, sm, base, lg (e.g., { "xs": "0.75rem", "sm": "0.875rem", "base": "1rem", "lg": "1.125rem" })
-**These fields are NOT optional. Your response will be rejected if they are missing.**
-
-=== ADAPTIVE DEPTH GUIDELINE ===
-- **Simple apps (MVP, utilities)**: Minimal design tokens, 10-15 components, focus on usability
-- **Medium apps (SaaS, dashboards)**: Full design system, 20-30 components, responsive patterns
-- **Complex apps (enterprise)**: Exhaustive tokens, 40+ components, theming support, advanced patterns
-
-=== MISSION OBJECTIVES ===
-
-1. **Design Tokens (Foundation)**
-   - **Colors**: Define semantic color system
-     * Primary: Main brand color + variants (50-900 scale)
-     * Secondary: Accent color for highlights
-     * Neutral: Gray scale for text, backgrounds, borders
-     * Semantic: Success (green), Warning (amber), Error (red), Info (blue)
-     * Surface: Background, card, input, overlay colors
-   - **Typography**: Font family, sizes, weights, line heights
-     * Font families: Sans (UI), Mono (code), Serif (optional)
-     * Scale: xs (12px), sm (14px), base (16px), lg (18px), xl (20px), 2xl (24px), 3xl (30px), 4xl (36px)
-     * Weights: normal (400), medium (500), semibold (600), bold (700)
-   - **Spacing**: Consistent spacing scale (4px base)
-     * Scale: 0, 1 (4px), 2 (8px), 3 (12px), 4 (16px), 5 (20px), 6 (24px), 8 (32px), 10 (40px), 12 (48px)
-   - **Shadows**: Elevation system (sm, md, lg, xl)
-   - **Border Radius**: none (0), sm (2px), md (4px), lg (8px), xl (12px), full (9999px)
-
-2. **Atomic Design Hierarchy**
-   - **Atoms**: Basic building blocks
-     * Button, Input, Label, Icon, Avatar, Badge, Checkbox, Radio, Switch, Spinner
-   - **Molecules**: Combinations of atoms
-     * Form Field (Label + Input + Error), Search Bar, Card Header, Nav Item, Dropdown
-   - **Organisms**: Complex, reusable sections
-     * Navigation (Header, Sidebar, Footer), Card, Modal, Table, Form, Dashboard Widget
-   - **Templates**: Page-level layouts
-     * Auth Layout, Dashboard Layout, Marketing Layout, Settings Layout
-   - **Pages**: Specific implementations
-     * Login, Dashboard, Profile, Settings, etc.
-
-3. **Component Specifications**
-   - For each key component, define:
-     * Props with types and defaults
-     * Variants (primary, secondary, ghost, destructive)
-     * Sizes (sm, md, lg)
-     * States (default, hover, active, focus, disabled, loading)
-     * Accessibility requirements (ARIA attributes, keyboard behavior)
-
-4. **Accessibility (WCAG 2.1 AA Compliance)**
-   - Color contrast: Minimum 4.5:1 for normal text, 3:1 for large text
-   - Focus indicators: Visible focus rings on all interactive elements
-   - Keyboard navigation: All functionality accessible via keyboard
-   - ARIA: Proper roles, labels, and live regions
-   - Screen reader: Semantic HTML, skip links, alternative text
-   - Motion: Respect prefers-reduced-motion
-
-5. **Responsive Strategy**
-   - Breakpoints:
-     * sm: 640px (mobile landscape)
-     * md: 768px (tablet)
-     * lg: 1024px (laptop)
-     * xl: 1280px (desktop)
-     * 2xl: 1536px (large desktop)
-   - Mobile-first approach
-   - Touch-friendly targets (min 44x44px)
-   - Container widths and padding per breakpoint
-
-6. **Layout & Information Architecture**
-   - Define page structure and navigation hierarchy
-   - Map user flows to page layouts
-   - Specify header, sidebar, content, footer patterns
-   - Define grid system (12-column)
-
-7. **Visual Philosophy & Brand**
-   - Define design principles (clean, modern, accessible, etc.)
-   - Establish visual hierarchy rules
-   - Animation and transition guidelines (duration, easing)
-   - Iconography style and library (Lucide, Heroicons, etc.)
-
-8. **UI Patterns Library**
-   - Loading states: Skeletons, spinners, progress bars
-   - Empty states: Illustrations, call-to-action
-   - Error states: Inline errors, toast notifications, error pages
-   - Success states: Confirmation messages, celebrations
-   - Data display: Tables, lists, cards, charts
-
-=== EXAMPLE COMPONENT SPEC (Follow this depth) ===
+=== EXAMPLE COMPONENT SPEC ===
 ${FEW_SHOT_EXAMPLES.component}
 
 ${qualityCheck}
-
-=== FINAL REMINDER ===
-- Keep component_specs to 10-15 unique components max
-- Keep website_layout.pages to 5-8 pages max  
-- Keep ui_patterns to 8-10 items max
-- BE CONCISE. Quality over quantity.
 
 Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
@@ -244,6 +202,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           {
             reasoning: context.options?.reasoning ?? false,
             temperature: getAgentTemperature("ui_design"),
+            maxTokens: getAgentMaxTokens("ui_design"),
             cacheId: context.cacheId,
             role: "UI Designer",
           }
@@ -260,6 +219,23 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
       // Sanitize color values to prevent malformed hex codes
       if (llmUIDesign.design_tokens?.colors) {
         llmUIDesign.design_tokens.colors = sanitizeDesignTokensColors(llmUIDesign.design_tokens.colors);
+      }
+      // Sanitize spacing/typography so values are only raw CSS (no INVALID/FIX/REQUIRED text)
+      sanitizeDesignTokensSpacingAndTypography(llmUIDesign.design_tokens);
+
+      // Fallback: if typography missing (e.g. MAX_TOKENS truncation), inject minimal required fields to pass validation
+      if (llmUIDesign.design_tokens && !llmUIDesign.design_tokens.typography) {
+        llmUIDesign.design_tokens.typography = {
+          fontFamily: "Inter",
+          fontSize: { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem", xl: "1.25rem", "2xl": "1.5rem" },
+          fontWeight: { light: "300", normal: "400", medium: "500", semibold: "600", bold: "700" },
+        };
+      } else if (llmUIDesign.design_tokens?.typography) {
+        const t = llmUIDesign.design_tokens.typography as Record<string, unknown>;
+        if (!t.fontFamily) t.fontFamily = "Inter";
+        if (!t.fontSize || typeof t.fontSize !== "object") {
+          t.fontSize = { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem" };
+        }
       }
 
       content = {
@@ -280,7 +256,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         component_specs: llmUIDesign.component_specs,
         layout_breakpoints: llmUIDesign.layout_breakpoints
       };
-    }
 
     logger.info("UI Designer agent completed");
 

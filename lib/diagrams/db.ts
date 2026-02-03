@@ -1,12 +1,14 @@
-import { prisma } from "@/lib/database/prisma";
+import { prisma, ensureDatabaseDir } from "@/lib/database/prisma";
 import { CreateDiagramRequest, UpdateDiagramRequest, Diagram } from "@/types/diagram";
 
 function mapToDiagram(p: any): Diagram {
     if (!p) return p;
     return {
-        ...p,
-        nodes: p.nodes as any,
-        edges: p.edges as any,
+        id: p.id,
+        userId: p.userId,
+        title: p.title,
+        description: p.description,
+        status: p.status,
         metadata: p.metadata as any,
         createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
         updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
@@ -73,13 +75,12 @@ export const diagramDb = {
 
     async create(userId: string, data: CreateDiagramRequest): Promise<Diagram> {
         try {
+            ensureDatabaseDir();
             const p = await prisma.diagram.create({
                 data: {
                     userId: userId,
                     title: data.prompt.split('\n')[0].substring(0, 50) || "New Diagram",
                     description: data.prompt.substring(0, 200),
-                    nodes: [],
-                    edges: [],
                     status: "processing",
                     metadata: {
                         prompt: data.prompt,
@@ -105,8 +106,6 @@ export const diagramDb = {
             data: {
                 ...(data.title ? { title: data.title } : {}),
                 ...(data.description ? { description: data.description } : {}),
-                ...(data.nodes ? { nodes: data.nodes as any } : {}),
-                ...(data.edges ? { edges: data.edges as any } : {}),
                 ...(data.status ? { status: data.status } : { status: "completed" }),
                 ...(data.metadata ? { metadata: data.metadata as any } : {}),
             },
@@ -123,8 +122,6 @@ export const diagramDb = {
                 userId: userId,
                 title: `${existing.title} (Copy)`,
                 description: existing.description,
-                nodes: existing.nodes as any,
-                edges: existing.edges as any,
                 status: "completed",
                 metadata: existing.metadata as any,
             },
@@ -160,19 +157,6 @@ export const diagramDb = {
                     current_progress: progress,
                     current_step: currentStep,
                 },
-            },
-        });
-        return mapToDiagram(p);
-    },
-
-    async updateResult(id: string, nodes: any[], edges: any[], metadata?: any): Promise<Diagram> {
-        const p = await prisma.diagram.update({
-            where: { id },
-            data: {
-                nodes: nodes as any,
-                edges: edges as any,
-                status: "completed",
-                metadata: metadata ? { metasop_artifacts: metadata } : undefined,
             },
         });
         return mapToDiagram(p);

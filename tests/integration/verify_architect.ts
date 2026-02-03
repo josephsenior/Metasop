@@ -1,7 +1,7 @@
 
 import 'dotenv/config'; // Loads .env file
-import { architectAgent } from '../lib/metasop/agents/architect';
-import { AgentContext } from '../lib/metasop/types';
+import { architectAgent } from '../../lib/metasop/agents/architect';
+import { AgentContext } from '../../lib/metasop/types';
 
 async function run() {
     console.log("🚀 Starting Architect Agent Verification (Simple Mode)...");
@@ -41,14 +41,7 @@ async function run() {
         // --- QUALITY CHECKS ---
         let errors = 0;
 
-        // Check 1: No Diagrams
-        if (content.nodes && content.nodes.length > 0) {
-            console.warn("⚠️  WARNING: 'nodes' field is present and not empty. Diagram generation wasn't disabled?");
-        } else {
-            console.log("✅ Check: No Diagram Nodes (Correct)");
-        }
-
-        // Check 2: API Schemas
+        // Check 1: API Schemas
         let missingSchemas = 0;
         if (content.apis) {
             content.apis.forEach((api: any) => {
@@ -64,7 +57,7 @@ async function run() {
         }
         if (missingSchemas === 0 && content.apis?.length > 0) console.log("✅ Check: All APIs have Schemas");
 
-        // Check 3: DB Columns
+        // Check 2: DB Columns
         let missingColumns = 0;
         if (content.database_schema?.tables) {
             content.database_schema.tables.forEach((table: any) => {

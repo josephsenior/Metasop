@@ -55,6 +55,8 @@ export interface MetaSOPEvent {
   artifact?: MetaSOPArtifact;
   thought?: string;
   partial_content?: any;
+  /** When step_failed due to timeout, last partial/streamed response from the agent for UI display */
+  partial_response?: any;
   error?: string;
   status?: string;
   message?: string;
@@ -85,7 +87,6 @@ export interface MetaSOPResult {
   };
   report: MetaSOPReport;
   steps: MetaSOPStep[];
-  graph?: KnowledgeGraph; // The dependency graph of all generated artifacts
   /** A2A Protocol state for inter-agent communication tracking */
   a2a?: {
     tasks: A2ATask[];
@@ -105,32 +106,8 @@ export interface AgentContext {
     model?: string;
     reasoning?: boolean;
   };
-  refinement?: {
-    instruction: string;
-    target_step_id: string;
-    previous_artifact_content: any;
-    isAtomicAction?: boolean;
-    /** Specific schema paths to update (for surgical refinement) */
-    targetPaths?: string[];
-    /** Additional context for the refinement */
-    context?: {
-      upstreamChange: string;
-      reason: string;
-      referenceValues?: Record<string, any>;
-    };
-  };
-}
-
-export interface ArtifactDependency {
-  source_id: string;
-  target_id: string;
-  type: "data_flow" | "schema_sync" | "security_rule" | "api_contract";
-  description?: string;
-}
-
-export interface KnowledgeGraph {
-  nodes: MetaSOPArtifact[];
-  edges: ArtifactDependency[];
+  /** User's answers from guided clarification (question id -> selected option). */
+  clarificationAnswers?: Record<string, string>;
 }
 
 export type AgentFunction = (

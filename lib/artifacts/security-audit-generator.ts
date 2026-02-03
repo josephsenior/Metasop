@@ -15,7 +15,6 @@ export class SecurityAuditGenerator {
   generateSecurityAudit(): string {
     const qaArtifact = this.artifacts.qa_verification?.content || {}
     const archContent = this.artifacts.arch_design?.content || {}
-    const nodes = this.diagram.nodes || []
     const securityFindings = qaArtifact.security_findings || []
 
     let markdown = `# Security Audit Report\n\n`
@@ -45,7 +44,7 @@ export class SecurityAuditGenerator {
 
     // OWASP Top 10 Assessment
     markdown += `## OWASP Top 10 Assessment\n\n`
-    markdown += this.generateOWASPAssessment(archContent, nodes)
+    markdown += this.generateOWASPAssessment(archContent)
 
     // Security Findings
     if (securityFindings.length > 0) {
@@ -89,9 +88,8 @@ export class SecurityAuditGenerator {
 
     // Authentication & Authorization
     markdown += `## Authentication & Authorization\n\n`
-    const hasAuth = this.diagram.description.toLowerCase().includes("auth") || 
-                   this.diagram.description.toLowerCase().includes("login") ||
-                   nodes.some(n => n.label.toLowerCase().includes("auth"))
+    const hasAuth = this.diagram.description.toLowerCase().includes("auth") ||
+                   this.diagram.description.toLowerCase().includes("login")
 
     if (hasAuth) {
       markdown += `### Current Implementation\n`
@@ -151,9 +149,10 @@ export class SecurityAuditGenerator {
 
     // Data Security
     markdown += `## Data Security\n\n`
-    const dbNodes = nodes.filter(n => n.type === "database")
-    
-    if (dbNodes.length > 0) {
+    const tables = archContent.database_schema?.tables || []
+    const hasDatabase = Array.isArray(tables) && tables.length > 0
+
+    if (hasDatabase) {
       markdown += `### Database Security\n\n`
       markdown += `1. **Encryption at Rest**\n`
       markdown += `   - Enable database encryption\n`
@@ -264,10 +263,11 @@ export class SecurityAuditGenerator {
     return markdown
   }
 
-  private generateOWASPAssessment(archContent: any, nodes: any[]): string {
+  private generateOWASPAssessment(archContent: any): string {
     const apis = archContent.apis || []
     const apiArray = Array.isArray(apis) ? apis : []
-    const hasDatabase = nodes.some(n => n.type === "database")
+    const tables = archContent.database_schema?.tables || []
+    const hasDatabase = Array.isArray(tables) && tables.length > 0
     const hasAuth = this.diagram.description.toLowerCase().includes("auth")
 
     let assessment = `| OWASP Top 10 | Status | Notes |\n`

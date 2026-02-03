@@ -271,25 +271,24 @@ export class DocumentationGenerator {
    */
   private calculateEstimates() {
     const artifacts = this.diagram.metadata?.metasop_artifacts || {}
-    const nodes = this.diagram.nodes || []
-    
+    const archContent = artifacts.arch_design?.content || {}
+    const apis = archContent.apis || []
+    const tables = archContent.database_schema?.tables || []
+    const apiCount = Array.isArray(apis) ? apis.length : 0
+    const tableCount = Array.isArray(tables) ? tables.length : 0
+
     // Base estimates
     let totalHours = 0
-    
+
     // Product Manager work
     if (artifacts.pm_spec) totalHours += 8
-    
+
     // Architect work
     if (artifacts.arch_design) totalHours += 16
-    
-    // Engineer work - estimate based on components
-    const componentCount = nodes.filter(n => n.type === "component").length
-    const serviceCount = nodes.filter(n => n.type === "service").length
-    const dbCount = nodes.filter(n => n.type === "database").length
-    
-    totalHours += componentCount * 8 // 8 hours per component
-    totalHours += serviceCount * 16 // 16 hours per service
-    totalHours += dbCount * 12 // 12 hours per database
+
+    // Engineer work - estimate from artifacts (APIs, DB tables)
+    totalHours += apiCount * 8
+    totalHours += tableCount * 12
     
     // UI Designer work
     if (artifacts.ui_design) totalHours += 12

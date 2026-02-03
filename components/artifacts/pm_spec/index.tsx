@@ -227,7 +227,7 @@ export default function PMSpecPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg, className)}>
       {/* Header Summary */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export default function PMSpecPanel({
               </Badge>
             </div>
             <p className={cn(styles.typography.bodySmall, "text-indigo-600 dark:text-indigo-400 font-medium")}>
-              {summary || "Detailed product requirements and specifications."}
+              {summary || description || "Detailed product requirements and specifications."}
             </p>
             {description && (
               <p className="text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl">
@@ -253,7 +253,7 @@ export default function PMSpecPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={TrendingUp}
             label="Stories"

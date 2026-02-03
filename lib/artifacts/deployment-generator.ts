@@ -62,7 +62,7 @@ Edit \`.env\` and set the following variables:
 \`\`\`env
 NODE_ENV=production
 PORT=3000
-${hasDatabase ? `DATABASE_URL=postgresql://user:password@localhost:5432/dbname` : ""}
+${hasDatabase ? `DATABASE_URL=file:./prisma/local.db` : ""}
 \`\`\`
 
 ---

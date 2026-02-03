@@ -50,13 +50,13 @@ export class EstimatesGenerator {
    * Calculate development time estimates
    */
   calculateDevelopmentEstimate(): DevelopmentEstimate {
-    const nodes = this.diagram.nodes || []
-    
-    // Component complexity scoring
-    const componentCount = nodes.filter(n => n.type === "component").length
-    const serviceCount = nodes.filter(n => n.type === "service").length
-    const dbCount = nodes.filter(n => n.type === "database").length
-    const apiCount = nodes.filter(n => n.type === "api").length
+    const archContent = this.artifacts.arch_design?.content || {}
+    const apis = archContent.apis || []
+    const tables = archContent.database_schema?.tables || []
+    const apiCount = Array.isArray(apis) ? apis.length : 0
+    const dbCount = Array.isArray(tables) ? tables.length : 0
+    const componentCount = 0
+    const serviceCount = 0
 
     // Base estimates (in hours)
     let planning = 0
@@ -144,10 +144,10 @@ export class EstimatesGenerator {
     const hourlyRate = 100 // Average developer rate ($/hour)
     const developmentTotal = devEstimate.totalHours * hourlyRate
 
-    // Infrastructure costs (monthly)
-    const nodes = this.diagram.nodes || []
-    const serviceCount = nodes.filter(n => n.type === "service").length
-    const dbCount = nodes.filter(n => n.type === "database").length
+    const archContent = this.artifacts.arch_design?.content || {}
+    const tables = archContent.database_schema?.tables || []
+    const serviceCount = 0
+    const dbCount = Array.isArray(tables) ? tables.length : 0
 
     // Base infrastructure
     let infrastructureMonthly = 50 // Base hosting
@@ -197,14 +197,15 @@ export class EstimatesGenerator {
     level: "simple" | "moderate" | "complex" | "very-complex"
     factors: string[]
   } {
-    const nodes = this.diagram.nodes || []
+    const archContent = this.artifacts.arch_design?.content || {}
+    const apis = archContent.apis || []
+    const tables = archContent.database_schema?.tables || []
+    const apiCount = Array.isArray(apis) ? apis.length : 0
+    const dbCount = Array.isArray(tables) ? tables.length : 0
+    const componentCount = 0
+    const serviceCount = 0
     let score = 0
     const factors: string[] = []
-
-    const componentCount = nodes.filter(n => n.type === "component").length
-    const serviceCount = nodes.filter(n => n.type === "service").length
-    const dbCount = nodes.filter(n => n.type === "database").length
-    const apiCount = nodes.filter(n => n.type === "api").length
 
     // Component complexity
     if (componentCount > 20) {

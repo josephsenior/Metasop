@@ -60,28 +60,6 @@ export class ERDGenerator {
       mermaid += `    }\n\n`
     })
 
-    // Generate relationships from edges
-    const edges = this.diagram.edges || []
-    const dbEdges = edges.filter((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-      return fromNode?.type === "database" && toNode?.type === "database"
-    })
-
-    dbEdges.forEach((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-
-      if (fromNode && toNode) {
-        const fromTable = fromNode.label.replace(/\s+/g, "")
-        const toTable = toNode.label.replace(/\s+/g, "")
-        const relationship = edge.label || "has"
-
-        // Determine cardinality from edge type or default to one-to-many
-        mermaid += `    ${fromTable} ||--o{ ${toTable} : "${relationship}"\n`
-      }
-    })
-
     return mermaid
   }
 
@@ -127,27 +105,6 @@ entity "NO_TABLES" {
       }
 
       plantuml += `}\n\n`
-    })
-
-    // Generate relationships
-    const edges = this.diagram.edges || []
-    const dbEdges = edges.filter((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-      return fromNode?.type === "database" && toNode?.type === "database"
-    })
-
-    dbEdges.forEach((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-
-      if (fromNode && toNode) {
-        const fromTable = fromNode.label
-        const toTable = toNode.label
-        const relationship = edge.label || "has"
-
-        plantuml += `"${fromTable}" ||--o{ "${toTable}" : "${relationship}"\n`
-      }
     })
 
     plantuml += "\n@enduml\n"
@@ -197,30 +154,6 @@ entity "NO_TABLES" {
         markdown += `\n`
       }
     })
-
-    // Relationships
-    const edges = this.diagram.edges || []
-    const dbEdges = edges.filter((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-      return fromNode?.type === "database" && toNode?.type === "database"
-    })
-
-    if (dbEdges.length > 0) {
-      markdown += `### Relationships\n\n`
-      markdown += `| From Table | To Table | Relationship |\n`
-      markdown += `|------------|----------|--------------|\n`
-
-      dbEdges.forEach((edge: any) => {
-        const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-        const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-
-        if (fromNode && toNode) {
-          markdown += `| ${fromNode.label} | ${toNode.label} | ${edge.label || "related to"} |\n`
-        }
-      })
-      markdown += `\n`
-    }
 
     return markdown
   }

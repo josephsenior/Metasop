@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthenticatedUser, createErrorResponse, createSuccessResponse } from "@/lib/auth/middleware";
-import { checkGuestDiagramLimit, recordGuestDiagramCreation } from "@/lib/middleware/guest-auth";
+import { createErrorResponse, createSuccessResponse, addGuestCookie } from "@/lib/api/response";
+import { handleGuestAuth, checkGuestDiagramLimit, recordGuestDiagramCreation } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
+import { checkDatabaseHealth } from "@/lib/database/prisma";
 import { runMetaSOPOrchestration } from "@/lib/metasop/orchestrator";
-import type { MetaSOPEvent } from "@/lib/metasop/types";
 import type { CreateDiagramRequest } from "@/types/diagram";
 import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
-import { rateLimit, rateLimiters, addRateLimitHeaders } from "@/lib/middleware/rate-limit";
 import { createRequestLogger } from "@/lib/monitoring/logger";
 import { metrics, MetricNames, trackPerformance } from "@/lib/monitoring/metrics";
 
@@ -24,39 +23,25 @@ export const maxDuration = 900; // 15 minutes
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger(request);
   const startTime = Date.now();
-  
+
   try {
-    // Rate limiting - stricter for guests
-    let userId: string | undefined;
-    let isGuest = false;
-    
-    try {
-      const user = await getAuthenticatedUser(request);
-      userId = user.userId;
-      isGuest = false;
-    } catch {
-      isGuest = true;
+    const guestAuth = await handleGuestAuth(request);
+    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+    if (!guestAuth.canProceed || !guestAuth.userId) {
+      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
     }
+    const userId = guestAuth.userId;
 
-    // Apply rate limiting based on user type
-    const rateLimitConfig = isGuest 
-      ? rateLimiters.diagramGeneration()
-      : rateLimiters.api();
-
-    const rateLimitResult = await rateLimit(request, {
-      ...rateLimitConfig,
-      identifier: async (req) => {
-        if (userId) return `user:${userId}`;
-        const forwarded = req.headers.get("x-forwarded-for");
-        return forwarded?.split(",")[0].trim() || "unknown";
-      },
-    });
-
-    // If rate limit check returned a response (429), return it
-    if (rateLimitResult instanceof NextResponse) {
-      metrics.increment(MetricNames.RATE_LIMIT_EXCEEDED, 1, { endpoint: "diagrams.generate" });
-      return rateLimitResult;
+    const guestCheck = await checkGuestDiagramLimit(request);
+    if (!guestCheck.allowed) {
+      metrics.increment(MetricNames.RATE_LIMIT_EXCEEDED, 1, { endpoint: "diagrams.generate", type: "guest_limit" });
+      return createErrorResponse(
+        guestCheck.reason || "Guest diagram limit reached. Create more after a while.",
+        403,
+        cookieOpt
+      );
     }
+    const guestSessionId = guestCheck.sessionId;
 
     const rawBody = await request.json();
 
@@ -75,26 +60,12 @@ export async function POST(request: NextRequest) {
         metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "validation" });
         return createErrorResponse(
           `Invalid request: ${error.errors.map((e) => e.message).join(", ")}`,
-          400
+          400,
+          cookieOpt
         );
       }
       metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "parse" });
-      return createErrorResponse("Invalid request format", 400);
-    }
-
-    let guestSessionId: string | undefined;
-
-    if (isGuest) {
-      const guestCheck = await checkGuestDiagramLimit(request);
-      if (!guestCheck.allowed) {
-        metrics.increment(MetricNames.RATE_LIMIT_EXCEEDED, 1, { endpoint: "diagrams.generate", type: "guest_limit" });
-        return createErrorResponse(
-          guestCheck.reason || "Please sign up to create more diagrams",
-          403
-        );
-      }
-      guestSessionId = guestCheck.sessionId;
-      userId = `guest_${guestSessionId}`;
+      return createErrorResponse("Invalid request format", 400, cookieOpt);
     }
 
     const useStreaming = request.nextUrl.searchParams.get("stream") === "true" || (body as any).stream === true;
@@ -138,21 +109,36 @@ export async function POST(request: NextRequest) {
           };
 
           try {
-            requestLogger.info("Starting diagram generation with streaming", { userId, isGuest });
+            const dbHealth = await checkDatabaseHealth();
+            if (!dbHealth.healthy) {
+              requestLogger.error("Database unavailable before orchestration", undefined, { error: dbHealth.error });
+              safeEnqueue({ type: "error", message: `Database unavailable: ${dbHealth.error ?? "connection failed"}` });
+              safeClose();
+              return;
+            }
+
+            requestLogger.info("Starting diagram generation with streaming", { userId });
 
             // Forward progress events from orchestrator to the stream
             const onProgress = (event: any) => {
               try {
                 safeEnqueue(event);
-              } catch (e) {
+              } catch {
                 // Stream might be closed, ignore
               }
             };
 
             const orchestrationFn = trackPerformance(
-              async () => runMetaSOPOrchestration(body.prompt, body.options || {}, onProgress),
+              async () =>
+                runMetaSOPOrchestration(
+                  body.prompt,
+                  body.options || {},
+                  onProgress,
+                  body.documents,
+                  body.clarificationAnswers
+                ),
               MetricNames.DIAGRAM_GENERATION_TIME,
-              { streaming: "true", isGuest: isGuest ? "true" : "false" }
+              { streaming: "true", isGuest: "true" }
             );
             const orchestrationResult = await orchestrationFn();
 
@@ -169,13 +155,13 @@ export async function POST(request: NextRequest) {
             const description = (pmArtifact as any)?.summary || body.prompt.substring(0, 200) || "";
 
             // Create diagram first
-            const createdDiagram = await diagramDb.create(userId!, {
+            const createdDiagram = await diagramDb.create(userId, {
               prompt: body.prompt,
               options: body.options,
             });
 
             // Update with artifacts metadata
-            const savedDiagram = await diagramDb.update(createdDiagram.id, userId!, {
+            const savedDiagram = await diagramDb.update(createdDiagram.id, userId, {
               title,
               description,
               status: "completed",
@@ -187,7 +173,7 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            if (isGuest && guestSessionId) {
+            if (guestSessionId) {
               recordGuestDiagramCreation(guestSessionId);
             }
 
@@ -198,8 +184,6 @@ export async function POST(request: NextRequest) {
                 id: savedDiagram.id,
                 title: savedDiagram.title,
                 description: savedDiagram.description,
-                nodes: [],
-                edges: [],
                 metadata: savedDiagram.metadata,
               }
             };
@@ -211,29 +195,48 @@ export async function POST(request: NextRequest) {
             safeEnqueue(diagramPayload);
             safeClose();
           } catch (error: any) {
-            requestLogger.error("Diagram generation failed", error, { userId, isGuest });
+            requestLogger.error("Diagram generation failed", error, { userId });
             safeEnqueue({ type: "error", message: error.message || "Generation failed" });
             safeClose();
           }
         },
       });
 
-      return new NextResponse(customReadable, {
+      const streamRes = new NextResponse(customReadable, {
         headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",
           "Connection": "keep-alive",
         },
       });
+      if (cookieOpt?.guestSessionId) addGuestCookie(streamRes, cookieOpt.guestSessionId);
+      return streamRes;
     }
 
     // Non-streaming path
-    requestLogger.info("Starting diagram generation", { userId, isGuest });
+    const dbHealth = await checkDatabaseHealth();
+    if (!dbHealth.healthy) {
+      requestLogger.error("Database unavailable before orchestration", undefined, { error: dbHealth.error });
+      return createErrorResponse(
+        `Database unavailable: ${dbHealth.error ?? "connection failed"}`,
+        503,
+        cookieOpt
+      );
+    }
+
+    requestLogger.info("Starting diagram generation", { userId });
 
     const orchestrationFn = trackPerformance(
-      async () => runMetaSOPOrchestration(body.prompt, body.options || {}),
+      async () =>
+        runMetaSOPOrchestration(
+          body.prompt,
+          body.options || {},
+          undefined,
+          body.documents,
+          body.clarificationAnswers
+        ),
       MetricNames.DIAGRAM_GENERATION_TIME,
-      { streaming: "false", isGuest: isGuest ? "true" : "false" }
+      { streaming: "false", isGuest: "true" }
     );
     const orchestrationResult = await orchestrationFn();
 
@@ -241,7 +244,7 @@ export async function POST(request: NextRequest) {
       metrics.increment(MetricNames.DIAGRAM_GENERATED, 0, { success: "false" });
       const errorMessage = orchestrationResult.steps.find(s => s.error)?.error || "Orchestration failed";
       requestLogger.error("Orchestration failed", new Error(errorMessage), { userId });
-      return createErrorResponse(errorMessage, 500);
+      return createErrorResponse(errorMessage, 500, cookieOpt);
     }
 
     // Extract title from PM spec or use prompt
@@ -250,13 +253,13 @@ export async function POST(request: NextRequest) {
     const description = (pmArtifact as any)?.summary || body.prompt.substring(0, 200) || "";
 
     // Create diagram first
-    const createdDiagram = await diagramDb.create(userId!, {
+    const createdDiagram = await diagramDb.create(userId, {
       prompt: body.prompt,
       options: body.options,
     });
 
     // Update with artifacts metadata
-    const savedDiagram = await diagramDb.update(createdDiagram.id, userId!, {
+    const savedDiagram = await diagramDb.update(createdDiagram.id, userId, {
       title,
       description,
       status: "completed",
@@ -268,26 +271,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (isGuest && guestSessionId) {
+    if (guestSessionId) {
       recordGuestDiagramCreation(guestSessionId);
     }
 
-    metrics.increment(MetricNames.DIAGRAM_GENERATED, 1, { success: "true", isGuest: isGuest ? "true" : "false" });
-    
+    metrics.increment(MetricNames.DIAGRAM_GENERATED, 1, { success: "true", isGuest: "true" });
+
     const responseTime = Date.now() - startTime;
     metrics.timing(MetricNames.API_RESPONSE_TIME, responseTime, { endpoint: "diagrams.generate" });
 
-    const response = createSuccessResponse({
-      id: savedDiagram.id,
-      title: savedDiagram.title,
-      description: savedDiagram.description,
-      nodes: [],
-      edges: [],
-      metadata: savedDiagram.metadata,
-    });
+    const response = createSuccessResponse(
+      {
+        id: savedDiagram.id,
+        title: savedDiagram.title,
+        description: savedDiagram.description,
+        metadata: savedDiagram.metadata,
+      },
+      undefined,
+      cookieOpt
+    );
 
-    // Add rate limit headers
-    return addRateLimitHeaders(response, rateLimitResult);
+    return response;
   } catch (error: any) {
     metrics.increment(MetricNames.API_ERROR, 1, { endpoint: "diagrams.generate", error: "unexpected" });
     requestLogger.error("Unexpected error in diagram generation", error);

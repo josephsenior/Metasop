@@ -50,12 +50,10 @@ MetaSOP includes several security features to protect your data and applications
 - Strict type checking prevents injection attacks
 - Sanitization of user-generated content
 
-### Authentication & Authorization
+### Session (Guest-Only)
 
-- Secure authentication using NextAuth.js
-- Role-based access control (RBAC)
-- Session management with secure cookies
-- JWT token validation
+- Guest session identified by `x-guest-session-id` header and `guest_session_id` cookie
+- No login or user accounts; diagrams are scoped to the browser session
 
 ### API Security
 
@@ -130,7 +128,7 @@ DATABASE_URL=your_database_url_here
 
 ### Secure Configuration
 
-- Use strong passwords for database connections
+- Keep database file (SQLite) or credentials secure
 - Enable HTTPS in production
 - Configure proper CORS settings
 - Set appropriate timeout values
@@ -198,35 +196,11 @@ if (!result.success) {
 }
 ```
 
-### 4. Weak Authentication
+### 4. Session / Guest Identity
 
-**Problem**: Insecure authentication mechanisms
+**Problem**: Diagram requests not associated with the same guest session (e.g. missing header).
 
-**Solution**: Use NextAuth.js with secure providers
-
-```typescript
-// Configure secure authentication
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-  },
-};
-```
+**Solution**: Ensure `x-guest-session-id` (or cookie) is sent with all diagram API requests. Use `fetchDiagramApi` or `apiClient` from the frontend so the header is set automatically. The API sets a `guest_session_id` cookie so same-origin requests carry the session.
 
 ## Security Resources
 

@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial open source release
 - Multi-agent orchestration system with 7 specialized agents
-- Cascading refinement system for automatic artifact updates
+- Tool-based refinement (Edit Artifacts API) for deterministic artifact updates
 - Knowledge graph for dependency tracking and management
 - Agent-to-Agent (A2A) communication protocol
 - Web interface built with Next.js 16 and React 19
@@ -39,7 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - QA Verification agent for test strategies
 - Execution service with timeout and retry logic
 - Refinement planner for surgical updates
-- Schema knowledge graph for dependency management
 - Guest support for non-authenticated users
 - Multi-provider LLM support (Gemini, Vercel AI SDK)
 - Context caching for improved performance

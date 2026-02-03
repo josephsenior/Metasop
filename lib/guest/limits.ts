@@ -12,9 +12,9 @@ export interface GuestSession {
 }
 
 export const GUEST_LIMITS = {
-  maxDiagrams: 5, // Increased for better guest experience
-  saveEnabled: true, // Guests can now save to DB within their session
-  exportEnabled: true, // Guests can export
+  maxDiagrams: Infinity, // Open-source: no limit
+  saveEnabled: true,
+  exportEnabled: true,
   sessionTimeout: 60 * 60 * 1000, // 60 minutes of inactivity
   maxSessionAge: 48 * 60 * 60 * 1000, // 48 hours total session age
 } as const;
@@ -32,11 +32,11 @@ export function generateGuestSessionId(): string {
 /**
  * Get or create a guest session
  */
-export function getGuestSession(sessionId?: string, ipAddress?: string): GuestSession {
+export function getGuestSession(sessionId?: string, ipAddress?: string, overriddenSessionId?: string): GuestSession {
   if (!sessionId) {
     // Create new session
     const newSession: GuestSession = {
-      sessionId: generateGuestSessionId(),
+      sessionId: overriddenSessionId || generateGuestSessionId(),
       diagramsCreated: 0,
       createdAt: Date.now(),
       lastActivity: Date.now(),
@@ -49,8 +49,9 @@ export function getGuestSession(sessionId?: string, ipAddress?: string): GuestSe
   // Get existing session
   const session = guestSessions.get(sessionId);
   if (!session) {
-    // Session expired or doesn't exist, create new one
-    return getGuestSession(undefined, ipAddress);
+    // Session doesn't exist in memory (e.g. server restart)
+    // TRUST the provided session ID and re-initialize it
+    return getGuestSession(undefined, ipAddress, sessionId);
   }
 
   // Check if session is expired
@@ -70,19 +71,13 @@ export function getGuestSession(sessionId?: string, ipAddress?: string): GuestSe
 }
 
 /**
- * Check if guest can create a diagram
+ * Check if guest can create a diagram (open-source: no limit)
  */
-export function canGuestCreateDiagram(session: GuestSession): {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature kept for API consistency
+export function canGuestCreateDiagram(_: GuestSession): {
   allowed: boolean;
   reason?: string;
 } {
-  if (session.diagramsCreated >= GUEST_LIMITS.maxDiagrams) {
-    return {
-      allowed: false,
-      reason: `You've reached the limit of ${GUEST_LIMITS.maxDiagrams} diagrams. Please sign up to create more.`,
-    };
-  }
-
   return { allowed: true };
 }
 
@@ -114,29 +109,20 @@ export function cleanupExpiredSessions(): void {
 }
 
 /**
- * Get guest session info
+ * Get guest session info (open-source: no limit, always can create more)
  */
 export function getGuestSessionInfo(sessionId: string): {
   diagramsCreated: number;
   diagramsRemaining: number;
   canCreateMore: boolean;
 } | null {
-  // In dev mode, always allow
-  if (process.env.DEV_MODE === "true") {
-    return {
-      diagramsCreated: 0,
-      diagramsRemaining: Infinity,
-      canCreateMore: true,
-    };
-  }
-
   const session = guestSessions.get(sessionId);
   if (!session) return null;
 
   return {
     diagramsCreated: session.diagramsCreated,
-    diagramsRemaining: Math.max(0, GUEST_LIMITS.maxDiagrams - session.diagramsCreated),
-    canCreateMore: session.diagramsCreated < GUEST_LIMITS.maxDiagrams,
+    diagramsRemaining: Infinity,
+    canCreateMore: true,
   };
 }
 

@@ -1,10 +1,13 @@
 /**
- * Middleware to handle guest authentication and limits
+ * Guest session handling (auth removed for open-source; everyone uses guest session).
+ *
+ * Identity: Server reads guest id from cookie first, then x-guest-session-id header.
+ * API responses set the guest_session_id cookie so same-origin requests carry it
+ * automatically. Frontend should still use fetchDiagramApi or apiClient so the header
+ * is sent; the cookie is a fallback so new fetch calls don't forget the header.
  */
 
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/options";
 import {
   getGuestSession,
   canGuestCreateDiagram,
@@ -25,113 +28,51 @@ export interface GuestAuthResult {
   };
 }
 
-/**
- * Extract guest session ID from request
- */
 function getGuestSessionId(request: NextRequest): string | undefined {
-  // Try to get from cookie
   const cookie = request.cookies.get("guest_session_id");
   if (cookie) return cookie.value;
-
-  // Try to get from header
   const header = request.headers.get("x-guest-session-id");
   if (header) return header;
-
   return undefined;
 }
 
-/**
- * Get IP address from request
- */
 function getIpAddress(request: NextRequest): string | undefined {
-  // Try various headers (for proxies/load balancers)
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp;
-
-  return undefined;
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return request.headers.get("x-real-ip") ?? undefined;
 }
 
 /**
- * Check if request is from authenticated user (JWT or Session)
+ * Resolve current "user" for diagram ownership. Auth is disabled; everyone is a guest.
  */
-async function isAuthenticated(request: NextRequest): Promise<boolean> {
-  // 1. Check Bearer Token
-  const authHeader = request.headers.get("authorization");
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return true;
-  }
-
-  // 2. Check Session
-  const session = await getServerSession(authOptions);
-  return !!session;
-}
-
-/**
- * Middleware to handle guest authentication
- */
-export async function handleGuestAuth(
-  request: NextRequest,
-  requireAuth: boolean = false
-): Promise<GuestAuthResult> {
-  // Check if user is authenticated
-  if (await isAuthenticated(request)) {
-    // User is authenticated, return that they're not a guest
-    return {
-      isGuest: false,
-      canProceed: true,
-    };
-  }
-
-  // User is not authenticated
-  if (requireAuth) {
-    return {
-      isGuest: true,
-      canProceed: false,
-      reason: "Authentication required. Please sign up or log in.",
-    };
-  }
-
-  // Allow guest access
+ 
+export async function handleGuestAuth(request: NextRequest): Promise<GuestAuthResult> {
   const sessionId = getGuestSessionId(request);
   const ipAddress = getIpAddress(request);
   const session = getGuestSession(sessionId, ipAddress);
-
   const sessionInfo = getGuestSessionInfo(session.sessionId);
+  const userId = session.sessionId.startsWith("guest_")
+    ? session.sessionId
+    : `guest_${session.sessionId}`;
 
   return {
     isGuest: true,
     sessionId: session.sessionId,
-    userId: session.sessionId.startsWith("guest_") ? session.sessionId : `guest_${session.sessionId}`,
+    userId,
     canProceed: true,
-    sessionInfo: sessionInfo || undefined,
+    sessionInfo: sessionInfo ?? undefined,
   };
 }
 
-/**
- * Check if guest can create a diagram
- */
 export async function checkGuestDiagramLimit(
   request: NextRequest
 ): Promise<{ allowed: boolean; reason?: string; sessionId?: string }> {
-  const authResult = await handleGuestAuth(request, false);
-
-  if (!authResult.isGuest) {
-    // Authenticated user, no limits
-    return { allowed: true };
-  }
-
+  const authResult = await handleGuestAuth(request);
   if (!authResult.sessionId) {
     return { allowed: false, reason: "Invalid session" };
   }
-
   const session = getGuestSession(authResult.sessionId);
   const check = canGuestCreateDiagram(session);
-
   return {
     allowed: check.allowed,
     reason: check.reason,
@@ -139,10 +80,6 @@ export async function checkGuestDiagramLimit(
   };
 }
 
-/**
- * Record diagram creation for guest
- */
 export function recordGuestDiagramCreation(sessionId: string): void {
   incrementGuestDiagramCount(sessionId);
 }
-

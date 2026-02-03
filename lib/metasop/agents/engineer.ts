@@ -3,7 +3,6 @@ import type { EngineerBackendArtifact } from "../artifacts/engineer/types";
 import { engineerSchema } from "../artifacts/engineer/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { TECHNICAL_STANDARDS, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -26,19 +25,7 @@ export async function engineerAgent(
   try {
     let content: EngineerBackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("Engineer agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<EngineerBackendArtifact>(
-        context,
-        "Engineer",
-        engineerSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("engineer_impl")
-        }
-      );
-    } else {
-      const pmArtifact = pmSpec?.content as any;
+    const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
       const uiArtifact = uiDesign?.content as any;
       const securityArtifact = context.previous_artifacts?.security_architecture?.content as any;
@@ -77,7 +64,7 @@ Infrastructure Context:
 - Deployment Strategy: ${devopsArtifact.deployment?.strategy || "Blue/Green"}` : ""}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
-=== TECHNICAL STANDARDS (MUST FOLLOW) ===
+=== TECHNICAL STANDARDS ===
 ${TECHNICAL_STANDARDS.naming}
 
 ${TECHNICAL_STANDARDS.errorHandling}
@@ -214,8 +201,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         },
         phases: llmEngineerImpl.phases || llmEngineerImpl.implementation_plan_phases || []
       };
-    }
-
 
     // Validation check
     if (!content.file_structure || !content.implementation_plan) {

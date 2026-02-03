@@ -33,7 +33,8 @@ export const pmSchema = {
         },
         user_stories: {
             type: "array",
-            description: "Array of INVEST-compliant user stories. Aim for 5-10 well-defined stories for complex projects, fewer for simple ones.",
+            minItems: 1,
+            description: "Array of INVEST-compliant user stories. At least one required. Aim for 5-10 well-defined stories for complex projects, fewer for simple ones.",
             items: {
                 type: "object",
                 required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
@@ -96,7 +97,8 @@ export const pmSchema = {
         },
         acceptance_criteria: {
             type: "array",
-            description: "Array of acceptance criteria.",
+            minItems: 1,
+            description: "Array of acceptance criteria. At least one required.",
             items: {
                 type: "object",
                 required: ["criteria"],

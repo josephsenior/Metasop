@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' }); // Try local first
 dotenv.config(); // Fallback to .env
 
-import { MetaSOPOrchestrator } from "../lib/metasop/orchestrator";
-import { resetLLMProvider } from "../lib/metasop/utils/llm-helper";
+import { MetaSOPOrchestrator } from "../../lib/metasop/orchestrator";
+import { resetLLMProvider } from "../../lib/metasop/utils/llm-helper";
 import path from 'path';
 import fs from 'fs';
 
@@ -54,7 +54,7 @@ Technical Constraints:
                 includeAPIs: true,
                 includeDatabase: true
             },
-            (event) => {
+            (event: { type: string; step_id?: string }) => {
                 if (event.type === 'step_start') {
                     process.stdout.write(`\nOriginal Step: [${event.step_id}] `);
                 } else if (event.type === 'step_complete') {
@@ -75,7 +75,7 @@ Technical Constraints:
         console.log(`🏁 Success: ${result.success}`);
 
         if (!result.success) {
-            console.error(`❌ Errors:`, JSON.stringify(result.report.events.filter(e => e.status === 'failed'), null, 2));
+            console.error(`❌ Errors:`, JSON.stringify(result.report.events.filter((e: { status?: string }) => e.status === 'failed'), null, 2));
         }
 
         // Save results

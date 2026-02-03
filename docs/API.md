@@ -30,38 +30,22 @@ The MetaSOP API provides programmatic access to the multi-agent orchestration pl
 
 ---
 
-## Authentication
+## Session (Guest Only)
 
-MetaSOP uses NextAuth.js for authentication. Most endpoints require authentication.
+The app is guest-only; there is no login or API keys. Diagram endpoints identify the session via:
 
-### Getting an API Key
+- **Header:** `x-guest-session-id` (set by the frontend; use `fetchDiagramApi` or `apiClient` so it is sent automatically).
+- **Cookie:** `guest_session_id` (set by the API on responses so same-origin requests carry it).
 
-1. Sign up at [metasop.dev](https://metasop.dev)
-2. Go to Settings > API Keys
-3. Generate a new API key
-4. Include the key in the `Authorization` header
-
-### Using the API Key
-
-```bash
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://api.metasop.dev/v1/diagrams
-```
-
-### Guest Access
-
-Some endpoints support guest access without authentication:
-
-- `POST /api/diagrams/generate` - Limited diagram generation
-- `GET /api/health` - Health check
+All diagram/orchestration endpoints use this guest session. Use the same client (or cookie) so all requests are tied to one session.
 
 ---
 
 ## Base URL
 
 ```
-Production: https://api.metasop.dev/v1
 Development: http://localhost:3000/api
+Production: set NEXT_PUBLIC_API_URL in your deployment (e.g. https://your-app.com/api)
 ```
 
 ---
@@ -70,81 +54,76 @@ Development: http://localhost:3000/api
 
 ### Diagrams
 
-#### Create Diagram
+#### Generate diagram (primary creation flow)
 
 ```http
-POST /api/diagrams
+POST /api/diagrams/generate
+POST /api/diagrams/generate?stream=true
 ```
 
-Creates a new diagram and starts orchestration.
+Runs the MetaSOP orchestration and creates a diagram. Use **guest session** (cookie or `x-guest-session-id`); no login or API key required for the app.
 
 **Request Body**:
 
 ```typescript
 {
-  title: string;
-  description: string;
-  userRequest: string;
+  prompt: string;                    // Natural language description (min 20 chars)
   options?: {
     includeStateManagement?: boolean;
     includeAPIs?: boolean;
     includeDatabase?: boolean;
-    model?: string;
-    reasoning?: boolean;
+    model?: string;                  // e.g. "gemini-3-flash-preview", "gemini-3-pro-preview"
+    reasoning?: boolean;             // Extended reasoning (slower)
   };
+  documents?: Array<{ name?: string; content?: string }>;  // Optional attached context
+  clarificationAnswers?: Record<string, string>;       // From guided-mode questions
 }
 ```
 
-**Response**:
+**Streaming (`?stream=true`)**: Response is NDJSON over SSE. Events include `step_start`, `step_thought`, `step_complete`, `orchestration_complete` (with diagram), or `error`.
 
-```typescript
-{
-  id: string;
-  title: string;
-  description: string;
-  status: "pending" | "running" | "completed" | "failed";
-  createdAt: string;
-  updatedAt: string;
-}
-```
+**Non-streaming**: Returns after orchestration completes. Response shape depends on success/error (see implementation).
 
 **Example**:
 
 ```bash
-curl -X POST https://api.metasop.dev/v1/diagrams \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+curl -X POST "http://localhost:3000/api/diagrams/generate?stream=true" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "E-commerce Platform",
-    "description": "Full-stack e-commerce application",
-    "userRequest": "Build a modern e-commerce platform with user authentication, product catalog, shopping cart, and payment processing"
-  }'
+  -d '{"prompt": "Build a modern e-commerce platform with auth, product catalog, and checkout"}'
 ```
 
-#### Get Diagram
+#### Create diagram (metadata only)
+
+```http
+POST /api/diagrams
+```
+
+Creates a new diagram record (metadata only). Orchestration is started via **POST /api/diagrams/generate**; this endpoint is used internally or for listing/CRUD.
+
+**Request Body** (if used): typically minimal; see implementation.
+
+#### Get diagram
 
 ```http
 GET /api/diagrams/:id
 ```
 
-Retrieves a specific diagram by ID.
+Retrieves a diagram by ID (scoped to the current guest session).
 
 **Response**:
 
 ```typescript
 {
   id: string;
+  userId: string;
   title: string;
   description: string;
-  status: "pending" | "running" | "completed" | "failed";
-  artifacts: {
-    pm_spec?: MetaSOPArtifact;
-    arch_design?: MetaSOPArtifact;
-    devops_infrastructure?: MetaSOPArtifact;
-    security_architecture?: MetaSOPArtifact;
-    engineer_impl?: MetaSOPArtifact;
-    ui_design?: MetaSOPArtifact;
-    qa_verification?: MetaSOPArtifact;
+  status: "pending" | "processing" | "completed" | "failed";
+  metadata?: {
+    prompt?: string;
+    options?: object;
+    metasop_artifacts?: Record<string, MetaSOPArtifact>;  // pm_spec, arch_design, etc.
+    metasop_steps?: any;
   };
   createdAt: string;
   updatedAt: string;
@@ -157,7 +136,7 @@ Retrieves a specific diagram by ID.
 GET /api/diagrams
 ```
 
-Lists all diagrams for the authenticated user.
+Lists diagrams for the current guest session (cookie or x-guest-session-id).
 
 **Query Parameters**:
 
@@ -297,41 +276,44 @@ Polls orchestration progress.
 
 ---
 
-### Refinement
+### Refinement (tool-based)
 
-#### Refine Artifact
+Refinement is done by editing artifact JSON via predefined tools. There is no instruction-based or agent re-run refinement.
+
+#### Edit Artifacts
 
 ```http
-POST /api/diagrams/refine
+POST /api/diagrams/artifacts/edit
 ```
 
-Refines a specific artifact.
+Applies predefined edit operations to artifact JSON without re-running agents. Treats artifacts as documents; all changes go through validated tools (set_at_path, delete_at_path, add_array_item, remove_array_item). Deterministic and performant.
 
 **Request Body**:
 
 ```typescript
 {
-  diagramId: string;
-  targetStepId: string;
-  instruction: string;
-  isAtomicAction?: boolean;
-  targetPaths?: string[];
-  context?: {
-    upstreamChange: string;
-    reason: string;
-    referenceValues?: Record<string, any>;
-  };
+  diagramId?: string;
+  previousArtifacts: Record<string, { content: object; step_id?: string; role?: string; timestamp?: string }>;
+  edits: Array<
+    | { tool: "set_at_path"; artifactId: string; path: string; value: any }
+    | { tool: "delete_at_path"; artifactId: string; path: string }
+    | { tool: "add_array_item"; artifactId: string; path: string; value: any }
+    | { tool: "remove_array_item"; artifactId: string; path: string; index?: number }
+  >;
 }
 ```
+
+- **artifactId**: One of `pm_spec`, `arch_design`, `security_architecture`, `devops_infrastructure`, `ui_design`, `engineer_impl`, `qa_verification`.
+- **path**: Dot-separated path, e.g. `apis.0.path` or `user_stories[1].title`.
 
 **Response**:
 
 ```typescript
 {
-  updatedArtifacts: {
-    [stepId: string]: MetaSOPArtifact;
-  };
-  affectedSteps: string[];
+  success: boolean;
+  artifacts: Record<string, ArtifactRecord>;
+  applied: number;
+  errors?: Array<{ op: EditOp; error: string }>;
 }
 ```
 
@@ -456,8 +438,8 @@ All errors follow a consistent format:
 
 | Code | HTTP Status | Description |
 |-------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Invalid or missing API key |
-| `FORBIDDEN` | 403 | Insufficient permissions |
+| `UNAUTHORIZED` | 401 | Invalid or missing guest session |
+| `FORBIDDEN` | 403 | Guest limit exceeded or insufficient permissions |
 | `NOT_FOUND` | 404 | Resource not found |
 | `VALIDATION_ERROR` | 400 | Invalid request data |
 | `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |

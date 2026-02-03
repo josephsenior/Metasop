@@ -84,21 +84,6 @@ BEGIN;
       }
     })
 
-    // Generate foreign keys if relationships exist
-    const edges = this.diagram.edges || []
-    edges.forEach((edge: any) => {
-      const fromNode = this.diagram.nodes.find(n => n.id === edge.from)
-      const toNode = this.diagram.nodes.find(n => n.id === edge.to)
-
-      if (fromNode?.type === "database" && toNode?.type === "database") {
-        const fromTable = fromNode.label.toLowerCase().replace(/\s+/g, "_")
-        const toTable = toNode.label.toLowerCase().replace(/\s+/g, "_")
-        
-        sql += `-- Foreign key relationship: ${fromTable} -> ${toTable}\n`
-        sql += `-- ALTER TABLE "${fromTable}" ADD CONSTRAINT "fk_${fromTable}_${toTable}" FOREIGN KEY ("${toTable}Id") REFERENCES "${toTable}"("id") ON DELETE CASCADE;\n\n`
-      }
-    })
-
     sql += `COMMIT;\n`
 
     return sql

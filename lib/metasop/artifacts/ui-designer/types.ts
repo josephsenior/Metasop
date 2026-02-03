@@ -1,7 +1,7 @@
 
 export interface UIDesignerBackendArtifact {
-    summary?: string;
-    description?: string;
+    summary: string;
+    description: string;
     schema_version?: "0.8";
     component_hierarchy: {
         root: string;
@@ -35,21 +35,21 @@ export interface UIDesignerBackendArtifact {
         borderRadius?: Record<string, string>;
         shadows?: Record<string, string>;
     };
-    ui_patterns?: string[];
-    component_specs?: Array<{
+    ui_patterns: string[];
+    component_specs: Array<{
         name: string;
         description: string;
         props?: Record<string, string>; // UI expects record
         variants?: string[];
         states?: string[];
     }>;
-    layout_breakpoints?: Record<string, string>;
-    atomic_structure?: {
+    layout_breakpoints: Record<string, string>;
+    atomic_structure: {
         atoms: string[];
         molecules: string[];
         organisms: string[];
     };
-    accessibility?: {
+    accessibility: {
         standard?: string;
         guidelines?: string[];
         checklist?: string[];
@@ -59,7 +59,7 @@ export interface UIDesignerBackendArtifact {
         wcag_level?: "A" | "AA" | "AAA";
         focus_indicators?: boolean;
     };
-    website_layout?: {
+    website_layout: {
         pages: Array<{
             name: string;
             route: string;

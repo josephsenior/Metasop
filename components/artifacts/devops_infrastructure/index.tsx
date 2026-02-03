@@ -127,7 +127,7 @@ export default function DevOpsInfrastructurePanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Section */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex flex-col gap-2 relative z-10">
           <div className="flex items-center gap-2">
             <h2 className={styles.typography.h2}>Infrastructure Specification</h2>
@@ -148,7 +148,7 @@ export default function DevOpsInfrastructurePanel({
             </p>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mt-2">
+          <div className={styles.layout.statsGrid + " mt-2"}>
             <StatsCard icon={Box} label="Services" value={services.length} color="text-sky-500" bg="bg-sky-500/10" />
             <StatsCard icon={Zap} label="Components" value={infra_components || 0} color="text-yellow-500" bg="bg-yellow-500/10" />
             <StatsCard icon={GitBranch} label="Pipelines" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
@@ -686,7 +686,7 @@ export default function DevOpsInfrastructurePanel({
                                   <div className="flex flex-wrap gap-1">
                                     {Object.entries(scaling.auto_scaling.metrics).map(([k, v]: [string, any]) => (
                                       <Badge key={k} variant="outline" className="text-[9px] border-zinc-700 text-zinc-400 font-mono">
-                                        {k}: {v}
+                                        {k}: {typeof v === "object" && v !== null ? JSON.stringify(v) : String(v)}
                                       </Badge>
                                     ))}
                                   </div>
@@ -715,56 +715,72 @@ export default function DevOpsInfrastructurePanel({
 
                 <TabsContent key="recovery" value="recovery" className="m-0 outline-none space-y-4">
                   <motion.div variants={container} initial="hidden" animate="show">
-                    <Card className="border-red-500/20 bg-red-500/5 overflow-hidden">
-                      <div className="p-4 border-b border-red-500/10 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                          <ShieldAlert className="h-5 w-5" />
-                          <h3 className="text-lg font-bold">Disaster Recovery Plan</h3>
+                    <Card className="border-red-500/30 bg-black shadow-2xl overflow-hidden relative group">
+                      {/* Subtle Pattern Overlay */}
+                      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#ef4444_0.5px,transparent_0.5px)] bg-[size:16px_16px]" />
+
+                      <div className="p-5 border-b border-red-500/20 flex items-center justify-between relative z-10 bg-black/40">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                            <ShieldAlert className="h-5 w-5 text-red-500" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight text-white/90">Disaster Recovery Plan</h3>
+                            <p className="text-[10px] text-red-500/60 font-mono tracking-widest uppercase">Emergency Protocol // Level 1</p>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="border-red-500/30 text-red-600 bg-red-500/10 uppercase font-mono tracking-wider">
-                          Business Continuity
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] uppercase font-bold tracking-wider">
+                          Critical Path
                         </Badge>
                       </div>
-                      <div className="p-6 grid gap-6 md:grid-cols-2">
+
+                      <div className="p-6 grid gap-6 md:grid-cols-2 relative z-10">
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-background/80 p-4 rounded-xl border border-border/50 shadow-sm flex flex-col gap-2">
-                              <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase font-bold tracking-wider">
-                                <Clock className="h-4 w-4 text-blue-500" />
+                            <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 shadow-inner flex flex-col gap-2 group/card hover:bg-zinc-900/80 transition-colors">
+                              <div className="flex items-center gap-2 text-white/40 text-[9px] uppercase font-black tracking-widest">
+                                <Clock className="h-3.5 w-3.5 text-blue-500" />
                                 RTO
                               </div>
-                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rto || "—"}</div>
-                              <div className="text-[10px] text-muted-foreground">Recovery Time Objective</div>
+                              <div className="text-2xl font-black text-white">{disaster_recovery?.rto || "—"}</div>
+                              <div className="text-[10px] text-white/20 font-medium">Recovery Time Objective</div>
                             </div>
-                            <div className="bg-background/80 p-4 rounded-xl border border-border/50 shadow-sm flex flex-col gap-2">
-                              <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase font-bold tracking-wider">
-                                <HardDrive className="h-4 w-4 text-emerald-500" />
+                            <div className="bg-zinc-900/60 p-4 rounded-xl border border-white/5 shadow-inner flex flex-col gap-2 group/card hover:bg-zinc-900/80 transition-colors">
+                              <div className="flex items-center gap-2 text-white/40 text-[9px] uppercase font-black tracking-widest">
+                                <HardDrive className="h-3.5 w-3.5 text-emerald-500" />
                                 RPO
                               </div>
-                              <div className="text-2xl font-black text-foreground">{disaster_recovery?.rpo || "—"}</div>
-                              <div className="text-[10px] text-muted-foreground">Recovery Point Objective</div>
+                              <div className="text-2xl font-black text-white">{disaster_recovery?.rpo || "—"}</div>
+                              <div className="text-[10px] text-white/20 font-medium">Recovery Point Objective</div>
                             </div>
                           </div>
 
-                          <div className="bg-background/80 p-4 rounded-xl border border-border/50 shadow-sm space-y-2">
-                            <div className="flex items-center gap-2 text-amber-600 font-semibold text-sm">
-                              <RefreshCcw className="h-4 w-4" />
+                          <div className="bg-zinc-900/40 p-4 rounded-xl border border-white/5 shadow-inner space-y-3 group/card hover:bg-zinc-900/60 transition-colors">
+                            <div className="flex items-center gap-2 text-amber-500/90 font-bold text-xs uppercase tracking-wider">
+                              <RefreshCcw className="h-3.5 w-3.5" />
                               Backup Strategy
                             </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
+                            <p className="text-xs text-white/70 leading-relaxed font-medium">
                               {disaster_recovery?.backup_strategy || "No backup strategy defined."}
                             </p>
                           </div>
                         </div>
 
-                        <div className="bg-background/80 p-4 rounded-xl border border-border/50 shadow-sm space-y-2">
-                          <div className="flex items-center gap-2 text-red-600 font-semibold text-sm">
-                            <Activity className="h-4 w-4" />
+                        <div className="bg-zinc-900/40 p-5 rounded-xl border border-white/5 shadow-inner space-y-4 group/card hover:bg-zinc-900/60 transition-colors">
+                          <div className="flex items-center gap-2 text-red-500/90 font-bold text-xs uppercase tracking-wider">
+                            <Activity className="h-3.5 w-3.5" />
                             Failover Plan
                           </div>
-                          <p className="text-sm text-foreground/80 leading-relaxed">
+                          <p className="text-sm text-white/80 leading-relaxed font-medium">
                             {disaster_recovery?.failover_plan || "No failover plan defined."}
                           </p>
+
+                          <div className="pt-4 border-t border-white/5 mt-4">
+                            <div className="flex items-center gap-2 text-blue-400/60 text-[9px] font-mono tracking-tighter">
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                              MONITORING SYSTEM ACTIVE
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </Card>

@@ -38,8 +38,8 @@ Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
 
 3. **Configure environment**
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your API keys
+   cp .env.example .env
+   # Edit .env with GOOGLE_AI_API_KEY and DATABASE_URL (see SETUP.md)
    ```
 
 4. **Initialize database**
@@ -60,7 +60,6 @@ Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
 ### System Overview
 
 - **[Architecture Overview](ARCHITECTURE.md)** - Complete system architecture and design
-- **[Knowledge Graph](ARCHITECTURE.md#knowledge-graph)** - Dependency management system
 - **[Agent System](ARCHITECTURE.md#agents)** - Multi-agent orchestration
 
 ### Core Components
@@ -68,7 +67,6 @@ Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
 | Component | Description | Location |
 |-----------|-------------|----------|
 | **Orchestrator** | Coordinates agent execution | [`lib/metasop/orchestrator.ts`](../lib/metasop/orchestrator.ts) |
-| **Knowledge Graph** | Tracks artifact dependencies | [`lib/metasop/knowledge-graph/`](../lib/metasop/knowledge-graph/) |
 | **Execution Service** | Handles timeouts and retries | [`lib/metasop/services/execution-service.ts`](../lib/metasop/services/execution-service.ts) |
 | **Agents** | Specialized AI agents | [`lib/metasop/agents/`](../lib/metasop/agents/) |
 | **LLM Adapter** | Abstracts LLM providers | [`lib/metasop/adapters/`](../lib/metasop/adapters/) |
@@ -76,7 +74,7 @@ Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
 ### Data Flow
 
 ```
-User Request → Orchestrator → Knowledge Graph → Agents → LLM → Artifacts
+User Request → Orchestrator → Agents → LLM → Artifacts
 ```
 
 ---
@@ -94,7 +92,7 @@ User Request → Orchestrator → Knowledge Graph → Agents → LLM → Artifac
 | `/api/diagrams` | POST | Create new diagram |
 | `/api/diagrams/:id` | GET | Get diagram details |
 | `/api/diagrams/:id/orchestration` | POST | Start orchestration |
-| `/api/diagrams/refine` | POST | Refine artifact |
+| `/api/diagrams/artifacts/edit` | POST | Edit artifacts (tool-based) |
 | `/api/health` | GET | Health check |
 
 ### Authentication
@@ -168,14 +166,12 @@ See [Deployment Guide](DEPLOYMENT.md#option-4-vps-digitalocean-aws-etc) for deta
 
 ### Environment Variables
 
-Required for production:
+Required for production (local/open-source):
 
 ```env
 NODE_ENV=production
-DATABASE_URL=postgresql://user:password@host:5432/metasop
+DATABASE_URL=file:./prisma/local.db
 GOOGLE_AI_API_KEY=your-api-key
-NEXTAUTH_URL=https://your-domain.com
-NEXTAUTH_SECRET=your-secret-key
 ```
 
 ---
@@ -188,14 +184,12 @@ NEXTAUTH_SECRET=your-secret-key
 
 ### Quick Fixes
 
-#### Database Connection Issues
+#### Database (SQLite)
 
 ```bash
-# Check project status (Supabase)
-# Go to app.supabase.com → Check if project is Active
-
-# Test connection
-psql "postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
+# Ensure DATABASE_URL=file:./prisma/local.db in .env
+pnpm db:push
+# If issues, delete prisma/local.db and run db:push again
 ```
 
 #### Test Failures
@@ -254,10 +248,9 @@ pnpm dev
 
 ### Intermediate
 
-1. Understand [Knowledge Graph](ARCHITECTURE.md#knowledge-graph)
-2. Learn [Agent System](ARCHITECTURE.md#agents)
-3. Review [Testing Guide](TESTING.md)
-4. Build [Custom Agents](../CONTRIBUTING.md#building-custom-agents)
+1. Learn [Agent System](ARCHITECTURE.md#agents)
+2. Review [Testing Guide](TESTING.md)
+3. Build [Custom Agents](../CONTRIBUTING.md#building-custom-agents)
 
 ### Advanced
 

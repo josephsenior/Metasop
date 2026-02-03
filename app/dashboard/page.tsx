@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { AuthGuard } from "@/components/auth/auth-guard"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { useAuth } from "@/contexts/auth-context"
@@ -12,14 +11,14 @@ import { FloatingCreateButton } from "@/components/layout/floating-create-button
 import { diagramsApi } from "@/lib/api/diagrams"
 import type { Diagram } from "@/types/diagram"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, FileText, Clock, TrendingUp, Sparkles, Zap, Users, Loader2, AlertCircle } from "lucide-react"
+import { Plus, FileText, Clock, TrendingUp, Sparkles, Zap, Loader2, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  useAuth() // guest-only: auth context for compatibility
   const { toast } = useToast()
   const [greeting, setGreeting] = useState("")
   const [recentDiagrams, setRecentDiagrams] = useState<Diagram[]>([])
@@ -87,7 +86,7 @@ export default function DashboardPage() {
     }
   }
 
-  const userName = user?.name || user?.username || "there"
+  const userName = "there" // guest-only: no user name
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
@@ -122,19 +121,13 @@ export default function DashboardPage() {
         <DashboardHeader />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Guest notice */}
-        {!user && (
-          <Alert className="border-blue-600/30 bg-blue-600/10 mb-8">
-            <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-            <AlertDescription className="text-sm">
-              <span className="font-medium">You are in guest mode.</span> Your diagrams are saved for this session only.{" "}
-              <Link href="/register" className="underline hover:no-underline font-medium">
-                Sign up
-              </Link>{" "}
-              to save them permanently.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Session notice */}
+        <Alert className="border-blue-600/30 bg-blue-600/10 mb-8">
+          <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+          <AlertDescription className="text-sm">
+            <span className="font-medium">Local storage.</span> Your diagrams are saved to your device and persist across sessions.
+          </AlertDescription>
+        </Alert>
 
         {/* Welcome Section */}
         <div className="mb-8">
@@ -145,11 +138,6 @@ export default function DashboardPage() {
               </h1>
               <p className="text-muted-foreground">Create and manage your architectural diagrams</p>
             </div>
-            {user?.subscriptionPlan && (
-              <Badge variant="outline" className="text-sm px-3 py-1.5 border-blue-600/20 bg-blue-600/10 text-blue-700 dark:text-blue-400">
-                {user.subscriptionPlan.charAt(0).toUpperCase() + user.subscriptionPlan.slice(1).toLowerCase()} Plan
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -294,12 +282,6 @@ export default function DashboardPage() {
                   <Button variant="outline" className="w-full justify-start gap-2 border-border hover:bg-accent hover:text-accent-foreground">
                     <FileText className="h-4 w-4" />
                     View All Diagrams
-                  </Button>
-                </Link>
-                <Link href="/dashboard/profile">
-                  <Button variant="outline" className="w-full justify-start gap-2 border-border hover:bg-accent hover:text-accent-foreground">
-                    <Users className="h-4 w-4" />
-                    Account Settings
                   </Button>
                 </Link>
               </CardContent>

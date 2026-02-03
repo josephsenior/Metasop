@@ -37,6 +37,9 @@ next-env.d.ts
 
 # prisma
 prisma/migrations
+prisma/*.db
+prisma/*.db-journal
+prisma/prisma
 
 # test results and logs
 /test_results/

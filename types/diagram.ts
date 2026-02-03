@@ -1,29 +1,15 @@
-export interface DiagramNode {
-  id: string;
-  label: string;
-  type: "component" | "service" | "database" | "api" | "storage" | "other" | "agent" | "user_story" | "file" | "gateway" | "frontend" | "database_schema" | "apis";
-  position?: { x: number; y: number };
-  data?: Record<string, any>;
-}
-
-export interface DiagramEdge {
-  id?: string;
-  from: string;
-  to: string;
-  label?: string;
-  type?: string;
-  data?: Record<string, any>;
-  animated?: boolean;
-  style?: Record<string, any>;
-}
+/**
+ * Diagram types: artifact-centric model.
+ *
+ * Diagram (for the user) = metadata + artifacts. The DB does not store
+ * any graph structure; the canonical view is artifacts only.
+ */
 
 export interface Diagram {
   id: string;
   userId: string;
   title: string;
   description: string;
-  nodes: DiagramNode[];
-  edges: DiagramEdge[];
   status: "processing" | "completed" | "failed" | "pending";
   createdAt: string;
   updatedAt: string;
@@ -52,6 +38,8 @@ export interface CreateDiagramRequest {
     reasoning?: boolean;
   };
   documents?: any[];
+  /** Answers from guided clarification (question id -> selected option). */
+  clarificationAnswers?: Record<string, string>;
 }
 
 export interface CreateDiagramResponse {
@@ -62,8 +50,6 @@ export interface CreateDiagramResponse {
 export interface UpdateDiagramRequest {
   title?: string;
   description?: string;
-  nodes?: DiagramNode[];
-  edges?: DiagramEdge[];
   status?: "processing" | "completed" | "failed" | "pending";
   metadata?: any;
 }

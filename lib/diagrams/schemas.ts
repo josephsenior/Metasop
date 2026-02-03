@@ -11,13 +11,20 @@ export const CreateDiagramSchema = z.object({
         reasoning: z.boolean().optional(),
     }).optional(),
     documents: z.array(z.any()).optional(),
+    clarificationAnswers: z.record(z.string()).optional(),
 });
+
+export const ScopeRequestSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required"),
+});
+
+export function validateScopeRequest(data: any) {
+    return ScopeRequestSchema.parse(data);
+}
 
 export const UpdateDiagramSchema = z.object({
     title: z.string().optional(),
     description: z.string().optional(),
-    nodes: z.array(z.any()).optional(),
-    edges: z.array(z.any()).optional(),
     metadata: z.any().optional(),
 });
 
@@ -29,17 +36,21 @@ export function validateUpdateDiagramRequest(data: any): UpdateDiagramRequest {
     return UpdateDiagramSchema.parse(data) as UpdateDiagramRequest;
 }
 
-export const RefineDiagramSchema = z.object({
-    diagramId: z.string(),
-    stepId: z.string(),
-    instruction: z.string().min(1, "Instruction is required"),
+const EditOpSchema = z.discriminatedUnion("tool", [
+    z.object({ tool: z.literal("set_at_path"), artifactId: z.string(), path: z.string(), value: z.any() }),
+    z.object({ tool: z.literal("delete_at_path"), artifactId: z.string(), path: z.string() }),
+    z.object({ tool: z.literal("add_array_item"), artifactId: z.string(), path: z.string(), value: z.any() }),
+    z.object({ tool: z.literal("remove_array_item"), artifactId: z.string(), path: z.string(), index: z.number().int().min(0).optional() }),
+]);
+
+export const EditArtifactsSchema = z.object({
+    diagramId: z.string().optional(),
     previousArtifacts: z.record(z.any()),
-    cascade: z.boolean().optional(),
-    isAtomicAction: z.boolean().optional(),
+    edits: z.array(EditOpSchema).min(1, "At least one edit is required"),
 });
 
-export function validateRefineDiagramRequest(data: any) {
-    return RefineDiagramSchema.parse(data);
+export function validateEditArtifactsRequest(data: any) {
+    return EditArtifactsSchema.parse(data);
 }
 
 export const AskQuestionSchema = z.object({
@@ -53,4 +64,14 @@ export const AskQuestionSchema = z.object({
 
 export function validateAskQuestionRequest(data: any) {
     return AskQuestionSchema.parse(data);
+}
+
+export const RefineArtifactsSchema = z.object({
+    diagramId: z.string().optional(),
+    intent: z.string().min(1, "Intent is required"),
+    previousArtifacts: z.record(z.any()),
+});
+
+export function validateRefineArtifactsRequest(data: any) {
+    return RefineArtifactsSchema.parse(data);
 }

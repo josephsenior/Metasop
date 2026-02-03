@@ -3,7 +3,6 @@ import type { ProductManagerBackendArtifact } from "../artifacts/product-manager
 import { pmSchema } from "../artifacts/product-manager/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -16,35 +15,29 @@ export async function productManagerAgent(
   context: AgentContext,
   onProgress?: (event: Partial<MetaSOPEvent>) => void
 ): Promise<MetaSOPArtifact> {
-  const { user_request } = context;
+  const { user_request, clarificationAnswers } = context;
 
   logger.info("Product Manager agent starting", { user_request: user_request.substring(0, 100) });
 
   try {
     let content: ProductManagerBackendArtifact;
 
-    // Check if this is a refinement request
-    if (shouldUseRefinement(context)) {
-      logger.info("PM agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<ProductManagerBackendArtifact>(
-        context,
-        "Product Manager",
-        pmSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("pm_spec")
-        }
-      );
-    } else {
-      // Get domain-specific context if applicable
+    // Get domain-specific context if applicable
       const domainContext = getDomainContext(user_request);
       const qualityCheck = getQualityCheckPrompt("pm");
+
+      const clarificationBlock =
+        clarificationAnswers && Object.keys(clarificationAnswers).length > 0
+          ? `\n\n=== USER CLARIFICATIONS (use these to scope the spec) ===\n${Object.entries(clarificationAnswers)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join("\n")}\n`
+          : "";
 
       // Original generation logic with enhanced prompts
       const pmPrompt = `You are a Senior Product Manager with 10+ years of experience in agile product development, user research, and stakeholder management. Create a comprehensive, production-ready product specification for:
 
 "${user_request}"
-
+${clarificationBlock}
 ${(context as any).previous_artifacts ? `Review the initial request and ensure all aspects are covered in the spec.` : ""}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
@@ -155,7 +148,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
       } else {
         throw new Error("Product Manager agent failed: No structured data received from LLM");
       }
-    }
 
     // Validation check: must have at least user stories
     if (!content.user_stories || content.user_stories.length === 0) {

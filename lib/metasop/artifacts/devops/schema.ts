@@ -23,8 +23,9 @@ export const devopsSchema = {
                 },
                 services: {
                     type: "array",
+                    minItems: 1,
                     description:
-                        "Infrastructure services (compute, DB, storage).",
+                        "Infrastructure services (compute, DB, storage). At least one required.",
                     items: {
                         type: "object",
                         required: ["name", "type"],
@@ -73,8 +74,9 @@ export const devopsSchema = {
             properties: {
                 pipeline_stages: {
                     type: "array",
+                    minItems: 1,
                     description:
-                        "CI/CD pipeline stages.",
+                        "CI/CD pipeline stages. At least one required.",
                     items: {
                         type: "object",
                         required: ["name", "steps"],
@@ -93,14 +95,16 @@ export const devopsSchema = {
                                 maxLength: 100,
                                 description: "Technical goal of this stage.",
                             },
+                            status: { type: "string", maxLength: 20, description: "Current stage status." },
                         },
                     },
                 },
                 tools: {
                     type: "array",
+                    minItems: 1,
                     items: { type: "string", maxLength: 20 },
                     description:
-                        "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.).",
+                        "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.). At least one required.",
                 },
                 triggers: {
                     type: "array",
@@ -216,9 +220,9 @@ export const devopsSchema = {
                 },
                 environments: {
                     type: "array",
-
+                    minItems: 1,
                     description:
-                        "Deployment environments (dev, staging, production)",
+                        "Deployment environments (dev, staging, production). At least one required.",
                     items: {
                         type: "object",
                         required: ["name", "configuration"],
@@ -250,15 +254,17 @@ export const devopsSchema = {
         },
         monitoring: {
             type: "object",
-            required: ["tools", "metrics", "alerts",],
+            required: ["tools", "metrics"],
             properties: {
                 tools: {
                     type: "array",
+                    minItems: 1,
                     items: { type: "string", maxLength: 20 },
-                    description: "Monitoring tools.",
+                    description: "Monitoring tools. At least one required.",
                 },
                 metrics: {
                     type: "array",
+                    minItems: 1,
                     items: {
                         type: "object",
                         required: ["name", "threshold"],
@@ -277,7 +283,7 @@ export const devopsSchema = {
                         required: ["name", "condition"],
                         properties: {
                             name: { type: "string", maxLength: 30, description: "Alert name." },
-                        condition: { type: "string", maxLength: 100, description: "Threshold/condition." },
+                            condition: { type: "string", maxLength: 100, description: "Threshold/condition." },
                             severity: { type: "string", enum: ["critical", "warning", "info"] },
                         },
                     },
@@ -340,6 +346,7 @@ export const devopsSchema = {
                                 properties: {
                                     type: { type: "string", maxLength: 20 },
                                     threshold: { type: "string", maxLength: 20 },
+                                    metric: { type: "string", maxLength: 20, description: "The metric to monitor (e.g., 'CPU')." },
                                 }
                             }
                         }

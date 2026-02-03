@@ -4,19 +4,19 @@ import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { VoiceInputButton } from "@/components/ui/voice-input-button"
-import { 
-    Bot, 
-    User, 
-    Send, 
-    Sparkles, 
-    Loader2, 
-    MessageSquare, 
-    Info, 
+import {
+    Bot,
+    User,
+    Send,
+    Sparkles,
+    Loader2,
+    MessageSquare,
+    Info,
     Zap,
     Paperclip
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { metasopApi } from "@/lib/api/metasop"
+import { fetchDiagramApi } from "@/lib/api/diagram-fetch"
 import { useToast } from "@/components/ui/use-toast"
 import { generateAgentContextMarkdown, getOptimizedSteps } from "@/lib/metasop/utils/export-context"
 import { v4 as uuidv4 } from "uuid"
@@ -36,9 +36,9 @@ interface ProjectChatPanelProps {
     onRefineComplete?: (result?: any) => void
 }
 
-export function ProjectChatPanel({ 
-    diagramId, 
-    artifacts, 
+export function ProjectChatPanel({
+    diagramId,
+    artifacts,
     activeTab = "all",
     onRefineComplete
 }: ProjectChatPanelProps) {
@@ -86,7 +86,7 @@ export function ProjectChatPanel({
             const reader = new FileReader()
             reader.onload = async (event) => {
                 const content = event.target?.result as string
-                
+
                 const newDoc = {
                     name: file.name,
                     type: file.name.split('.').pop() || 'txt',
@@ -94,12 +94,12 @@ export function ProjectChatPanel({
                 }
 
                 setTransientDocuments(prev => [...prev, newDoc])
-                
+
                 toast({
                     title: "Context Added",
                     description: `${file.name} added to current chat context.`,
                 })
-                
+
                 setIsUploading(false)
             }
             reader.readAsText(file)
@@ -132,12 +132,12 @@ export function ProjectChatPanel({
         // Check if the input looks like a refinement request
         // Refinement requests typically contain action verbs or specific instructions to change the design
         const refinementVerbs = [
-            "change", "add", "remove", "update", "refine", "fix", "improve", 
+            "change", "add", "remove", "update", "refine", "fix", "improve",
             "modify", "adjust", "create", "delete", "implement", "set",
             "make", "rewrite", "incorporate", "expand", "reduce"
         ]
-        
-        const isRefinementRequest = refinementVerbs.some(verb => 
+
+        const isRefinementRequest = refinementVerbs.some(verb =>
             currentInput.toLowerCase().includes(verb)
         )
 
@@ -189,9 +189,8 @@ export function ProjectChatPanel({
 
         try {
             // Use streaming API
-            const response = await fetch(`/api/diagrams/ask?stream=true`, {
+            const response = await fetchDiagramApi(`/api/diagrams/ask?stream=true`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     diagramId: diagramId || "",
                     question,
@@ -217,7 +216,7 @@ export function ProjectChatPanel({
             try {
                 while (true) {
                     const { done, value } = await reader.read()
-                    
+
                     if (done) {
                         // Process any remaining buffer before closing
                         if (buffer.trim()) {
@@ -245,13 +244,13 @@ export function ProjectChatPanel({
 
                         try {
                             const event = JSON.parse(line.trim())
-                            
+
                             if (event.type === "chunk") {
                                 if (event.content) {
                                     fullAnswer += event.content
                                     // Update the streaming message immediately
-                                    setMessages(prev => prev.map(msg => 
-                                        msg.id === streamingMessageId 
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === streamingMessageId
                                             ? { ...msg, content: fullAnswer }
                                             : msg
                                     ))
@@ -279,8 +278,8 @@ export function ProjectChatPanel({
 
                 // Ensure final answer is set even if stream ended without "complete" event
                 if (fullAnswer && !streamComplete) {
-                    setMessages(prev => prev.map(msg => 
-                        msg.id === streamingMessageId 
+                    setMessages(prev => prev.map(msg =>
+                        msg.id === streamingMessageId
                             ? { ...msg, content: fullAnswer }
                             : msg
                     ))
@@ -291,12 +290,12 @@ export function ProjectChatPanel({
             }
         } catch (error: any) {
             // Update the streaming message with error
-            setMessages(prev => prev.map(msg => 
-                msg.id === streamingMessageId 
+            setMessages(prev => prev.map(msg =>
+                msg.id === streamingMessageId
                     ? { ...msg, content: `Sorry, I encountered an error: ${error.message}` }
                     : msg
             ))
-            
+
             toast({
                 title: "Chat Error",
                 description: error.message || "Failed to get answer",
@@ -307,189 +306,94 @@ export function ProjectChatPanel({
 
     const handleRefinement = async (instruction: string) => {
         setIsRefining(true)
-        
-        // Create initial refinement message with progress tracking
         const refinementMessageId = uuidv4()
-        const refinementMessage: Message = {
+        const placeholderMessage: Message = {
             id: refinementMessageId,
             role: "assistant",
-            content: `🔍 Analyzing your request: "${instruction}"`,
+            content: "Applying your changes…",
             type: "refinement",
             timestamp: new Date()
         }
-        setMessages(prev => [...prev, refinementMessage])
+        setMessages(prev => [...prev, placeholderMessage])
 
         try {
-            // Use streaming API for real-time progress
-            const response = await fetch(`/api/diagrams/refine`, {
+            const res = await fetchDiagramApi("/api/diagrams/artifacts/refine", {
                 method: "POST",
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Accept": "text/event-stream"
-                },
                 body: JSON.stringify({
-                    diagramId,
-                    stepId: activeTab === 'all' ? 'summary' : activeTab,
-                    instruction,
-                    previousArtifacts: artifacts,
-                    cascade: true
+                    intent: instruction,
+                    previousArtifacts: artifacts ?? {},
+                }),
+                headers: { "Content-Type": "application/json" },
+            })
+
+            const json = await res.json().catch(() => ({}))
+            const data = json?.data
+
+            if (!res.ok) {
+                const errMsg = json?.message || res.statusText || "Refinement failed"
+                setMessages(prev => prev.map(msg =>
+                    msg.id === refinementMessageId
+                        ? { ...msg, content: `❌ ${errMsg}` }
+                        : msg
+                ))
+                toast({
+                    title: "Refinement failed",
+                    description: errMsg,
+                    variant: "destructive",
                 })
-            })
-
-            if (!response.ok) {
-                throw new Error(`Refinement failed: ${response.statusText}`)
+                return
             }
 
-            if (!response.body) {
-                throw new Error("No response body")
+            if (data?.artifacts != null) {
+                onRefineComplete?.({ artifacts: data.artifacts })
             }
 
-            // Handle streaming response
-            const reader = response.body.getReader()
-            const decoder = new TextDecoder()
-            let buffer = ""
-            let finalResult: any = null
-
-            try {
-                while (true) {
-                    const { done, value } = await reader.read()
-                    
-                    if (done) break
-
-                    buffer += decoder.decode(value, { stream: true })
-                    const lines = buffer.split("\n")
-                    buffer = lines.pop() || ""
-
-                    for (const line of lines) {
-                        if (!line.trim() || !line.startsWith("data: ")) continue
-
-                        try {
-                            const event = JSON.parse(line.substring(6))
-                            
-                            // Update the refinement message with progress
-                            setMessages(prev => prev.map(msg => {
-                                if (msg.id !== refinementMessageId) return msg
-
-                                let newContent = msg.content
-                                let progressHtml = ""
-
-                                switch (event.type) {
-                                    case "start":
-                                        newContent = `🚀 **Starting refinement...**\n\n${event.message}`
-                                        break
-                                    case "analyzing":
-                                        newContent = `🔍 **${event.message}**\n\nBuilding knowledge graph to understand dependencies...`
-                                        break
-                                    case "graph_built":
-                                        progressHtml = `\n\n📊 **Knowledge Graph Built:**\n• ${event.stats.nodes} schema nodes\n• ${event.stats.edges} dependency edges`
-                                        newContent = msg.content + progressHtml
-                                        break
-                                    case "progress":
-                                        const data = event.data
-                                        if (data.type === "step_start") {
-                                            progressHtml = `\n\n🔄 **${data.role}** - Updating...`
-                                        } else if (data.type === "step_complete") {
-                                            progressHtml = `\n\n✅ **${data.role}** - Updated successfully`
-                                        } else if (data.type === "step_failed") {
-                                            progressHtml = `\n\n❌ **${data.role}** - Failed: ${data.error}`
-                                        }
-                                        newContent = msg.content + progressHtml
-                                        break
-                                    case "complete":
-                                        finalResult = event.data
-                                        const summary = event.data
-                                        newContent = `🎉 **Refinement Complete!**\n\n${event.message}\n\n📈 **Summary:**\n• ${summary.successCount} artifacts updated successfully${summary.failedCount > 0 ? `\n• ${summary.failedCount} artifacts failed` : ""}\n\nUpdated: ${summary.updatedArtifacts?.join(", ") || "N/A"}`
-                                        break
-                                    case "error":
-                                        newContent = `❌ **Refinement Failed**\n\n${event.message}`
-                                        break
-                                }
-
-                                return { ...msg, content: newContent }
-                            }))
-                        } catch (parseError) {
-                            // Skip invalid JSON
-                            continue
-                        }
-                    }
-                }
-            } finally {
-                reader.releaseLock()
-            }
-
-            // Show success toast
-            toast({
-                title: "Refinement Complete",
-                description: "Your project has been updated successfully.",
-            })
-
-            // Invalidate cache after refinement
-            setCacheId(undefined)
-
-            // Update parent state if callback provided
-            if (onRefineComplete && finalResult) {
-                (onRefineComplete as any)({ success: true, result: finalResult })
-            } else {
-                // Refresh after a short delay if no callback
-                setTimeout(() => {
-                    window.location.reload()
-                }, 3000)
-            }
-
-        } catch (error: any) {
-            // Update message with error
-            setMessages(prev => prev.map(msg => 
-                msg.id === refinementMessageId 
-                    ? { ...msg, content: `❌ **Refinement Failed**\n\n${error.message}` }
+            const applied = data?.applied ?? 0
+            const summary = applied > 0
+                ? `✅ Applied ${applied} edit(s) to the artifacts.`
+                : data?.message || "No edits were needed for this request."
+            setMessages(prev => prev.map(msg =>
+                msg.id === refinementMessageId
+                    ? { ...msg, content: summary }
                     : msg
             ))
-            
+            if (applied > 0) {
+                toast({
+                    title: "Refinement applied",
+                    description: `${applied} edit(s) applied.`,
+                })
+            }
+        } catch (error: any) {
+            setMessages(prev => prev.map(msg =>
+                msg.id === refinementMessageId
+                    ? { ...msg, content: `❌ ${error?.message || "Refinement failed"}` }
+                    : msg
+            ))
             toast({
-                title: "Refinement Failed",
-                description: error.message,
-                variant: "destructive"
+                title: "Refinement failed",
+                description: error?.message || "Something went wrong.",
+                variant: "destructive",
             })
-            
-            throw error
         } finally {
             setIsRefining(false)
         }
     }
 
     return (
-        <div className="flex flex-col h-full bg-background border-l border-border shadow-xl w-80 lg:w-96 min-h-0">
-            {/* Header */}
-            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-blue-600 rounded-lg">
-                        <Zap className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-foreground">Project Architect</h3>
-                        <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Online Context</span>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <Info className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
+        <div className="flex flex-col h-full bg-background relative z-40 w-full min-h-0">
+
 
             {/* Chat Area */}
-            <div 
-                className="flex-1 overflow-y-auto p-4 custom-scrollbar" 
+            <div
+                className="flex-1 overflow-y-auto px-2 py-4 custom-scrollbar"
                 ref={scrollRef}
             >
                 <div className="flex flex-col gap-4 min-h-full">
                     {messages.map((msg) => (
-                        <div 
-                            key={msg.id} 
+                        <div
+                            key={msg.id}
                             className={cn(
-                                "flex flex-col max-w-[85%]",
+                                "flex flex-col max-w-[96%]",
                                 msg.role === "user" ? "ml-auto items-end" : "mr-auto items-start"
                             )}
                         >
@@ -510,16 +414,16 @@ export function ProjectChatPanel({
                                     {msg.role === "assistant" ? "Architect" : "You"}
                                 </span>
                             </div>
-                            
+
                             <div className={cn(
                                 "p-3 rounded-2xl text-xs leading-relaxed shadow-sm",
-                                msg.role === "user" 
-                                    ? "bg-blue-600 text-white rounded-tr-none" 
+                                msg.role === "user"
+                                    ? "bg-blue-600 text-white rounded-tr-none"
                                     : cn(
                                         "bg-muted/50 text-foreground border border-border/50 rounded-tl-none",
                                         msg.type === "refinement" && "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400",
                                         msg.type === "system" && "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400"
-                                      )
+                                    )
                             )}>
                                 {msg.content}
                                 {msg.type === "refinement" && isRefining && (
@@ -549,15 +453,15 @@ export function ProjectChatPanel({
                     <Input
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Ask a question or request a change..."
-                        className="pr-32 h-11 bg-background border-border/50 focus-visible:ring-blue-500/30 text-xs rounded-xl shadow-inner"
+                        placeholder="Ask a question..."
+                        className="pr-26 h-11 bg-background border-border/50 focus-visible:ring-blue-500/30 text-[11px] rounded-xl shadow-inner"
                         disabled={isLoading || isRefining}
                     />
                     <div className="absolute right-2 top-1.5 flex items-center gap-1.5 z-10">
-                        <Button 
+                        <Button
                             type="button"
-                            variant="ghost" 
-                            size="icon" 
+                            variant="ghost"
+                            size="icon"
                             className="h-9 w-9 text-muted-foreground hover:text-blue-500 shrink-0"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isLoading || isRefining || isUploading}
@@ -568,21 +472,21 @@ export function ProjectChatPanel({
                                 <Paperclip className="h-4 w-4" />
                             )}
                         </Button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
                             accept=".txt,.md,.json,.csv,.pdf"
                             onChange={handleFileChange}
                         />
-                        <VoiceInputButton 
+                        <VoiceInputButton
                             onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
                             disabled={isLoading || isRefining || isUploading}
                             className="h-9 w-9 shrink-0"
                         />
-                        <Button 
-                            type="submit" 
-                            size="icon" 
+                        <Button
+                            type="submit"
+                            size="icon"
                             disabled={!input.trim() || isLoading || isRefining || isUploading}
                             className="h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md shrink-0"
                         >

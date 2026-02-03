@@ -129,7 +129,7 @@ export default function UIDesignPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className="p-4 border-b border-border/40 bg-muted/10">
+      <div className={styles.layout.header}>
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export default function UIDesignPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Palette}
             label="Tokens"
@@ -312,7 +312,7 @@ export default function UIDesignPanel({
                               {page.sections?.map((section: any, sIdx: number) => {
                                 const sectionName = typeof section === 'string' ? section : section.name;
                                 const components = typeof section === 'object' ? section.components : [];
-                                
+
                                 return (
                                   <div key={sIdx} className="space-y-1.5">
                                     <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded border border-border/40 group hover:border-primary/30 transition-colors">
@@ -635,12 +635,16 @@ export default function UIDesignPanel({
                         </div>
                         <p className="text-xs text-muted-foreground mb-3">{spec.description}</p>
                         <div className="space-y-2 pt-2 border-t border-border/40">
-                          {spec.props && (
-                            <div className="grid grid-cols-2 gap-2 text-[10px]">
-                              {Object.entries(spec.props).map(([k, v]: [string, any], idx: number) => (
-                                <div key={idx} className="flex justify-between bg-muted/30 px-2 py-1 rounded">
-                                  <span className="font-mono text-muted-foreground">{k}</span>
-                                  <span className="font-mono text-foreground/80">{String(v)}</span>
+                          {spec.props && Array.isArray(spec.props) && (
+                            <div className="grid grid-cols-1 gap-2 text-[10px]">
+                              {spec.props.map((p: any, idx: number) => (
+                                <div key={idx} className="flex flex-col gap-1 bg-muted/30 px-2 py-2 rounded">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-mono font-bold text-foreground">{p.name}</span>
+                                    <Badge variant="outline" className="text-[8px] h-4 uppercase">{p.type}</Badge>
+                                  </div>
+                                  {p.description && <p className="text-muted-foreground/80 italic">{p.description}</p>}
+                                  {p.default && <div className="text-[8px] text-muted-foreground/60 mt-0.5">Default: <span className="font-mono">{p.default}</span></div>}
                                 </div>
                               ))}
                             </div>

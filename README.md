@@ -1,5 +1,6 @@
 # MetaSOP 🌊
 
+[![CI](https://github.com/josephsenior/Metasop/actions/workflows/ci.yml/badge.svg)](https://github.com/josephsenior/Metasop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
@@ -23,7 +24,7 @@
 Building software today requires coordinating multiple specialized roles, each with their own expertise and tools. MetaSOP automates this entire process by:
 
 - **Eliminating manual coordination** between PMs, Architects, Engineers, Security, DevOps, and QA
-- **Ensuring consistency** across all artifacts through cascading refinement
+- **Ensuring consistency** across artifacts via tool-based refinement (Edit Artifacts API)
 - **Reducing development time** from weeks to hours
 - **Providing production-ready outputs** validated against industry standards
 
@@ -31,9 +32,9 @@ Building software today requires coordinating multiple specialized roles, each w
 
 ##  Key Features
 
-- **Cascading Refinement**: Industry-leading "ripple" update system. When requirements change at the PM level, the platform automatically propagates those changes through the entire artifact chain (Architect -> Engineer -> Security -> QA).
+- **Tool-based Refinement**: Edit artifact JSON via predefined ops (`set_at_path`, `add_array_item`, etc.) without re-running agents. Use `POST /api/diagrams/artifacts/edit` with an `edits` array for deterministic, performant updates.
 - **Context-Aware Agents**: Each agent operates with deep awareness of upstream dependencies, ensuring architectural decisions are consistent across the stack.
-- **LLM-Native Caching**: Leverages advanced Gemini context caching to minimize latency and token consumption during iterative refinement cycles.
+- **LLM-Native Caching**: Leverages advanced Gemini context caching to minimize latency and token consumption during generation.
 - **Structured Validation**: All agent outputs are validated against strict Zod schemas and JSON structures, ensuring reliable, machine-readable artifacts.
 - **Agent-to-Agent (A2A) Communication**: Specialized protocol for inter-agent delegation and task management.
 - **Guest Support**: Limited diagram generation for non-authenticated users with session tracking.
@@ -41,14 +42,14 @@ Building software today requires coordinating multiple specialized roles, each w
 
 ## 🏗️ Architecture
 
-MetaSOP utilizes a sequential pipeline with feedback loops:
+MetaSOP utilizes a sequential pipeline:
 
 1.  **Product Manager**: Defines user stories and acceptance criteria.
 2.  **Architect**: Generates API contracts, database schemas, and ADRs.
-3.  **Security Architecture**: Performs threat modeling and defines security controls.
-4.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
-5.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
-6.  **UI Designer**: Generates design tokens and component hierarchies.
+3.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
+4.  **Security Architecture**: Performs threat modeling and defines security controls.
+5.  **UI Designer**: Generates design tokens and component hierarchies.
+6.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
 7.  **QA Verification**: Creates comprehensive test strategies and test cases.
 
 ## 🛠️ Getting Started
@@ -63,14 +64,18 @@ git clone https://github.com/josephsenior/Metasop.git
 cd Metasop
 
 # Install dependencies
-npm install
+pnpm install
 
 # Set up environment variables
-cp .env.example .env.local
-# Edit .env.local and add your Gemini API key
+cp .env.example .env
+# Edit .env and add your Gemini API key (GOOGLE_AI_API_KEY)
+
+# Create local database (SQLite)
+pnpm db:generate
+pnpm db:push
 
 # Run the development server
-npm run dev
+pnpm dev
 
 # Open http://localhost:3000
 ```
@@ -78,57 +83,59 @@ npm run dev
 ### Prerequisites
 
 - **Node.js** 18+ ([Download](https://nodejs.org/))
-- **npm**, **pnpm**, or **yarn** package manager
+- **pnpm** (recommended) or npm/yarn
 - **Gemini API Key** ([Get one here](https://ai.google.dev/))
 - **Git** for version control
 
 ### Configuration
 
-Create a `.env.local` file in the root directory:
+Create a `.env` file in the root directory (see `.env.example` for a template):
 
 ```env
-# Required: Gemini API Key
+# Required: Gemini API Key (get one at https://aistudio.google.com/apikey)
 GOOGLE_AI_API_KEY=your_gemini_api_key_here
+
+# Required for local storage: SQLite
+DATABASE_URL="file:./prisma/local.db"
 
 # Optional: LLM Provider (default: gemini)
 METASOP_LLM_PROVIDER=gemini
 
-# Optional: Model Selection (default: gemini-3-flash-preview)
-METASOP_LLM_MODEL=gemini-1.5-pro-latest
+# Optional: Model (default: gemini-3-flash-preview)
+METASOP_LLM_MODEL=gemini-3-flash-preview
 
-# Optional: Agent Timeout in milliseconds (default: 180000)
-METASOP_AGENT_TIMEOUT=180000
-
-# Optional: Agent Retries (default: 0)
-METASOP_AGENT_RETRIES=0
+# Optional: Agent timeout (ms) and retries
+# METASOP_AGENT_TIMEOUT=180000
+# METASOP_AGENT_RETRIES=0
 ```
 
-### Running Orchestration
+### Running orchestration (integration tests)
 
 ```bash
-# Run a test orchestration
-npx tsx scripts/test_cascading_refinement.ts
+# Run integration tests (orchestration flow)
+npx tsx tests/integration/verify_full_pipeline.ts
+npx tsx tests/integration/test_cascading_refinement.ts
 
-# Run with custom configuration
-METASOP_LLM_MODEL=gemini-1.5-pro npx tsx scripts/test_cascading_refinement.ts
+# With custom model
+METASOP_LLM_MODEL=gemini-3-pro-preview npx tsx tests/integration/verify_full_pipeline.ts
 ```
 
 ### Development
 
 ```bash
 # Start development server
-npm run dev
+pnpm dev
 
 # Type checking
-npm run type-check
+pnpm type-check
 
 # Linting
-npm run lint
-npm run lint:fix
+pnpm lint
+pnpm lint:fix
 
 # Build for production
-npm run build
-npm run start
+pnpm build
+pnpm start
 ```
 
 ### Testing
@@ -164,53 +171,31 @@ If `pnpm test` fails with **spawn EPERM** in Cursor's terminal (common on Window
 MetaSOP utilizes a sequential pipeline with feedback loops:
 
 ```mermaid
-graph TD
+graph LR
     A[User Request] --> B[Product Manager]
     B --> C[Architect]
-    C --> D[Security Architecture]
-    C --> E[DevOps Infrastructure]
-    C --> F[Engineer Implementation]
-    C --> G[UI Designer]
-    D --> H[QA Verification]
-    E --> H
-    F --> H
-    G --> H
-    
-    I[Knowledge Graph] -.-> B
-    I -.-> C
-    I -.-> D
-    I -.-> E
-    I -.-> F
-    I -.-> G
-    I -.-> H
-    
-    J[Refinement Planner] -.-> I
-    K[Execution Service] -.-> B
-    K -.-> C
-    K -.-> D
-    K -.-> E
-    K -.-> F
-    K -.-> G
-    K -.-> H
+    C --> D[DevOps]
+    D --> E[Security]
+    E --> F[UI Designer]
+    F --> G[Engineer]
+    G --> H[QA Verification]
 ```
 
-### Agent Pipeline
+### Agent pipeline (sequential)
 
 1.  **Product Manager**: Defines user stories and acceptance criteria.
 2.  **Architect**: Generates API contracts, database schemas, and ADRs.
-3.  **Security Architecture**: Performs threat modeling and defines security controls.
-4.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
-5.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
-6.  **UI Designer**: Generates design tokens and component hierarchies.
+3.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
+4.  **Security Architecture**: Performs threat modeling and defines security controls.
+5.  **UI Designer**: Generates design tokens and component hierarchies.
+6.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
 7.  **QA Verification**: Creates comprehensive test strategies and test cases.
 
-### Key Components
+### Key components
 
-- **Orchestrator**: Coordinates agent execution and manages the workflow
-- **Knowledge Graph**: Tracks dependencies between artifacts
-- **Refinement Planner**: Plans surgical updates based on user intent
-- **Execution Service**: Handles timeouts, retries, and error handling
-- **A2A Protocol**: Enables agent-to-agent communication
+- **Orchestrator**: Runs agents in order and passes artifacts as context; no graph in DB.
+- **Execution Service**: Handles timeouts, retries, and error handling.
+- **Refinement**: Tool-based only via `POST /api/diagrams/artifacts/edit` (no agent re-runs).
 
 ---
 
@@ -228,7 +213,7 @@ We love contributions! Whether you're fixing a bug, adding a feature, or improvi
 
 For detailed guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Development Setup
+### Development setup
 
 ```bash
 # Fork and clone the repository
@@ -236,15 +221,15 @@ git clone https://github.com/YOUR_USERNAME/Metasop.git
 cd Metasop
 
 # Install dependencies
-npm install
+pnpm install
 
 # Create a feature branch
 git checkout -b feature/my-feature
 
 # Make your changes and test
 pnpm test
-npm run type-check
-npm run lint
+pnpm type-check
+pnpm lint
 
 # Commit and push
 git add .
@@ -273,7 +258,7 @@ git push origin feature/my-feature
 ## 🗺️ Roadmap
 
 - [x] Multi-agent orchestration system
-- [x] Cascading refinement
+- [x] Tool-based refinement (Edit Artifacts API)
 - [x] Knowledge graph for dependency tracking
 - [x] Agent-to-agent communication protocol
 - [x] Web interface with Next.js

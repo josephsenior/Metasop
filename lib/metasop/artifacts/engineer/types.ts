@@ -54,8 +54,6 @@ export interface EngineerBackendArtifact {
         build_commands?: string[];
         notes?: string;
     };
-    nodes?: any[];
-    edges?: any[];
 }
 
 // ============================================================================

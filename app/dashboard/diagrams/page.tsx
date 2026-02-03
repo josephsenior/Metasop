@@ -15,18 +15,21 @@ import { useToast } from "@/components/ui/use-toast"
 import type { Diagram } from "@/types/diagram"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2, AlertCircle } from "lucide-react"
+import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2, AlertCircle, Presentation } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia } from "@/components/ui/empty"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
 export default function MyDiagramsPage() {
-  const { user } = useAuth()
+  useAuth() // guest-only: auth context for future use
   const { toast } = useToast()
   const [diagrams, setDiagrams] = useState<Diagram[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -60,7 +63,7 @@ export default function MyDiagramsPage() {
       console.log("[Diagrams Page] Has diagrams property:", "diagrams" in (result || {}))
       console.log("[Diagrams Page] Diagrams count:", result?.diagrams?.length || 0)
       console.log("[Diagrams Page] Total:", result?.total || 0)
-      console.log("[Diagrams Page] User:", user?.id || "guest")
+      console.log("[Diagrams Page] Session: guest")
       
       // Handle different possible response structures
       let diagramsToSet: Diagram[] = []
@@ -199,19 +202,13 @@ export default function MyDiagramsPage() {
         <DashboardHeader />
 
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          {/* Guest notice */}
-          {!user && (
-            <Alert className="border-blue-600/30 bg-blue-600/10 mb-8">
-              <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
-              <AlertDescription className="text-sm">
-                <span className="font-medium">You are in guest mode.</span> Your diagrams are saved for this session only.{" "}
-                <Link href="/register" className="underline hover:no-underline font-medium">
-                  Sign up
-                </Link>{" "}
-                to save them permanently.
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Session notice */}
+          <Alert className="border-blue-600/30 bg-blue-600/10 mb-8">
+            <AlertCircle className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+            <AlertDescription className="text-sm">
+              <span className="font-medium">Local storage.</span> Your diagrams are saved to your device and persist across sessions.
+            </AlertDescription>
+          </Alert>
 
           {/* Error notice */}
           {error && (
@@ -340,10 +337,26 @@ export default function MyDiagramsPage() {
                               View
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" />
-                            Export
-                          </DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Download className="mr-2 h-4 w-4" />
+                              Export
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation`, "_blank")}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Markdown
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation`, "_blank")}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`, "_blank")}>
+                                <Presentation className="mr-2 h-4 w-4" />
+                                PowerPoint (.pptx)
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
                           <DropdownMenuItem>
                             <Share2 className="mr-2 h-4 w-4" />
                             Share

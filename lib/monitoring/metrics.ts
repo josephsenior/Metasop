@@ -186,9 +186,7 @@ export const MetricNames = {
   RATE_LIMIT_HIT: "rate_limit.hit",
   RATE_LIMIT_EXCEEDED: "rate_limit.exceeded",
   
-  // Business metrics
+  // Business metrics (guest-only; no user registration/login)
   DIAGRAM_GENERATED: "diagram.generated",
   DIAGRAM_GENERATION_TIME: "diagram.generation_time",
-  USER_REGISTERED: "user.registered",
-  USER_LOGIN: "user.login",
 } as const;

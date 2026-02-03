@@ -3,7 +3,6 @@ import type { SecurityBackendArtifact } from "../artifacts/security/types";
 import { securitySchema } from "../artifacts/security/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { TECHNICAL_STANDARDS, FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -24,19 +23,7 @@ export async function securityAgent(
   try {
     let content: SecurityBackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("Security agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<SecurityBackendArtifact>(
-        context,
-        "Security",
-        securitySchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("security_architecture")
-        }
-      );
-    } else {
-      const pmArtifact = pmSpec?.content as any;
+    const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as any;
       const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
       
@@ -56,12 +43,13 @@ Architecture Context:
 - Tech Stack: ${Object.values(archArtifact.technology_stack || {}).flat().slice(0, 8).join(", ")}` : ""}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
-=== SECURITY STANDARDS (MUST FOLLOW) ===
+=== SECURITY STANDARDS ===
 ${TECHNICAL_STANDARDS.security}
 
 === MISSION OBJECTIVES ===
 
 1. **STRIDE Threat Modeling**
+   - Provide at least 2 distinct threats (required by schema).
    - Analyze each threat category systematically:
      * **S**poofing: Identity theft, credential compromise
      * **T**ampering: Data modification, SQL injection, parameter manipulation
@@ -93,6 +81,7 @@ ${TECHNICAL_STANDARDS.security}
    - Secrets management: HashiCorp Vault, AWS Secrets Manager, or equivalent
 
 5. **Security Controls (Map to NIST CSF)**
+   - Provide at least 3 distinct security controls (required by schema).
    - Identify: Asset inventory, risk assessment
    - Protect: Access control, encryption, secure configuration
    - Detect: Logging, monitoring, anomaly detection
@@ -184,7 +173,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         vulnerability_management: llmSecurity.vulnerability_management,
         security_monitoring: llmSecurity.security_monitoring,
       };
-    }
 
     // Validation check
     if (!content.security_architecture || !content.threat_model || content.threat_model.length === 0) {

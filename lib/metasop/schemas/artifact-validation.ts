@@ -674,8 +674,8 @@ const DesignTokensSchema = z.object({
   colors: z.object({
     primary: z.string(),
     secondary: z.string(),
-    background: z.string(), // REQUIRED: Main background color
-    text: z.string().optional(),
+    background: z.string(),
+    text: z.string(), // Required (aligned with JSON schema)
     accent: z.string().optional(),
     error: z.string().optional(),
     success: z.string().optional(),
@@ -684,7 +684,7 @@ const DesignTokensSchema = z.object({
   spacing: z.record(z.string(), z.string()),
   typography: z.object({
     fontFamily: z.string(),
-    fontSize: z.record(z.string(), z.string()), // REQUIRED: Font size scale
+    fontSize: z.record(z.string(), z.string()),
     fontWeight: z.record(z.string(), z.string()).optional(),
     lineHeight: z.record(z.string(), z.string()).optional(),
   }),
@@ -695,6 +695,7 @@ const DesignTokensSchema = z.object({
 const ComponentSpecSchema = z.object({
   name: z.string(),
   description: z.string(),
+  category: z.enum(["atom", "molecule", "organism", "template"]).optional(),
   props: z.array(z.object({
     name: z.string(),
     type: z.string(),
@@ -716,14 +717,14 @@ export const UIDesignerArtifactSchema = z.object({
   }).optional(),
   component_hierarchy: ComponentHierarchySchema,
   design_tokens: DesignTokensSchema,
-  ui_patterns: z.array(z.string()).optional(),
-  component_specs: z.array(ComponentSpecSchema).optional(),
-  layout_breakpoints: z.record(z.string(), z.string()).optional(),
+  ui_patterns: z.array(z.string()),
+  component_specs: z.array(ComponentSpecSchema),
+  layout_breakpoints: z.record(z.string(), z.string()),
   atomic_structure: z.object({
     atoms: z.array(z.string()),
     molecules: z.array(z.string()),
     organisms: z.array(z.string()),
-  }).optional(),
+  }),
   accessibility: z.object({
     aria_labels: z.boolean().optional(),
     keyboard_navigation: z.boolean().optional(),
@@ -731,10 +732,10 @@ export const UIDesignerArtifactSchema = z.object({
     color_contrast: z.string().optional(),
     focus_indicators: z.boolean().optional(),
     wcag_level: z.enum(["A", "AA", "AAA"]).optional(),
-  }).optional(),
-  website_layout: WebsiteLayoutSchema.optional(),
-  summary: z.string().optional(),
-  description: z.string().optional(),
+  }),
+  website_layout: WebsiteLayoutSchema,
+  summary: z.string(),
+  description: z.string(),
 });
 
 export function validateUIDesignerArtifact(data: unknown) {

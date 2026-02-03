@@ -1,5 +1,5 @@
-import { createLLMProvider } from "../lib/metasop/adapters/llm-adapter";
-import { architectSchema } from "../lib/metasop/artifacts/architect/schema";
+import { createLLMProvider } from "../../lib/metasop/adapters/llm-adapter";
+import { architectSchema } from "../../lib/metasop/artifacts/architect/schema";
 
 async function benchmark() {
     const prompt = "Design a high-scale real-time notification system. Include global distribution, low latency push (WebSockets), and cross-platform delivery (mobile, web, email). Use PostgreSQL for persistent state and Redis for real-time routing.";

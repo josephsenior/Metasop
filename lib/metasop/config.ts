@@ -1,13 +1,16 @@
 /**
  * MetaSOP Configuration
- * Centralized configuration for the MetaSOP system
+ * Reads from runtime config (env + defaults) so behavior is easy to reason about.
  */
+
+import { getRuntimeConfig } from "@/lib/runtime-config";
 
 export interface AgentConfig {
   stepId: string;
   timeout: number; // Timeout in ms
   retries: number; // Number of retries
   temperature: number; // LLM temperature (0.0-1.0)
+  maxTokens?: number; // Optional per-agent output token cap (avoids truncation when set lower)
   model?: string; // Optional per-agent model override
   retryPolicy?: {
     initialDelay: number;
@@ -71,7 +74,7 @@ export const defaultConfig: MetaSOPConfig = {
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 600000, // 600 seconds (10 minutes) - longer timeout for complex infrastructure setup
+        timeout: 180000, // 600 seconds (10 minutes) - longer timeout for complex infrastructure setup
         retries: 0,
         temperature: 0.3, // Balanced
       },
@@ -89,9 +92,10 @@ export const defaultConfig: MetaSOPConfig = {
       },
       ui_design: {
         stepId: "ui_design",
-        timeout: 180000, // 180 seconds (3 minutes) - same as other agents
+        timeout: 600000, // 10 minutes
         retries: 0,
-        temperature: 0.4, // Slightly higher for creative design decisions
+        temperature: 0.2,
+        maxTokens: 24576, // Cap output so response completes before MAX_TOKENS; aligns with prompt "keep each section short"
       },
       qa_verification: {
         stepId: "qa_verification",
@@ -102,18 +106,18 @@ export const defaultConfig: MetaSOPConfig = {
     },
   },
   llm: {
-    provider: process.env.NODE_ENV === "test" ? "mock" : "gemini",
-    model: "gemini-3-flash-preview", // Use Gemini 3 Flash Preview for fast, high-quality orchestration
+    provider: "gemini",
+    model: "gemini-3-pro-preview",
     temperature: 0.2,
     maxTokens: 64000,
   },
   performance: {
     cacheEnabled: true,
-    maxRefinementDepth: 3, // Prevent infinite refinement loops
-    maxCascadeRipples: 10, // Limit cascade updates
+    maxRefinementDepth: 3,
+    maxCascadeRipples: 10,
   },
   logging: {
-    level: process.env.NODE_ENV === "development" ? "debug" : "info",
+    level: "info",
     enabled: true,
   },
 };
@@ -129,37 +133,32 @@ export function getAgentTemperature(stepId: string): number {
 }
 
 /**
- * Get configuration from environment variables
+ * Get max output tokens for a specific agent step (for structured output).
+ * Lower cap for UI Designer reduces truncation and validation failures.
+ */
+export function getAgentMaxTokens(stepId: string): number | undefined {
+  const config = getConfig();
+  const agentConfig = config.agents.agentConfigs[stepId];
+  return agentConfig?.maxTokens ?? config.llm.maxTokens;
+}
+
+/**
+ * Get configuration from runtime config (env + defaults). Single source for API and lib/metasop.
  */
 export function getConfig(): MetaSOPConfig {
-  const config = { ...defaultConfig };
-
-  // Override with environment variables if present
-  if (process.env.METASOP_LLM_PROVIDER) {
-    const provider = process.env.METASOP_LLM_PROVIDER;
-    if (provider === "gemini" || provider === "mock") {
-      config.llm.provider = provider;
-    }
-  }
-
-  if (process.env.METASOP_LLM_MODEL) {
-    config.llm.model = process.env.METASOP_LLM_MODEL;
-  }
-
-  if (process.env.METASOP_AGENT_TIMEOUT) {
-    config.agents.defaultTimeout = parseInt(process.env.METASOP_AGENT_TIMEOUT, 10);
-  }
-
-  if (process.env.METASOP_AGENT_RETRIES) {
-    config.agents.defaultRetries = parseInt(process.env.METASOP_AGENT_RETRIES, 10);
-  }
-
-  // Support for provider-specific keys
-  if (process.env.METASOP_LLM_API_KEY) {
-    config.llm.apiKey = process.env.METASOP_LLM_API_KEY;
-  } else if (config.llm.provider === "gemini" && (process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY)) {
-    config.llm.apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-  }
-
-  return config;
+  const runtime = getRuntimeConfig();
+  return {
+    ...defaultConfig,
+    llm: {
+      ...defaultConfig.llm,
+      ...runtime.llm,
+    },
+    agents: {
+      ...defaultConfig.agents,
+      defaultTimeout: runtime.agents.defaultTimeout,
+      defaultRetries: runtime.agents.defaultRetries,
+    },
+    performance: runtime.performance,
+    logging: runtime.logging,
+  };
 }

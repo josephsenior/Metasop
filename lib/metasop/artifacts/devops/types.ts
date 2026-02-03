@@ -23,7 +23,7 @@ export interface DevOpsBackendArtifact {
             | "load-balancer";
             configuration?: any;
             description?: string;
-        }>; // REQUIRED: minItems: 3
+        }>; // REQUIRED: minItems: 1
         iac?: "Terraform" | "CloudFormation" | "Crossplane" | "Ansible" | "Pulumi";
         regions?: string[];
     }; // REQUIRED
@@ -31,14 +31,15 @@ export interface DevOpsBackendArtifact {
         pipeline_stages: Array<{
             name: string; // REQUIRED: minLength: 1
             steps?: string[]; // minItems: 1
-            description?: string;
-            status?: "active" | "planned" | "deprecated"; // UI expected field
-        }>; // REQUIRED: minItems: 3
+            goal?: string; // added to match schema
+            status?: string; // added to match schema
+        }>; // REQUIRED: minItems: 1
         tools: string[]; // REQUIRED: minItems: 1
         triggers?: Array<{
             type: "push" | "pull_request" | "schedule" | "manual"; // REQUIRED
             branch?: string;
             description?: string;
+            metric?: string; // added to match schema
         }>;
     }; // REQUIRED
     containerization?: {
@@ -113,8 +114,6 @@ export interface DevOpsBackendArtifact {
         backup_strategy: string;
         failover_plan?: string;
     };
-    nodes?: any[];
-    edges?: any[];
 }
 
 // ============================================================================

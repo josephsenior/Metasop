@@ -1,4 +1,4 @@
-import { MetaSOPResult, MetaSOPStep, AgentContext, MetaSOPEvent, KnowledgeGraph, ArtifactDependency } from "./types";
+import { MetaSOPResult, MetaSOPStep, AgentContext, MetaSOPEvent } from "./types";
 import { productManagerAgent } from "./agents/product-manager";
 import { architectAgent } from "./agents/architect";
 import { devopsAgent } from "./agents/devops";
@@ -8,7 +8,7 @@ import { uiDesignerAgent } from "./agents/ui-designer";
 import { qaAgent } from "./agents/qa";
 import { logger } from "./utils/logger";
 import { getConfig } from "./config";
-import { generateWithLLM, createCacheWithLLM } from "./utils/llm-helper";
+import { createCacheWithLLM } from "./utils/llm-helper";
 import { ExecutionService } from "./services/execution-service";
 import { RetryService, RetryPolicy } from "./services/retry-service";
 import { FailureHandler } from "./services/failure-handler";
@@ -29,7 +29,6 @@ import {
   safeValidateUIDesignerArtifact,
 } from "./schemas/artifact-validation";
 import type { A2ATask, A2AMessage } from "./a2a-types";
-import { SchemaKnowledgeGraph, RefinementPlanner } from "./knowledge-graph";
 
 /**
  * MetaSOP Orchestrator
@@ -52,16 +51,10 @@ export class MetaSOPOrchestrator {
   private a2aTasks: A2ATask[] = [];
   private a2aMessages: A2AMessage[] = [];
 
-  // Schema Knowledge Graph for surgical refinement
-  private knowledgeGraph: SchemaKnowledgeGraph;
-  private refinementPlanner: RefinementPlanner;
-
   constructor() {
     this.executionService = new ExecutionService();
     this.retryService = new RetryService();
     this.failureHandler = new FailureHandler();
-    this.knowledgeGraph = new SchemaKnowledgeGraph();
-    this.refinementPlanner = new RefinementPlanner(this.knowledgeGraph);
   }
 
   /**
@@ -133,7 +126,8 @@ export class MetaSOPOrchestrator {
       reasoning?: boolean;
     },
     onProgress?: (event: MetaSOPEvent) => void,
-    documents?: any[]
+    documents?: any[],
+    clarificationAnswers?: Record<string, string>
   ): Promise<MetaSOPResult> {
     const startTime = Date.now();
     
@@ -145,7 +139,8 @@ export class MetaSOPOrchestrator {
       agents: this.config.agents.enabled.length,
       model: this.config.llm.model,
       reasoning: options?.reasoning ?? false,
-      debugSessionId: this.debugSession.sessionId
+      debugSessionId: this.debugSession.sessionId,
+      hasClarification: !!clarificationAnswers && Object.keys(clarificationAnswers).length > 0,
     });
     this.steps = [];
     this.artifacts = {};
@@ -157,6 +152,7 @@ export class MetaSOPOrchestrator {
       previous_artifacts: {},
       options,
       documents,
+      clarificationAnswers,
     };
 
     try {
@@ -236,15 +232,13 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         }
       }
 
-      // Step 3: Security (runs BEFORE DevOps - security defines policy, DevOps implements it)
-      // Security needs: PM spec (what to secure), Architect (tech stack, APIs, database)
-      // Security produces: Auth requirements, threat model, encryption policy, compliance needs
+      // Step 3: Security (runs before DevOps - defines policy and controls; DevOps implements them)
+      // Security needs: PM spec, Architect for threat model and compliance
       await this.executeStep("security_architecture", "Security", securityAgent, context, onProgress);
       context.previous_artifacts.security_architecture = this.artifacts.security_architecture;
 
-      // Step 4: DevOps (runs AFTER Security - implements security requirements)
-      // DevOps needs: Security (auth method, encryption, compliance) to configure infrastructure correctly
-      // Examples: OAuth2 → identity provider setup, PCI-DSS → network segmentation, WAF → CDN config
+      // Step 4: DevOps (runs after Security - implements infra and CI/CD with security in mind)
+      // DevOps needs: PM spec, Architect, Security (controls) to plan CI/CD and infra
       await this.executeStep("devops_infrastructure", "DevOps", devopsAgent, context, onProgress);
       context.previous_artifacts.devops_infrastructure = this.artifacts.devops_infrastructure;
 
@@ -275,21 +269,11 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         setCurrentSession(null);
       }
 
-      // Build schema knowledge graph for surgical refinement
-      try {
-        await this.knowledgeGraph.build(this.artifacts);
-        const graphStats = this.knowledgeGraph.getStats();
-        logger.info("Schema Knowledge Graph built after orchestration", graphStats);
-      } catch (error: any) {
-        logger.warn("Failed to build knowledge graph, continuing without it", { error: error.message });
-      }
-
       return {
         success,
         artifacts: { ...this.artifacts } as any,
         report: this.report,
         steps: this.steps,
-        graph: this.buildKnowledgeGraph(),
         a2a: this.getA2AState(),
       };
     } catch (error: any) {
@@ -318,438 +302,6 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         a2a: this.getA2AState(),
       };
     }
-  }
-
-  /**
-   * Refine a specific artifact based on user feedback
-   */
-  async refineArtifact(
-    stepId: string,
-    instruction: string,
-    onProgress?: (event: MetaSOPEvent) => void,
-    depth: number = 0,
-    isAtomicAction: boolean = false
-  ): Promise<MetaSOPResult> {
-    logger.info("Starting artifact refinement", { stepId, instruction, depth, isAtomicAction });
-
-    if (depth > this.config.performance.maxRefinementDepth) {
-      logger.warn(`Refinement depth limit reached (${depth}), stopping recursion.`);
-      return {
-        success: true,
-        artifacts: { ...this.artifacts } as any,
-        report: this.report,
-        steps: this.steps,
-        graph: this.buildKnowledgeGraph(),
-      };
-    }
-
-    const currentArtifact = this.artifacts[stepId];
-    if (!currentArtifact) {
-      throw new Error(`Cannot refine artifact ${stepId}: artifact not found`);
-    }
-
-    const context: AgentContext = {
-      user_request: instruction,
-      previous_artifacts: { ...this.artifacts },
-      refinement: {
-        instruction,
-        target_step_id: stepId,
-        previous_artifact_content: currentArtifact.content,
-        isAtomicAction,
-      }
-    };
-
-    if (this.cacheId) context.cacheId = this.cacheId;
-
-    const agentMap: Record<string, any> = {
-      pm_spec: productManagerAgent,
-      arch_design: architectAgent,
-      devops_infrastructure: devopsAgent,
-      security_architecture: securityAgent,
-      engineer_impl: engineerAgent,
-      ui_design: uiDesignerAgent,
-      qa_verification: qaAgent,
-    };
-
-    const agentFn = agentMap[stepId];
-    if (!agentFn) {
-      throw new Error(`No agent function found for step ${stepId}`);
-    }
-
-    this.steps = this.steps.filter(s => s.id !== stepId);
-    await this.executeStep(stepId, stepId.replace(/_/g, " "), agentFn, context, onProgress);
-
-    return {
-      success: this.steps.every(s => s.status === "success"),
-      artifacts: { ...this.artifacts } as any,
-      report: this.report,
-      steps: this.steps,
-      graph: this.buildKnowledgeGraph(),
-    };
-  }
-
-  /**
-   * Determine which downstream agents actually need to be refined based on the changes.
-   * This improves efficiency by skipping agents whose artifacts wouldn't be affected.
-   */
-  private async determineDownstreamImpact(
-    upstreamStepId: string,
-    instruction: string,
-    downstreamSteps: string[]
-  ): Promise<string[]> {
-    if (downstreamSteps.length === 0) return [];
-
-    logger.info(`Analyzing downstream impact of ${upstreamStepId} refinement...`);
-
-    // 1. RULE-BASED PRE-SCREENING (Fast path for common cases)
-    const lowerInstruction = instruction.toLowerCase();
-    
-    // If the instruction is very specific to documentation or minor tweaks that don't change logic/structure
-    const isMinorTweak = /typo|grammar|wording|color|padding|margin|font|icon|text only|spelling/i.test(lowerInstruction);
-    
-    if (isMinorTweak && upstreamStepId !== "pm_spec") {
-      logger.info("Impact analysis: Minor tweak detected, skipping downstream refinement.");
-      return [];
-    }
-
-    // 2. LLM-BASED ANALYSIS
-    try {
-      const prompt = `
-You are a Senior System Architect analyzing a change in a multi-agent development pipeline.
-
-UPSTREAM STEP MODIFIED: ${upstreamStepId}
-CHANGE INSTRUCTION: "${instruction}"
-
-POTENTIAL DOWNSTREAM STEPS:
-${downstreamSteps.map(step => `- ${step}`).join("\n")}
-
-TASK:
-Identify which downstream steps MUST be refined to maintain technical consistency with this change.
-Only include a step if the change in '${upstreamStepId}' likely impacts its output.
-
-REFINEMENT GUIDELINES:
-- Changes to 'pm_spec' usually impact EVERYTHING downstream.
-- Changes to 'arch_design' impact 'engineer_impl', 'qa_verification', and often 'devops_infrastructure' or 'security_architecture'.
-- Changes to 'ui_design' usually only impact 'engineer_impl' (frontend) and 'qa_verification'.
-- Changes to 'security_architecture' or 'devops_infrastructure' impact 'engineer_impl' and 'qa_verification'.
-
-RESPONSE FORMAT:
-Return ONLY a comma-separated list of the step IDs that need refinement. 
-If none need refinement, return "none".
-Do not provide any explanation, just the IDs.
-`.trim();
-
-      const response = await generateWithLLM(prompt, {
-        temperature: 0.1,
-        role: "Impact Analyzer"
-      });
-
-      const cleanedResponse = response.toLowerCase().trim();
-      
-      if (cleanedResponse === "none") {
-        logger.info("Impact analysis: No downstream steps affected (LLM).");
-        return [];
-      }
-
-      const impactedSteps = cleanedResponse
-        .split(",")
-        .map(s => s.trim())
-        .filter(s => downstreamSteps.includes(s));
-
-      if (impactedSteps.length > 0) {
-        logger.info(`Impact analysis complete (LLM). Impacted steps: ${impactedSteps.join(", ")}`);
-        return impactedSteps;
-      }
-    } catch (e: any) {
-      logger.warn(`Impact analysis LLM failed, falling back to rule-based: ${e.message}`);
-    }
-
-    // 3. RULE-BASED FALLBACK (Enhanced path)
-    logger.info("Using enhanced rule-based fallback for impact analysis.");
-    
-    const dependencyMap: Record<string, string[]> = {
-      "pm_spec": ["arch_design", "devops_infrastructure", "security_architecture", "ui_design", "engineer_impl", "qa_verification"],
-      "arch_design": ["devops_infrastructure", "security_architecture", "engineer_impl", "qa_verification"],
-      "devops_infrastructure": ["engineer_impl", "qa_verification"],
-      "security_architecture": ["engineer_impl", "qa_verification"],
-      "ui_design": ["engineer_impl", "qa_verification"],
-      "engineer_impl": ["qa_verification"],
-      "qa_verification": []
-    };
-
-    // Keyword-based refinement for the rule-based fallback
-    let ruleImpacted = dependencyMap[upstreamStepId] || [];
-    
-    if (upstreamStepId !== "pm_spec") {
-      const hasUI = /ui|ux|color|font|theme|style|button|layout|screen|page|view|component|css|frontend/i.test(lowerInstruction);
-      const hasBackend = /api|endpoint|database|schema|backend|server|logic|auth|security|performance|logic/i.test(lowerInstruction);
-      const hasInfra = /deploy|docker|k8s|cloud|aws|infrastructure|ci|cd|pipeline|environment/i.test(lowerInstruction);
-
-      if (hasUI && !hasBackend && !hasInfra) {
-        // UI-only changes mostly impact UI Design, Engineering, and QA
-        ruleImpacted = ruleImpacted.filter(step => ["ui_design", "engineer_impl", "qa_verification"].includes(step));
-      } else if (!hasUI && hasBackend && !hasInfra) {
-        // Backend-only changes mostly impact Architecture, Engineering, and QA
-        ruleImpacted = ruleImpacted.filter(step => ["arch_design", "engineer_impl", "qa_verification"].includes(step));
-      } else if (!hasUI && !hasBackend && hasInfra) {
-        // Infra-only changes mostly impact DevOps and QA
-        ruleImpacted = ruleImpacted.filter(step => ["devops_infrastructure", "qa_verification"].includes(step));
-      }
-    }
-
-    const filteredImpacted = ruleImpacted.filter(step => downstreamSteps.includes(step));
-    
-    logger.info(`Impact analysis complete (Rule-based). Impacted steps: ${filteredImpacted.join(", ") || "none"}`);
-    return filteredImpacted;
-  }
-
-  /**
-   * Refine an artifact using schema-aware surgical updates.
-   * Uses the Knowledge Graph to determine exactly what needs to change.
-   */
-  async surgicalRefinement(
-    stepId: string,
-    schemaPath: string,
-    newValue: any,
-    instruction: string,
-    onProgress?: (event: MetaSOPEvent) => void
-  ): Promise<MetaSOPResult> {
-    logger.info("Starting surgical refinement", { stepId, schemaPath, instruction });
-
-    // Ensure knowledge graph is built
-    await this.knowledgeGraph.build(this.artifacts);
-
-    // Create refinement plan using the planner
-    const plan = this.refinementPlanner.createPlan(
-      instruction,
-      stepId,
-      schemaPath,
-      newValue
-    );
-
-    // Validate the plan
-    const validation = this.refinementPlanner.validatePlan(plan);
-    if (!validation.valid) {
-      logger.error("Refinement plan validation failed", { errors: validation.errors });
-      throw new Error(`Invalid refinement plan: ${validation.errors.join(', ')}`);
-    }
-
-    logger.info("Surgical refinement plan created", {
-      impactScore: plan.impactScore,
-      updates: plan.updates.length,
-      unaffected: plan.unaffectedArtifacts,
-    });
-
-    // Execute each surgical update in order
-    for (const update of plan.updates) {
-      logger.info(`Executing surgical update for ${update.artifactType}`, {
-        paths: update.targetPaths,
-        priority: update.priority,
-      });
-
-      const context: AgentContext = {
-        user_request: update.instruction,
-        previous_artifacts: { ...this.artifacts },
-        refinement: {
-          instruction: update.instruction,
-          target_step_id: update.artifactType,
-          previous_artifact_content: this.artifacts[update.artifactType]?.content,
-          isAtomicAction: true,
-          targetPaths: update.targetPaths,
-          context: update.context,
-        },
-      };
-
-      if (this.cacheId) context.cacheId = this.cacheId;
-
-      const agentMap: Record<string, any> = {
-        pm_spec: productManagerAgent,
-        arch_design: architectAgent,
-        devops_infrastructure: devopsAgent,
-        security_architecture: securityAgent,
-        engineer_impl: engineerAgent,
-        ui_design: uiDesignerAgent,
-        qa_verification: qaAgent,
-      };
-
-      const agentFn = agentMap[update.artifactType];
-      if (!agentFn) {
-        logger.warn(`No agent found for ${update.artifactType}, skipping`);
-        continue;
-      }
-
-      // Remove old step if exists
-      this.steps = this.steps.filter(s => s.id !== update.artifactType);
-
-      // Execute the surgical update
-      await this.executeStep(
-        update.artifactType,
-        update.artifactType.replace(/_/g, ' '),
-        agentFn,
-        context,
-        onProgress
-      );
-
-      // Rebuild knowledge graph after each update
-      this.knowledgeGraph.build(this.artifacts);
-    }
-
-    logger.info("Surgical refinement completed successfully");
-
-    return {
-      success: this.steps.every(s => s.status === 'success'),
-      artifacts: { ...this.artifacts } as any,
-      report: this.report,
-      steps: this.steps,
-      graph: this.buildKnowledgeGraph(),
-      a2a: this.getA2AState(),
-    };
-  }
-
-  /**
-   * Refine an artifact and then propagate changes to all downstream dependencies.
-   * This ensures system-wide consistency after an update.
-   * 
-   * @deprecated Use surgicalRefinement for schema-aware updates
-   */
-  async cascadeRefinement(
-    stepId: string,
-    instruction: string,
-    onProgress?: (event: MetaSOPEvent) => void,
-    depth: number = 0,
-    isAtomicAction: boolean = false
-  ): Promise<MetaSOPResult> {
-    logger.info("Starting cascading refinement", { stepId, instruction, depth, isAtomicAction });
-
-    // If we have a knowledge graph built, try to use surgical refinement
-    if (Object.keys(this.artifacts).length > 0) {
-      try {
-        // Build knowledge graph to analyze dependencies
-        await this.knowledgeGraph.build(this.artifacts);
-        logger.info("Knowledge graph built for cascade refinement");
-      } catch (error: any) {
-        logger.warn("Knowledge graph build failed, continuing with cascade", { error: error.message });
-      }
-    }
-
-    // 1. Refine the initial target
-    const result = await this.refineArtifact(stepId, instruction, onProgress, depth, isAtomicAction);
-    if (!result.success) return result;
-
-    // 2. Identify all steps for bidirectional sync
-    const pipelineOrder = [
-      "pm_spec",
-      "arch_design",
-      "devops_infrastructure",
-      "security_architecture",
-      "ui_design",
-      "engineer_impl",
-      "qa_verification"
-    ];
-
-    const startIndex = pipelineOrder.indexOf(stepId);
-    if (startIndex === -1) {
-      throw new Error(`Unknown step ID: ${stepId}`);
-    }
-
-    // --- PHASE 1: UPSTREAM SYNC (Maintain Source of Truth) ---
-    // If we refine a downstream artifact, check if we need to update the "Foundational" artifacts
-    const upstreamSteps = pipelineOrder.slice(0, startIndex);
-    if (upstreamSteps.length > 0) {
-        logger.info(`Checking if upstream sync is needed for ${stepId} refinement...`);
-        
-        // We only sync upstream if the change is significant (not a minor tweak)
-        const isMinor = /typo|grammar|color|padding|margin|font/i.test(instruction.toLowerCase());
-        
-        if (!isMinor) {
-            for (const upstreamId of upstreamSteps.reverse()) { // Update PM Spec first, then Arch
-                const syncInstruction = `The downstream artifact '${stepId}' has been refined with: "${instruction}". 
-Please update this upstream specification to reflect this change, ensuring the "Universal Source of Truth" remains consistent with the latest implementation decisions.`;
-                
-                logger.info(`Syncing upstream: Updating ${upstreamId} to align with ${stepId}...`);
-                await this.refineArtifact(upstreamId, syncInstruction, onProgress, depth + 1, isAtomicAction);
-            }
-        }
-    }
-
-    // --- PHASE 2: DOWNSTREAM CASCADE ---
-    const allDownstream = pipelineOrder.slice(startIndex + 1);
-    
-    // 3. Filter downstream steps that are enabled and exist
-    const enabledDownstream = allDownstream.filter(id => {
-      return this.config.agents.enabled.includes(id) && this.artifacts[id];
-    });
-
-    if (enabledDownstream.length === 0) {
-      logger.info("No downstream artifacts to refine.");
-      return result;
-    }
-
-    // 4. SMART CASCADE: Determine actual impact
-    const downstreamSteps = await this.determineDownstreamImpact(stepId, instruction, enabledDownstream);
-
-    if (downstreamSteps.length === 0) {
-      return result;
-    }
-
-    let rippleCount = 0;
-
-    // 5. Ripple the changes through downstream dependents sequentially
-    // We maintain a strict linear sequence to ensure total logical alignment.
-    // Each agent receives the cumulative context of all previous updates.
-    for (const downstreamId of downstreamSteps) {
-      if (rippleCount >= this.config.performance.maxCascadeRipples) {
-        logger.warn(`Cascade ripple limit reached (${rippleCount}), stopping.`);
-        break;
-      }
-
-      const alignmentInstruction = `The upstream artifact '${stepId}' has been updated with the following changes: "${instruction}". 
-Please synchronize this artifact to maintain technical alignment, structural consistency, and cross-functional coherence with the updated upstream state. 
-Ensure all references, dependencies, and shared logic are correctly updated while preserving existing high-quality implementation details.`;
-
-      logger.info(`Cascading sequential ripple update to ${downstreamId}...`);
-
-      try {
-        // We use await here to ensure strict sequence
-        const cascadeResult = await this.refineArtifact(downstreamId, alignmentInstruction, onProgress, depth + 1, isAtomicAction);
-
-        if (!cascadeResult.success) {
-          logger.error(`Cascading refinement failed at ${downstreamId}`);
-          return cascadeResult;
-        }
-        rippleCount++;
-      } catch (error: any) {
-        logger.error(`Error during cascading refinement for ${downstreamId}: ${error.message}`);
-        throw error;
-      }
-    }
-
-    logger.info("Cascading refinement completed successfully across all dependents");
-
-    return {
-      success: true,
-      artifacts: { ...this.artifacts } as any,
-      report: this.report,
-      steps: this.steps,
-      graph: this.buildKnowledgeGraph(),
-    };
-  }
-
-  /**
-   * Build a knowledge graph of the artifacts
-   */
-  private buildKnowledgeGraph(): KnowledgeGraph {
-    const nodes = Object.values(this.artifacts);
-    const edges: ArtifactDependency[] = [];
-
-    if (this.artifacts.pm_spec && this.artifacts.arch_design) {
-      edges.push({ source_id: "pm_spec", target_id: "arch_design", type: "data_flow" });
-    }
-    if (this.artifacts.arch_design && this.artifacts.engineer_impl) {
-      edges.push({ source_id: "arch_design", target_id: "engineer_impl", type: "api_contract" });
-    }
-
-    return { nodes, edges };
   }
 
   /**
@@ -802,11 +354,22 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
 
     const options = this.getExecutionOptions(stepId, role);
 
+    // Capture last partial/artifact so we can send it on timeout for UI display
+    let lastPartialForStep: any = null;
+    const wrappedOnProgress = onProgress
+      ? (ev: MetaSOPEvent) => {
+          if (ev.partial_content !== undefined || ev.artifact !== undefined) {
+            lastPartialForStep = ev.partial_content ?? ev.artifact;
+          }
+          onProgress(ev);
+        }
+      : undefined;
+
     const result = await this.executionService.executeStep(
       agentFn,
       context || { user_request: "", previous_artifacts: {}, options: {} },
       options,
-      onProgress
+      wrappedOnProgress
     );
 
     if (result.success && result.artifact) {
@@ -948,14 +511,16 @@ Ensure all references, dependencies, and shared logic are correctly updated whil
         logger.info(`Failed agent response saved to debug session: ${debugPath}`);
       }
 
-      // Emit failure event with full error details
+      // Emit failure event with full error details; include partial response when reason is timeout
+      const isTimeout = error.message?.toLowerCase().includes("timeout") ?? false;
       if (onProgress) {
         onProgress({
           type: "step_failed",
           step_id: stepId,
           role: role,
           error: error.message,
-          message: error.message, // Include in message field for compatibility
+          message: error.message,
+          ...(isTimeout && lastPartialForStep != null ? { partial_response: lastPartialForStep } : {}),
           timestamp: new Date().toISOString()
         });
       }
@@ -1126,63 +691,10 @@ export async function runMetaSOPOrchestration(
     includeDatabase?: boolean;
   },
   onProgress?: (event: MetaSOPEvent) => void,
-  documents?: any[]
+  documents?: any[],
+  clarificationAnswers?: Record<string, string>
 ): Promise<MetaSOPResult> {
   const orchestrator = new MetaSOPOrchestrator();
-  return orchestrator.run(user_request, options, onProgress, documents);
-}
-
-/**
- * Convenience function to refine an artifact
- */
-export async function refineMetaSOPArtifact(
-  stepId: string,
-  instruction: string,
-  previousArtifacts: Record<string, any>,
-  onProgress?: (event: MetaSOPEvent) => void,
-  cascade: boolean = false,
-  isAtomicAction: boolean = false
-): Promise<MetaSOPResult> {
-  const orchestrator = new MetaSOPOrchestrator();
-  // Hydrate orchestrator with previous state
-  (orchestrator as any).artifacts = previousArtifacts;
-  // Create dummy steps for the previous artifacts to maintain consistency
-  (orchestrator as any).steps = Object.keys(previousArtifacts).map(id => ({
-    id,
-    name: id.replace(/_/g, " "),
-    status: "success",
-    role: id.replace(/_impl|_spec|_design/g, "")
-  }));
-
-  if (cascade) {
-    return orchestrator.cascadeRefinement(stepId, instruction, onProgress, 0, isAtomicAction);
-  } else {
-    return orchestrator.refineArtifact(stepId, instruction, onProgress, 0, isAtomicAction);
-  }
-}
-
-/**
- * Convenience function for surgical refinement using schema paths
- */
-export async function surgicallyRefineArtifact(
-  stepId: string,
-  schemaPath: string,
-  newValue: any,
-  instruction: string,
-  previousArtifacts: Record<string, any>,
-  onProgress?: (event: MetaSOPEvent) => void
-): Promise<MetaSOPResult> {
-  const orchestrator = new MetaSOPOrchestrator();
-  // Hydrate orchestrator with previous state
-  (orchestrator as any).artifacts = previousArtifacts;
-  // Create dummy steps for the previous artifacts to maintain consistency
-  (orchestrator as any).steps = Object.keys(previousArtifacts).map(id => ({
-    id,
-    name: id.replace(/_/g, " "),
-    status: "success",
-    role: id.replace(/_impl|_spec|_design/g, "")
-  }));
-
-  return orchestrator.surgicalRefinement(stepId, schemaPath, newValue, instruction, onProgress);
+  return orchestrator.run(user_request, options, onProgress, documents, clarificationAnswers);
 }
 

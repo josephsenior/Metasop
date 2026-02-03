@@ -28,17 +28,17 @@ export const itemVariantsX = {
 
 export function StatsCard({ icon: Icon, label, value, subValue, color, bg, isText = false }: any) {
   return (
-    <div className={cn("border rounded-lg p-3 flex flex-col items-center justify-center text-center shadow-sm", styles.colors.bgCard, styles.colors.borderMuted)}>
-      <div className={cn("p-2 rounded-full mb-1.5", bg, color)}>
+    <div className={cn("border rounded-lg p-3 flex flex-col items-center justify-center text-center shadow-sm min-w-0 h-full", styles.colors.bgCard, styles.colors.borderMuted)}>
+      <div className={cn("p-2 rounded-full mb-1.5 flex-shrink-0", bg, color)}>
         <Icon className="h-4 w-4" />
       </div>
-      <div className={cn("font-bold", isText ? "text-xs uppercase" : "text-xl", isText ? "text-muted-foreground" : styles.colors.text)}>
+      <div className={cn("font-bold flex-shrink-0", isText ? "text-xs uppercase" : "text-xl", isText ? "text-muted-foreground" : styles.colors.text)}>
         {value || 0}
       </div>
       {subValue && (
-        <div className="text-[9px] text-muted-foreground/60 font-mono mt-0.5">{subValue}</div>
+        <div className="text-[9px] text-muted-foreground/60 font-mono mt-0.5 truncate w-full px-1">{subValue}</div>
       )}
-      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-1">{label}</div>
+      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-1 line-clamp-2 w-full px-1 leading-tight">{label}</div>
     </div>
   )
 }

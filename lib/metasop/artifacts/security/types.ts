@@ -48,15 +48,24 @@ export interface SecurityBackendArtifact {
             invalidation_strategy?: string;
             concurrency_control?: string;
         };
+        network_boundaries?: Array<{
+            zone: string;
+            description: string;
+            level?: "Public" | "DMZ" | "Private";
+        }>;
     }; // REQUIRED
     threat_model: Array<{
         threat: string; // REQUIRED: minLength: 10
+        category?: "Spoofing" | "Tampering" | "Repudiation" | "Information Disclosure" | "Denial of Service" | "Elevation of Privilege";
         severity: "critical" | "high" | "medium" | "low"; // REQUIRED
         likelihood?: "high" | "medium" | "low";
         impact?: string;
+        description?: string; // Added to match schema
         mitigation: string; // REQUIRED: minLength: 10
         affected_components?: string[];
-    }>; // REQUIRED: minItems: 3
+        owasp_ref?: string;
+        cwe_ref?: string;
+    }>; // REQUIRED: minItems: 2
     encryption: {
         data_at_rest: {
             method: string; // REQUIRED: minLength: 1
@@ -90,13 +99,14 @@ export interface SecurityBackendArtifact {
         description?: string;
     }>;
     security_controls: Array<{
-        id: string; // REQUIRED
+        id?: string;
         control: string; // REQUIRED: minLength: 10
-        category: "preventive" | "detective" | "corrective" | "compensating";
+        type?: string;
+        category?: "preventive" | "detective" | "corrective" | "compensating";
         implementation: string; // REQUIRED: minLength: 10
-        priority: "critical" | "high" | "medium" | "low";
+        priority?: "critical" | "high" | "medium" | "low";
         description?: string;
-    }>; // REQUIRED: minItems: 5
+    }>; // REQUIRED: minItems: 3
     vulnerability_management: {
         scanning_frequency: string;
         tools: string[];

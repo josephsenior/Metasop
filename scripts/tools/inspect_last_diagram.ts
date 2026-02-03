@@ -1,4 +1,4 @@
-import { prisma } from "../lib/database/prisma";
+import { prisma } from "../../lib/database/prisma";
 
 async function inspect() {
     console.log("🔍 Inspecting latest diagram artifacts...");

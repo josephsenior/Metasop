@@ -325,10 +325,10 @@ export function getDomainContext(projectDescription: string): string {
 export function getQualityCheckPrompt(agentType: keyof typeof QUALITY_CRITERIA): string {
   const criteria = QUALITY_CRITERIA[agentType];
   return `
-QUALITY SELF-CHECK (Ensure your output meets these criteria):
+QUALITY SELF-CHECK (ensure your output meets these criteria):
 ${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
-If any criterion is not met, revise your output before returning.`;
+Revise your output so all criteria above are met before returning.`;
 }
 
 /**

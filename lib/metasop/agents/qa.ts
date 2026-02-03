@@ -4,7 +4,6 @@ import type { ArchitectBackendArtifact } from "../artifacts/architect/types";
 import { qaSchema } from "../artifacts/qa/schema";
 import { generateStreamingStructuredWithLLM } from "../utils/llm-helper";
 import { logger } from "../utils/logger";
-import { shouldUseRefinement, refineWithAtomicActions } from "../utils/refinement-helper";
 import { FEW_SHOT_EXAMPLES, getDomainContext, getQualityCheckPrompt } from "../utils/prompt-standards";
 import { getAgentTemperature } from "../config";
 
@@ -26,19 +25,7 @@ export async function qaAgent(
   try {
     let content: QABackendArtifact;
 
-    if (shouldUseRefinement(context)) {
-      logger.info("QA agent in ATOMIC REFINEMENT mode");
-      content = await refineWithAtomicActions<QABackendArtifact>(
-        context,
-        "QA",
-        qaSchema,
-        { 
-          cacheId: context.cacheId,
-          temperature: getAgentTemperature("qa_verification")
-        }
-      );
-    } else {
-      const pmArtifact = pmSpec?.content as any;
+    const pmArtifact = pmSpec?.content as any;
       const archArtifact = archDesign?.content as ArchitectBackendArtifact | undefined;
       const engineerArtifact = engineerImpl?.content as any;
       const securityArtifact = context.previous_artifacts?.security_architecture?.content as any;
@@ -53,11 +40,10 @@ export async function qaAgent(
 
 "${projectTitle}"
 
-=== CRITICAL OUTPUT RULES (MUST FOLLOW) ===
-1. **UNIQUE TEST CASES ONLY**: Generate 8-15 test cases maximum. Each MUST have a unique ID (TC-001, TC-002, etc.) and unique name.
-2. **NEVER REPEAT**: Do NOT generate the same test case twice. If you've written "TC-001 Tenant Registration", do NOT write it again.
-3. **DIVERSE COVERAGE**: Cover different aspects - auth, CRUD, validation, error handling, security, performance.
-4. **STOP WHEN DONE**: After generating ~10-15 diverse test cases, STOP. Do not keep generating more.
+=== OUTPUT RULES ===
+- Give each test case a unique ID (max 10 chars, e.g. TC-1, TC-2, TC-01) and a unique name. One scenario per test; no duplicate IDs or names.
+- Cover auth, CRUD, validation, error handling, security, and performance where relevant. Stop after scope is covered.
+- Response: Output only the JSON object matching the schema. No markdown, no explanations.
 
 ${pmArtifact ? `
 Project Context:
@@ -200,10 +186,6 @@ ${FEW_SHOT_EXAMPLES.testCase}
 
 ${qualityCheck}
 
-=== FINAL REMINDERS ===
-- Each test case ID must be UNIQUE (TC-001, TC-002, TC-003... never repeat)
-- Each test case name must be DIFFERENT (cover registration, login, CRUD, errors, security, etc.)
-
 Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
       let llmQA: QABackendArtifact | null = null;
@@ -247,7 +229,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         accessibility_plan: llmQA.accessibility_plan || (llmQA as any).accessibility,
         manual_uat_plan: llmQA.manual_uat_plan,
       };
-    }
 
     logger.info("QA agent completed");
 

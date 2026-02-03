@@ -1,93 +1,53 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues when setting up and running the application.
+This guide helps you resolve common issues when setting up and running the application (local/open-source with SQLite).
 
-## Database Connection Issues
+## Database (SQLite) Issues
 
-### Error: "Can't reach database server"
+### Error: "Can't reach database server" / "SQLITE_CANTOPEN" (Error code 14)
 
-**Possible causes:**
+**For local SQLite (default):**
 
-1. **Project is paused**
-   - Go to [app.supabase.com](https://app.supabase.com)
-   - Check project status
-   - If paused, click "Resume" and wait 1-2 minutes
-
-2. **Wrong connection string format**
-   - Ensure you're using **Direct connection** (port 5432) for migrations
-   - Remove brackets around password: `[password]` → `password`
-   - Verify quotes around the connection string in `.env.local`
-
-3. **Incorrect password**
-   - Verify the password matches what you set when creating the project
-   - Check for special characters that might need URL encoding
-
-**Solution:**
-```env
-# Correct format
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
-```
-
-### Error: "Connection refused"
-
-**Check:**
-1. Project status in Supabase dashboard (must be Active)
-2. Firewall/antivirus isn't blocking port 5432
-3. Connection string is exactly as shown in Supabase (Settings → Database → Direct connection)
-
-**Test connection:**
-```bash
-# If you have psql installed
-psql "postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
-```
+1. **Ensure `DATABASE_URL` is set** in `.env`:
+   ```env
+   DATABASE_URL="file:./prisma/local.db"
+   ```
+2. **Create the database and tables:**
+   ```bash
+   pnpm db:generate
+   pnpm db:push
+   ```
+3. The app creates the `prisma` directory automatically when using a relative path (`file:./prisma/local.db`). If the error persists, ensure the project root is writable and no other process has the DB file locked.
 
 ### Error: "Invalid connection string"
 
-**Common issues:**
-- Missing quotes around connection string
-- Spaces before/after `=`
-- Incomplete connection string copied
-
 **Fix:**
 ```env
-# Correct
-DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres"
+# Correct (SQLite)
+DATABASE_URL="file:./prisma/local.db"
 
 # Wrong
-DATABASE_URL = "postgresql://..."  # Space before =
-DATABASE_URL=postgresql://...      # Missing quotes
+DATABASE_URL = "file:./prisma/local.db"  # Space before =
+DATABASE_URL=file:./prisma/local.db     # Missing quotes (if path has spaces)
 ```
 
-### Error: "Database does not exist"
+### Reset local database
 
-- For Supabase: Use `postgres` as the database name (default)
-- For Neon: Use `neondb` or `main` as the database name
+To start fresh:
+```bash
+# Delete the SQLite file (e.g. prisma/local.db)
+# Then:
+pnpm db:push
+```
 
 ## Environment File Issues
 
-### `.env.local` not being read
+### `.env` not being read
 
 **Check:**
-1. File is named exactly `.env.local` (not `.env.local.txt`)
-2. File is in the project root directory
-3. No syntax errors (missing quotes, extra spaces)
-
-**Restart dev server after changes:**
-```bash
-# Stop server (Ctrl+C)
-pnpm dev
-```
-
-### Password with special characters
-
-If your password contains special characters, you may need to URL-encode them:
-- `@` → `%40`
-- `#` → `%23`
-- `$` → `%24`
-- `%` → `%25`
-- `&` → `%26`
-
-Or change your database password to one without special characters.
+1. File is named `.env` and is in the project root (or `.env.local` for local overrides)
+2. No syntax errors (missing quotes, extra spaces)
+3. Restart the dev server after changes: `pnpm dev`
 
 ## Prisma Issues
 
@@ -107,7 +67,7 @@ Check `prisma/schema.prisma` for syntax errors. Common issues:
 ### Error: "Migration failed"
 
 1. Use **Direct connection** (port 5432), not pooler (port 6543)
-2. Ensure project is Active in Supabase
+2. For SQLite, ensure `pnpm db:push` has been run
 3. Check database password is correct
 
 ## Supabase-Specific Issues

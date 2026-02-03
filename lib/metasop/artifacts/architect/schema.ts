@@ -12,7 +12,8 @@ export const architectSchema = {
         description: { type: "string", maxLength: 500, description: "Brief overview of the system architecture." },
     apis: {
             type: "array",
-            description: "CRUD-focused API specification. Technical and concise.",
+            minItems: 1,
+            description: "CRUD-focused API specification. At least one API required. Technical and concise.",
             items: {
                 type: "object",
                 required: ["path", "method", "description", "request_schema", "response_schema"],
@@ -30,7 +31,8 @@ export const architectSchema = {
         },
         decisions: {
             type: "array",
-            description: "Core architectural decisions (ADRs). Aim for 4-6 well-documented decisions with full context for complex projects.",
+            minItems: 1,
+            description: "Core architectural decisions (ADRs). At least one required. Aim for 4-6 well-documented decisions with full context for complex projects.",
             items: {
                 type: "object",
                 required: ["decision", "status", "reason", "tradeoffs", "consequences"],

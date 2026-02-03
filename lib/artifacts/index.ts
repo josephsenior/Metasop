@@ -1,4 +1,5 @@
 // Artifact generators exports
+export * from './edit-tools';
 export * from './adr-generator';
 export * from './api-client-generator';
 export * from './code-generator';
@@ -10,6 +11,7 @@ export * from './iac-generator';
 export * from './mermaid-generator';
 export * from './openapi-generator';
 export * from './pdf-generator';
+export * from './pptx-generator';
 export * from './security-audit-generator';
 export * from './sql-generator';
 export * from './tech-comparison-generator';

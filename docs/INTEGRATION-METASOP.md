@@ -9,11 +9,13 @@ This project includes an integrated MetaSOP multi-agent system written in TypeSc
 The MetaSOP system consists of:
 
 - **Orchestrator** (`lib/metasop/orchestrator.ts`): Coordinates the execution of multiple agents
-- **Agents** (`lib/metasop/agents/`):
+- **Agents** (`lib/metasop/agents/`): All seven run **sequentially** in this order:
   - Product Manager: Generates specifications and requirements
   - Architect: Designs system architecture and APIs
-  - Engineer: Creates implementation plans
+  - DevOps: CI/CD pipelines and infrastructure
+  - Security: Threat modeling and security controls
   - UI Designer: Designs UI components
+  - Engineer: Creates implementation plans
   - QA: Generates test plans
 
 ## Configuration
@@ -38,21 +40,28 @@ TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
 
 1. User submits a prompt on `/dashboard/create`
 2. Frontend calls `/api/diagrams/generate`
-3. API route uses the integrated MetaSOP orchestrator:
+3. API route uses the integrated MetaSOP orchestrator (agents run sequentially):
    - Product Manager generates specifications
    - Architect designs system architecture
-   - Engineer creates implementation plan
+   - DevOps produces CI/CD and infrastructure
+   - Security produces threat model and security architecture
    - UI Designer designs components
+   - Engineer creates implementation plan
    - QA generates test plans
-4. MetaSOP artifacts are transformed to React Flow diagram format
-5. Diagram is saved with MetaSOP metadata
+4. MetaSOP artifacts are stored in diagram metadata (`metadata.metasop_artifacts`) and displayed in the artifacts panel.
+5. Diagram is saved with MetaSOP metadata.
 
 ### Agent Execution Order
 
+Agents run **sequentially** (no parallelism). Order matches dependency flow:
+
 1. **Product Manager** → Generates user stories and requirements
 2. **Architect** → Designs architecture based on PM specs
-3. **Engineer** + **UI Designer** → Run in parallel
-4. **QA** → Generates test plans based on all previous artifacts
+3. **DevOps** → CI/CD and infrastructure
+4. **Security** → Threat model and security architecture
+5. **UI Designer** → Designs UI components
+6. **Engineer** → Creates implementation plan
+7. **QA** → Generates test plans based on all previous artifacts
 
 ### API Endpoint
 
@@ -83,8 +92,10 @@ POST /api/diagrams/generate
       "artifacts": {
         "pm_spec": {...},
         "arch_design": {...},
-        "engineer_impl": {...},
+        "security_architecture": {...},
+        "devops_infrastructure": {...},
         "ui_design": {...},
+        "engineer_impl": {...},
         "qa_verification": {...}
       },
       "report": {
@@ -108,6 +119,10 @@ The `OrchestrationPanel` component displays:
 ### Real-time Updates
 
 The `useMetaSOPOrchestration` hook polls for updates every 2 seconds while orchestrating.
+
+### Refinement (tool-based)
+
+Refinement is done via **Edit Artifacts** (`POST /api/diagrams/artifacts/edit`). Send `previousArtifacts` and an `edits` array of ops (`set_at_path`, `delete_at_path`, `add_array_item`, `remove_array_item`). No agent re-runs; see [API.md](API.md#edit-artifacts-tool-based).
 
 ## Customization
 
