@@ -3,10 +3,8 @@ import type PptxGenJS from "pptxgenjs"
 
 const SLIDE_TITLE_FONT = 24
 const SLIDE_BODY_FONT = 12
-const SECTION_TITLE_FONT = 16
 const MARGIN = 0.5
 const W = 10
-const H = 5.5
 
 function truncate(text: string, maxLen: number): string {
   if (!text || typeof text !== "string") return ""
@@ -79,7 +77,7 @@ export class PPTXGenerator {
       pmOverviewSlide.addText("PM: Overview", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
       const pmSummary = (pm.summary as string) || (pm.description as string) || ""
       if (pmSummary) pmOverviewSlide.addText(truncate(pmSummary, 600), { x: MARGIN, y: 1, w: W, h: 2, fontSize: SLIDE_BODY_FONT })
-      
+
       // Stats
       const stats = [
         `User Stories: ${(pm.user_stories as unknown[])?.length || 0}`,
@@ -313,7 +311,7 @@ export class PPTXGenerator {
         const secArchSlide = pptx.addSlide()
         secArchSlide.addText("Security: Architecture", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
         let yPos = 1
-        
+
         const auth = secArch.authentication as Record<string, unknown> | undefined
         if (auth) {
           secArchSlide.addText("Authentication:", { x: MARGIN, y: yPos, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -356,7 +354,7 @@ export class PPTXGenerator {
         const secEncSlide = pptx.addSlide()
         secEncSlide.addText("Security: Encryption", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
         let yPos = 1
-        
+
         const dataAtRest = encryption.data_at_rest as Record<string, string> | undefined
         if (dataAtRest) {
           secEncSlide.addText("Data at Rest:", { x: MARGIN, y: yPos, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -400,7 +398,7 @@ export class PPTXGenerator {
       if (infrastructure && Object.keys(infrastructure).length > 0) {
         const devopsInfraSlide = pptx.addSlide()
         devopsInfraSlide.addText("DevOps: Infrastructure", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const services = infrastructure.services as unknown[] || []
         if (services.length > 0) {
           const serviceLines = services.slice(0, 15).map((s: unknown) => {
@@ -416,7 +414,7 @@ export class PPTXGenerator {
       if (cicd && Object.keys(cicd).length > 0) {
         const devopsCicdSlide = pptx.addSlide()
         devopsCicdSlide.addText("DevOps: CI/CD Pipeline", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const stages = cicd.pipeline_stages as unknown[] || []
         if (stages.length > 0) {
           const stageLines = stages.slice(0, 12).map((s: unknown, idx: number) => {
@@ -438,7 +436,7 @@ export class PPTXGenerator {
       if (containerization && Object.keys(containerization).length > 0) {
         const devopsContSlide = pptx.addSlide()
         devopsContSlide.addText("DevOps: Containerization", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const k8s = containerization.kubernetes as Record<string, unknown> | undefined
         if (k8s) {
           const deployments = k8s.deployments as unknown[] || []
@@ -458,7 +456,7 @@ export class PPTXGenerator {
       if (deployment && Object.keys(deployment).length > 0) {
         const devopsDeploySlide = pptx.addSlide()
         devopsDeploySlide.addText("DevOps: Deployment", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const strategy = deployment.strategy as string
         if (strategy) {
           devopsDeploySlide.addText("Strategy:", { x: MARGIN, y: 1, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -481,7 +479,7 @@ export class PPTXGenerator {
       if (monitoring && Object.keys(monitoring).length > 0) {
         const devopsMonSlide = pptx.addSlide()
         devopsMonSlide.addText("DevOps: Monitoring", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const tools = monitoring.tools as string[] || []
         if (tools.length > 0) {
           devopsMonSlide.addText("Tools:", { x: MARGIN, y: 1, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -509,7 +507,7 @@ export class PPTXGenerator {
       if (designTokens && Object.keys(designTokens).length > 0) {
         const uiTokensSlide = pptx.addSlide()
         uiTokensSlide.addText("UI: Design Tokens", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         let yPos = 1
         const colors = designTokens.colors as Record<string, string> | undefined
         if (colors && Object.keys(colors).length > 0) {
@@ -564,7 +562,7 @@ export class PPTXGenerator {
       if (websiteLayout?.pages && websiteLayout.pages.length > 0) {
         const uiSitemapSlide = pptx.addSlide()
         uiSitemapSlide.addText("UI: Sitemap", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const pageLines = websiteLayout.pages.slice(0, 12).map((p: unknown) => {
           const page = p as { name?: string; route?: string }
           const routeSuffix = page.route ? " (" + page.route + ")" : ""
@@ -578,7 +576,7 @@ export class PPTXGenerator {
       if (componentHierarchy?.root || componentHierarchy?.children?.length) {
         const uiHierarchySlide = pptx.addSlide()
         uiHierarchySlide.addText("UI: Component Hierarchy", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const items = [componentHierarchy.root || "App", ...(componentHierarchy.children || []).map((c: unknown) => (c as { name?: string }).name)].filter(Boolean)
         const itemLines = items.slice(0, 15).map((n) => "• " + n).join("\n")
         uiHierarchySlide.addText(itemLines, { x: MARGIN, y: 1, w: W, h: 4.5, fontSize: 10 })
@@ -589,7 +587,7 @@ export class PPTXGenerator {
       if (atomicStructure && (atomicStructure.atoms?.length || atomicStructure.molecules?.length || atomicStructure.organisms?.length)) {
         const uiAtomicSlide = pptx.addSlide()
         uiAtomicSlide.addText("UI: Atomic Structure", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         let yPos = 1
         if (atomicStructure.atoms?.length) {
           uiAtomicSlide.addText("Atoms:", { x: MARGIN, y: yPos, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -612,7 +610,7 @@ export class PPTXGenerator {
       if (componentSpecs.length > 0) {
         const uiSpecsSlide = pptx.addSlide()
         uiSpecsSlide.addText("UI: Component Blueprint", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const specLines = componentSpecs.slice(0, 12).map((s: unknown) => {
           const spec = s as { name?: string; description?: string }
           const descSuffix = spec.description ? ": " + truncate(spec.description, 60) : ""
@@ -626,7 +624,7 @@ export class PPTXGenerator {
       if (accessibility && Object.keys(accessibility).length > 0) {
         const uiA11ySlide = pptx.addSlide()
         uiA11ySlide.addText("UI: Accessibility", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         let yPos = 1
         const standard = accessibility.standard as string
         if (standard) {
@@ -667,7 +665,7 @@ export class PPTXGenerator {
       if (phases.length > 0) {
         const engPhasesSlide = pptx.addSlide()
         engPhasesSlide.addText("Engineer: Implementation Phases", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const phaseLines = phases.slice(0, 10).map((p: unknown, idx: number) => {
           const phase = p as { name?: string; description?: string }
           const descSuffix = phase.description ? ": " + truncate(phase.description, 60) : ""
@@ -681,7 +679,7 @@ export class PPTXGenerator {
       if (techDecisions.length > 0) {
         const engDecisionsSlide = pptx.addSlide()
         engDecisionsSlide.addText("Engineer: Technical Decisions", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const decisionLines = techDecisions.slice(0, 10).map((d: unknown) => {
           const dec = d as { decision?: string; rationale?: string }
           const ratSuffix = dec.rationale ? " - " + truncate(dec.rationale, 40) : ""
@@ -703,10 +701,10 @@ export class PPTXGenerator {
       if (fileStructure && Object.keys(fileStructure).length > 0) {
         const engStructSlide = pptx.addSlide()
         engStructSlide.addText("Engineer: File Structure", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const rootName = fileStructure.name as string || "Project"
         engStructSlide.addText("Root: " + rootName, { x: MARGIN, y: 1, w: W, h: 0.3, fontSize: 12, bold: true })
-        
+
         const children = fileStructure.children as unknown[] || []
         if (children.length > 0) {
           const childLines = children.slice(0, 15).map((c: unknown) => {
@@ -723,7 +721,7 @@ export class PPTXGenerator {
       if (envVars.length > 0) {
         const engEnvSlide = pptx.addSlide()
         engEnvSlide.addText("Engineer: Environment Variables", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const envLines = envVars.slice(0, 12).map((e: unknown) => {
           const env = e as { name?: string; description?: string }
           const descSuffix = env.description ? ": " + truncate(env.description, 60) : ""
@@ -742,7 +740,7 @@ export class PPTXGenerator {
       if (testStrategy && Object.keys(testStrategy).length > 0) {
         const qaStrategySlide = pptx.addSlide()
         qaStrategySlide.addText("QA: Test Strategy", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         let yPos = 1
         const approach = testStrategy.approach as string
         if (approach) {
@@ -770,7 +768,7 @@ export class PPTXGenerator {
       if (testCases.length > 0) {
         const qaCasesSlide = pptx.addSlide()
         qaCasesSlide.addText("QA: Test Cases", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const caseLines = testCases.slice(0, 12).map((tc: unknown) => {
           const testCase = tc as { id?: string; name?: string; priority?: string }
           const prioSuffix = testCase.priority ? " [" + testCase.priority.toUpperCase() + "]" : ""
@@ -784,7 +782,7 @@ export class PPTXGenerator {
       if (securityPlan && Object.keys(securityPlan).length > 0) {
         const qaSecSlide = pptx.addSlide()
         qaSecSlide.addText("QA: Security Plan", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const authSteps = securityPlan.auth_verification_steps as string[] || []
         if (authSteps.length > 0) {
           qaSecSlide.addText("Auth Verification:", { x: MARGIN, y: 1, w: W, h: 0.3, fontSize: 12, bold: true })
@@ -803,7 +801,7 @@ export class PPTXGenerator {
       if (riskAnalysis.length > 0) {
         const qaRiskSlide = pptx.addSlide()
         qaRiskSlide.addText("QA: Risk Analysis", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const riskLines = riskAnalysis.slice(0, 12).map((r: unknown) => {
           const risk = r as { risk?: string; impact?: string; mitigation?: string }
           return "• " + truncate(risk.risk || "", 60) + " [Impact: " + (risk.impact || "Unknown") + "]"
@@ -816,7 +814,7 @@ export class PPTXGenerator {
       if (accessibilityPlan && Object.keys(accessibilityPlan).length > 0) {
         const qaA11ySlide = pptx.addSlide()
         qaA11ySlide.addText("QA: Accessibility Plan", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         let yPos = 1
         const standard = accessibilityPlan.standard as string
         if (standard) {
@@ -844,7 +842,7 @@ export class PPTXGenerator {
       if (performanceMetrics && Object.keys(performanceMetrics).length > 0) {
         const qaPerfSlide = pptx.addSlide()
         qaPerfSlide.addText("QA: Performance Metrics", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        
+
         const metricLines = Object.entries(performanceMetrics).slice(0, 10).map(([key, value]) => {
           return "• " + key.replace(/_/g, " ") + ": " + value
         })

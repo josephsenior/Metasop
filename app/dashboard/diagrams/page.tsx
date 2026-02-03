@@ -47,16 +47,16 @@ export default function MyDiagramsPage() {
     try {
       setIsLoading(true)
       setError(null)
-      
+
       // Build options object - only include status if it's not "all"
       const options: { status?: Diagram["status"] } = {}
       if (statusFilter !== "all") {
         options.status = statusFilter as Diagram["status"]
       }
-      
+
       console.log("[Diagrams Page] Loading diagrams with options:", options)
       const result = await diagramsApi.getAll(options)
-      
+
       // Debug logging
       console.log("[Diagrams Page] API Response:", result)
       console.log("[Diagrams Page] Response type:", typeof result)
@@ -64,10 +64,10 @@ export default function MyDiagramsPage() {
       console.log("[Diagrams Page] Diagrams count:", result?.diagrams?.length || 0)
       console.log("[Diagrams Page] Total:", result?.total || 0)
       console.log("[Diagrams Page] Session: guest")
-      
+
       // Handle different possible response structures
       let diagramsToSet: Diagram[] = []
-      
+
       if (result) {
         if (Array.isArray(result)) {
           // If result is directly an array
@@ -80,25 +80,25 @@ export default function MyDiagramsPage() {
           setError("Unexpected response format from server. Check console for details.")
         }
       }
-      
+
       setDiagrams(diagramsToSet)
       setError(null)
-      
+
       if (diagramsToSet.length === 0 && !isLoading) {
         console.log("[Diagrams Page] No diagrams found. This might be expected if you haven't created any yet.")
       }
-    } catch (error: any) {
-      console.error("[Diagrams Page] Error loading diagrams:", error)
+    } catch (err: any) {
+      console.error("[Diagrams Page] Error loading diagrams:", err)
       console.error("[Diagrams Page] Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        stack: error.stack,
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        stack: err.stack,
       })
-      
-      const errorMessage = error.response?.data?.message || error.message || "Failed to load diagrams"
+
+      const errorMessage = err.response?.data?.message || err.message || "Failed to load diagrams"
       setError(errorMessage)
-      
+
       toast({
         title: "Error",
         description: errorMessage,
@@ -122,10 +122,10 @@ export default function MyDiagramsPage() {
         description: "The diagram has been permanently deleted.",
       })
       loadDiagrams()
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to delete diagram",
+        description: err.response?.data?.message || "Failed to delete diagram",
         variant: "destructive",
       })
     }
@@ -158,13 +158,13 @@ export default function MyDiagramsPage() {
       statusFilter,
       diagramStatuses: diagrams.map(d => ({ id: d.id, status: d.status, title: d.title?.substring(0, 30) }))
     })
-    
+
     let filtered = diagrams.filter((diagram) => {
       const matchesSearch =
         (diagram.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (diagram.description || "").toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStatus = statusFilter === "all" || diagram.status === statusFilter
-      
+
       // Debug individual filter results
       if (diagrams.length <= 10) { // Only log for small sets
         console.log(`[Diagrams Page] Diagram "${diagram.title?.substring(0, 30)}":`, {
@@ -175,10 +175,10 @@ export default function MyDiagramsPage() {
           passes: matchesSearch && matchesStatus
         })
       }
-      
+
       return matchesSearch && matchesStatus
     })
-    
+
     console.log("[Diagrams Page] Filtered count:", filtered.length, "out of", diagrams.length)
 
     filtered.sort((a, b) => {

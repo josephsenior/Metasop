@@ -2,17 +2,12 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Sparkles, FileText, Shield, Server, Code, Palette, CheckCircle, Download, Archive, LayoutDashboard } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
-import { downloadFile, cn } from "@/lib/utils"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Tabs } from "@/components/ui/tabs"
+import { Sparkles } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+// Import modular tab components
+import { agentTabs, SidebarTabs, TopTabs } from "./ArtifactTabs"
 
 // Import all artifact display components
 import ProjectSummary from "@/components/artifacts/ProjectSummary"
@@ -42,17 +37,6 @@ interface ArtifactsPanelProps {
     sidebarMode?: boolean
 }
 
-const agentTabs = [
-    { id: "summary", label: "Summary", icon: LayoutDashboard, color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { id: "pm_spec", label: "PM Spec", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
-    { id: "arch_design", label: "Architect", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
-    { id: "devops_infrastructure", label: "DevOps", icon: Server, color: "text-green-600", bgColor: "bg-green-500/10" },
-    { id: "security_architecture", label: "Security", icon: Shield, color: "text-red-600", bgColor: "bg-red-500/10" },
-    { id: "ui_design", label: "UI Designer", icon: Palette, color: "text-pink-600", bgColor: "bg-pink-500/10" },
-    { id: "engineer_impl", label: "Engineer", icon: Code, color: "text-orange-600", bgColor: "bg-orange-500/10" },
-    { id: "qa_verification", label: "QA", icon: CheckCircle, color: "text-teal-600", bgColor: "bg-teal-500/10" },
-]
-
 export function ArtifactsPanel({
     diagramId,
     artifacts,
@@ -62,7 +46,6 @@ export function ArtifactsPanel({
     onTabChange,
     sidebarMode = false
 }: ArtifactsPanelProps) {
-    const { toast } = useToast()
     const [internalActiveTab, setInternalActiveTab] = useState("summary")
 
     const activeTab = externalActiveTab || internalActiveTab
@@ -71,79 +54,17 @@ export function ArtifactsPanel({
         onTabChange?.(tab)
     }
 
-    // Debug: Log artifacts structure
-    const artifactKeys = artifacts ? Object.keys(artifacts) : []
-    console.log("[ArtifactsPanel] Artifacts received:", {
-        artifactKeys,
-        artifactCount: artifactKeys.length,
-        sampleArtifacts: artifacts ? Object.entries(artifacts).slice(0, 2).map(([k, v]: [string, any]) => ({
-            key: k,
-            type: typeof v,
-            isNull: v === null,
-            hasContent: !!v?.content,
-            isObject: typeof v === 'object' && v !== null,
-            keys: typeof v === 'object' && v !== null ? Object.keys(v) : [],
-            contentKeys: v?.content && typeof v.content === 'object' ? Object.keys(v.content) : []
-        })) : []
-    })
-
     const availableTabs = agentTabs.filter((tab) => {
-        if (tab.id === "summary") return true // Always show summary
+        if (tab.id === "summary") return true
         const artifact = artifacts?.[tab.id as keyof typeof artifacts]
-
-        if (!artifact) {
-            console.log(`[ArtifactsPanel] Tab ${tab.id}: No artifact found`)
-            return false
-        }
-
-        // Handle MetaSOPArtifact structure (has .content) or direct content
-        const hasContent = artifact?.content !== undefined
-        const hasData = typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0
-        const isValid = hasContent || hasData
-
-        console.log(`[ArtifactsPanel] Tab ${tab.id}:`, {
-            hasContent,
-            hasData,
-            isValid,
-            artifactType: typeof artifact,
-            artifactKeys: typeof artifact === 'object' && artifact !== null ? Object.keys(artifact) : []
-        })
-
-        return isValid
+        if (!artifact) return false
+        return artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)
     })
 
-    console.log("[ArtifactsPanel] Available tabs:", availableTabs.map(t => t.id), "from artifact keys:", artifactKeys)
     const currentTab = agentTabs.find(t => t.id === activeTab) || agentTabs[0]
     const Icon = currentTab.icon
 
-    const handleExportAll = () => {
-        const data = JSON.stringify(artifacts, null, 2)
-        downloadFile(data, `metasop-project-${diagramId?.substring(0, 8)}.json`, "application/json")
-        toast({
-            title: "Project Exported",
-            description: "All artifacts downloaded as JSON.",
-        })
-    }
-
-    const handleExportMarkdown = () => {
-        let md = `# Project Specification: ${diagramId}\n\n`
-
-        agentTabs.forEach(tab => {
-            const data = artifacts[tab.id as keyof typeof artifacts]
-            if (data) {
-                md += `## ${tab.label}\n\n`
-                md += `\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n\n`
-            }
-        })
-
-        downloadFile(md, `metasop-spec-${diagramId?.substring(0, 8)}.md`, "text/markdown")
-        toast({
-            title: "Markdown Exported",
-            description: "Technical specification downloaded.",
-        })
-    }
-
-    if (availableTabs.length === 0) {
+    if (availableTabs.length <= 1 && activeTab === "summary" && artifacts && Object.keys(artifacts).length === 0) {
         return (
             <div className={`flex flex-col items-center justify-center p-8 text-center ${className}`}>
                 <motion.div
@@ -166,33 +87,7 @@ export function ArtifactsPanel({
             <Tabs value={activeTab} onValueChange={setActiveTab} className={cn("flex-1 flex min-h-0 overflow-hidden", sidebarMode ? "flex-row" : "flex-col")}>
 
                 {/* Sidebar Mode Tabs */}
-                {sidebarMode && (
-                    <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
-                        <div className="p-4 border-b border-border">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
-                                Agent Reports
-                            </h3>
-                        </div>
-                        <TabsList className="flex flex-col items-stretch w-full h-auto gap-1 bg-transparent p-2 rounded-none overflow-y-auto custom-scrollbar">
-                            {agentTabs.map((tab) => {
-                                const TabIcon = tab.icon
-                                const artifact = artifacts?.[tab.id as keyof typeof artifacts]
-                                const hasData = tab.id === "summary" || tab.id === "documents" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
-                                return (
-                                    <TabsTrigger
-                                        key={tab.id}
-                                        value={tab.id}
-                                        disabled={!hasData}
-                                        className="flex items-center gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50"
-                                    >
-                                        <TabIcon className={cn("h-4 w-4", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
-                                        <span className="font-medium truncate">{tab.label}</span>
-                                    </TabsTrigger>
-                                )
-                            })}
-                        </TabsList>
-                    </div>
-                )}
+                {sidebarMode && <SidebarTabs activeTab={activeTab} artifacts={artifacts} />}
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <div className="border-b border-border bg-background px-3 pt-3 pb-2 sticky top-0 z-20 shrink-0">
@@ -205,32 +100,10 @@ export function ArtifactsPanel({
                                     {currentTab.label}
                                 </h3>
                             </div>
-                            <div className="flex items-center gap-1">
-                                {/* Download button relocated to main toolbar */}
-                            </div>
                         </div>
 
                         {/* Top Mode Tabs (only if not sidebar) */}
-                        {!sidebarMode && (
-                            <TabsList className="flex items-center w-full h-auto gap-1 bg-muted/20 p-1 rounded-lg overflow-x-auto no-scrollbar scroll-smooth">
-                                {agentTabs.map((tab) => {
-                                    const TabIcon = tab.icon
-                                    const artifact = artifacts?.[tab.id as keyof typeof artifacts]
-                                    const hasData = tab.id === "summary" || tab.id === "documents" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
-                                    return (
-                                        <TabsTrigger
-                                            key={tab.id}
-                                            value={tab.id}
-                                            disabled={!hasData}
-                                            className="flex items-center gap-1.5 py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-disabled:opacity-40 rounded-md text-[10px] min-w-max transition-all"
-                                        >
-                                            <TabIcon className={cn("h-3.5 w-3.5", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
-                                            <span className="font-semibold whitespace-nowrap">{tab.label}</span>
-                                        </TabsTrigger>
-                                    )
-                                })}
-                            </TabsList>
-                        )}
+                        {!sidebarMode && <TopTabs activeTab={activeTab} artifacts={artifacts} />}
                     </div>
 
                     <div className="flex-1 min-h-0 overflow-hidden relative">

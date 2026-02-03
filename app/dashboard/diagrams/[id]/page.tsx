@@ -147,7 +147,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
       if (resolvedParams.id.startsWith("guest_") || data.metadata?.is_guest) {
         setIsGuestDiagram(true)
       }
-    } catch (error: any) {
+    } catch {
       setDiagram(null)
       // Don'tredirect automatically - show error state
     } finally {

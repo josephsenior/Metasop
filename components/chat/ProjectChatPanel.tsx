@@ -11,8 +11,6 @@ import {
     Sparkles,
     Loader2,
     MessageSquare,
-    Info,
-    Zap,
     Paperclip
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -30,10 +28,11 @@ interface Message {
 }
 
 interface ProjectChatPanelProps {
-    diagramId: string
+    diagramId?: string
     artifacts: any
     activeTab?: string
     onRefineComplete?: (result?: any) => void
+    onClose?: () => void
 }
 
 export function ProjectChatPanel({
