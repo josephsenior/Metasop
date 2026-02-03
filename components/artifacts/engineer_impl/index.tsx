@@ -215,7 +215,7 @@ export default function EngineerImplPanel({
           <StatsCard
             icon={Terminal}
             label="Scripts"
-            value={(runResults.setup_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.dev_commands?.length || 0)}
+            value={(runResults.setup_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.dev_commands?.length || 0) + (runResults.build_commands?.length || 0)}
             color="text-blue-600 dark:text-blue-400"
             bg="bg-blue-500/10"
           />
