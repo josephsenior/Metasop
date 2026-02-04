@@ -39,6 +39,7 @@ export async function generateWithLLM(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    model?: string; // Per-call model override
   }
 ): Promise<string> {
   const provider = getLLMProvider();
@@ -47,12 +48,13 @@ export async function generateWithLLM(
   return provider.generate(prompt, {
     temperature: options?.temperature ?? config.llm.temperature,
     maxTokens: options?.maxTokens ?? config.llm.maxTokens,
-    model: config.llm.model,
+    model: options?.model ?? config.llm.model,
     reasoning: options?.reasoning,
     cacheId: options?.cacheId,
     role: options?.role,
   });
 }
+
 
 /**
  * Generate structured output using LLM
@@ -148,7 +150,7 @@ export async function generateStreamWithLLM(
   }
 ): Promise<string> {
   const provider = getLLMProvider();
-  
+
   if (!provider.generateStream) {
     // Fallback to non-streaming if provider doesn't support streaming
     const result = await generateWithLLM(prompt, options);

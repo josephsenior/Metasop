@@ -70,6 +70,8 @@ export const RefineArtifactsSchema = z.object({
     diagramId: z.string().optional(),
     intent: z.string().min(1, "Intent is required"),
     previousArtifacts: z.record(z.any()),
+    chatHistory: z.string().optional(),
+    activeTab: z.string().optional(),
 });
 
 export function validateRefineArtifactsRequest(data: any) {

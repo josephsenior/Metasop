@@ -309,59 +309,140 @@ export function ProjectChatPanel({
         const placeholderMessage: Message = {
             id: refinementMessageId,
             role: "assistant",
-            content: "Applying your changes…",
+            content: "🔍 Analyzing your request...",
             type: "refinement",
             timestamp: new Date()
         }
         setMessages(prev => [...prev, placeholderMessage])
 
         try {
-            const res = await fetchDiagramApi("/api/diagrams/artifacts/refine", {
+            // Use streaming endpoint
+            const res = await fetchDiagramApi("/api/diagrams/artifacts/refine?stream=true", {
                 method: "POST",
                 body: JSON.stringify({
                     intent: instruction,
                     previousArtifacts: artifacts ?? {},
+                    chatHistory: messages
+                        .filter(m => m.type !== "system")
+                        .slice(-6)
+                        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+                        .join("\n\n"),
+                    activeTab
                 }),
                 headers: { "Content-Type": "application/json" },
             })
 
-            const json = await res.json().catch(() => ({}))
-            const data = json?.data
-
             if (!res.ok) {
-                const errMsg = json?.message || res.statusText || "Refinement failed"
-                setMessages(prev => prev.map(msg =>
-                    msg.id === refinementMessageId
-                        ? { ...msg, content: `❌ ${errMsg}` }
-                        : msg
-                ))
-                toast({
-                    title: "Refinement failed",
-                    description: errMsg,
-                    variant: "destructive",
-                })
-                return
+                throw new Error(res.statusText || "Refinement failed")
             }
 
-            if (data?.artifacts != null) {
-                onRefineComplete?.({ artifacts: data.artifacts })
+            const reader = res.body?.getReader()
+            if (!reader) throw new Error("No response body")
+
+            const decoder = new TextDecoder()
+            let buffer = ""
+            let finalArtifacts: any = null
+            let changelog: any[] = []
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                buffer += decoder.decode(value, { stream: true })
+                const lines = buffer.split("\n")
+                buffer = lines.pop() || ""
+
+                for (const line of lines) {
+                    if (!line.trim()) continue
+
+                    try {
+                        const event = JSON.parse(line.trim())
+
+                        switch (event.type) {
+                            case "analyzing":
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === refinementMessageId
+                                        ? { ...msg, content: "🔍 Analyzing your request..." }
+                                        : msg
+                                ))
+                                break
+
+                            case "plan_ready":
+                                const { edits_count, artifacts_affected, reasoning } = event.payload
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === refinementMessageId
+                                        ? {
+                                            ...msg,
+                                            content: `📋 **Edit Plan**: ${edits_count} change(s) across ${artifacts_affected.join(", ")}\n\n_${reasoning}_`
+                                        }
+                                        : msg
+                                ))
+                                break
+
+                            case "applying":
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === refinementMessageId
+                                        ? { ...msg, content: "⚡ Applying changes..." }
+                                        : msg
+                                ))
+                                break
+
+                            case "artifact_updated":
+                                // Optional: could show per-artifact updates
+                                break
+
+                            case "complete":
+                                finalArtifacts = event.payload.updated_artifacts
+                                changelog = event.payload.changelog || []
+                                const applied = event.payload.applied ?? 0
+
+                                if (applied > 0) {
+                                    const changelogSummary = changelog.slice(0, 3)
+                                        .map((c: any) => `• **${c.artifact}**: ${c.change}`)
+                                        .join("\n")
+                                    const moreText = changelog.length > 3
+                                        ? `\n_...and ${changelog.length - 3} more_`
+                                        : ""
+
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === refinementMessageId
+                                            ? {
+                                                ...msg,
+                                                content: `✅ Applied ${applied} edit(s)\n\n${changelogSummary}${moreText}`
+                                            }
+                                            : msg
+                                    ))
+                                } else {
+                                    setMessages(prev => prev.map(msg =>
+                                        msg.id === refinementMessageId
+                                            ? { ...msg, content: event.payload.message || "No changes needed." }
+                                            : msg
+                                    ))
+                                }
+                                break
+
+                            case "error":
+                                throw new Error(event.payload.message)
+                        }
+                    } catch (parseError: any) {
+                        if (!parseError.message?.includes("JSON")) {
+                            throw parseError
+                        }
+                    }
+                }
             }
 
-            const applied = data?.applied ?? 0
-            const summary = applied > 0
-                ? `✅ Applied ${applied} edit(s) to the artifacts.`
-                : data?.message || "No edits were needed for this request."
-            setMessages(prev => prev.map(msg =>
-                msg.id === refinementMessageId
-                    ? { ...msg, content: summary }
-                    : msg
-            ))
-            if (applied > 0) {
-                toast({
-                    title: "Refinement applied",
-                    description: `${applied} edit(s) applied.`,
-                })
+            // Update artifacts in parent if we got results
+            if (finalArtifacts) {
+                onRefineComplete?.({ artifacts: finalArtifacts })
+                if (changelog.length > 0) {
+                    toast({
+                        title: "Refinement applied",
+                        description: `${changelog.length} change(s) made.`,
+                    })
+                }
             }
+
         } catch (error: any) {
             setMessages(prev => prev.map(msg =>
                 msg.id === refinementMessageId
@@ -377,6 +458,7 @@ export function ProjectChatPanel({
             setIsRefining(false)
         }
     }
+
 
     return (
         <div className="flex flex-col h-full bg-background relative z-40 w-full min-h-0">
