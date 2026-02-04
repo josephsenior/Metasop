@@ -34,7 +34,7 @@ export function ClarificationPanel({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="w-full max-w-2xl"
             >
-                <Card className="border-border/50 shadow-2xl bg-card/95 backdrop-blur-2xl overflow-hidden rounded-[2rem]">
+                <Card className="border-border/50 shadow-2xl bg-card/95 backdrop-blur-2xl overflow-hidden rounded-4xl">
                     <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-purple-500 to-cyan-500" />
 
                     <CardHeader className="text-center pt-8 pb-4">

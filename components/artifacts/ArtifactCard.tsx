@@ -86,7 +86,7 @@ export default function ArtifactCard({ artifact, children }: { artifact: any; ch
         </motion.div>
       </SheetTrigger>
 
-      <SheetContent side="right" className="sm:max-w-4xl w-[90vw] p-0 flex flex-col gap-0 overflow-y-auto">
+      <SheetContent side="right" className="dark sm:max-w-4xl w-[90vw] p-0 flex flex-col gap-0 overflow-y-auto bg-neutral-950 text-white border-l-border/20">
         <ArtifactHeader
           role={title}
           timestamp={timestamp}

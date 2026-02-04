@@ -54,6 +54,13 @@ ERROR HANDLING STANDARDS:
 - Never expose internal error details to clients in production
 - Implement circuit breakers for external service calls
 - Use exponential backoff with jitter for retries`,
+
+  creativity: `
+CREATIVITY & VARIANCE STANDARDS:
+- DO NOT copy examples verbatim. You MUST generate unique, project-specific values.
+- For UI Design: Use distinct color palettes (e.g., Violet/Teal, Emerald/Amber) based on the project vibe, NOT just Blue/Gray.
+- For User Stories: Tailor stories to the specific domain (e.g., "Patient" vs "User", "Policy" vs "Rule").
+- AVOID generic placeholders like "Lorem Ipsum" or standard defaults unless necessary.`,
 };
 
 // =============================================================================
@@ -62,7 +69,7 @@ ERROR HANDLING STANDARDS:
 
 export const FEW_SHOT_EXAMPLES = {
   userStory: `
-EXAMPLE USER STORY:
+EXAMPLE USER STORY (Product Manager):
 {
   "id": "US-1",
   "title": "User Registration",
@@ -78,11 +85,12 @@ EXAMPLE USER STORY:
     "User cannot access protected routes until email is verified"
   ],
   "estimated_complexity": "medium",
-  "user_value": "Enables personalized experience and data persistence across sessions"
+  "user_value": "Enables personalized experience and data persistence across sessions",
+  "dependencies": []
 }`,
 
   adr: `
-EXAMPLE ARCHITECTURAL DECISION RECORD:
+EXAMPLE ARCHITECTURAL DECISION (Architect):
 {
   "decision": "Use PostgreSQL as primary database over MongoDB",
   "status": "accepted",
@@ -90,33 +98,37 @@ EXAMPLE ARCHITECTURAL DECISION RECORD:
   "rationale": "Financial data requires transactional guarantees that only ACID-compliant databases provide reliably.",
   "tradeoffs": "Less flexible schema evolution requires migrations; horizontal scaling more complex than document stores",
   "consequences": "Need to implement proper migration strategy; may need read replicas for high-read workloads",
-  "alternatives": ["MongoDB (rejected: eventual consistency unsuitable for financial data)", "CockroachDB (considered: overkill for current scale)", "MySQL (rejected: weaker JSON support)"]
+  "alternatives": [
+    "MongoDB (rejected: eventual consistency unsuitable for financial data)",
+    "CockroachDB (considered: overkill for current scale)",
+    "MySQL (rejected: weaker JSON support)"
+  ]
 }`,
 
   api: `
-EXAMPLE API ENDPOINT:
+EXAMPLE API ENDPOINT (Architect):
 {
   "path": "/api/v1/users",
   "method": "POST",
+  "endpoint": "Create User",
   "description": "Create a new user account with email verification",
   "request_schema": {
-    "email": "string (required, valid email format)",
-    "password": "string (required, min 8 chars)",
-    "name": "string (optional, max 100 chars)"
+    "email": "string",
+    "password": "string",
+    "name": "string"
   },
   "response_schema": {
-    "id": "string (UUID)",
+    "id": "string",
     "email": "string",
-    "name": "string | null",
-    "createdAt": "string (ISO 8601)",
+    "createdAt": "string",
     "emailVerified": "boolean"
   },
   "auth_required": false,
-  "rate_limit": "10 req/min per IP"
+  "rate_limit": "10 req/min"
 }`,
 
   threatModel: `
-EXAMPLE STRIDE THREAT:
+EXAMPLE STRIDE THREAT (Security):
 {
   "threat": "SQL Injection via user input",
   "category": "Tampering",
@@ -131,72 +143,45 @@ EXAMPLE STRIDE THREAT:
 }`,
 
   testCase: `
-EXAMPLE TEST CASES (Note: Complex flow split into chained tests):
-
-TEST 1 - Registration submission:
+EXAMPLE TEST CASE (QA):
 {
   "id": "TC-001",
   "name": "User submits registration form",
   "type": "integration",
   "priority": "critical",
   "description": "Verifies registration API creates user record. Password hashed, email stored. Requires database accessible and email service configured.",
-  "expected_result": "201 response with user ID, email verified=false",
-  "depends_on": null
-}
-
-TEST 2 - Email verification sent (chained):
-{
-  "id": "TC-002",
-  "name": "Verification email sent after registration",
-  "type": "integration",
-  "priority": "critical",
-  "description": "After TC-001 passes and email service is configured, verifies that a verification email is sent within 30 seconds of registration completion.",
-  "expected_result": "Email queued and sent with valid verification token",
-  "depends_on": "TC-001"
-}
-
-KEY RULES:
-- Complex flows use depends_on to chain test cases
-- Put all test setup requirements and detailed steps in the description field`,
+  "expected_result": "201 response with user ID, email verified=false"
+}`,
 
   component: `
-EXAMPLE COMPONENT SPEC:
+EXAMPLE COMPONENT SPEC (UI Designer):
 {
   "name": "Button",
   "category": "atom",
-  "description": "Primary interactive element for user actions",
+  "description": "Primary interactive element for actions like 'Add to Cart' or 'Checkout'.",
   "props": [
-    { "name": "variant", "type": "'primary' | 'secondary' | 'ghost' | 'destructive'", "default": "primary", "description": "Visual style variant" },
-    { "name": "size", "type": "'sm' | 'md' | 'lg'", "default": "md", "description": "Button size" },
-    { "name": "disabled", "type": "boolean", "default": "false", "description": "Disables interaction" },
-    { "name": "loading", "type": "boolean", "default": "false", "description": "Shows loading spinner" },
-    { "name": "onClick", "type": "() => void", "required": true, "description": "Click handler" }
+    { "name": "variant", "type": "string", "default": "primary", "description": "Visual style: primary, secondary, ghost" },
+    { "name": "size", "type": "string", "default": "md", "description": "Size: sm, md, lg" },
+    { "name": "isLoading", "type": "boolean", "default": "false", "description": "Shows spinner when true" }
   ],
-  "states": ["default", "hover", "active", "focus", "disabled", "loading"],
+  "variants": ["primary", "secondary", "ghost", "danger"],
+  "sizes": ["sm", "md", "lg"],
+  "states": ["default", "hover", "active", "disabled", "loading"],
   "accessibility": {
     "role": "button",
     "aria_label": "Required if no visible text",
-    "keyboard": "Enter/Space to activate, Tab to focus"
+    "keyboard": "Enter/Space to activate"
   }
 }`,
 
   cicdPipeline: `
-EXAMPLE CI/CD STAGE:
+EXAMPLE PIPELINE STAGE (DevOps):
 {
-  "name": "build-and-test",
-  "trigger": "push to main or pull_request",
-  "steps": [
-    { "name": "checkout", "action": "actions/checkout@v4" },
-    { "name": "setup-node", "action": "actions/setup-node@v4", "with": { "node-version": "20", "cache": "pnpm" } },
-    { "name": "install", "run": "pnpm install --frozen-lockfile" },
-    { "name": "lint", "run": "pnpm lint" },
-    { "name": "typecheck", "run": "pnpm typecheck" },
-    { "name": "test", "run": "pnpm test:ci", "env": { "CI": "true" } },
-    { "name": "build", "run": "pnpm build" }
-  ],
-  "artifacts": ["coverage/", "dist/"],
-  "timeout": "15 minutes"
-}`,
+  "name": "Build",
+  "steps": ["Checkout Code", "Install Dependencies", "Lint", "Typecheck", "Build Project"],
+  "goal": "Verify code quality and compile artifacts",
+  "status": "active"
+}`
 };
 
 // =============================================================================
@@ -302,7 +287,7 @@ export const QUALITY_CRITERIA = {
  */
 export function getDomainContext(projectDescription: string): string {
   const lower = projectDescription.toLowerCase();
-  
+
   if (lower.includes("payment") || lower.includes("banking") || lower.includes("fintech") || lower.includes("financial")) {
     return DOMAIN_CONTEXTS.fintech;
   }
@@ -315,7 +300,7 @@ export function getDomainContext(projectDescription: string): string {
   if (lower.includes("saas") || lower.includes("subscription") || lower.includes("multi-tenant")) {
     return DOMAIN_CONTEXTS.saas;
   }
-  
+
   return ""; // No specific domain context
 }
 

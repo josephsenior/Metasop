@@ -42,7 +42,7 @@ export class GeminiLLMProvider implements LLMProvider {
     const isPro = model.toLowerCase().includes('pro');
     const isFlash2 = model.toLowerCase().includes('gemini-2.0-flash');
     const isNativeAudio = model.toLowerCase().includes('native-audio');
-    
+
     let rates = pricing['gemini-3-flash-preview'];
     if (isPro) rates = pricing['gemini-3-pro-preview'];
     else if (isFlash2) rates = pricing['gemini-2.0-flash'];
@@ -87,7 +87,7 @@ ${prompt}`
           },
         ],
         generationConfig: {
-          temperature: options?.temperature ?? 0.1,
+          temperature: options?.temperature ?? 0.7,
           maxOutputTokens: options?.maxTokens ?? 65000,
           ...(options?.reasoning ? { thinkingConfig: { includeThoughts: true } } : {}),
         },
@@ -142,7 +142,7 @@ ${prompt}`
           try {
             const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
             const debugDir = getSessionDebugDir();
-            
+
             if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
 
             const debugPayload = {
@@ -166,11 +166,11 @@ ${prompt}`
             };
 
             fs.writeFileSync(
-              path.join(debugDir, `${agentRole}_llm_response.json`), 
+              path.join(debugDir, `${agentRole}_llm_response.json`),
               JSON.stringify(debugPayload, null, 2)
             );
-            } catch {
-              // Failed to dump debug artifacts - continue silently
+          } catch {
+            // Failed to dump debug artifacts - continue silently
           }
         }
 
@@ -216,7 +216,7 @@ ${prompt}`
           },
         ],
         generationConfig: {
-          temperature: options?.temperature ?? 0.1,
+          temperature: options?.temperature ?? 0.7,
           maxOutputTokens: options?.maxTokens ?? 65000,
           ...(options?.reasoning ? { thinkingConfig: { includeThoughts: true } } : {}),
         },
@@ -230,7 +230,7 @@ ${prompt}`
       // Use streamGenerateContent endpoint with SSE format
       // Note: Gemini uses ?alt=sse for Server-Sent Events format
       const apiUrl = `${this.baseUrl}/models/${model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
-      
+
       const response = await axios.post(apiUrl, requestBody, {
         headers: {
           "Content-Type": "application/json",
@@ -245,17 +245,17 @@ ${prompt}`
       return new Promise((resolve, reject) => {
         response.data.on("data", (chunk: Buffer) => {
           buffer += chunk.toString();
-          
+
           // Process complete JSON objects from the stream
           const lines = buffer.split("\n");
           buffer = lines.pop() || ""; // Keep incomplete line in buffer
 
           for (const line of lines) {
             if (!line.trim()) continue;
-            
+
             // Skip SSE event type lines (e.g., "event: ...")
             if (line.startsWith("event:") || line === "[DONE]") continue;
-            
+
             // Gemini streaming format: each line is a JSON object prefixed with "data: "
             let jsonStr = "";
             if (line.startsWith("data: ")) {
@@ -271,15 +271,15 @@ ${prompt}`
 
             try {
               const data = JSON.parse(jsonStr);
-              
+
               // Extract text from candidates
               const candidates = data.candidates || [];
               for (const candidate of candidates) {
                 // Check if this is a finish reason (stream ended)
                 if (candidate.finishReason && candidate.finishReason !== "STOP") {
-                  logger.warn("Gemini stream finished with reason", { 
+                  logger.warn("Gemini stream finished with reason", {
                     finishReason: candidate.finishReason,
-                    finishMessage: candidate.finishMessage 
+                    finishMessage: candidate.finishMessage
                   });
                 }
 
@@ -327,7 +327,7 @@ ${prompt}`
             const lines = buffer.split("\n").filter(l => l.trim());
             for (const line of lines) {
               if (!line.trim() || line === "[DONE]") continue;
-              
+
               let jsonStr = "";
               if (line.startsWith("data: ")) {
                 jsonStr = line.slice(6).trim();
@@ -367,8 +367,8 @@ ${prompt}`
           }
 
           const latency = Date.now() - startTime;
-          logger.info("Gemini streaming generation completed", { 
-            model, 
+          logger.info("Gemini streaming generation completed", {
+            model,
             latency,
             finalLength: fullText.length,
             chunksProcessed: true
@@ -395,7 +395,7 @@ ${prompt}`
   async transcribe(audioBase64: string, mimeType: string = "audio/webm"): Promise<string> {
     const startTime = Date.now();
     // Using Gemini 2.0 Flash for best transcription performance
-    const model = "gemini-2.0-flash"; 
+    const model = "gemini-2.0-flash";
 
     try {
       const requestBody = {
@@ -444,10 +444,10 @@ ${prompt}`
 
       if (data.usageMetadata) {
         const cost = this.calculateCost(model, data.usageMetadata);
-        logger.info("Transcription completed", { 
-          latency: Date.now() - startTime, 
+        logger.info("Transcription completed", {
+          latency: Date.now() - startTime,
           tokens: data.usageMetadata.totalTokenCount,
-          cost 
+          cost
         });
       }
 
@@ -575,7 +575,7 @@ ${prompt}`
           },
         ],
         generationConfig: {
-          temperature: isGemini3 ? 0.1 : (options?.temperature ?? 0.7),
+          temperature: options?.temperature ?? 0.7,
           maxOutputTokens: options?.maxTokens ?? 65000,
           responseMimeType: "application/json",
           responseSchema: geminiSchema,
@@ -606,31 +606,31 @@ ${prompt}`
 
       let data: any;
       const apiUrl = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
-      
-      try {
-          const response = await axios.post(apiUrl, requestBody, {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            signal: controller.signal,
-            timeout: timeoutMs,
-          });
 
-          data = response.data;
-        } catch (axiosErr: any) {
+      try {
+        const response = await axios.post(apiUrl, requestBody, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          timeout: timeoutMs,
+        });
+
+        data = response.data;
+      } catch (axiosErr: any) {
         if (axios.isCancel(axiosErr)) {
           throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
         }
-        
+
         if (axiosErr.response) {
           const errorData = axiosErr.response.data;
-          
+
           // DEBUG: Dump error response to session folder
           if (options?.role) {
             try {
               const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
               const debugDir = getSessionDebugDir();
-              
+
               if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
 
               const errorPayload = {
@@ -648,7 +648,7 @@ ${prompt}`
               };
 
               fs.writeFileSync(
-                path.join(debugDir, `${agentRole}_API_ERROR.json`), 
+                path.join(debugDir, `${agentRole}_API_ERROR.json`),
                 JSON.stringify(errorPayload, null, 2)
               );
               console.error(`\n[DEBUG] ${options.role} API ERROR captured to session folder`);
@@ -660,17 +660,17 @@ ${prompt}`
           throw new Error(`Gemini API error (${axiosErr.response.status}): ${errorData.error?.message || axiosErr.response.statusText}`);
         }
 
-          logger.error("Low-level Axios failure", { 
-            message: axiosErr.message, 
-            name: axiosErr.name,
-            code: axiosErr.code,
-            url: apiUrl.replace(/key=.*$/, "key=REDACTED"),
-            stack: axiosErr.stack
-          });
-          throw axiosErr;
-        } finally {
-          clearTimeout(timeoutId);
-        }
+        logger.error("Low-level Axios failure", {
+          message: axiosErr.message,
+          name: axiosErr.name,
+          code: axiosErr.code,
+          url: apiUrl.replace(/key=.*$/, "key=REDACTED"),
+          stack: axiosErr.stack
+        });
+        throw axiosErr;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       // Extract JSON content from response
       const parts = data.candidates?.[0]?.content?.parts || [];
@@ -684,7 +684,7 @@ ${prompt}`
 
       if (!jsonText && data) {
         // Log additional info if text is missing but data exists
-        logger.warn(`[Gemini] ${options?.role || 'Agent'} returned data but no text part`, { 
+        logger.warn(`[Gemini] ${options?.role || 'Agent'} returned data but no text part`, {
           candidateCount: data.candidates?.length,
           finishReason: data.candidates?.[0]?.finishReason
         });
@@ -728,9 +728,9 @@ ${prompt}`
           try {
             const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
             const debugDir = getSessionDebugDir();
-            
+
             if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-            
+
             const debugPayload = {
               agent: options.role,
               model: model,
@@ -745,7 +745,7 @@ ${prompt}`
               truncatedResponse: jsonText,
               responseLength: jsonText.length
             };
-            
+
             const debugFilePath = path.join(debugDir, `${agentRole}_MAX_TOKENS_truncated.json`);
             fs.writeFileSync(debugFilePath, JSON.stringify(debugPayload, null, 2));
             logger.error(`[DEBUG] MAX_TOKENS TRUNCATION DUMPED TO: ${debugFilePath}`);
@@ -853,9 +853,9 @@ ${prompt}`
             try {
               const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
               const debugDir = getSessionDebugDir();
-              
+
               if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-              
+
               const debugFilePath = path.join(debugDir, `${agentRole}_malformed_response.json`);
               fs.writeFileSync(debugFilePath, jsonText);
               logger.error(`[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
@@ -904,10 +904,10 @@ ${prompt}`
     // For Gemini, we use a combined approach:
     // 1. Start a heartbeat to keep the connection alive and show progress
     // 2. Use the standard structured generation which is more reliable for JSON
-    
+
     let progressInterval: NodeJS.Timeout | undefined;
     let progressCount = 0;
-    
+
     if (onProgress) {
       try {
         onProgress({
@@ -933,7 +933,7 @@ ${prompt}`
           "Reviewing generated plan..."
         ];
         const message = messages[Math.min(progressCount - 1, messages.length - 1)];
-        
+
         try {
           onProgress({
             type: "agent_progress",
@@ -1020,7 +1020,7 @@ ${prompt}`
               }
             } catch {
               logger.warn(`Failed to parse dynamic field at ${path} even with heuristics`, { value });
-              obj[key] = { value: value }; 
+              obj[key] = { value: value };
             }
           } else {
             logger.warn(`Failed to parse dynamic field at ${path}`, { value });

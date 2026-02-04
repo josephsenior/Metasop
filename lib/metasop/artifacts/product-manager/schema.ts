@@ -2,6 +2,7 @@
 export const pmSchema = {
     type: "object",
     required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
+    propertyOrdering: ["summary", "description", "gaps", "opportunities", "user_stories", "acceptance_criteria", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
     properties: {
         summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the product. No conversational filler." },
         description: { type: "string", maxLength: 500, description: "Detailed product vision, target audience, and value proposition." },
@@ -33,8 +34,7 @@ export const pmSchema = {
         },
         user_stories: {
             type: "array",
-            minItems: 1,
-            description: "Array of INVEST-compliant user stories. At least one required. Aim for 5-10 well-defined stories for complex projects, fewer for simple ones.",
+            description: "Array of INVEST-compliant user stories.",
             items: {
                 type: "object",
                 required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
@@ -97,8 +97,7 @@ export const pmSchema = {
         },
         acceptance_criteria: {
             type: "array",
-            minItems: 1,
-            description: "Array of acceptance criteria. At least one required.",
+            description: "Array of acceptance criteria.",
             items: {
                 type: "object",
                 required: ["criteria"],

@@ -24,16 +24,16 @@ export interface UIDesignerBackendArtifact {
             warning?: string;
             surface?: string;
         };
-        spacing: Record<string, string>;
+        spacing: Record<"xs" | "sm" | "md" | "lg" | "xl" | "2xl", string>;
         typography: {
             fontFamily: string;
             headingFont?: string;
-            fontSize: Record<string, string>;
-            fontWeight?: Record<string, string>;
+            fontSize: Record<"xs" | "sm" | "base" | "lg" | "xl" | "2xl", string>;
+            fontWeight: Record<"light" | "normal" | "medium" | "semibold" | "bold", string>;
             lineHeight?: Record<string, string>;
         };
-        borderRadius?: Record<string, string>;
-        shadows?: Record<string, string>;
+        borderRadius: Record<"none" | "sm" | "md" | "lg" | "full", string>;
+        shadows: Record<"sm" | "md" | "lg" | "inner", string>;
     };
     ui_patterns: string[];
     component_specs: Array<{

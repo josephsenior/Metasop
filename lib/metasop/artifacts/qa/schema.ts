@@ -1,6 +1,7 @@
 export const qaSchema = {
     type: "object",
     required: ["ok", "test_strategy", "test_cases", "security_plan", "manual_verification_steps", "risk_analysis", "summary", "description", "coverage", "performance_metrics"],
+    propertyOrdering: ["ok", "summary", "description", "test_strategy", "test_cases", "coverage", "risk_analysis", "security_plan", "manual_verification_steps", "performance_metrics", "accessibility_plan", "manual_uat_plan"],
     properties: {
         ok: {
             type: "boolean",
@@ -21,8 +22,7 @@ export const qaSchema = {
         },
         test_cases: {
             type: "array",
-            minItems: 1,
-            description: "Core test cases. At least one required. Keep it focused and minimal.",
+            description: "Core test cases. Keep it focused and minimal.",
             items: {
                 type: "object",
                 required: ["id", "name", "expected_result"],

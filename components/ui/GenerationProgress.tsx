@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { CheckCircle2, Loader2, Circle, AlertCircle, Clock } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface GenerationProgressProps {
@@ -34,7 +34,8 @@ const agentLabels: Record<string, string> = {
 
 export function GenerationProgress({ steps }: GenerationProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [startTime] = useState(Date.now())
+  const [startTime, setStartTime] = useState(Date.now())
+  const prevStepsLengthRef = useRef(0)
 
   // Create a map of steps by step_id
   const stepsMap = new Map(steps.map((step) => [step.step_id, step]))
@@ -55,6 +56,16 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
 
   // Find current step
   const currentStep = orderedSteps.find((s) => s.status === "running")
+
+  // Reset timer when a new generation starts (steps go from 0 to >0)
+  useEffect(() => {
+    if (prevStepsLengthRef.current === 0 && steps.length > 0) {
+      setStartTime(Date.now())
+      setElapsedTime(0)
+    }
+    prevStepsLengthRef.current = steps.length
+  }, [steps.length])
+
 
   // Update elapsed time - continue updating even when no step is running
   useEffect(() => {

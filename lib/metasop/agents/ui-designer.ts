@@ -136,29 +136,29 @@ export async function uiDesignerAgent(
     let content: UIDesignerBackendArtifact;
 
     const pmArtifact = context.previous_artifacts?.pm_spec?.content as any;
-      const archArtifact = context.previous_artifacts?.arch_design?.content as any;
-      const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
+    const archArtifact = context.previous_artifacts?.arch_design?.content as any;
+    const projectTitle = pmArtifact?.summary?.substring(0, 50) || "Project";
 
-      const domainContext = getDomainContext(user_request);
-      const qualityCheck = getQualityCheckPrompt("ui");
+    const domainContext = getDomainContext(user_request);
+    const qualityCheck = getQualityCheckPrompt("ui");
 
-      const projectContext = pmArtifact
-        ? `
+    const projectContext = pmArtifact
+      ? `
 Project Context:
 - Summary: ${pmArtifact.summary}
 - Key User Stories: ${pmArtifact.user_stories?.slice(0, 4).map((s: any) => s.title).join(", ") || "N/A"}
 - Target Users: ${pmArtifact.stakeholders?.find((s: any) => s.role?.toLowerCase().includes("user"))?.interest || "End users"}`
-        : `User Request: ${user_request}`;
+      : `User Request: ${user_request}`;
 
-      const techContext = archArtifact
-        ? `
+    const techContext = archArtifact
+      ? `
 Technical Context:
 - Frontend Stack: ${archArtifact.technology_stack?.frontend?.join(", ") || "React/Next.js"}
 - Key APIs: ${archArtifact.apis?.slice(0, 4).map((a: any) => a.path).join(", ") || "N/A"}
 - Database Entities: ${archArtifact.database_schema?.tables?.slice(0, 5).map((t: any) => t.name).join(", ") || "N/A"}`
-        : "";
+      : "";
 
-      const uiPrompt = `You are a Principal UI/UX Designer with 12+ years of experience in design systems, accessibility, and modern web interfaces. Create a design system and UI architecture for:
+    const uiPrompt = `You are a Principal UI/UX Designer with 12+ years of experience in design systems, accessibility, and modern web interfaces. Create a design system and UI architecture for:
 
 "${projectTitle}"
 
@@ -188,74 +188,74 @@ ${qualityCheck}
 
 Respond with ONLY the structured JSON object matching the schema. No explanations or markdown.`;
 
-      let llmUIDesign: any = null;
+    let llmUIDesign: any = null;
 
-      try {
-        llmUIDesign = await generateStreamingStructuredWithLLM<any>(
-          uiPrompt,
-          uiSchema,
-          (partialEvent) => {
-            if (onProgress) {
-              onProgress(partialEvent);
-            }
-          },
-          {
-            reasoning: context.options?.reasoning ?? false,
-            temperature: getAgentTemperature("ui_design"),
-            maxTokens: getAgentMaxTokens("ui_design"),
-            cacheId: context.cacheId,
-            role: "UI Designer",
+    try {
+      llmUIDesign = await generateStreamingStructuredWithLLM<any>(
+        uiPrompt,
+        uiSchema,
+        (partialEvent) => {
+          if (onProgress) {
+            onProgress(partialEvent);
           }
-        );
-      } catch (error: any) {
-        logger.error("UI Designer agent LLM call failed", { error: error.message });
-        throw error;
-      }
-
-      if (!llmUIDesign) {
-        throw new Error("UI Designer agent failed: No structured data received from LLM");
-      }
-
-      // Sanitize color values to prevent malformed hex codes
-      if (llmUIDesign.design_tokens?.colors) {
-        llmUIDesign.design_tokens.colors = sanitizeDesignTokensColors(llmUIDesign.design_tokens.colors);
-      }
-      // Sanitize spacing/typography so values are only raw CSS (no INVALID/FIX/REQUIRED text)
-      sanitizeDesignTokensSpacingAndTypography(llmUIDesign.design_tokens);
-
-      // Fallback: if typography missing (e.g. MAX_TOKENS truncation), inject minimal required fields to pass validation
-      if (llmUIDesign.design_tokens && !llmUIDesign.design_tokens.typography) {
-        llmUIDesign.design_tokens.typography = {
-          fontFamily: "Inter",
-          fontSize: { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem", xl: "1.25rem", "2xl": "1.5rem" },
-          fontWeight: { light: "300", normal: "400", medium: "500", semibold: "600", bold: "700" },
-        };
-      } else if (llmUIDesign.design_tokens?.typography) {
-        const t = llmUIDesign.design_tokens.typography as Record<string, unknown>;
-        if (!t.fontFamily) t.fontFamily = "Inter";
-        if (!t.fontSize || typeof t.fontSize !== "object") {
-          t.fontSize = { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem" };
+        },
+        {
+          reasoning: context.options?.reasoning ?? false,
+          temperature: getAgentTemperature("ui_design"),
+          maxTokens: getAgentMaxTokens("ui_design"),
+          cacheId: context.cacheId,
+          role: "UI Designer",
         }
-      }
+      );
+    } catch (error: any) {
+      logger.error("UI Designer agent LLM call failed", { error: error.message });
+      throw error;
+    }
 
-      content = {
-        summary: llmUIDesign.summary,
-        description: llmUIDesign.description,
-        schema_version: "0.8",
-        design_tokens: llmUIDesign.design_tokens,
-        atomic_structure: llmUIDesign.atomic_structure,
-        accessibility: llmUIDesign.accessibility,
-        component_blueprint: llmUIDesign.component_blueprint,
-        layout_strategy: llmUIDesign.layout_strategy,
-        visual_philosophy: llmUIDesign.visual_philosophy,
-        information_architecture: llmUIDesign.information_architecture,
-        responsive_strategy: llmUIDesign.responsive_strategy,
-        ui_patterns: llmUIDesign.ui_patterns,
-        component_hierarchy: llmUIDesign.component_hierarchy,
-        website_layout: llmUIDesign.website_layout,
-        component_specs: llmUIDesign.component_specs,
-        layout_breakpoints: llmUIDesign.layout_breakpoints
+    if (!llmUIDesign) {
+      throw new Error("UI Designer agent failed: No structured data received from LLM");
+    }
+
+    // Sanitize color values to prevent malformed hex codes
+    if (llmUIDesign.design_tokens?.colors) {
+      llmUIDesign.design_tokens.colors = sanitizeDesignTokensColors(llmUIDesign.design_tokens.colors);
+    }
+    // Sanitize spacing/typography so values are only raw CSS (no INVALID/FIX/REQUIRED text)
+    sanitizeDesignTokensSpacingAndTypography(llmUIDesign.design_tokens);
+
+    // Fallback: if typography missing (e.g. MAX_TOKENS truncation), inject minimal required fields to pass validation
+    if (llmUIDesign.design_tokens && !llmUIDesign.design_tokens.typography) {
+      llmUIDesign.design_tokens.typography = {
+        fontFamily: "Inter",
+        fontSize: { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem", xl: "1.25rem", "2xl": "1.5rem" },
+        fontWeight: { light: "300", normal: "400", medium: "500", semibold: "600", bold: "700" },
       };
+    } else if (llmUIDesign.design_tokens?.typography) {
+      const t = llmUIDesign.design_tokens.typography as Record<string, unknown>;
+      if (!t.fontFamily) t.fontFamily = "Inter";
+      if (!t.fontSize || typeof t.fontSize !== "object") {
+        t.fontSize = { xs: "0.75rem", sm: "0.875rem", base: "1rem", lg: "1.125rem" };
+      }
+    }
+
+    content = {
+      summary: llmUIDesign.summary,
+      description: llmUIDesign.description,
+      schema_version: "0.8",
+      design_tokens: llmUIDesign.design_tokens,
+      atomic_structure: llmUIDesign.atomic_structure,
+      accessibility: llmUIDesign.accessibility,
+      component_blueprint: llmUIDesign.component_blueprint,
+      layout_strategy: llmUIDesign.layout_strategy,
+      visual_philosophy: llmUIDesign.visual_philosophy,
+      information_architecture: llmUIDesign.information_architecture,
+      responsive_strategy: llmUIDesign.responsive_strategy,
+      ui_patterns: llmUIDesign.ui_patterns,
+      component_hierarchy: llmUIDesign.component_hierarchy,
+      website_layout: llmUIDesign.website_layout,
+      component_specs: llmUIDesign.component_specs,
+      layout_breakpoints: llmUIDesign.layout_breakpoints
+    };
 
     logger.info("UI Designer agent completed");
 

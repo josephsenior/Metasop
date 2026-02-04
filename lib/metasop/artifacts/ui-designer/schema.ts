@@ -2,6 +2,7 @@
 export const uiDesignerSchema = {
     type: "object",
     required: ["component_hierarchy", "design_tokens", "summary", "description", "ui_patterns", "component_specs", "layout_breakpoints", "accessibility", "atomic_structure", "website_layout"],
+    propertyOrdering: ["summary", "description", "website_layout", "accessibility", "ui_patterns", "layout_breakpoints", "component_specs", "atomic_structure", "design_tokens", "component_hierarchy"],
     properties: {
         summary: { type: "string", maxLength: 300, description: "A technical, 1-2 sentence summary of the UI strategy and design system approach. No conversational filler." },
         description: { type: "string", maxLength: 600, description: "Detailed visual design philosophy, brand alignment, and design principles." },
@@ -16,7 +17,7 @@ export const uiDesignerSchema = {
                         type: "object",
                         required: ["name"],
                         properties: {
-                            name: { type: "string", maxLength: 40, description: "Component name." },
+                            name: { type: "string", maxLength: 40, description: "Component name (e.g., 'Button')." },
                             props: {
                                 type: "array",
                                 items: { type: "string", maxLength: 30 },
@@ -36,7 +37,7 @@ export const uiDesignerSchema = {
                                             items: {
                                                 type: "object",
                                                 properties: {
-                                                    name: { type: "string", maxLength: 20 },
+                                                    name: { type: "string", maxLength: 20, description: "Nested child component name." },
                                                 }
                                             },
                                         },
@@ -73,71 +74,76 @@ export const uiDesignerSchema = {
                 spacing: {
                     type: "object",
                     description: "Spacing scale. CSS length per key, e.g. 0.25rem.",
+                    required: ["xs", "sm", "md", "lg", "xl", "2xl"],
                     properties: {
-                        xs: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        md: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        xl: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        "2xl": { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        xs: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Extra small spacing (e.g., '0.25rem')." },
+                        sm: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Small spacing (e.g., '0.5rem')." },
+                        md: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Medium spacing (e.g., '1rem')." },
+                        lg: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Large spacing (e.g., '1.5rem')." },
+                        xl: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Extra large spacing (e.g., '2rem')." },
+                        "2xl": { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "2X large spacing (e.g., '3rem')." },
                     },
                 },
                 typography: {
                     type: "object",
                     required: ["fontFamily", "fontSize"],
-                    description: "Typography. fontFamily and fontSize are mandatory. Font size: CSS length per key, e.g. 0.875rem.",
+                    description: "Typography settings.",
                     properties: {
                         fontFamily: { type: "string", maxLength: 100, description: "Primary font family, e.g. Inter." },
                         headingFont: { type: "string", maxLength: 100, description: "Heading font family." },
                         fontSize: {
                             type: "object",
-                            description: "Font size scale. CSS length per key, e.g. 0.875rem. Include xs, sm, base, lg.",
+                            description: "Font size scale. CSS length per key, e.g. 0.875rem.",
+                            required: ["xs", "sm", "base", "lg", "xl", "2xl"],
                             properties: {
-                                xs: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                                sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                                base: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                                lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                                xl: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                                "2xl": { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                                xs: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Extra small font size (e.g., '0.75rem')." },
+                                sm: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Small font size (e.g., '0.875rem')." },
+                                base: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Base font size (e.g., '1rem')." },
+                                lg: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Large font size (e.g., '1.125rem')." },
+                                xl: { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "Extra large font size (e.g., '1.25rem')." },
+                                "2xl": { type: "string", maxLength: 12, pattern: "^[0-9.]+[a-z%]+$", description: "2X large font size (e.g., '1.5rem')." },
                             },
                         },
                         fontWeight: {
                             type: "object",
                             description: "Font weights (e.g., '400').",
+                            required: ["light", "normal", "medium", "semibold", "bold"],
                             properties: {
-                                light: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
-                                normal: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
-                                medium: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
-                                semibold: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
-                                bold: { type: "string", maxLength: 10, pattern: "^[0-9]+$" },
+                                light: { type: "string", maxLength: 10, pattern: "^[0-9]+$", description: "Light font weight (e.g. '300')." },
+                                normal: { type: "string", maxLength: 10, pattern: "^[0-9]+$", description: "Normal font weight (e.g. '400')." },
+                                medium: { type: "string", maxLength: 10, pattern: "^[0-9]+$", description: "Medium font weight (e.g. '500')." },
+                                semibold: { type: "string", maxLength: 10, pattern: "^[0-9]+$", description: "Semibold font weight (e.g. '600')." },
+                                bold: { type: "string", maxLength: 10, pattern: "^[0-9]+$", description: "Bold font weight (e.g. '700')." },
                             }
                         }
                     },
                 },
                 borderRadius: {
                     type: "object",
+                    required: ["none", "sm", "md", "lg", "full"],
                     properties: {
-                        none: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        sm: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        md: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        lg: { type: "string", maxLength: 10, pattern: "^[0-9.]*(rem|px|em|%)?$" },
-                        full: { type: "string", maxLength: 20, pattern: "^[0-9.]*(rem|px|em|%)?$" },
+                        none: { type: "string", maxLength: 10, pattern: "^[0-9.]+[a-z%]+$", description: "No border radius (e.g., '0')." },
+                        sm: { type: "string", maxLength: 10, pattern: "^[0-9.]+[a-z%]+$", description: "Small border radius (e.g., '0.125rem')." },
+                        md: { type: "string", maxLength: 10, pattern: "^[0-9.]+[a-z%]+$", description: "Medium border radius (e.g., '0.375rem')." },
+                        lg: { type: "string", maxLength: 10, pattern: "^[0-9.]+[a-z%]+$", description: "Large border radius (e.g., '0.5rem')." },
+                        full: { type: "string", maxLength: 20, pattern: "^[0-9.]+[a-z%]+$", description: "Full boolean radius (e.g., '9999px')." },
                     }
                 },
                 shadows: {
                     type: "object",
+                    required: ["sm", "md", "lg", "inner"],
                     properties: {
-                        sm: { type: "string", maxLength: 100 },
-                        md: { type: "string", maxLength: 100 },
-                        lg: { type: "string", maxLength: 150 },
-                        inner: { type: "string", maxLength: 100 },
+                        sm: { type: "string", maxLength: 100, description: "Small shadow CSS value." },
+                        md: { type: "string", maxLength: 100, description: "Medium shadow CSS value." },
+                        lg: { type: "string", maxLength: 150, description: "Large shadow CSS value." },
+                        inner: { type: "string", maxLength: 100, description: "Inner shadow CSS value." },
                     }
                 }
             },
         },
         ui_patterns: {
             type: "array",
-            items: { type: "string", maxLength: 100 },
+            items: { type: "string", maxLength: 100, description: "UI design pattern name." },
         },
         component_specs: {
             type: "array",
@@ -191,13 +197,13 @@ export const uiDesignerSchema = {
         accessibility: {
             type: "object",
             properties: {
-                standard: { type: "string", maxLength: 50 },
-                guidelines: { type: "array", items: { type: "string", maxLength: 200 } },
-                checklist: { type: "array", items: { type: "string", maxLength: 200 } },
+                standard: { type: "string", maxLength: 50, description: "Accessibility standard used (e.g., 'WCAG 2.1')." },
+                guidelines: { type: "array", items: { type: "string", maxLength: 200 }, description: "List of key accessibility guidelines." },
+                checklist: { type: "array", items: { type: "string", maxLength: 200 }, description: "Checklist of accessibility tasks." },
                 aria_labels: { type: "boolean", description: "Use ARIA labels" },
                 keyboard_navigation: { type: "boolean", description: "Support keyboard navigation" },
-                screen_reader_support: { type: "boolean", description: "Screen reader support" },
-                wcag_level: { type: "string", enum: ["A", "AA", "AAA"] },
+                screen_reader_support: { type: "boolean", description: "Support screen readers" },
+                wcag_level: { type: "string", enum: ["A", "AA", "AAA"], description: "WCAG compliance level target." },
                 focus_indicators: { type: "boolean", description: "Visible focus indicators" },
             },
             description: "Accessibility requirements",
@@ -206,9 +212,9 @@ export const uiDesignerSchema = {
             type: "object",
             required: ["atoms", "molecules", "organisms"],
             properties: {
-                atoms: { type: "array", items: { type: "string", maxLength: 50 } },
-                molecules: { type: "array", items: { type: "string", maxLength: 50 } },
-                organisms: { type: "array", items: { type: "string", maxLength: 50 } },
+                atoms: { type: "array", items: { type: "string", maxLength: 50 }, description: "Basic building blocks (e.g. Buttons, Inputs)." },
+                molecules: { type: "array", items: { type: "string", maxLength: 50 }, description: "Groups of atoms (e.g. SearchBar)." },
+                organisms: { type: "array", items: { type: "string", maxLength: 50 }, description: "Complex UI components (e.g. Header)." },
             }
         },
         website_layout: {
@@ -217,7 +223,6 @@ export const uiDesignerSchema = {
             properties: {
                 pages: {
                     type: "array",
-                    minItems: 1,
                     items: {
                         type: "object",
                         required: ["name", "route", "sections"],
@@ -231,7 +236,7 @@ export const uiDesignerSchema = {
                                     required: ["name"],
                                     properties: {
                                         name: { type: "string", maxLength: 50, description: "Section name (e.g., 'Hero')." },
-                                        components: { type: "array", items: { type: "string", maxLength: 50 } },
+                                        components: { type: "array", items: { type: "string", maxLength: 50 }, description: "List of components in this section." },
                                     }
                                 }
                             }

@@ -37,8 +37,8 @@ export function Footer() {
   return (
     <footer className="border-t border-border/50 bg-secondary/30 relative overflow-hidden">
       {/* Subtle background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-t from-blue-500/5 via-transparent to-transparent pointer-events-none" />
-      
+      <div className="absolute inset-0 bg-linear-to-t from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-12">

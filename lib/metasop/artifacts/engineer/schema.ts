@@ -2,6 +2,7 @@
 export const engineerSchema = {
     type: "object",
     required: ["artifact_path", "file_structure", "implementation_plan", "implementation_plan_phases", "dependencies", "run_results", "summary", "description", "technical_decisions", "environment_variables", "technical_patterns", "state_management"],
+    propertyOrdering: ["summary", "description", "artifact_path", "run_results", "dependencies", "technical_decisions", "technical_patterns", "state_management", "environment_variables", "implementation_plan_phases", "file_structure", "implementation_plan"],
     properties: {
         summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the implementation strategy and architecture approach." },
         description: { type: "string", maxLength: 600, description: "Detailed implementation philosophy, technical roadmap, and development approach." },

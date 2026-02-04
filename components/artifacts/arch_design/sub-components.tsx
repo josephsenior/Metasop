@@ -52,7 +52,7 @@ export function PhilosophySection({ title, content, icon: Icon, color }: Philoso
         <motion.div variants={item} className="mb-4">
             <Card className="border-border/50 shadow-sm overflow-hidden group relative">
                 {/* Subtle Blueprint Grid Accent */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:15px_15px] group-hover:opacity-[0.05] transition-opacity" />
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-size-[15px_15px] group-hover:opacity-[0.05] transition-opacity" />
 
                 <div className={cn("px-4 py-3 border-b flex items-center justify-between bg-muted/20", styles.colors.borderMuted)}>
                     <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export function BlueprintHeader({ summary, title }: BlueprintHeaderProps) {
     return (
         <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 mb-8 group">
             {/* Blueprint Grid Overlay */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-[size:20px_20px]" />
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-size-[20px_20px]" />
 
             {/* Decorative Blueprint Corner (Top Right) */}
             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">

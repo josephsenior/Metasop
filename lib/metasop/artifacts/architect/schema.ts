@@ -2,6 +2,7 @@
 export const architectSchema = {
     type: "object",
     required: ["design_doc", "apis", "decisions", "technology_stack", "database_schema", "integration_points", "security_considerations", "scalability_approach", "summary", "description", "next_tasks"],
+    propertyOrdering: ["summary", "description", "technology_stack", "decisions", "apis", "security_considerations", "scalability_approach", "integration_points", "next_tasks", "database_schema", "design_doc"],
     properties: {
         design_doc: {
             type: "string",
@@ -10,10 +11,9 @@ export const architectSchema = {
         },
         summary: { type: "string", maxLength: 250, description: "Technical executive summary of the architecture." },
         description: { type: "string", maxLength: 500, description: "Brief overview of the system architecture." },
-    apis: {
+        apis: {
             type: "array",
-            minItems: 1,
-            description: "CRUD-focused API specification. At least one API required. Technical and concise.",
+            description: "CRUD-focused API specification. Technical and concise.",
             items: {
                 type: "object",
                 required: ["path", "method", "description", "request_schema", "response_schema"],
@@ -31,8 +31,7 @@ export const architectSchema = {
         },
         decisions: {
             type: "array",
-            minItems: 1,
-            description: "Core architectural decisions (ADRs). At least one required. Aim for 4-6 well-documented decisions with full context for complex projects.",
+            description: "Core architectural decisions (ADRs).",
             items: {
                 type: "object",
                 required: ["decision", "status", "reason", "tradeoffs", "consequences"],
@@ -57,7 +56,6 @@ export const architectSchema = {
             properties: {
                 tables: {
                     type: "array",
-                    minItems: 1,
                     items: {
                         type: "object",
                         required: ["name", "columns"],
@@ -66,7 +64,6 @@ export const architectSchema = {
                             description: { type: "string", maxLength: 100 },
                             columns: {
                                 type: "array",
-                                minItems: 1,
                                 items: {
                                     type: "object",
                                     required: ["name", "type"],
@@ -84,7 +81,7 @@ export const architectSchema = {
                                     type: "object",
                                     required: ["columns"],
                                     properties: {
-                                        columns: { type: "array", items: { type: "string", maxLength: 30 }, minItems: 1 },
+                                        columns: { type: "array", items: { type: "string", maxLength: 30 } },
                                         type: { type: "string", enum: ["btree", "hash", "gin", "gist"] },
                                         reason: { type: "string", maxLength: 100 },
                                     },

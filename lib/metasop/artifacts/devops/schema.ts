@@ -2,6 +2,7 @@
 export const devopsSchema = {
     type: "object",
     required: ["infrastructure", "cicd", "deployment", "monitoring", "containerization", "scaling", "disaster_recovery", "summary", "description"],
+    propertyOrdering: ["summary", "description", "cloud_provider", "infrastructure", "cicd", "deployment", "containerization", "scaling", "monitoring", "disaster_recovery", "infra_components"],
     properties: {
         cloud_provider: { type: "string", maxLength: 20 },
         infra_components: { type: "number" },
@@ -23,9 +24,7 @@ export const devopsSchema = {
                 },
                 services: {
                     type: "array",
-                    minItems: 1,
-                    description:
-                        "Infrastructure services (compute, DB, storage). At least one required.",
+                    description: "Infrastructure services (compute, DB, storage).",
                     items: {
                         type: "object",
                         required: ["name", "type"],
@@ -74,9 +73,7 @@ export const devopsSchema = {
             properties: {
                 pipeline_stages: {
                     type: "array",
-                    minItems: 1,
-                    description:
-                        "CI/CD pipeline stages. At least one required.",
+                    description: "CI/CD pipeline stages.",
                     items: {
                         type: "object",
                         required: ["name", "steps"],
@@ -101,10 +98,8 @@ export const devopsSchema = {
                 },
                 tools: {
                     type: "array",
-                    minItems: 1,
                     items: { type: "string", maxLength: 20 },
-                    description:
-                        "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.). At least one required.",
+                    description: "CI/CD tools (GitHub Actions, GitLab CI, Jenkins, etc.). At least one required.",
                 },
                 triggers: {
                     type: "array",
@@ -220,9 +215,7 @@ export const devopsSchema = {
                 },
                 environments: {
                     type: "array",
-                    minItems: 1,
-                    description:
-                        "Deployment environments (dev, staging, production). At least one required.",
+                    description: "Deployment environments (dev, staging, production).",
                     items: {
                         type: "object",
                         required: ["name", "configuration"],
@@ -258,13 +251,11 @@ export const devopsSchema = {
             properties: {
                 tools: {
                     type: "array",
-                    minItems: 1,
                     items: { type: "string", maxLength: 20 },
-                    description: "Monitoring tools. At least one required.",
+                    description: "Monitoring tools.",
                 },
                 metrics: {
                     type: "array",
-                    minItems: 1,
                     items: {
                         type: "object",
                         required: ["name", "threshold"],

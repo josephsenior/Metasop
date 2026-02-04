@@ -27,6 +27,7 @@ import { TemplateSidebar } from "@/components/dashboard/create/TemplateSidebar"
 import { GenerationFlow } from "@/components/dashboard/create/GenerationFlow"
 import { PromptInput } from "@/components/dashboard/create/PromptInput"
 import { ClarificationPanel } from "@/components/dashboard/create/ClarificationPanel"
+import { GenerationProgress } from "@/components/diagrams/generation-progress"
 
 export default function CreateDiagramPage() {
   const { isAuthenticated } = useAuth()
@@ -51,6 +52,7 @@ export default function CreateDiagramPage() {
     uploadedDocuments,
     generationSteps,
     stepSummaries,
+    agentThoughts,
     currentDiagram, setCurrentDiagram,
     handleGenerate,
     doStartGeneration,
@@ -166,6 +168,8 @@ export default function CreateDiagramPage() {
             {/* Main Canvas Area */}
             <ResizablePanel defaultSize={isLeftPanelOpen ? 60 : 80}>
               <div className="h-full flex flex-col relative overflow-hidden bg-background">
+                {/* Persistent Progress Bar */}
+                <GenerationProgress steps={generationSteps} />
 
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
                   <AnimatePresence mode="wait">
@@ -198,6 +202,7 @@ export default function CreateDiagramPage() {
                             </p>
                           </div>
                         )}
+
                       </motion.div>
                     ) : (
                       <motion.div

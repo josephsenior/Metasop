@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { CheckCircle2, Loader2, Circle, AlertCircle, Clock } from "lucide-react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface GenerationProgressProps {
@@ -34,7 +34,8 @@ const agentLabels: Record<string, string> = {
 
 export function GenerationProgress({ steps }: GenerationProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [startTime] = useState(Date.now())
+  const [startTime, setStartTime] = useState(Date.now())
+  const prevStepsLengthRef = useRef(0)
 
   // Memoize step mapping to ensure re-renders when steps change
   const { orderedSteps, progress } = useMemo(() => {
@@ -57,8 +58,8 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
     const runningSteps = ordered.filter((s) => s.status === "running").length
     const totalSteps = ordered.length
     // Progress = completed steps (100%) + running steps (50%) / total steps
-    const calculatedProgress = totalSteps > 0 
-      ? ((completedSteps + (runningSteps * 0.5)) / totalSteps) * 100 
+    const calculatedProgress = totalSteps > 0
+      ? ((completedSteps + (runningSteps * 0.5)) / totalSteps) * 100
       : 0
 
     return { orderedSteps: ordered, progress: calculatedProgress }
@@ -80,6 +81,15 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
 
   // Find current step
   const currentStep = orderedSteps.find((s) => s.status === "running")
+
+  // Reset timer when a new generation starts (steps go from 0 to >0)
+  useEffect(() => {
+    if (prevStepsLengthRef.current === 0 && steps.length > 0) {
+      setStartTime(Date.now())
+      setElapsedTime(0)
+    }
+    prevStepsLengthRef.current = steps.length
+  }, [steps.length])
 
   // Update elapsed time - continue updating even when no step is running
   useEffect(() => {
@@ -183,8 +193,8 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
             className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full absolute top-0 left-0"
             initial={{ width: "0%" }}
             animate={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
-            transition={{ 
-              duration: 0.3, 
+            transition={{
+              duration: 0.3,
               ease: "easeOut"
             }}
           />

@@ -12,6 +12,7 @@ export const securitySchema = {
         "vulnerability_management",
         "security_monitoring"
     ],
+    propertyOrdering: ["summary", "description", "security_architecture", "encryption", "security_controls", "compliance", "threat_model", "vulnerability_management", "security_monitoring"],
     properties: {
         summary: { type: "string", maxLength: 300, description: "A technical, 1-2 sentence summary of the security architecture. No conversational filler." },
         description: { type: "string", maxLength: 800, description: "Detailed security specifications, threat landscape, and mitigation strategy overview." },
@@ -142,8 +143,7 @@ export const securitySchema = {
         },
         threat_model: {
             type: "array",
-            minItems: 2,
-            description: "STRIDE-based threat model. At least 2 threats required. Scale depth to project complexity.",
+            description: "STRIDE-based threat model. Scale depth to project complexity.",
             items: {
                 type: "object",
                 required: ["threat", "mitigation", "severity"],
@@ -282,8 +282,7 @@ export const securitySchema = {
         },
         security_controls: {
             type: "array",
-            minItems: 3,
-            description: "At least 3 security controls are required.",
+            description: "security controls.",
             items: {
                 type: "object",
                 required: ["control", "implementation"],
