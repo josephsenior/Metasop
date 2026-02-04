@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createErrorResponse } from "@/lib/api/response";
 import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
-import { PPTXGenerator } from "@/lib/artifacts/pptx-generator";
+import { PPTXGeneratorScreenshot } from "@/lib/artifacts/pptx-generator-screenshot";
 
 export async function GET(
     request: NextRequest,
@@ -49,8 +49,8 @@ export async function GET(
             }
         }
 
-        // Generate PPTX
-        const generator = new PPTXGenerator(diagram);
+        // Generate PPTX with screenshot-based rendering
+        const generator = new PPTXGeneratorScreenshot(diagram);
         const buffer = await generator.generate();
 
         // Return as downloadable file
