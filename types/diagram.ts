@@ -25,6 +25,7 @@ export interface Diagram {
     metasop_steps?: any;
     is_guest?: boolean;
     update_error?: string;
+    chat_history?: any[];
   };
 }
 

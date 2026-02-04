@@ -2148,8 +2148,17 @@
         "timestamp": "2026-02-03T23:12:08.721Z"
       }
     },
-    "generated_at": "2026-02-03T23:12:08.777Z"
+    "generated_at": "2026-02-03T23:12:08.777Z",
+    "chat_history": [
+      {
+        "id": "1",
+        "role": "assistant",
+        "content": "Hello! I'm your Project Architect AI. I have full context of your architecture blueprints. You can ask me questions about the design, or tell me to refine specific parts of the project.",
+        "type": "system",
+        "timestamp": "2026-02-04T17:13:46.603Z"
+      }
+    ]
   },
   "createdAt": "2026-02-03T23:12:08.755Z",
-  "updatedAt": "2026-02-03T23:34:26.349Z"
+  "updatedAt": "2026-02-04T17:13:48.684Z"
 }

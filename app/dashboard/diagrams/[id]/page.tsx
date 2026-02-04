@@ -614,6 +614,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     diagramId={diagram.id}
                     artifacts={artifacts}
                     activeTab={activeArtifactTab}
+                    initialHistory={diagram.metadata?.chat_history}
                     onRefineComplete={handleRefineComplete}
                   />
                 </div>
@@ -637,6 +638,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       diagramId={diagram.id}
                       artifacts={artifacts}
                       activeTab={activeArtifactTab}
+                      initialHistory={diagram.metadata?.chat_history}
                       onRefineComplete={handleRefineComplete}
                     />
                   </SheetContent>

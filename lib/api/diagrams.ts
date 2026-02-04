@@ -35,7 +35,7 @@ export const diagramsApi = {
     const response = await apiClient.get<{
       status: string;
       data: { diagram: Diagram };
-    }>(`/diagrams/${id}`);
+    }>(`/diagrams/${id}?t=${Date.now()}`);
     return response.data.data.diagram;
   },
 

@@ -33,7 +33,7 @@ export const diagramDb = {
 
     async findByUserId(userId: string, options: { limit?: number; offset?: number; status?: string } = {}) {
         const { limit = 20, offset = 0, status } = options;
-        
+
         try {
             const [diagrams, total] = await Promise.all([
                 prisma.diagram.findMany({
@@ -107,7 +107,13 @@ export const diagramDb = {
                 ...(data.title ? { title: data.title } : {}),
                 ...(data.description ? { description: data.description } : {}),
                 ...(data.status ? { status: data.status } : { status: "completed" }),
-                ...(data.metadata ? { metadata: data.metadata as any } : {}),
+                // Deep merge metadata to prevent data loss (e.g. wiping artifacts when saving chat history)
+                ...(data.metadata ? {
+                    metadata: {
+                        ...(existing.metadata as Record<string, any> || {}),
+                        ...(data.metadata as Record<string, any> || {})
+                    }
+                } : {}),
             },
         });
         return mapToDiagram(p);

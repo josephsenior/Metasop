@@ -31,6 +31,7 @@ interface ProjectChatPanelProps {
     diagramId?: string
     artifacts: any
     activeTab?: string
+    initialHistory?: Message[]
     onRefineComplete?: (result?: any) => void
     onClose?: () => void
 }
@@ -39,18 +40,25 @@ export function ProjectChatPanel({
     diagramId,
     artifacts,
     activeTab = "all",
+    initialHistory = [],
     onRefineComplete
 }: ProjectChatPanelProps) {
     const { toast } = useToast()
-    const [messages, setMessages] = useState<Message[]>([
-        {
+    const [messages, setMessages] = useState<Message[]>(() => {
+        if (initialHistory && initialHistory.length > 0) {
+            return initialHistory.map(m => ({
+                ...m,
+                timestamp: new Date(m.timestamp)
+            }))
+        }
+        return [{
             id: "1",
             role: "assistant",
             content: "Hello! I'm your Project Architect AI. I have full context of your architecture blueprints. You can ask me questions about the design, or tell me to refine specific parts of the project.",
             type: "system",
             timestamp: new Date()
-        }
-    ])
+        }]
+    })
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [isRefining, setIsRefining] = useState(false)
@@ -74,6 +82,18 @@ export function ProjectChatPanel({
             })
         }
     }, [messages, isLoading])
+
+    const saveMessage = async (msg: Message) => {
+        if (!diagramId) return
+        try {
+            await fetchDiagramApi(`/api/diagrams/${diagramId}/messages`, {
+                method: "POST",
+                body: JSON.stringify({ message: msg })
+            })
+        } catch (err) {
+            console.error("Failed to save message:", err)
+        }
+    }
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -124,6 +144,7 @@ export function ProjectChatPanel({
         }
 
         setMessages(prev => [...prev, userMessage])
+        saveMessage(userMessage) // Save user message immediately
         const currentInput = input
         setInput("")
         setIsLoading(true)
@@ -163,10 +184,14 @@ export function ProjectChatPanel({
         // Generate context from artifacts and documents
         // If we have a cacheId, we don't need to send the full context markdown again
         const includeSteps = getOptimizedSteps(activeTab);
+
+
         const contextMarkdown = cacheId ? "" : generateAgentContextMarkdown({
             metadata: { metasop_artifacts: artifacts },
             documents: transientDocuments
         }, { includeSteps })
+
+
 
         // Build conversation history (last 3 user-assistant pairs for context)
         const conversationHistory = messages
@@ -260,6 +285,15 @@ export function ProjectChatPanel({
                                 if (event.cacheId) {
                                     setCacheId(event.cacheId)
                                 }
+
+                                // Save assistant response when complete
+                                saveMessage({
+                                    id: streamingMessageId,
+                                    role: "assistant",
+                                    content: fullAnswer,
+                                    type: "info",
+                                    timestamp: new Date()
+                                })
                             } else if (event.type === "error") {
                                 throw new Error(event.message || "Stream error occurred")
                             }
@@ -419,6 +453,18 @@ export function ProjectChatPanel({
                                             : msg
                                     ))
                                 }
+
+                                // Save refinement result message
+                                const finalRefineMsg = {
+                                    id: refinementMessageId,
+                                    role: "assistant" as const,
+                                    content: applied > 0
+                                        ? `✅ Applied ${applied} edit(s)\n\n${changelogSummary}${moreText}`
+                                        : (event.payload.message || "No changes needed."),
+                                    type: "refinement" as const,
+                                    timestamp: new Date()
+                                }
+                                saveMessage(finalRefineMsg)
                                 break
 
                             case "error":

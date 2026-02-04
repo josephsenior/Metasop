@@ -27,7 +27,9 @@ export async function GET(
       return createErrorResponse("Diagram not found", 404, cookieOpt);
     }
 
-    return createSuccessResponse({ diagram }, undefined, cookieOpt);
+    const response = createSuccessResponse({ diagram }, undefined, cookieOpt);
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return response;
   } catch (error: any) {
     return createErrorResponse(error.message || "Failed to fetch diagram", 500);
   }

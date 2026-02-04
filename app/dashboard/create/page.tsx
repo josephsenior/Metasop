@@ -267,8 +267,9 @@ export default function CreateDiagramPage() {
                 <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
                   <ProjectChatPanel
                     diagramId={currentDiagram?.id}
-                    artifacts={currentDiagram?.metadata?.artifacts}
+                    artifacts={currentDiagram?.metadata?.metasop_artifacts || {}}
                     activeTab={activeTab}
+                    initialHistory={currentDiagram?.metadata?.chat_history}
                     onRefineComplete={handleRefineComplete}
                     onClose={() => setIsChatOpen(false)}
                   />
