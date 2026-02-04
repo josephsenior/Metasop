@@ -60,6 +60,12 @@ export interface MetaSOPEvent {
   error?: string;
   status?: string;
   message?: string;
+  diagram?: {
+    id: string;
+    title?: string;
+    description?: string;
+    metadata?: any;
+  };
   timestamp: string;
 }
 

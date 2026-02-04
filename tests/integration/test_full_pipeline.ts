@@ -54,9 +54,66 @@ async function testFullPipeline() {
         }
 
         const data = await response.json();
+        const streamUrl = data?.data?.streamUrl;
+        if (!streamUrl) {
+            console.error('❌ Missing stream URL in response');
+            return;
+        }
+
+        const streamResponse = await fetch(`http://localhost:3000${streamUrl}`);
+        if (!streamResponse.ok) {
+            const errorText = await streamResponse.text();
+            console.error('❌ Stream Error:', errorText);
+            return;
+        }
+
+        const reader = streamResponse.body?.getReader();
+        if (!reader) {
+            console.error('❌ Stream has no reader');
+            return;
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finalEvent: any = null;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            let splitIndex = buffer.indexOf('\n\n');
+            while (splitIndex !== -1) {
+                const chunk = buffer.slice(0, splitIndex);
+                buffer = buffer.slice(splitIndex + 2);
+
+                const dataLines = chunk.split('\n').filter(line => line.startsWith('data:'));
+                if (dataLines.length > 0) {
+                    const payload = dataLines.map(line => line.replace(/^data:\s?/, '')).join('\n');
+                    if (payload && payload !== '[DONE]') {
+                        try {
+                            const event = JSON.parse(payload);
+                            if (event.type === 'orchestration_complete') {
+                                finalEvent = event;
+                            }
+                        } catch {
+                            // ignore parse errors
+                        }
+                    }
+                }
+
+                splitIndex = buffer.indexOf('\n\n');
+            }
+        }
+
+        if (!finalEvent) {
+            console.error('❌ No orchestration_complete event received');
+            return;
+        }
+
         console.log('✅ Orchestration Complete!\n');
 
-        const artifactsMap = data.data?.orchestration?.artifacts || data.artifacts || {};
+        const artifactsMap = finalEvent.diagram?.metadata?.metasop_artifacts || {};
         const finalArtifacts = Object.values(artifactsMap);
 
         console.log(`Received ${finalArtifacts.length} artifacts.\n`);
@@ -69,7 +126,7 @@ async function testFullPipeline() {
 
         fs.writeFileSync(
             path.join(outputDir, 'complete_blueprint.json'),
-            JSON.stringify(data, null, 2)
+            JSON.stringify(finalEvent, null, 2)
         );
 
         console.log(`📊 Artifact Summary:`);

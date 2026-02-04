@@ -169,6 +169,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
             temperature: getAgentTemperature("engineer_impl"),
             cacheId: context.cacheId,
             role: "Engineer",
+            model: context.options?.model,
           }
         );
       } catch (error: any) {

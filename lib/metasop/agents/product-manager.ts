@@ -107,7 +107,8 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
             reasoning: context.options?.reasoning ?? false,
             temperature: getAgentTemperature("pm_spec"),
             cacheId: context.cacheId,
-            role: "Product Manager"
+            role: "Product Manager",
+            model: context.options?.model
           }
         );
 

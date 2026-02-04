@@ -224,7 +224,7 @@ export function useDiagramGeneration() {
         setGenerationSteps(initialSteps)
 
         try {
-            const response = await fetchDiagramApi("/api/diagrams/generate?stream=true", {
+            const response = await fetchDiagramApi("/api/diagrams/generate", {
                 method: "POST",
                 body: JSON.stringify({
                     prompt: prompt.trim(),
@@ -240,123 +240,146 @@ export function useDiagramGeneration() {
                 }),
             })
 
+            const responseJson = await response.json().catch(() => ({}))
             if (!response.ok) {
-                throw new Error(`Failed to generate: ${response.statusText}`)
+                throw new Error(responseJson?.message || `Failed to generate: ${response.statusText}`)
             }
 
-            const reader = response.body?.getReader()
+            const jobId = responseJson?.data?.jobId
+            const streamUrl = responseJson?.data?.streamUrl
+            if (!jobId || !streamUrl) {
+                throw new Error("Missing job information from server")
+            }
+
+            const streamResponse = await fetchDiagramApi(streamUrl, { method: "GET" })
+            if (!streamResponse.ok) {
+                throw new Error(`Failed to open stream: ${streamResponse.statusText}`)
+            }
+
+            const reader = streamResponse.body?.getReader()
             if (!reader) throw new Error("No response body")
 
             const decoder = new TextDecoder()
             let buffer = ""
+
+            const handleEvent = (event: any) => {
+                if (event.type === "step_start") {
+                    stepStartTimesRef.current.set(event.step_id, Date.now())
+                    activeStepIdRef.current = event.step_id
+                    setGenerationSteps(prev =>
+                        prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
+                    )
+                } else if (event.type === "step_thought") {
+                    const thought = typeof event.thought === 'string' ? event.thought : ""
+                    setAgentThoughts(prev => ({
+                        ...prev,
+                        [event.step_id]: (prev[event.step_id as string] || "") + thought
+                    }))
+                } else if (event.type === "step_complete") {
+                    const summary = getStepCompletionSummary(event.step_id, event.artifact)
+                    setStepSummaries(prev => ({ ...prev, [event.step_id]: summary }))
+
+                    setGenerationSteps(prev => {
+                        const step = prev.find(s => s.step_id === event.step_id)
+                        if (!step) return prev
+
+                        if (step.status === "pending") {
+                            if (!stepStartTimesRef.current.has(event.step_id)) {
+                                stepStartTimesRef.current.set(event.step_id, Date.now())
+                            }
+
+                            const timeoutId = setTimeout(() => {
+                                setGenerationSteps(prevSteps => prevSteps.map(s =>
+                                    s.step_id === event.step_id && s.status === "running"
+                                        ? { ...s, status: "success" }
+                                        : s
+                                ))
+                                stepStartTimesRef.current.delete(event.step_id)
+                                pendingTimeoutsRef.current.delete(event.step_id)
+                            }, 800)
+
+                            pendingTimeoutsRef.current.set(event.step_id, timeoutId)
+                            return prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
+                        }
+
+                        if (step.status === "running") {
+                            const startTime = stepStartTimesRef.current.get(event.step_id) || Date.now()
+                            const elapsed = Date.now() - startTime
+                            const minDisplayTime = 800
+
+                            const existingTimeout = pendingTimeoutsRef.current.get(event.step_id)
+                            if (existingTimeout) {
+                                clearTimeout(existingTimeout)
+                                pendingTimeoutsRef.current.delete(event.step_id)
+                            }
+
+                            if (elapsed < minDisplayTime) {
+                                const timeoutId = setTimeout(() => {
+                                    setGenerationSteps(prevSteps => prevSteps.map(s =>
+                                        s.step_id === event.step_id && s.status === "running"
+                                            ? { ...s, status: "success" }
+                                            : s
+                                    ))
+                                    stepStartTimesRef.current.delete(event.step_id)
+                                    pendingTimeoutsRef.current.delete(event.step_id)
+                                }, minDisplayTime - elapsed)
+                                pendingTimeoutsRef.current.set(event.step_id, timeoutId)
+                                return prev
+                            } else {
+                                stepStartTimesRef.current.delete(event.step_id)
+                                return prev.map(s => s.step_id === event.step_id && s.status === "running" ? { ...s, status: "success" } : s)
+                            }
+                        }
+                        return prev
+                    })
+                } else if (event.type === "step_failed") {
+                    setGenerationSteps(prev => prev.map(s =>
+                        s.step_id === event.step_id
+                            ? { ...s, status: "failed", error: event.error, partial_response: event.partial_response }
+                            : s
+                    ))
+                } else if (event.type === "orchestration_complete") {
+                    const diagram = event.diagram
+                    if (diagram) {
+                        setCurrentDiagram({
+                            id: diagram.id,
+                            title: diagram.title,
+                            description: diagram.description,
+                            isGuest: diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false,
+                            metadata: diagram.metadata,
+                        })
+                    }
+                    setGenerationSteps(prev => prev.map(s => s.status === "running" ? { ...s, status: "success" as const } : s))
+                } else if (event.type === "orchestration_failed") {
+                    throw new Error(event.error || "Orchestration failed")
+                }
+            }
 
             while (true) {
                 const { done, value } = await reader.read()
                 if (done) break
 
                 buffer += decoder.decode(value, { stream: true })
-                const lines = buffer.split("\n")
-                buffer = lines.pop() || ""
+                let splitIndex = buffer.indexOf("\n\n")
+                while (splitIndex !== -1) {
+                    const chunk = buffer.slice(0, splitIndex)
+                    buffer = buffer.slice(splitIndex + 2)
 
-                for (const line of lines) {
-                    if (!line.trim()) continue
-
-                    try {
-                        const event = JSON.parse(line)
-
-                        if (event.type === "step_start") {
-                            stepStartTimesRef.current.set(event.step_id, Date.now())
-                            activeStepIdRef.current = event.step_id
-                            setGenerationSteps(prev =>
-                                prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
-                            )
-                        } else if (event.type === "step_thought") {
-                            const thought = typeof event.thought === 'string' ? event.thought : ""
-                            setAgentThoughts(prev => ({
-                                ...prev,
-                                [event.step_id]: (prev[event.step_id as string] || "") + thought
-                            }))
-                        } else if (event.type === "step_complete") {
-                            const summary = getStepCompletionSummary(event.step_id, event.artifact)
-                            setStepSummaries(prev => ({ ...prev, [event.step_id]: summary }))
-
-                            setGenerationSteps(prev => {
-                                const step = prev.find(s => s.step_id === event.step_id)
-                                if (!step) return prev
-
-                                if (step.status === "pending") {
-                                    if (!stepStartTimesRef.current.has(event.step_id)) {
-                                        stepStartTimesRef.current.set(event.step_id, Date.now())
-                                    }
-
-                                    const timeoutId = setTimeout(() => {
-                                        setGenerationSteps(prevSteps => prevSteps.map(s =>
-                                            s.step_id === event.step_id && s.status === "running"
-                                                ? { ...s, status: "success" }
-                                                : s
-                                        ))
-                                        stepStartTimesRef.current.delete(event.step_id)
-                                        pendingTimeoutsRef.current.delete(event.step_id)
-                                    }, 800)
-
-                                    pendingTimeoutsRef.current.set(event.step_id, timeoutId)
-                                    return prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
-                                }
-
-                                if (step.status === "running") {
-                                    const startTime = stepStartTimesRef.current.get(event.step_id) || Date.now()
-                                    const elapsed = Date.now() - startTime
-                                    const minDisplayTime = 800
-
-                                    const existingTimeout = pendingTimeoutsRef.current.get(event.step_id)
-                                    if (existingTimeout) {
-                                        clearTimeout(existingTimeout)
-                                        pendingTimeoutsRef.current.delete(event.step_id)
-                                    }
-
-                                    if (elapsed < minDisplayTime) {
-                                        const timeoutId = setTimeout(() => {
-                                            setGenerationSteps(prevSteps => prevSteps.map(s =>
-                                                s.step_id === event.step_id && s.status === "running"
-                                                    ? { ...s, status: "success" }
-                                                    : s
-                                            ))
-                                            stepStartTimesRef.current.delete(event.step_id)
-                                            pendingTimeoutsRef.current.delete(event.step_id)
-                                        }, minDisplayTime - elapsed)
-                                        pendingTimeoutsRef.current.set(event.step_id, timeoutId)
-                                        return prev
-                                    } else {
-                                        stepStartTimesRef.current.delete(event.step_id)
-                                        return prev.map(s => s.step_id === event.step_id && s.status === "running" ? { ...s, status: "success" } : s)
-                                    }
-                                }
-                                return prev
-                            })
-                        } else if (event.type === "step_failed") {
-                            setGenerationSteps(prev => prev.map(s =>
-                                s.step_id === event.step_id
-                                    ? { ...s, status: "failed", error: event.error, partial_response: event.partial_response }
-                                    : s
-                            ))
-                        } else if (event.type === "orchestration_complete") {
-                            const diagram = event.diagram
-                            if (diagram) {
-                                setCurrentDiagram({
-                                    id: diagram.id,
-                                    title: diagram.title,
-                                    description: diagram.description,
-                                    isGuest: diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false,
-                                    metadata: diagram.metadata,
-                                })
+                    const lines = chunk.split("\n")
+                    const dataLines = lines.filter(line => line.startsWith("data:"))
+                    if (dataLines.length > 0) {
+                        const dataStr = dataLines.map(line => line.replace(/^data:\s?/, "")).join("\n")
+                        if (dataStr && dataStr !== "[DONE]") {
+                            try {
+                                const event = JSON.parse(dataStr)
+                                handleEvent(event)
+                            } catch (e) {
+                                console.error("Error parsing stream event:", e, dataStr)
                             }
-                            setGenerationSteps(prev => prev.map(s => s.status === "running" ? { ...s, status: "success" as const } : s))
-                        } else if (event.type === "orchestration_failed") {
-                            throw new Error(event.error || "Orchestration failed")
                         }
-                    } catch (e) {
-                        console.error("Error parsing stream event:", e, line)
                     }
+
+                    splitIndex = buffer.indexOf("\n\n")
                 }
             }
         } catch (error: any) {

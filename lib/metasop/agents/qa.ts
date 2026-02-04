@@ -203,7 +203,8 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
             reasoning: context.options?.reasoning ?? false,
             temperature: getAgentTemperature("qa_verification"),
             cacheId: context.cacheId,
-            role: "QA"
+            role: "QA",
+            model: context.options?.model
           }
         );
       } catch (error: any) {

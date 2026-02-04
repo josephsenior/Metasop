@@ -1,12 +1,11 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import * as fs from 'fs';
-import * as path from 'path';
 import { createErrorResponse, createSuccessResponse } from "@/lib/api/response";
 import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
 import type { CreateDiagramRequest } from "@/types/diagram";
 import { validateCreateDiagramRequest } from "@/lib/diagrams/schemas";
+import { persistDiagramShadow } from "@/lib/diagrams/shadow-persist";
 
 /**
  * GET /api/diagrams - Get all diagrams for the current guest session
@@ -67,20 +66,7 @@ export async function POST(request: NextRequest) {
     // Create diagram
     const diagram = await diagramDb.create(userId, body);
 
-    // Save to local filesystem (Shadow Persistence)
-    try {
-      const saveDir = path.join(process.cwd(), 'saved_diagrams');
-      if (!fs.existsSync(saveDir)) {
-        fs.mkdirSync(saveDir, { recursive: true });
-      }
-      fs.writeFileSync(
-        path.join(saveDir, `${diagram.id}.json`),
-        JSON.stringify(diagram, null, 2)
-      );
-    } catch (error) {
-      console.error("Failed to save local backup:", error);
-      // Non-blocking error
-    }
+    persistDiagramShadow(diagram);
 
     return createSuccessResponse(
       { diagram },

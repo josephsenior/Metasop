@@ -205,6 +205,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           maxTokens: getAgentMaxTokens("ui_design"),
           cacheId: context.cacheId,
           role: "UI Designer",
+          model: context.options?.model,
         }
       );
     } catch (error: any) {

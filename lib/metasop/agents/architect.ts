@@ -117,7 +117,8 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
             reasoning: context.options?.reasoning ?? false,
             temperature: getAgentTemperature("arch_design"),
             cacheId: context.cacheId,
-            role: "Architect"
+            role: "Architect",
+            model: context.options?.model
           }
         );
       } catch (error: any) {

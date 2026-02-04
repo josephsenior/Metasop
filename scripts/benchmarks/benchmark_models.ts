@@ -40,8 +40,7 @@ Technical Constraints:
                     includeAPIs: true,
                     includeDatabase: true,
                     model: modelId // Pass model to override
-                },
-                stream: true // Enable streaming
+                }
             }),
             signal: AbortSignal.timeout(900000) // 15 min timeout
         });
@@ -51,8 +50,19 @@ Technical Constraints:
             throw new Error(`API Request Failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        // Consume SSE Stream
-        const reader = response.body?.getReader();
+        const responseJson = await response.json();
+        const streamUrl = responseJson?.data?.streamUrl;
+        if (!streamUrl) {
+            throw new Error("Missing stream URL from generation response");
+        }
+
+        const streamResponse = await fetch(`http://localhost:3000${streamUrl}`);
+        if (!streamResponse.ok) {
+            const errorText = await streamResponse.text();
+            throw new Error(`Stream Request Failed: ${streamResponse.status} ${streamResponse.statusText} - ${errorText}`);
+        }
+
+        const reader = streamResponse.body?.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
         let finalData: any = {};
@@ -64,35 +74,34 @@ Technical Constraints:
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || ''; // Keep incomplete line
+                let splitIndex = buffer.indexOf('\n\n');
+                while (splitIndex !== -1) {
+                    const chunk = buffer.slice(0, splitIndex);
+                    buffer = buffer.slice(splitIndex + 2);
 
-                for (const line of lines) {
-                    if (line.trim()) {
-                        // DEBUG: Print raw lines ALWAYS
-                        console.log(`[RAW] ${line.substring(0, 100)}...`);
+                    const dataLines = chunk.split('\n').filter(line => line.startsWith('data:'));
+                    if (dataLines.length > 0) {
+                        const payload = dataLines.map(line => line.replace(/^data:\s?/, '')).join('\n');
+                        if (payload && payload !== '[DONE]') {
+                            try {
+                                const event = JSON.parse(payload);
 
-                        try {
-                            const event = JSON.parse(line);
-
-                            if (event.type === 'orchestration_complete') {
-                                finalData = event;
-                                // Count artifacts
-                                const orchestration = event.diagram?.metadata?.metasop_artifacts || {};
-                                artifactCount = Object.keys(orchestration).length;
-                                // Fallback
-                                if (artifactCount === 0 && event.orchestration?.artifacts) {
-                                    artifactCount = Object.keys(event.orchestration.artifacts).length;
+                                if (event.type === 'orchestration_complete') {
+                                    finalData = event;
+                                    const orchestration = event.diagram?.metadata?.metasop_artifacts || {};
+                                    artifactCount = Object.keys(orchestration).length;
+                                } else if (event.type === 'step_complete') {
+                                    process.stdout.write('.');
+                                } else if (event.type === 'orchestration_failed' || event.type === 'step_failed') {
+                                    console.error(`\n❌ Failed: ${event.error}`);
                                 }
-                            } else if (event.type === 'step_complete') {
-                                process.stdout.write('.'); // Progress dot
-                            } else if (event.type === 'orchestration_failed' || event.type === 'step_failed') {
-                                console.error(`\n❌ Failed: ${event.error}`);
+                            } catch (e: any) {
+                                if (process.env.DEBUG) console.log(`[Parse Error] ${e.message}`);
                             }
-                        } catch (e: any) {
-                            if (process.env.DEBUG) console.log(`[Parse Error] ${e.message}`);
                         }
                     }
+
+                    splitIndex = buffer.indexOf('\n\n');
                 }
             }
         }
