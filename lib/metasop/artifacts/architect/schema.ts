@@ -16,14 +16,21 @@ export const architectSchema = {
             description: "CRUD-focused API specification. Technical and concise.",
             items: {
                 type: "object",
-                required: ["path", "method", "description", "request_schema", "response_schema"],
+                required: ["path", "method", "description", "request_schema", "response_schema", "auth_required"],
                 properties: {
                     path: { type: "string", pattern: "^/.*", maxLength: 50, description: "API path (e.g., '/api/users')" },
                     method: { type: "string", enum: ["GET", "POST", "PUT", "DELETE", "PATCH"] },
-                    endpoint: { type: "string", maxLength: 100, description: "Specific endpoint identifier or base URL." },
                     description: { type: "string", maxLength: 100, description: "Concise purpose." },
-                    request_schema: { type: "object", description: "Request mapping (field: type). No descriptions. Keep concise." },
-                    response_schema: { type: "object", description: "Response mapping (field: type). No descriptions. Keep concise." },
+                    request_schema: {
+                        type: "object",
+                        description: "Request mapping (field: type). No descriptions. Keep concise.",
+                        additionalProperties: { type: "string", maxLength: 50 }
+                    },
+                    response_schema: {
+                        type: "object",
+                        description: "Response mapping (field: type). No descriptions. Keep concise.",
+                        additionalProperties: { type: "string", maxLength: 50 }
+                    },
                     auth_required: { type: "boolean" },
                     rate_limit: { type: "string", maxLength: 20 },
                 },
@@ -66,7 +73,7 @@ export const architectSchema = {
                                 type: "array",
                                 items: {
                                     type: "object",
-                                    required: ["name", "type"],
+                                    required: ["name", "type", "constraints"],
                                     properties: {
                                         name: { type: "string", maxLength: 30, description: "Column name (snake_case)" },
                                         type: { type: "string", maxLength: 20, description: "SQL type (e.g., 'UUID', 'VARCHAR(255)')" },
@@ -109,6 +116,7 @@ export const architectSchema = {
         technology_stack: {
             type: "object",
             description: "Specific technology choices with justification.",
+            required: ["frontend", "backend", "database", "authentication", "hosting"],
             properties: {
                 frontend: { type: "array", items: { type: "string", maxLength: 30 }, description: "Frontend stack" },
                 backend: { type: "array", items: { type: "string", maxLength: 30 }, description: "Backend stack" },
@@ -125,8 +133,6 @@ export const architectSchema = {
                 required: ["service", "purpose"],
                 properties: {
                     service: { type: "string", maxLength: 30, description: "External service" },
-                    system: { type: "string", maxLength: 30, description: "System name" },
-                    name: { type: "string", maxLength: 30, description: "Display name" },
                     purpose: { type: "string", maxLength: 100, description: "Purpose of integration" },
                     api_docs: { type: "string", format: "uri", maxLength: 100, description: "Docs URL" },
                 },

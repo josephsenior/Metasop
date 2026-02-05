@@ -6,6 +6,7 @@ import { diagramDb } from "@/lib/diagrams/db";
 import { checkDatabaseHealth } from "@/lib/database/prisma";
 import { recordGuestDiagramCreation } from "@/lib/middleware/guest-auth";
 import { persistDiagramShadow } from "@/lib/diagrams/shadow-persist";
+import { normalizeArtifacts } from "@/lib/metasop/utils/normalize-artifacts";
 
 export type GenerationJobStatus = "pending" | "running" | "completed" | "failed";
 
@@ -139,6 +140,8 @@ export function startGenerationJob(params: StartJobParams): void {
       const title = pmArtifact?.project_name || params.prompt.split("\n")[0].substring(0, 50) || "New Diagram";
       const description = pmArtifact?.summary || params.prompt.substring(0, 200) || "";
 
+      const normalizedArtifacts = normalizeArtifacts(orchestrationResult.artifacts);
+
       const savedDiagram = await diagramDb.update(params.diagramId, params.userId, {
         title,
         description,
@@ -146,7 +149,7 @@ export function startGenerationJob(params: StartJobParams): void {
         metadata: {
           prompt: params.prompt,
           options: params.options,
-          metasop_artifacts: orchestrationResult.artifacts,
+          metasop_artifacts: normalizedArtifacts,
           metasop_report: orchestrationResult.report,
           metasop_steps: orchestrationResult.steps,
           generated_at: nowIso(),

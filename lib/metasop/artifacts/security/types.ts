@@ -16,12 +16,11 @@ export interface SecurityBackendArtifact {
             providers?: string[];
             token_expiry?: string;
             refresh_tokens?: boolean;
-            multi_factor_auth?: boolean;
             mfa_enabled?: boolean; // UI expected field
             sso_integration?: boolean;
             description?: string;
         }; // REQUIRED
-        audit_logging?: {
+        audit_logging: {
             enabled?: boolean;
             retention?: string;
             storage_location?: string;
@@ -32,19 +31,19 @@ export interface SecurityBackendArtifact {
             roles?: string[]; // UI convenience field
             policies?: Array<{
                 resource: string; // REQUIRED: minLength: 1
-                permissions?: string[];
+                permissions: string[];
                 roles?: string[];
                 description?: string;
             }>;
             description?: string;
         }; // REQUIRED
-        session_management?: {
+        session_management: {
             strategy?: "stateless" | "stateful" | "hybrid";
             session_timeout?: string;
             timeout?: string;
             secure_cookies?: boolean;
             http_only_cookies?: boolean;
-            same_site_policy?: "strict" | "lax" | "none";
+            same_site_policy?: "Strict" | "Lax" | "None";
             invalidation_strategy?: string;
             concurrency_control?: string;
         };
@@ -82,8 +81,8 @@ export interface SecurityBackendArtifact {
             rotation_policy?: string;
             description?: string;
         }; // REQUIRED
-        envelope_encryption?: boolean;
-        secrets_management?: string; // e.g. "HashiCorp Vault", "AWS Secrets Manager"
+        envelope_encryption: boolean;
+        secrets_management: string; // e.g. "HashiCorp Vault", "AWS Secrets Manager"
     }; // REQUIRED
     compliance: Array<{
         standard:
@@ -93,8 +92,8 @@ export interface SecurityBackendArtifact {
         | "PCI-DSS"
         | "ISO27001"
         | "CCPA"
-        | "other"; // REQUIRED
-        requirements: string[]; // minItems: 1
+        | "other";
+        requirements?: string[];
         implementation_status: "planned" | "in-progress" | "compliant";
         description?: string;
     }>;

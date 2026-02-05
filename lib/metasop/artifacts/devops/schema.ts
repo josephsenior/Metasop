@@ -4,13 +4,11 @@ export const devopsSchema = {
     required: ["infrastructure", "cicd", "deployment", "monitoring", "containerization", "scaling", "disaster_recovery", "summary", "description"],
     propertyOrdering: ["summary", "description", "cloud_provider", "infrastructure", "cicd", "deployment", "containerization", "scaling", "monitoring", "disaster_recovery", "infra_components"],
     properties: {
-        cloud_provider: { type: "string", maxLength: 20 },
-        infra_components: { type: "number" },
         summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the DevOps strategy and infrastructure approach." },
         description: { type: "string", maxLength: 600, description: "Detailed infrastructure philosophy, SRE approach, and operational excellence strategy." },
         infrastructure: {
             type: "object",
-            required: ["cloud_provider", "services"],
+            required: ["cloud_provider", "services", "regions"],
             properties: {
                 cloud_provider: {
                     type: "string",
@@ -51,6 +49,7 @@ export const devopsSchema = {
                             configuration: {
                                 type: "object",
                                 description: "Technical config (e.g., 'instance_type: t3.medium').",
+                                additionalProperties: { type: "string", maxLength: 100 }
                             },
                             description: {
                                 type: "string",
@@ -69,7 +68,7 @@ export const devopsSchema = {
         },
         cicd: {
             type: "object",
-            required: ["pipeline_stages", "tools"],
+            required: ["pipeline_stages", "tools", "triggers"],
             properties: {
                 pipeline_stages: {
                     type: "array",
@@ -228,10 +227,7 @@ export const devopsSchema = {
                             },
                             configuration: {
                                 type: "object",
-                                properties: {
-                                    key: { type: "string", maxLength: 50 },
-                                    value: { type: "string", maxLength: 200 },
-                                },
+                                additionalProperties: { type: "string", maxLength: 200 },
                                 description: "Environment-specific configuration",
                             },
                             description: {
@@ -247,7 +243,7 @@ export const devopsSchema = {
         },
         monitoring: {
             type: "object",
-            required: ["tools", "metrics"],
+            required: ["tools", "metrics", "alerts"],
             properties: {
                 tools: {
                     type: "array",
@@ -328,6 +324,7 @@ export const devopsSchema = {
                         metrics: {
                             type: "object",
                             description: "Custom scaling metrics (e.g., requests_per_second: 1000)",
+                            additionalProperties: { type: ["string", "number"] }
                         },
                         triggers: {
                             type: "array",
@@ -357,7 +354,7 @@ export const devopsSchema = {
         },
         disaster_recovery: {
             type: "object",
-            required: ["rpo", "rto", "backup_strategy"],
+            required: ["rpo", "rto", "backup_strategy", "failover_plan"],
             properties: {
                 rpo: { type: "string", maxLength: 50, description: "Recovery Point Objective" },
                 rto: { type: "string", maxLength: 50, description: "Recovery Time Objective" },

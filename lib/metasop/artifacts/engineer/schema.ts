@@ -13,7 +13,7 @@ export const engineerSchema = {
         },
         run_results: {
             type: "object",
-            required: ["setup_commands", "test_commands", "dev_commands"],
+            required: ["setup_commands", "test_commands", "dev_commands", "build_commands"],
             description: "Essential CLI commands.",
             properties: {
                 setup_commands: { type: "array", items: { type: "string", maxLength: 50 }, description: "Setup (e.g., 'npm install')." },
@@ -92,7 +92,7 @@ export const engineerSchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["decision", "rationale"],
+                required: ["decision", "rationale", "alternatives"],
                 properties: {
                     decision: { type: "string", maxLength: 100, description: "Clear decision statement (e.g., 'Use React Query for server state management')." },
                     rationale: { type: "string", maxLength: 300, description: "Detailed reasoning with specific justification and benefits." },
@@ -105,7 +105,7 @@ export const engineerSchema = {
             type: "array",
             items: {
                 type: "object",
-                required: ["name", "description"],
+                required: ["name", "description", "example", "required"],
                 properties: {
                     name: { type: "string", maxLength: 50, description: "Variable name in SCREAMING_SNAKE_CASE." },
                     description: { type: "string", maxLength: 150, description: "What this variable configures and when it's needed." },

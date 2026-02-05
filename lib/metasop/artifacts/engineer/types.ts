@@ -5,53 +5,43 @@
 
 export interface FileNode {
     name: string; // REQUIRED
-    path?: string;
-    file?: string; // Alias for name
-    type?: "file" | "folder" | "directory";
+    type: "file" | "directory"; // REQUIRED
     children?: FileNode[];
 }
 
 export interface EngineerBackendArtifact {
-    summary?: string;
-    description?: string;
+    summary: string;
+    description: string;
     artifact_path: string; // REQUIRED: minLength: 1
-    files?: FileNode[]; // Alias for file_structure (flat structure)
-    file_changes?: FileNode[]; // Alias for files
-    components?: FileNode[]; // List of components created
-    file_structure?: FileNode; // REQUIRED: Complete recursive file/folder structure (object, NOT array!)
-    implementation_plan?: string; // REQUIRED: Multi-phase development plan (string, NOT array!) (minLength: 50)
-    phases?: Array<{
+    file_structure: FileNode; // REQUIRED: Complete recursive file/folder structure (object, NOT array!)
+    implementation_plan: string; // REQUIRED: Multi-phase development plan (string, NOT array!) (minLength: 50)
+    implementation_plan_phases: Array<{
         name: string;
         description: string;
         tasks: string[];
-    }>; // Structured plan to prevent truncation issues
-    implementation_plan_phases?: Array<{
-        name: string;
-        description: string;
-        tasks: string[];
-    }>; // Alias for phases
-    plan?: string; // Alias for implementation_plan
-    dependencies?: string[]; // REQUIRED: Array of strings like "package@version" (NOT objects!)
-    technical_decisions?: Array<{
+    }>;
+    dependencies: string[]; // REQUIRED: Array of strings like "package@version" (NOT objects!)
+    technical_decisions: Array<{
         decision: string;
         rationale: string; // REQUIRED
-        alternatives?: string;
+        alternatives: string;
     }>;
-    environment_variables?: Array<{
+    environment_variables: Array<{
         name: string; // REQUIRED
         description: string; // REQUIRED
-        example?: string;
+        example: string;
+        required: boolean;
     }>;
-    technical_patterns?: string[]; // e.g. ["SOLID", "Factory", "Observer"]
-    state_management?: {
-        tool: "Zustand" | "Redux" | "React Query" | "Context API" | "none";
+    technical_patterns: string[]; // e.g. ["SOLID", "Factory", "Observer"]
+    state_management: {
+        tool: string;
         strategy: string;
     };
-    run_results?: {
-        setup_commands?: string[];
-        dev_commands?: string[];
-        test_commands?: string[];
-        build_commands?: string[];
+    run_results: {
+        setup_commands: string[];
+        dev_commands: string[];
+        test_commands: string[];
+        build_commands: string[];
         notes?: string;
     };
 }
@@ -65,7 +55,12 @@ export function isEngineerBackendArtifact(
 ): artifact is EngineerBackendArtifact {
     return (
         artifact &&
+        typeof artifact.summary === "string" &&
+        typeof artifact.description === "string" &&
         typeof artifact.artifact_path === "string" &&
-        (typeof artifact.implementation_plan === "string" || typeof artifact.plan === "string")
+        typeof artifact.implementation_plan === "string" &&
+        Array.isArray(artifact.implementation_plan_phases) &&
+        Array.isArray(artifact.dependencies) &&
+        typeof artifact.file_structure === "object"
     );
 }

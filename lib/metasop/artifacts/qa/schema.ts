@@ -1,6 +1,6 @@
 export const qaSchema = {
     type: "object",
-    required: ["ok", "test_strategy", "test_cases", "security_plan", "manual_verification_steps", "risk_analysis", "summary", "description", "coverage", "performance_metrics"],
+    required: ["ok", "test_strategy", "test_cases", "security_plan", "manual_verification_steps", "risk_analysis", "summary", "description", "coverage", "performance_metrics", "accessibility_plan"],
     propertyOrdering: ["ok", "summary", "description", "test_strategy", "test_cases", "coverage", "risk_analysis", "security_plan", "manual_verification_steps", "performance_metrics", "accessibility_plan", "manual_uat_plan"],
     properties: {
         ok: {
@@ -25,9 +25,9 @@ export const qaSchema = {
             description: "Core test cases. Keep it focused and minimal.",
             items: {
                 type: "object",
-                required: ["id", "name", "expected_result"],
+                required: ["id", "name", "expected_result", "type", "priority"],
                 properties: {
-                    id: { type: "string", maxLength: 10, description: "Short ID (e.g., TC-1)." },
+                    id: { type: "string", maxLength: 10, pattern: "^TC-[0-9]+$", description: "Short ID (e.g., TC-1)." },
                     name: { type: "string", maxLength: 60, description: "Test case name." },
                     description: { type: "string", maxLength: 200, description: "Detailed test scenario." },
                     type: { type: "string", enum: ["unit", "integration", "e2e", "manual"], description: "Test category." },
@@ -73,6 +73,7 @@ export const qaSchema = {
         description: { type: "string", maxLength: 600, description: "Detailed verification philosophy, test plan overview, and quality objectives." },
         coverage: {
             type: "object",
+            required: ["percentage", "threshold", "lines", "statements", "functions", "branches"],
             properties: {
                 percentage: { type: "number" },
                 threshold: { type: "number", description: "Target code coverage percentage (e.g. 80)" },
@@ -83,6 +84,7 @@ export const qaSchema = {
             }
         },
         performance_metrics: {
+            required: ["api_response_time_p95", "page_load_time", "database_query_time", "first_contentful_paint", "time_to_interactive", "largest_contentful_paint"],
             type: "object",
             properties: {
                 api_response_time_p95: { type: "string", maxLength: 15 },

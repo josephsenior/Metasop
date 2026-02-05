@@ -37,7 +37,7 @@ export const pmSchema = {
             description: "Array of INVEST-compliant user stories.",
             items: {
                 type: "object",
-                required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value"],
+                required: ["title", "story", "description", "priority", "story_points", "acceptance_criteria", "estimated_complexity", "user_value", "dependencies"],
                 properties: {
                     id: {
                         type: "string",
@@ -100,7 +100,7 @@ export const pmSchema = {
             description: "Array of acceptance criteria.",
             items: {
                 type: "object",
-                required: ["criteria"],
+                required: ["criteria", "priority"],
                 properties: {
                     id: {
                         type: "string",

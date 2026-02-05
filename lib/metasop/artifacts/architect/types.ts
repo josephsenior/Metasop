@@ -9,14 +9,13 @@ export interface ArchitectBackendArtifact {
         path: string; // REQUIRED: pattern "^/.*"
         method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH"; // REQUIRED
         description: string; // REQUIRED: minLength: 10
-        endpoint?: string; // Alias for path
-        request_schema?: any; // Object
-        response_schema?: any; // Object
-        auth_required?: boolean; // Default: true
+        request_schema: Record<string, string>; // REQUIRED: field -> type
+        response_schema: Record<string, string>; // REQUIRED: field -> type
+        auth_required: boolean; // Default: true
         rate_limit?: string; // Pattern: "^[0-9]+ requests/(second|minute|hour|day)$"
     }>; // REQUIRED: minItems: 1
-    summary?: string;
-    description?: string;
+    summary: string;
+    description: string;
     decisions: Array<{
         decision: string; // REQUIRED: minLength: 10
         status: "accepted" | "proposed" | "superseded"; // REQUIRED
@@ -26,8 +25,8 @@ export interface ArchitectBackendArtifact {
         consequences: string; // REQUIRED: minLength: 20
         alternatives?: string[]; // Array of strings (minLength: 5)
     }>; // REQUIRED: minItems: 1
-    database_schema?: {
-        tables?: Array<{
+    database_schema: {
+        tables: Array<{
             name: string; // REQUIRED: pattern "^[a-z_][a-z0-9_]*$"
             description?: string;
             columns: Array<{
@@ -51,29 +50,27 @@ export interface ArchitectBackendArtifact {
         }>;
         migrations_strategy?: string;
     };
-    technology_stack?: {
-        frontend?: string[];
-        backend?: string[];
-        database?: string[];
-        authentication?: string[];
-        hosting?: string[];
-        other?: string[];
+    technology_stack: {
+        frontend: string[];
+        backend: string[];
+        database: string[];
+        authentication: string[];
+        hosting: string[];
+        other: string[];
     };
-    integration_points?: Array<{
+    integration_points: Array<{
         service: string; // REQUIRED
-        system?: string; // UI alias for service
-        name?: string; // UI alias for service
         purpose: string; // REQUIRED
         api_docs?: string; // URI format
     }>;
-    security_considerations?: string[]; // Array of strings (minLength: 10)
-    scalability_approach?: {
-        horizontal_scaling?: string;
-        database_scaling?: string;
-        caching_strategy?: string;
-        performance_targets?: string;
+    security_considerations: string[]; // Array of strings (minLength: 10)
+    scalability_approach: {
+        horizontal_scaling: string;
+        database_scaling: string;
+        caching_strategy: string;
+        performance_targets: string;
     };
-    next_tasks?: Array<{
+    next_tasks: Array<{
         task: string;
         priority: "high" | "medium" | "low";
         assignee: "engineer" | "devops" | "qa";
@@ -94,6 +91,16 @@ export function isArchitectBackendArtifact(
         typeof artifact.summary === "string" &&
         typeof artifact.description === "string" &&
         Array.isArray(artifact.apis) &&
+        artifact.apis.every((api: any) =>
+            api &&
+            typeof api.path === "string" &&
+            typeof api.method === "string" &&
+            typeof api.description === "string" &&
+            typeof api.request_schema === "object" &&
+            api.request_schema !== null &&
+            typeof api.response_schema === "object" &&
+            api.response_schema !== null
+        ) &&
         Array.isArray(artifact.decisions) &&
         typeof artifact.database_schema === "object" &&
         typeof artifact.technology_stack === "object" &&

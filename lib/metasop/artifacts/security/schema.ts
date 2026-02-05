@@ -18,7 +18,7 @@ export const securitySchema = {
         description: { type: "string", maxLength: 800, description: "Detailed security specifications, threat landscape, and mitigation strategy overview." },
         security_architecture: {
             type: "object",
-            required: ["authentication", "authorization"],
+            required: ["authentication", "authorization", "audit_logging", "session_management"],
             properties: {
                 network_boundaries: {
                     type: "array",
@@ -63,10 +63,6 @@ export const securitySchema = {
                         refresh_tokens: {
                             type: "boolean",
                             description: "Use of refresh tokens.",
-                        },
-                        multi_factor_auth: {
-                            type: "boolean",
-                            description: "MFA requirement.",
                         },
                         mfa_enabled: {
                             type: "boolean",
@@ -167,7 +163,7 @@ export const securitySchema = {
         },
         encryption: {
             type: "object",
-            required: ["data_at_rest", "data_in_transit", "key_management"],
+            required: ["data_at_rest", "data_in_transit", "key_management", "envelope_encryption", "secrets_management"],
             properties: {
                 data_at_rest: {
                     type: "object",
@@ -263,6 +259,7 @@ export const securitySchema = {
             type: "array",
             items: {
                 type: "object",
+                required: ["standard", "requirements", "implementation_status"],
                 properties: {
                     standard: {
                         type: "string",

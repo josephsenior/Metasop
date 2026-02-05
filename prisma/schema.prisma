@@ -15,7 +15,7 @@ model Diagram {
   title       String
   description String
   status      String   @default("processing") // "processing" | "completed" | "failed"
-  metadata    Json?    // Optional metadata (prompt, options, metasop_artifacts, etc.)
+  metadata    Json
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
