@@ -374,7 +374,7 @@ export class PPTXGeneratorScreenshot {
       const cicdHTML = templates.createListSlide(
         "CI/CD Pipeline",
         cicd,
-        (item, idx) => `
+        (item) => `
           <div class="list-item">
             <div class="list-item-title">${item.stage || item.name || item}</div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -426,7 +426,7 @@ export class PPTXGeneratorScreenshot {
       const sitemapHTML = templates.createListSlide(
         "Sitemap",
         sitemap,
-        (item, idx) => `
+        (item) => `
           <div class="list-item">
             <div class="list-item-title">${item.page || item.name || item}</div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -442,7 +442,7 @@ export class PPTXGeneratorScreenshot {
       const componentsHTML = templates.createListSlide(
         "Component Library",
         components,
-        (item, idx) => `
+        (item) => `
           <div class="list-item">
             <div class="list-item-title">${item.name || item.component || item}</div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -464,7 +464,7 @@ export class PPTXGeneratorScreenshot {
       const blueprintHTML = templates.createListSlide(
         "Blueprint",
         blueprint,
-        (item, idx) => `
+        (item) => `
           <div class="list-item">
             <div class="list-item-title">${item.screen || item.name || item}</div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -518,7 +518,7 @@ export class PPTXGeneratorScreenshot {
       const decisionsHTML = templates.createListSlide(
         "Technical Decisions",
         decisions,
-        (item, idx) => `
+        (item) => `
           <div class="list-item">
             <div class="list-item-title">${item.decision || item.title || item}</div>
             ${item.rationale ? `<div class="list-item-description">${item.rationale}</div>` : ''}

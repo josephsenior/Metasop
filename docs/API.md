@@ -23,7 +23,7 @@ The MetaSOP API provides programmatic access to the multi-agent orchestration pl
 ### Features
 
 - Create and manage diagrams
-- Execute orchestrations
+- Run generation jobs
 - Refine artifacts
 - Query progress
 - Export results
@@ -37,7 +37,7 @@ The app is guest-only; there is no login or API keys. Diagram endpoints identify
 - **Header:** `x-guest-session-id` (set by the frontend; use `fetchDiagramApi` or `apiClient` so it is sent automatically).
 - **Cookie:** `guest_session_id` (set by the API on responses so same-origin requests carry it).
 
-All diagram/orchestration endpoints use this guest session. Use the same client (or cookie) so all requests are tied to one session.
+All diagram and generation endpoints use this guest session. Use the same client (or cookie) so all requests are tied to one session.
 
 ---
 
@@ -58,10 +58,9 @@ Production: set NEXT_PUBLIC_API_URL in your deployment (e.g. https://your-app.co
 
 ```http
 POST /api/diagrams/generate
-POST /api/diagrams/generate?stream=true
 ```
 
-Runs the MetaSOP orchestration and creates a diagram. Use **guest session** (cookie or `x-guest-session-id`); no login or API key required for the app.
+Enqueues the MetaSOP orchestration and creates a diagram. Use **guest session** (cookie or `x-guest-session-id`); no login or API key required for the app.
 
 **Request Body**:
 
@@ -80,16 +79,28 @@ Runs the MetaSOP orchestration and creates a diagram. Use **guest session** (coo
 }
 ```
 
-**Streaming (`?stream=true`)**: Response is NDJSON over SSE. Events include `step_start`, `step_thought`, `step_complete`, `orchestration_complete` (with diagram), or `error`.
+**Response**:
 
-**Non-streaming**: Returns after orchestration completes. Response shape depends on success/error (see implementation).
+```typescript
+{
+  jobId: string;
+  diagramId: string;
+  streamUrl: string; // e.g. "/api/diagrams/generate/stream?jobId=..."
+}
+```
+
+Use the `streamUrl` to subscribe to progress updates.
 
 **Example**:
 
 ```bash
-curl -X POST "http://localhost:3000/api/diagrams/generate?stream=true" \
+# 1) Enqueue generation
+curl -X POST "http://localhost:3000/api/diagrams/generate" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Build a modern e-commerce platform with auth, product catalog, and checkout"}'
+
+# 2) Stream events (SSE)
+curl -N "http://localhost:3000/api/diagrams/generate/stream?jobId=<jobId>"
 ```
 
 #### Create diagram (metadata only)
@@ -226,53 +237,18 @@ Exports diagram in specified format.
 
 ---
 
-### Orchestration
-
-#### Start Orchestration
+### Generation Stream (SSE)
 
 ```http
-POST /api/diagrams/:id/orchestration
+GET /api/diagrams/generate/stream?jobId=:jobId
 ```
 
-Starts orchestration for a diagram.
+Streams progress updates for a queued generation job. Each SSE event is a JSON payload with a `type` field.
 
-**Response**:
+**Note**: Jobs are in-process. A server restart will drop in-flight jobs.
 
-```typescript
-{
-  sessionId: string;
-  status: "running";
-  startedAt: string;
-}
-```
-
-#### Poll Progress
-
-```http
-GET /api/diagrams/:id/orchestration/poll
-```
-
-Polls orchestration progress.
-
-**Response**:
-
-```typescript
-{
-  sessionId: string;
-  status: "running" | "completed" | "failed";
-  progress: {
-    total: number;
-    completed: number;
-    percentage: number;
-  };
-  currentStep?: {
-    stepId: string;
-    role: string;
-    status: string;
-  };
-  events: MetaSOPEvent[];
-}
-```
+**Event types**:
+`step_start`, `step_thought`, `step_complete`, `step_failed`, `orchestration_complete`, `orchestration_failed`, `agent_progress`.
 
 ---
 
@@ -316,6 +292,29 @@ Applies predefined edit operations to artifact JSON without re-running agents. T
   errors?: Array<{ op: EditOp; error: string }>;
 }
 ```
+
+#### Refine Artifacts (intent-driven)
+
+```http
+POST /api/diagrams/artifacts/refine
+POST /api/diagrams/artifacts/refine?stream=true
+```
+
+Uses intent analysis to generate edit operations, then applies them atomically.
+
+**Request Body**:
+
+```typescript
+{
+  diagramId?: string;
+  intent: string;
+  previousArtifacts: Record<string, { content: object; step_id?: string; role?: string; timestamp?: string }>;
+  chatHistory?: string;
+  activeTab?: string;
+}
+```
+
+**Streaming**: newline-delimited JSON events with types: `analyzing`, `plan_ready`, `applying`, `artifact_updated`, `complete`, `error`.
 
 #### Ask Question
 
@@ -401,6 +400,12 @@ interface MetaSOPEvent {
   error?: string;
   status?: string;
   message?: string;
+  diagram?: {
+    id: string;
+    title?: string;
+    description?: string;
+    metadata?: any;
+  };
   timestamp: string;
 }
 ```
@@ -511,113 +516,6 @@ async function makeRequest(url: string, retries = 3) {
     }
     throw error;
   }
-}
-```
-
----
-
-## SDKs
-
-### JavaScript/TypeScript
-
-```bash
-npm install @metasop/sdk
-```
-
-```typescript
-import { MetaSOPClient } from '@metasop/sdk';
-
-const client = new MetaSOPClient({
-  apiKey: 'YOUR_API_KEY'
-});
-
-const diagram = await client.diagrams.create({
-  title: 'My Project',
-  description: 'Project description',
-  userRequest: 'Build a web application'
-});
-```
-
-### Python
-
-```bash
-pip install metasop-sdk
-```
-
-```python
-from metasop import MetaSOPClient
-
-client = MetaSOPClient(api_key='YOUR_API_KEY')
-
-diagram = client.diagrams.create(
-    title='My Project',
-    description='Project description',
-    user_request='Build a web application'
-)
-```
-
----
-
-## Webhooks
-
-MetaSOP supports webhooks for real-time notifications.
-
-### Setting Up Webhooks
-
-```http
-POST /api/webhooks
-```
-
-**Request Body**:
-
-```typescript
-{
-  url: string;
-  events: Array<"orchestration.completed" | "orchestration.failed" | "artifact.updated">;
-  secret?: string;
-}
-```
-
-### Webhook Events
-
-#### Orchestration Completed
-
-```json
-{
-  "event": "orchestration.completed",
-  "data": {
-    "diagramId": "abc123",
-    "sessionId": "xyz789",
-    "completedAt": "2025-01-30T00:00:00Z"
-  }
-}
-```
-
-#### Artifact Updated
-
-```json
-{
-  "event": "artifact.updated",
-  "data": {
-    "diagramId": "abc123",
-    "artifactId": "arch_design",
-    "updatedAt": "2025-01-30T00:00:00Z"
-  }
-}
-```
-
-### Verifying Webhooks
-
-Verify webhook signatures using the secret:
-
-```typescript
-import crypto from 'crypto';
-
-function verifyWebhook(payload: string, signature: string, secret: string): boolean {
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(payload);
-  const expectedSignature = hmac.digest('hex');
-  return signature === expectedSignature;
 }
 ```
 

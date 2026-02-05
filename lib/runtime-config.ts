@@ -4,7 +4,9 @@
  * All defaults live here; env vars override; nothing is "forgotten."
  */
 
-const env = typeof process !== "undefined" ? process.env : ({} as NodeJS.ProcessEnv);
+function getEnv(): NodeJS.ProcessEnv {
+  return typeof process !== "undefined" ? process.env : ({} as NodeJS.ProcessEnv);
+}
 
 /** Feature flags and misc runtime options */
 export interface RuntimeFeatureFlags {
@@ -49,43 +51,6 @@ export interface RuntimeConfig {
   featureFlags: RuntimeFeatureFlags;
 }
 
-const DEFAULT_LLM: RuntimeLLMConfig = {
-  provider: env.NODE_ENV === "test" ? "mock" : "gemini",
-  model: "gemini-3-flash-preview",
-  temperature: 0.2,
-  maxTokens: 64000,
-};
-
-const DEFAULT_AGENTS: RuntimeAgentsConfig = {
-  enabled: [
-    "pm_spec",
-    "arch_design",
-    "devops_infrastructure",
-    "security_architecture",
-    "engineer_impl",
-    "ui_design",
-    "qa_verification",
-  ],
-  defaultTimeout: 180000,
-  defaultRetries: 0,
-};
-
-const DEFAULT_PERFORMANCE: RuntimePerformanceConfig = {
-  cacheEnabled: true,
-  maxRefinementDepth: 3,
-  maxCascadeRipples: 10,
-};
-
-const DEFAULT_LOGGING: RuntimeLoggingConfig = {
-  level: env.NODE_ENV === "development" ? "debug" : "info",
-  enabled: true,
-};
-
-const DEFAULT_FEATURE_FLAGS: RuntimeFeatureFlags = {
-  enableMetrics: env.ENABLE_METRICS !== "false",
-  enableCache: true,
-};
-
 function parseNumber(value: string | undefined, fallback: number): number {
   if (value === undefined) return fallback;
   const n = parseInt(value, 10);
@@ -96,8 +61,46 @@ function parseNumber(value: string | undefined, fallback: number): number {
  * Returns the current runtime config (env + defaults). Safe to call from API and lib/metasop.
  */
 export function getRuntimeConfig(): RuntimeConfig {
+  const env = getEnv();
+  const defaultLlm: RuntimeLLMConfig = {
+    provider: env.NODE_ENV === "test" ? "mock" : "gemini",
+    model: "gemini-3-flash-preview",
+    temperature: 0.2,
+    maxTokens: 64000,
+  };
+
+  const defaultAgents: RuntimeAgentsConfig = {
+    enabled: [
+      "pm_spec",
+      "arch_design",
+      "devops_infrastructure",
+      "security_architecture",
+      "engineer_impl",
+      "ui_design",
+      "qa_verification",
+    ],
+    defaultTimeout: 180000,
+    defaultRetries: 0,
+  };
+
+  const defaultPerformance: RuntimePerformanceConfig = {
+    cacheEnabled: true,
+    maxRefinementDepth: 3,
+    maxCascadeRipples: 10,
+  };
+
+  const defaultLogging: RuntimeLoggingConfig = {
+    level: env.NODE_ENV === "development" ? "debug" : "info",
+    enabled: true,
+  };
+
+  const defaultFeatureFlags: RuntimeFeatureFlags = {
+    enableMetrics: env.ENABLE_METRICS !== "false",
+    enableCache: true,
+  };
+
   const llm: RuntimeLLMConfig = {
-    ...DEFAULT_LLM,
+    ...defaultLlm,
     ...(env.METASOP_LLM_PROVIDER === "gemini" || env.METASOP_LLM_PROVIDER === "mock"
       ? { provider: env.METASOP_LLM_PROVIDER }
       : {}),
@@ -109,20 +112,20 @@ export function getRuntimeConfig(): RuntimeConfig {
   }
 
   const agents: RuntimeAgentsConfig = {
-    ...DEFAULT_AGENTS,
+    ...defaultAgents,
     ...(env.METASOP_AGENT_TIMEOUT !== undefined && {
-      defaultTimeout: parseNumber(env.METASOP_AGENT_TIMEOUT, DEFAULT_AGENTS.defaultTimeout),
+      defaultTimeout: parseNumber(env.METASOP_AGENT_TIMEOUT, defaultAgents.defaultTimeout),
     }),
     ...(env.METASOP_AGENT_RETRIES !== undefined && {
-      defaultRetries: parseNumber(env.METASOP_AGENT_RETRIES, DEFAULT_AGENTS.defaultRetries),
+      defaultRetries: parseNumber(env.METASOP_AGENT_RETRIES, defaultAgents.defaultRetries),
     }),
   };
 
   return {
     llm,
     agents,
-    performance: { ...DEFAULT_PERFORMANCE },
-    logging: { ...DEFAULT_LOGGING },
-    featureFlags: { ...DEFAULT_FEATURE_FLAGS },
+    performance: { ...defaultPerformance },
+    logging: { ...defaultLogging },
+    featureFlags: { ...defaultFeatureFlags },
   };
 }

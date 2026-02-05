@@ -52,7 +52,6 @@ export default function CreateDiagramPage() {
     uploadedDocuments,
     generationSteps,
     stepSummaries,
-    agentThoughts,
     currentDiagram, setCurrentDiagram,
     handleGenerate,
     doStartGeneration,

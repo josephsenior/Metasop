@@ -40,10 +40,9 @@ To become the leading open-source platform for AI-powered software development a
 
 ### Technical Notes
 
-**Why not streaming responses?**
-- Gemini adapter doesn't support thought tokens streaming
-- Content tokens streaming doesn't work well because each agent streams its full JSON output at once
-- Even if streaming were possible, JSON output isn't suitable for real-time streaming (not standard text format)
+**Streaming status updates**
+- SSE progress streaming is supported for generation jobs.
+- Full JSON artifacts are still emitted at step completion, not token-streamed.
 
 **Why not parallel execution?**
 - While parallel execution would reduce latency, it would degrade output quality

@@ -52,3 +52,6 @@ tsconfig.tsbuildinfo
 
 # debug session logs (each generation run creates a folder)
 /debug_logs/
+
+# generated outputs
+/saved_diagrams/

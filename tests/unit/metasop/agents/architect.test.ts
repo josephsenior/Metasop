@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { architectAgent } from "@/lib/metasop/agents/architect";
-import type { AgentContext, MetaSOPArtifact } from "@/lib/metasop/types";
-import type { ArchitectBackendArtifact } from "@/lib/metasop/types-backend-schema";
+import type { AgentContext, MetaSOPArtifact, ArchitectBackendArtifact } from "@/lib/metasop/types";
 
 describe("ArchitectAgent", () => {
   let context: AgentContext;

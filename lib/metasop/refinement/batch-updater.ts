@@ -6,7 +6,7 @@
  */
 
 import { generateWithLLM } from "../utils/llm-helper";
-import { EditPlan, RefinementOutput, ChangelogEntry } from "./types";
+import { EditPlan, RefinementOutput } from "./types";
 
 const BATCH_UPDATER_PROMPT = `You are a precise software artifact editor. Apply the requested changes to the artifacts.
 

@@ -430,14 +430,16 @@ export function ProjectChatPanel({
                                 changelog = event.payload.changelog || []
                                 const applied = event.payload.applied ?? 0
 
-                                if (applied > 0) {
-                                    const changelogSummary = changelog.slice(0, 3)
+                                const changelogSummary = applied > 0
+                                    ? changelog.slice(0, 3)
                                         .map((c: any) => `• **${c.artifact}**: ${c.change}`)
                                         .join("\n")
-                                    const moreText = changelog.length > 3
-                                        ? `\n_...and ${changelog.length - 3} more_`
-                                        : ""
+                                    : ""
+                                const moreText = applied > 0 && changelog.length > 3
+                                    ? `\n_...and ${changelog.length - 3} more_`
+                                    : ""
 
+                                if (applied > 0) {
                                     setMessages(prev => prev.map(msg =>
                                         msg.id === refinementMessageId
                                             ? {

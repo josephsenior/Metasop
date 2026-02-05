@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     };
 
     if (useStreaming) {
-      return handleStreamingRefinement(context, cookieOpt, originalWrappers);
+      return handleStreamingRefinement(context, originalWrappers, cookieOpt);
     } else {
-      return handleSyncRefinement(context, cookieOpt, originalWrappers);
+      return handleSyncRefinement(context, originalWrappers, cookieOpt);
     }
   } catch (error: any) {
     console.error("Refine artifacts error:", error);
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
  */
 async function handleStreamingRefinement(
   context: RefinementContext,
-  cookieOpt?: { guestSessionId: string },
-  originalWrappers: Record<string, any>
+  originalWrappers: Record<string, any>,
+  cookieOpt?: { guestSessionId: string }
 ): Promise<NextResponse> {
   const encoder = new TextEncoder();
 
@@ -161,7 +161,7 @@ async function handleStreamingRefinement(
 
 
         // Send artifact_updated events for each changed artifact
-        for (const [artifact, _] of Object.entries(result.updated_artifacts)) {
+        for (const artifact of Object.keys(result.updated_artifacts)) {
           const fieldsChanged = result.changelog.filter(c => c.artifact === artifact).length;
           sendEvent({
             type: "artifact_updated",
@@ -219,8 +219,8 @@ async function handleStreamingRefinement(
  */
 async function handleSyncRefinement(
   context: RefinementContext,
-  cookieOpt?: { guestSessionId: string },
-  originalWrappers: Record<string, any>
+  originalWrappers: Record<string, any>,
+  cookieOpt?: { guestSessionId: string }
 ): Promise<NextResponse> {
   // Layer 1: Analyze intent
   const editPlan = await analyzeIntent(context);
@@ -240,19 +240,6 @@ async function handleSyncRefinement(
   // Layer 2: Apply changes
   const result = await applyBatchUpdate(editPlan, context.artifacts);
   const mergedContent = mergeArtifacts(context.artifacts, result.updated_artifacts);
-
-  // Re-wrap
-  const finalArtifacts: Record<string, any> = {};
-  for (const [id, content] of Object.entries(mergedContent)) {
-    if (originalWrappers[id]) {
-      finalArtifacts[id] = {
-        ...originalWrappers[id],
-        content: content
-      };
-    } else {
-      finalArtifacts[id] = content;
-    }
-  }
 
   // Re-wrap
   const finalArtifacts: Record<string, any> = {};

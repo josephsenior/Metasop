@@ -83,6 +83,4 @@ export const diagramsApi = {
   },
 };
 
-// Re-export metasopApi for convenience
-export { metasopApi } from "./metasop";
 

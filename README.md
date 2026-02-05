@@ -37,6 +37,7 @@ Building software today requires coordinating multiple specialized roles, each w
 - **LLM-Native Caching**: Leverages advanced Gemini context caching to minimize latency and token consumption during generation.
 - **Structured Validation**: All agent outputs are validated against strict Zod schemas and JSON structures, ensuring reliable, machine-readable artifacts.
 - **Agent-to-Agent (A2A) Communication**: Specialized protocol for inter-agent delegation and task management.
+- **Generation Jobs + SSE**: Long-running generation is queued, with progress streamed via Server-Sent Events.
 - **Guest Support**: Limited diagram generation for non-authenticated users with session tracking.
 - **Multi-Provider Support**: Built-in adapters for Google Gemini, Vercel AI SDK, and Token Factory (Llama 3.1).
 
@@ -100,6 +101,9 @@ DATABASE_URL="file:./prisma/local.db"
 
 # Optional: LLM Provider (default: gemini)
 METASOP_LLM_PROVIDER=gemini
+
+# Optional: use mock provider for offline/dev tests
+# METASOP_LLM_PROVIDER=mock
 
 # Optional: Model (default: gemini-3-flash-preview)
 METASOP_LLM_MODEL=gemini-3-flash-preview
@@ -263,7 +267,7 @@ git push origin feature/my-feature
 - [x] Agent-to-agent communication protocol
 - [x] Web interface with Next.js
 - [ ] Additional LLM providers (OpenAI, Anthropic, etc.)
-- [ ] Streaming responses for real-time updates
+- [x] SSE progress streaming for generation
 - [ ] Custom agent templates marketplace
 - [ ] Advanced analytics and insights
 - [ ] Mobile app

@@ -50,7 +50,8 @@ Open [http://localhost:3000](http://localhost:3000). Diagrams are stored locally
 - **`NEXT_PUBLIC_API_URL`** – API base URL (default: `http://localhost:3000/api`).
 - **`NEXT_PUBLIC_APP_URL`** – App URL (default: `http://localhost:3000`).
 - **`METASOP_LLM_MODEL`** – Override LLM model (e.g. `gemini-3-flash-preview`).
-- **`DEV_MODE`** – Set to `"true"` for development.
+- **`METASOP_LLM_API_KEY`** – Alternative to `GOOGLE_AI_API_KEY`/`GEMINI_API_KEY` for Gemini.
+- **`METASOP_LLM_PROVIDER`** – Set to `mock` for offline or deterministic runs.
 
 ## Database (Local SQLite)
 

@@ -118,7 +118,11 @@ The `OrchestrationPanel` component displays:
 
 ### Real-time Updates
 
-The `useMetaSOPOrchestration` hook polls for updates every 2 seconds while orchestrating.
+Generation progress is streamed via SSE at:
+
+```
+GET /api/diagrams/generate/stream?jobId=<jobId>
+```
 
 ### Refinement (tool-based)
 
@@ -139,10 +143,6 @@ Each agent can be enhanced to:
 - Parse user requests more intelligently
 - Generate more detailed artifacts
 - Add validation and error handling
-
-### Transform Function
-
-Modify `transformMetaSOPToDiagram()` in `/app/api/diagrams/generate/route.ts` to customize how MetaSOP artifacts are converted to diagram nodes/edges.
 
 ## Extending with Real LLMs
 
