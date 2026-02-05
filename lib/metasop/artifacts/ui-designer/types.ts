@@ -10,6 +10,7 @@ export interface UIDesignerBackendArtifact {
             secondary_foreground: string;
             background: string;
             foreground: string;
+            text?: string;
             muted: string;
             muted_foreground: string;
             card: string;

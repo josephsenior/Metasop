@@ -58,7 +58,11 @@ export const uiDesignerSchema = {
                 colors: {
                     type: "object",
                     required: ["primary", "primary_foreground", "secondary", "secondary_foreground", "background", "foreground", "muted", "muted_foreground", "card", "card_foreground", "popover", "popover_foreground", "border", "input", "ring", "accent", "accent_foreground", "destructive", "destructive_foreground"],
-                    description: "Comprehensive color palette using hex codes (e.g., #FFFFFF). Follows Shadcn/Tailwind conventions.",
+                    anyOf: [
+                        { required: ["text"] },
+                        { required: ["foreground"] }
+                    ],
+                    description: "Comprehensive color palette using hex codes (e.g., #FFFFFF). Follows Shadcn/Tailwind conventions. Either 'text' or 'foreground' must be present.",
                     properties: {
                         primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Primary brand color." },
                         primary_foreground: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$", description: "Foreground color for primary elements." },
