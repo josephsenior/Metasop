@@ -50,15 +50,10 @@ export function CreateHeader({
                     <ChevronLeft className="h-4 w-4 shrink-0" />
                     <span className="hidden sm:inline">Back</span>
                 </Link>
-                <div className="h-4 w-px bg-border hidden sm:block" />
-                <h1 className="text-sm font-semibold text-foreground truncate">Create Diagram</h1>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
+                {/* Left-panel toggle placed near the back button */}
                 {currentDiagram && (
-                    <TooltipProvider>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/20 rounded-xl border border-border/40 backdrop-blur-md">
-                            {/* Left Panel Toggle (Menu) */}
+                    <div className="ml-1">
+                        <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -77,6 +72,18 @@ export function CreateHeader({
                                     {isLeftPanelOpen ? "Close Menu" : "Open Menu"}
                                 </TooltipContent>
                             </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                )}
+                <div className="h-4 w-px bg-border hidden sm:block" />
+                <h1 className="text-sm font-semibold text-foreground truncate">Create Diagram</h1>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+                {currentDiagram && (
+                    <TooltipProvider>
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/20 rounded-xl border border-border/40 backdrop-blur-md">
+                            {/* left-panel toggle moved to the left near Back link */}
 
                             {/* Chat Toggle */}
                             <Tooltip>

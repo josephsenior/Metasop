@@ -101,7 +101,7 @@ export function PromptInput({
 
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all z-50"
+                        className="absolute top-2 left-2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all z-50"
                         title={isCollapsed ? "Expand" : "Collapse"}
                     >
                         {isCollapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -183,7 +183,7 @@ export function PromptInput({
                                     {uploadedDocuments.map((doc, idx) => (
                                         <Badge key={idx} variant="secondary" className="text-[10px] py-0.5 px-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 flex items-center gap-1">
                                             <FileText className="h-2.5 w-2.5" />
-                                            <span className="max-w-[80px] truncate">{doc.name}</span>
+                                            <span className="max-w-20 truncate">{doc.name}</span>
                                             <button onClick={() => onRemoveDocument(idx)} className="hover:text-red-500">
                                                 <X className="h-2.5 w-2.5" />
                                             </button>
