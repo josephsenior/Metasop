@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Lock,
@@ -19,7 +19,10 @@ import { SecurityBackendArtifact } from "@/lib/metasop/artifacts/security/types"
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
+  EmptyStateCard,
 } from "../shared-components"
 
 import { ThreatModelSection } from "./sections/ThreatModelSection"
@@ -48,6 +51,8 @@ export default function SecurityArchitecturePanel({
 
   const auth = security_architecture?.authentication
   const authz = security_architecture?.authorization
+  const summaryText = (data as any).security_architecture?.description || (data as any).summary || (data as any).description || "Security controls and threat model."
+  const descriptionText = (data as any).summary ? (data as any).description : undefined
 
   const getSeverityStyles = (severity: string) => {
     switch (severity?.toLowerCase()) {
@@ -62,27 +67,28 @@ export default function SecurityArchitecturePanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Security Hub Header */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>Security Architecture</h2>
-              <Badge variant="secondary" className="bg-red-500/10 text-red-700 hover:bg-red-500/20 text-[10px] px-1.5 h-5">
-                Blueprint
-              </Badge>
-              <Badge variant="outline" className={cn(
-                "text-[10px] font-mono border-red-500/30 uppercase px-1.5 py-0.5",
+      <ArtifactHeaderBlock
+        title="Security Architecture"
+        summary={summaryText}
+        description={descriptionText}
+        badges={(
+          <>
+            <Badge variant="secondary" className={cn(styles.badges.small, "bg-red-500/10 text-red-700 hover:bg-red-500/20")}>
+              Blueprint
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                styles.badges.small,
+                "font-mono uppercase",
                 threat_model.length > 3 ? "text-red-600 border-red-500/40" : "text-emerald-600 border-emerald-500/30"
-              )}>
-                THREAT_LEVEL: {threat_model.length > 3 ? 'ELEVATED' : 'NORMAL'}
-              </Badge>
-            </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).security_architecture?.description || (data as any).summary || (data as any).description || "Security controls and threat model."}
-            </p>
-          </div>
-        </div>
-
+              )}
+            >
+              THREAT_LEVEL: {threat_model.length > 3 ? 'ELEVATED' : 'NORMAL'}
+            </Badge>
+          </>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={AlertTriangle}
@@ -114,46 +120,60 @@ export default function SecurityArchitecturePanel({
             bg="bg-amber-500/10"
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="threats" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="threats" icon={AlertTriangle} label="Threat Matrix" count={threat_model.length} />
-                <TabTrigger value="controls" icon={ShieldCheck} label="Defense Grid" count={security_controls.length} />
-                <TabTrigger value="arch" icon={Network} label="Architecture" />
-                <TabTrigger value="data" icon={Lock} label="Encryption" />
-                {(vulnerability_management || security_monitoring) && (
-                  <TabTrigger value="management" icon={Activity} label="Management" />
-                )}
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="threats" icon={AlertTriangle} label="Threat Matrix" count={threat_model.length} />
+            <TabTrigger value="controls" icon={ShieldCheck} label="Defense Grid" count={security_controls.length} />
+            <TabTrigger value="arch" icon={Network} label="Architecture" />
+            <TabTrigger value="data" icon={Lock} label="Encryption" />
+            {(vulnerability_management || security_monitoring) && (
+              <TabTrigger value="management" icon={Activity} label="Management" />
+            )}
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
               <div className="p-4">
-                <ThreatModelSection threat_model={threat_model} getSeverityStyles={getSeverityStyles} />
+                {threat_model.length > 0 ? (
+                  <ThreatModelSection threat_model={threat_model} getSeverityStyles={getSeverityStyles} />
+                ) : (
+                  <EmptyStateCard title="Threat Matrix" description="No threats were generated for this run." icon={AlertTriangle} />
+                )}
 
-                <SecurityControlsSection security_controls={security_controls} />
+                {security_controls.length > 0 ? (
+                  <SecurityControlsSection security_controls={security_controls} />
+                ) : (
+                  <EmptyStateCard title="Security Controls" description="No security controls were generated for this run." icon={ShieldCheck} />
+                )}
 
-                <SecurityArchitectureSection security_architecture={security_architecture} auth={auth} authz={authz} />
+                {security_architecture ? (
+                  <SecurityArchitectureSection security_architecture={security_architecture} auth={auth} authz={authz} />
+                ) : (
+                  <EmptyStateCard title="Architecture" description="No security architecture details were generated for this run." icon={Network} />
+                )}
 
-                <DataSecuritySection
-                  encryption={encryption}
-                  compliance={compliance}
-                  activeStandard={activeStandard}
-                  setActiveStandard={setActiveStandard}
-                />
+                {encryption || compliance.length > 0 ? (
+                  <DataSecuritySection
+                    encryption={encryption}
+                    compliance={compliance}
+                    activeStandard={activeStandard}
+                    setActiveStandard={setActiveStandard}
+                  />
+                ) : (
+                  <EmptyStateCard title="Encryption" description="No encryption or compliance details were generated for this run." icon={Lock} />
+                )}
 
-                {(vulnerability_management || security_monitoring) && (
+                {(vulnerability_management || security_monitoring) ? (
                   <ManagementSection
                     vulnerability_management={vulnerability_management}
                     security_monitoring={security_monitoring}
                   />
+                ) : (
+                  <EmptyStateCard title="Management" description="No vulnerability or monitoring details were generated for this run." icon={Activity} />
                 )}
               </div>
             </ScrollArea>

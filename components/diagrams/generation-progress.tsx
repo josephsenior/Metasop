@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { CheckCircle2, Loader2, Circle, AlertCircle, Clock } from "lucide-react"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface GenerationProgressProps {
   steps: Array<{
@@ -11,6 +12,7 @@ interface GenerationProgressProps {
     role: string
     status: "pending" | "running" | "success" | "failed"
   }>
+  summaries?: Record<string, string>
 }
 
 const agentOrder = [
@@ -32,7 +34,7 @@ const agentLabels: Record<string, string> = {
   qa_verification: "QA",
 }
 
-export function GenerationProgress({ steps }: GenerationProgressProps) {
+export function GenerationProgress({ steps, summaries = {} }: GenerationProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0)
   const [startTime, setStartTime] = useState(Date.now())
   const prevStepsLengthRef = useRef(0)
@@ -81,6 +83,13 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
 
   // Find current step
   const currentStep = orderedSteps.find((s) => s.status === "running")
+  const lastCompleted = [...orderedSteps].reverse().find((s) => s.status === "success")
+  const nextPending = orderedSteps.find((s) => s.status === "pending")
+  const currentSummary = currentStep ? summaries[currentStep.stepId] : ""
+  const lastSummary = lastCompleted ? summaries[lastCompleted.stepId] : ""
+  const etaSeconds = progress > 0 && progress < 100
+    ? Math.round((elapsedTime * (100 - progress)) / Math.max(progress, 1))
+    : null
 
   // Reset timer when a new generation starts (steps go from 0 to >0)
   useEffect(() => {
@@ -113,95 +122,136 @@ export function GenerationProgress({ steps }: GenerationProgressProps) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full flex items-center gap-3 py-2 px-4 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50"
+      className="w-full flex flex-col gap-1.5 py-2 px-4 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-50"
     >
-      {/* Left: Title + Time */}
-      <div className="flex items-center gap-2 shrink-0">
-        {currentStep ? (
-          <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
-        ) : (
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        )}
-        <span className="text-sm font-medium text-foreground">
-          {currentStep ? "Generating" : "Completed"}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {formatTime(elapsedTime)}
-        </span>
-      </div>
-
-      {/* Center: Step indicators */}
-      <div className="flex items-center gap-2 flex-1 justify-center">
-        {orderedSteps.map((step, index) => {
-          const isActive = step.status === "running"
-          const isCompleted = step.status === "success"
-          const isFailed = step.status === "failed"
-
-          return (
-            <div key={step.stepId} className="flex items-center gap-1">
-              {/* Connector line (except first) */}
-              {index > 0 && (
-                <div
-                  className={cn(
-                    "w-6 h-0.5 transition-colors",
-                    isCompleted || isActive ? "bg-blue-500" : "bg-muted"
-                  )}
-                />
-              )}
-              {/* Step indicator */}
-              <div className="flex items-center gap-1">
-                {isCompleted ? (
-                  <motion.div
-                    key={`check-${step.stepId}`}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                  </motion.div>
-                ) : isActive ? (
-                  <Loader2
-                    key={`loader-${step.stepId}-${step.status}`}
-                    className="h-4 w-4 text-blue-500 animate-spin shrink-0"
-                  />
-                ) : isFailed ? (
-                  <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-                ) : (
-                  <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
-                )}
-                <span
-                  className={cn(
-                    "text-xs font-medium transition-colors whitespace-nowrap",
-                    isActive ? "text-blue-600 dark:text-blue-400" :
-                      isCompleted ? "text-green-600 dark:text-green-400" :
-                        isFailed ? "text-red-600 dark:text-red-400" :
-                          "text-muted-foreground"
-                  )}
-                >
-                  {step.label}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Right: Progress percentage */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden relative">
-          <motion.div
-            className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full absolute top-0 left-0"
-            initial={{ width: "0%" }}
-            animate={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
-            transition={{
-              duration: 0.3,
-              ease: "easeOut"
-            }}
-          />
+      <div className="flex items-center gap-3">
+        {/* Left: Title + Time */}
+        <div className="flex items-center gap-2 shrink-0">
+          {currentStep ? (
+            <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+          ) : (
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="text-sm font-medium text-foreground">
+            {currentStep ? "Generating" : "Completed"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {formatTime(elapsedTime)}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            ETA {etaSeconds === null ? "--" : formatTime(etaSeconds)}
+          </span>
         </div>
-        <span className="text-xs font-medium text-muted-foreground w-8 tabular-nums min-w-8 text-right">
-          {Math.round(Math.max(0, Math.min(progress, 100)))}%
-        </span>
+
+        {/* Center: Step indicators */}
+        <TooltipProvider>
+          <div className="flex items-center gap-2 flex-1 justify-center">
+            {orderedSteps.map((step, index) => {
+              const isActive = step.status === "running"
+              const isCompleted = step.status === "success"
+              const isFailed = step.status === "failed"
+              const summary = summaries[step.stepId]
+
+              return (
+                <div key={step.stepId} className="flex items-center gap-1">
+                  {/* Connector line (except first) */}
+                  {index > 0 && (
+                    <div
+                      className={cn(
+                        "w-6 h-0.5 transition-colors",
+                        isCompleted || isActive ? "bg-blue-500" : "bg-muted"
+                      )}
+                    />
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1">
+                        {isCompleted ? (
+                          <motion.div
+                            key={`check-${step.stepId}`}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                          </motion.div>
+                        ) : isActive ? (
+                          <Loader2
+                            key={`loader-${step.stepId}-${step.status}`}
+                            className="h-4 w-4 text-blue-500 animate-spin shrink-0"
+                          />
+                        ) : isFailed ? (
+                          <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                        )}
+                        <span
+                          className={cn(
+                            "text-xs font-medium transition-colors whitespace-nowrap",
+                            isActive ? "text-blue-600 dark:text-blue-400" :
+                              isCompleted ? "text-green-600 dark:text-green-400" :
+                                isFailed ? "text-red-600 dark:text-red-400" :
+                                  "text-muted-foreground"
+                          )}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[220px]">
+                      <div className="text-xs space-y-1">
+                        <div className="font-semibold text-foreground">{step.label}</div>
+                        <div className="text-muted-foreground">Status: {step.status}</div>
+                        {summary ? (
+                          <div className="text-muted-foreground">{summary}</div>
+                        ) : (
+                          <div className="text-muted-foreground">No summary yet</div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )
+            })}
+          </div>
+        </TooltipProvider>
+
+        {/* Right: Progress percentage */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden relative">
+            <motion.div
+              className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full absolute top-0 left-0"
+              initial={{ width: "0%" }}
+              animate={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut"
+              }}
+            />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground w-8 tabular-nums min-w-8 text-right">
+            {Math.round(Math.max(0, Math.min(progress, 100)))}%
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        {currentStep ? (
+          <span className="truncate">
+            <span className="font-medium text-foreground">Now:</span> {currentStep.label}
+            {currentSummary ? ` — ${currentSummary}` : ""}
+          </span>
+        ) : lastCompleted ? (
+          <span className="truncate">
+            <span className="font-medium text-foreground">Last:</span> {lastCompleted.label}
+            {lastSummary ? ` — ${lastSummary}` : ""}
+          </span>
+        ) : (
+          <span className="truncate">
+            <span className="font-medium text-foreground">Queued:</span> {nextPending?.label || "Preparing"}
+          </span>
+        )}
+        <span className="tabular-nums">{orderedSteps.filter(s => s.status === "success").length}/{orderedSteps.length}</span>
       </div>
     </motion.div>
   )

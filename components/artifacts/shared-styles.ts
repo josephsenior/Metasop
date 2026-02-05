@@ -68,7 +68,7 @@ export const artifactStyles = {
   // Standardized layouts
   layout: {
     container: "mx-auto w-full px-4",
-    header: "p-4 border-b border-border/40 bg-muted/10",
+    header: "p-3 sm:p-4 border-b border-border/40 bg-muted/10",
     section: "p-4 space-y-6",
     // Flexible responsive grid for StatsCards - adapts to content
     statsGrid: "grid gap-3" + " " + "grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))]",

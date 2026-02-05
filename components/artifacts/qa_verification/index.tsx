@@ -4,7 +4,7 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   ShieldAlert,
@@ -30,7 +30,10 @@ import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
+  EmptyStateCard,
   itemVariants as item
 } from "../shared-components"
 
@@ -217,43 +220,41 @@ export default function QAVerificationPanel({
     (coverage as any).functions ??
     (coverage as any).branches
   const coverageThreshold = coverage?.threshold
+  const summaryText = (data as any).summary || "Quality assurance strategy, test plans, and risk analysis."
+  const descriptionText = (data as any).summary ? data.description : undefined
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>QA Verification</h2>
-              {ok !== undefined && (
-                <Badge variant="outline" className={cn(
-                  "text-[10px] px-1.5 h-5 uppercase font-bold",
+      <ArtifactHeaderBlock
+        title="QA Verification"
+        summary={summaryText}
+        description={descriptionText}
+        badges={(
+          <>
+            {ok !== undefined && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  styles.badges.small,
+                  "uppercase font-bold",
                   ok ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/5" : "text-rose-600 border-rose-500/30 bg-rose-500/5"
-                )}>
-                  {ok ? "Ready for Release" : "Verification Pending"}
-                </Badge>
-              )}
-              <Badge variant="secondary" className="bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 text-[10px] px-1.5 h-5">
-                Quality Assurance
+                )}
+              >
+                {ok ? "Ready for Release" : "Verification Pending"}
               </Badge>
-              {Object.keys(coverage).length > 0 && (
-                <Badge variant="outline" className="text-[10px] font-mono text-green-600 border-green-500/30 uppercase px-1.5 h-5">
-                  Coverage: {coveragePercent !== undefined ? `${coveragePercent}%` : '—'} {coverageThreshold && `(Goal: ${coverageThreshold}%)`}
-                </Badge>
-              )}
-            </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).summary || "Quality assurance strategy, test plans, and risk analysis."}
-            </p>
-            {data.description && (
-              <p className={cn("text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl")}>
-                {data.description}
-              </p>
             )}
-          </div>
-        </div>
-
+            <Badge variant="secondary" className={cn(styles.badges.small, "bg-purple-500/10 text-purple-700 hover:bg-purple-500/20")}>
+              Quality Assurance
+            </Badge>
+            {Object.keys(coverage).length > 0 && (
+              <Badge variant="outline" className={cn(styles.badges.small, "font-mono text-green-600 border-green-500/30 uppercase")}>
+                Coverage: {coveragePercent !== undefined ? `${coveragePercent}%` : '—'} {coverageThreshold && `(Goal: ${coverageThreshold}%)`}
+              </Badge>
+            )}
+          </>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={TestTube}
@@ -279,25 +280,21 @@ export default function QAVerificationPanel({
             isText={true}
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="overview" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="overview" icon={Info} label="Overview" />
-                <TabTrigger value="strategy" icon={Target} label="Strategy" />
-                <TabTrigger value="cases" icon={ListTodo} label="Test Cases" count={testCases.length} />
-                <TabTrigger value="risks" icon={AlertTriangle} label="Risk Analysis" count={riskAnalysis.length} />
-                {securityPlan && <TabTrigger value="security" icon={Shield} label="Security Plan" />}
-                {manualVerification.length > 0 && <TabTrigger value="manual" icon={UserCheck} label="Manual Audit" count={manualVerification.length} />}
-                {accessibilityPlan && <TabTrigger value="accessibility" icon={Globe} label="Accessibility" />}
-                {manualUatPlan && <TabTrigger value="uat" icon={UserCheck} label="UAT Plan" />}
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="overview" icon={Info} label="Overview" />
+            <TabTrigger value="strategy" icon={Target} label="Strategy" />
+            <TabTrigger value="cases" icon={ListTodo} label="Test Cases" count={testCases.length} />
+            <TabTrigger value="risks" icon={AlertTriangle} label="Risk Analysis" count={riskAnalysis.length} />
+            {securityPlan && <TabTrigger value="security" icon={Shield} label="Security Plan" />}
+            {manualVerification.length > 0 && <TabTrigger value="manual" icon={UserCheck} label="Manual Audit" count={manualVerification.length} />}
+            {accessibilityPlan && <TabTrigger value="accessibility" icon={Globe} label="Accessibility" />}
+            {manualUatPlan && <TabTrigger value="uat" icon={UserCheck} label="UAT Plan" />}
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
@@ -306,23 +303,51 @@ export default function QAVerificationPanel({
                   description={data.description}
                   testStrategy={testStrategy}
                 />
-                <StrategySection
-                  testStrategy={testStrategy}
-                  performanceMetrics={performanceMetrics}
-                  coverage={coverage}
-                />
-                <TestCasesSection
-                  testCases={testCases}
-                  TestPlanCard={TestPlanCard}
-                />
-                <RiskAnalysisSection
-                  riskAnalysis={riskAnalysis}
-                  RiskCard={RiskCard}
-                />
-                <SecurityPlanSection securityPlan={securityPlan} />
-                <ManualVerificationSection manualVerification={manualVerification} />
-                <AccessibilityPlanSection accessibilityPlan={accessibilityPlan} />
-                <UatPlanSection manualUatPlan={manualUatPlan} />
+                {Object.keys(testStrategy).length > 0 || Object.keys(performanceMetrics).length > 0 || Object.keys(coverage).length > 0 ? (
+                  <StrategySection
+                    testStrategy={testStrategy}
+                    performanceMetrics={performanceMetrics}
+                    coverage={coverage}
+                  />
+                ) : (
+                  <EmptyStateCard title="Strategy" description="No QA strategy details were generated for this run." icon={Target} />
+                )}
+                {testCases.length > 0 ? (
+                  <TestCasesSection
+                    testCases={testCases}
+                    TestPlanCard={TestPlanCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="Test Cases" description="No test cases were generated for this run." icon={ListTodo} />
+                )}
+                {riskAnalysis.length > 0 ? (
+                  <RiskAnalysisSection
+                    riskAnalysis={riskAnalysis}
+                    RiskCard={RiskCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="Risk Analysis" description="No risk analysis was generated for this run." icon={AlertTriangle} />
+                )}
+                {securityPlan ? (
+                  <SecurityPlanSection securityPlan={securityPlan} />
+                ) : (
+                  <EmptyStateCard title="Security Plan" description="No security plan was generated for this run." icon={Shield} />
+                )}
+                {manualVerification.length > 0 ? (
+                  <ManualVerificationSection manualVerification={manualVerification} />
+                ) : (
+                  <EmptyStateCard title="Manual Audit" description="No manual verification steps were generated for this run." icon={UserCheck} />
+                )}
+                {accessibilityPlan ? (
+                  <AccessibilityPlanSection accessibilityPlan={accessibilityPlan} />
+                ) : (
+                  <EmptyStateCard title="Accessibility" description="No accessibility plan was generated for this run." icon={Globe} />
+                )}
+                {manualUatPlan ? (
+                  <UatPlanSection manualUatPlan={manualUatPlan} />
+                ) : (
+                  <EmptyStateCard title="UAT Plan" description="No UAT plan was generated for this run." icon={UserCheck} />
+                )}
               </div>
             </ScrollArea>
           </div>

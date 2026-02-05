@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Cpu,
@@ -23,7 +23,10 @@ import { ArchitectBackendArtifact } from "@/lib/metasop/artifacts/architect/type
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
+  EmptyStateCard,
 } from "../shared-components"
 
 import { StrategySection } from "./sections/StrategySection"
@@ -55,25 +58,22 @@ export default function ArchDesignPanel({
   const securityConsiderations = data.security_considerations || []
   const scalabilityApproach = data.scalability_approach
   const nextTasks = data.next_tasks || []
+  const summaryText = (data as any).summary || (data as any).description || "Architectural design and technical specifications."
+  const descriptionText = (data as any).summary ? (data as any).description : undefined
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>System Architecture</h2>
-              <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 text-[10px] px-1.5 h-5">
-                Specification
-              </Badge>
-            </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {(data as any).summary || (data as any).description || "Architectural design and technical specifications."}
-            </p>
-          </div>
-        </div>
-
+      <ArtifactHeaderBlock
+        title="System Architecture"
+        summary={summaryText}
+        description={descriptionText}
+        badges={(
+          <Badge variant="secondary" className={cn(styles.badges.small, "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20")}>
+            Specification
+          </Badge>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Network}
@@ -125,27 +125,23 @@ export default function ArchDesignPanel({
             bg="bg-orange-500/10"
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="design" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="design" icon={BookOpen} label="Philosophy" />
-                <TabTrigger value="api" icon={Terminal} label="API Contract" count={apis.length} />
-                <TabTrigger value="db" icon={Database} label="Schema" count={databaseSchema?.tables?.length || 0} />
-                <TabTrigger value="decisions" icon={ScrollText} label="ADRs" count={decisions.length} />
-                <TabTrigger value="integrations" icon={Share2} label="Integrations" count={integrationPoints.length} />
-                {technologyStack && <TabTrigger value="stack" icon={Layers} label="Stack" count={Object.keys(technologyStack).length} />}
-                {nextTasks.length > 0 && <TabTrigger value="tasks" icon={ListTodo} label="Next Tasks" count={nextTasks.length} />}
-                {(securityConsiderations.length > 0 || scalabilityApproach) && (
-                  <TabTrigger value="advanced" icon={Settings} label="Advanced" count={securityConsiderations.length + (scalabilityApproach ? 1 : 0)} />
-                )}
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="design" icon={BookOpen} label="Philosophy" />
+            <TabTrigger value="api" icon={Terminal} label="API Contract" count={apis.length} />
+            <TabTrigger value="db" icon={Database} label="Schema" count={databaseSchema?.tables?.length || 0} />
+            <TabTrigger value="decisions" icon={ScrollText} label="ADRs" count={decisions.length} />
+            <TabTrigger value="integrations" icon={Share2} label="Integrations" count={integrationPoints.length} />
+            {technologyStack && <TabTrigger value="stack" icon={Layers} label="Stack" count={Object.keys(technologyStack).length} />}
+            {nextTasks.length > 0 && <TabTrigger value="tasks" icon={ListTodo} label="Next Tasks" count={nextTasks.length} />}
+            {(securityConsiderations.length > 0 || scalabilityApproach) && (
+              <TabTrigger value="advanced" icon={Settings} label="Advanced" count={securityConsiderations.length + (scalabilityApproach ? 1 : 0)} />
+            )}
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
@@ -155,23 +151,44 @@ export default function ArchDesignPanel({
                   title={(data as any).title || artifact?.title}
                   design_doc={data.design_doc}
                 />
-
-                <EndpointsSection apiEndpoints={apis} />
-
-                <DatabaseSection databaseSchema={databaseSchema} />
-
-                <DecisionsSection decisions={decisions} />
-
-                <IntegrationsSection integrationPoints={integrationPoints} />
-
-                <TechStackSection technologyStack={technologyStack} />
-
-                <TasksSection nextTasks={nextTasks} />
-
-                <AdvancedSection
-                  securityConsiderations={securityConsiderations}
-                  scalabilityApproach={scalabilityApproach}
-                />
+                {apis.length > 0 ? (
+                  <EndpointsSection apiEndpoints={apis} />
+                ) : (
+                  <EmptyStateCard title="API Contract" description="No API endpoints were generated for this run." icon={Terminal} />
+                )}
+                {databaseSchema?.tables?.length ? (
+                  <DatabaseSection databaseSchema={databaseSchema} />
+                ) : (
+                  <EmptyStateCard title="Database Schema" description="No database schema was generated for this run." icon={Database} />
+                )}
+                {decisions.length > 0 ? (
+                  <DecisionsSection decisions={decisions} />
+                ) : (
+                  <EmptyStateCard title="Architecture Decisions" description="No decisions were recorded for this run." icon={ScrollText} />
+                )}
+                {integrationPoints.length > 0 ? (
+                  <IntegrationsSection integrationPoints={integrationPoints} />
+                ) : (
+                  <EmptyStateCard title="Integrations" description="No integration points were generated for this run." icon={Share2} />
+                )}
+                {technologyStack ? (
+                  <TechStackSection technologyStack={technologyStack} />
+                ) : (
+                  <EmptyStateCard title="Tech Stack" description="No technology stack was generated for this run." icon={Layers} />
+                )}
+                {nextTasks.length > 0 ? (
+                  <TasksSection nextTasks={nextTasks} />
+                ) : (
+                  <EmptyStateCard title="Next Tasks" description="No next tasks were generated for this run." icon={ListTodo} />
+                )}
+                {securityConsiderations.length > 0 || scalabilityApproach ? (
+                  <AdvancedSection
+                    securityConsiderations={securityConsiderations}
+                    scalabilityApproach={scalabilityApproach}
+                  />
+                ) : (
+                  <EmptyStateCard title="Advanced" description="No advanced considerations were generated for this run." icon={Settings} />
+                )}
               </div>
             </ScrollArea>
           </div>

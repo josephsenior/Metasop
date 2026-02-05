@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from "react"
+import type { ComponentType, ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "./shared-styles"
 import { Button } from "@/components/ui/button"
 import { Check, Copy } from "lucide-react"
-import { TabsTrigger as TabsTriggerPrimitive } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { TabsList, TabsTrigger as TabsTriggerPrimitive } from "@/components/ui/tabs"
 
 // Animation variants
 export const containerVariants = {
@@ -83,5 +85,85 @@ export function TabTrigger({ value, icon: Icon, label, count, className, ...prop
         </span>
       )}
     </TabsTriggerPrimitive>
+  )
+}
+
+export function ArtifactTabBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="px-4 pt-4">
+      <ScrollArea className="w-full pb-2">
+        <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full flex-wrap">
+          {children}
+        </TabsList>
+      </ScrollArea>
+    </div>
+  )
+}
+
+export function ArtifactHeaderBlock({
+  title,
+  summary,
+  summaryClassName,
+  description,
+  badges,
+  children,
+  className
+}: {
+  title: string
+  summary?: string
+  summaryClassName?: string
+  description?: string
+  badges?: ReactNode
+  children?: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn(styles.layout.header, className)}>
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className={styles.typography.h2}>{title}</h2>
+            {badges}
+          </div>
+          {summary && (
+            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted, summaryClassName)}>
+              {summary}
+            </p>
+          )}
+          {description && (
+            <p className="text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+export function EmptyStateCard({
+  title,
+  description = "No data available for this section yet.",
+  icon: Icon
+}: {
+  title: string
+  description?: string
+  icon?: ComponentType<{ className?: string }>
+}) {
+  return (
+    <div className={cn("border rounded-lg p-4 bg-muted/20", styles.colors.borderMuted)}>
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+        <div className="space-y-0.5">
+          <div className={cn("text-xs font-semibold", styles.colors.text)}>{title}</div>
+          <div className="text-[11px] text-muted-foreground/80">{description}</div>
+        </div>
+      </div>
+    </div>
   )
 }

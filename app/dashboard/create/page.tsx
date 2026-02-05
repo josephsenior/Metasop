@@ -168,7 +168,7 @@ export default function CreateDiagramPage() {
             <ResizablePanel defaultSize={isLeftPanelOpen ? 60 : 80}>
               <div className="h-full flex flex-col relative overflow-hidden bg-background">
                 {/* Persistent Progress Bar */}
-                <GenerationProgress steps={generationSteps} />
+                <GenerationProgress steps={generationSteps} summaries={stepSummaries} />
 
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
                   <AnimatePresence mode="wait">

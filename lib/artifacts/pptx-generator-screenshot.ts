@@ -140,10 +140,10 @@ export class PPTXGeneratorScreenshot {
       const criteriaHTML = templates.createListSlide(
         "Acceptance Criteria",
         acceptanceCriteria,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
-              <span class="badge badge-green">AC-${idx + 1}</span>
+              <span class="badge badge-green">AC-${_idx + 1}</span>
               ${item.criteria || item.title || item}
             </div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -199,7 +199,7 @@ export class PPTXGeneratorScreenshot {
       const stakeholdersHTML = templates.createListSlide(
         "Stakeholders",
         stakeholders,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">${item.name || item.role || item}</div>
             ${item.role && item.name !== item.role ? `<div class="list-item-description">Role: ${item.role}</div>` : ''}
@@ -228,7 +228,7 @@ export class PPTXGeneratorScreenshot {
       const apiHTML = templates.createListSlide(
         "API Endpoints",
         apiEndpoints,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
               <span class="badge badge-blue">${item.method || 'GET'}</span>
@@ -247,7 +247,7 @@ export class PPTXGeneratorScreenshot {
       const decisionsHTML = templates.createListSlide(
         "Architecture Decisions",
         decisions,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">${item.decision || item.title || item}</div>
             ${item.rationale ? `<div class="list-item-description">${item.rationale}</div>` : ''}
@@ -263,7 +263,7 @@ export class PPTXGeneratorScreenshot {
       const dbHTML = templates.createListSlide(
         "Database Schema",
         database,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
               <span class="badge badge-purple">${item.name || item.table || item}</span>
@@ -288,7 +288,7 @@ export class PPTXGeneratorScreenshot {
       const integrationsHTML = templates.createListSlide(
         "Integrations",
         integrations,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">${item.name || item.service || item}</div>
             ${item.purpose ? `<div class="list-item-description">${item.purpose}</div>` : ''}
@@ -330,10 +330,10 @@ export class PPTXGeneratorScreenshot {
       const threatsHTML = templates.createListSlide(
         "Threat Model",
         threats,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
-              <span class="badge badge-red">T-${idx + 1}</span>
+              <span class="badge badge-red">T-${_idx + 1}</span>
               ${item.threat || item.title || item}
             </div>
             ${item.mitigation ? `<div class="list-item-description">Mitigation: ${item.mitigation}</div>` : ''}
@@ -499,10 +499,10 @@ export class PPTXGeneratorScreenshot {
       const phasesHTML = templates.createListSlide(
         "Implementation Phases",
         phases,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
-              <span class="badge badge-blue">Phase ${idx + 1}</span>
+              <span class="badge badge-blue">Phase ${_idx + 1}</span>
               ${item.phase || item.name || item}
             </div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
@@ -565,10 +565,10 @@ export class PPTXGeneratorScreenshot {
       const testCasesHTML = templates.createListSlide(
         "Test Cases",
         testCases,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
-              <span class="badge badge-green">TC-${idx + 1}</span>
+              <span class="badge badge-green">TC-${_idx + 1}</span>
               ${item.test || item.title || item}
             </div>
             ${item.expected ? `<div class="list-item-description">Expected: ${item.expected}</div>` : ''}
@@ -590,10 +590,10 @@ export class PPTXGeneratorScreenshot {
       const risksHTML = templates.createListSlide(
         "Risk Analysis",
         risks,
-        (item, idx) => `
+        (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">
-              <span class="badge badge-red">R-${idx + 1}</span>
+              <span class="badge badge-red">R-${_idx + 1}</span>
               ${item.risk || item.title || item}
             </div>
             ${item.mitigation ? `<div class="list-item-description">Mitigation: ${item.mitigation}</div>` : ''}

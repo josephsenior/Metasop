@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Palette,
@@ -20,6 +20,9 @@ import { UIDesignerBackendArtifact } from "@/lib/metasop/artifacts/ui-designer/t
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
+  EmptyStateCard,
   TabTrigger
 } from "../shared-components"
 
@@ -49,6 +52,8 @@ export default function UIDesignPanel({
   const visualPhilosophy = data.visual_philosophy
   const informationArchitecture = data.information_architecture
   const responsiveStrategy = data.responsive_strategy
+  const summaryText = data.summary || "Visual language, component specification, and design patterns."
+  const descriptionText = data.summary ? data.description : undefined
 
   const hierarchyNodes: any[] = Array.isArray(componentHierarchy)
     ? componentHierarchy
@@ -61,26 +66,16 @@ export default function UIDesignPanel({
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Design Header */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>UI/UX Design Specification</h2>
-              <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 text-[10px] px-1.5 h-5">
-                Design System
-              </Badge>
-            </div>
-            <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-              {data.summary || "Visual language, component specification, and design patterns."}
-            </p>
-            {data.description && (
-              <p className="text-[11px] text-muted-foreground italic leading-tight max-w-3xl border-l-2 border-primary/20 pl-3 py-1 mt-1">
-                {data.description}
-              </p>
-            )}
-          </div>
-        </div>
-
+      <ArtifactHeaderBlock
+        title="UI/UX Design Specification"
+        summary={summaryText}
+        description={descriptionText}
+        badges={(
+          <Badge variant="secondary" className={cn(styles.badges.small, "bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20")}>
+            Design System
+          </Badge>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Palette}
@@ -132,47 +127,71 @@ export default function UIDesignPanel({
             bg="bg-cyan-500/10"
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="tokens" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="tokens" icon={Palette} label="Tokens" count={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)} />
-                <TabTrigger value="strategy" icon={Layout} label="Strategy" />
-                <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
-                <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
-                <TabTrigger value="atomic" icon={Box} label="Atomic" count={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0} />
-                <TabTrigger value="arch" icon={Grid} label="Blueprint" count={componentSpecs.length} />
-                <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="tokens" icon={Palette} label="Tokens" count={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)} />
+            <TabTrigger value="strategy" icon={Layout} label="Strategy" />
+            <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
+            <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
+            <TabTrigger value="atomic" icon={Box} label="Atomic" count={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0} />
+            <TabTrigger value="arch" icon={Grid} label="Blueprint" count={componentSpecs.length} />
+            <TabTrigger value="accessibility" icon={Accessibility} label="Accessibility" />
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
               <div className="p-4">
-                <TokensSection designTokens={designTokens} />
-                <StrategySection
-                  visualPhilosophy={visualPhilosophy}
-                  layoutStrategy={layoutStrategy}
-                  informationArchitecture={informationArchitecture}
-                  responsiveStrategy={responsiveStrategy}
-                />
-                <SitemapSection websiteLayout={websiteLayout} />
-                <ComponentLibrarySection
-                  rootNode={rootNode}
-                  hierarchyNodes={hierarchyNodes}
-                  uiPatterns={uiPatterns}
-                />
-                <AtomicSection atomicStructure={atomicStructure} />
-                <BlueprintSection
-                  layoutBreakpoints={layoutBreakpoints}
-                  componentSpecs={componentSpecs}
-                />
-                <AccessibilitySection accessibility={accessibility} />
+                {(designTokens.colors || designTokens.spacing) ? (
+                  <TokensSection designTokens={designTokens} />
+                ) : (
+                  <EmptyStateCard title="Design Tokens" description="No design tokens were generated for this run." icon={Palette} />
+                )}
+                {(visualPhilosophy || layoutStrategy || informationArchitecture || responsiveStrategy) ? (
+                  <StrategySection
+                    visualPhilosophy={visualPhilosophy}
+                    layoutStrategy={layoutStrategy}
+                    informationArchitecture={informationArchitecture}
+                    responsiveStrategy={responsiveStrategy}
+                  />
+                ) : (
+                  <EmptyStateCard title="Design Strategy" description="No strategy details were generated for this run." icon={Layout} />
+                )}
+                {websiteLayout?.pages?.length ? (
+                  <SitemapSection websiteLayout={websiteLayout} />
+                ) : (
+                  <EmptyStateCard title="Sitemap" description="No sitemap pages were generated for this run." icon={Monitor} />
+                )}
+                {hierarchyNodes.length > 0 ? (
+                  <ComponentLibrarySection
+                    rootNode={rootNode}
+                    hierarchyNodes={hierarchyNodes}
+                    uiPatterns={uiPatterns}
+                  />
+                ) : (
+                  <EmptyStateCard title="Component Library" description="No component hierarchy was generated for this run." icon={Layers} />
+                )}
+                {atomicStructure ? (
+                  <AtomicSection atomicStructure={atomicStructure} />
+                ) : (
+                  <EmptyStateCard title="Atomic Design" description="No atomic structure was generated for this run." icon={Box} />
+                )}
+                {componentSpecs.length > 0 || layoutBreakpoints ? (
+                  <BlueprintSection
+                    layoutBreakpoints={layoutBreakpoints}
+                    componentSpecs={componentSpecs}
+                  />
+                ) : (
+                  <EmptyStateCard title="Blueprint" description="No layout blueprint was generated for this run." icon={Grid} />
+                )}
+                {accessibility ? (
+                  <AccessibilitySection accessibility={accessibility} />
+                ) : (
+                  <EmptyStateCard title="Accessibility" description="No accessibility guidance was generated for this run." icon={Accessibility} />
+                )}
               </div>
             </ScrollArea>
           </div>

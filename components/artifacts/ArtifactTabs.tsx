@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
     FileText,
     Shield,
@@ -10,6 +11,8 @@ import {
     LayoutDashboard
 } from "lucide-react"
 import { TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 export const agentTabs = [
@@ -23,12 +26,67 @@ export const agentTabs = [
     { id: "qa_verification", label: "QA", icon: CheckCircle, color: "text-teal-600", bgColor: "bg-teal-500/10" },
 ]
 
+function getArtifactMeta(tabId: string, artifact: any) {
+    if (!artifact || tabId === "summary") return null
+    const content = artifact?.content ?? artifact
+    const count = (value: any) => (Array.isArray(value) ? value.length : 0)
+    const build = (summary: string, tags: string[], details?: string) => ({ summary, tags, details })
+
+    switch (tabId) {
+        case "pm_spec": {
+            const stories = count(content?.user_stories)
+            const criteria = count(content?.acceptance_criteria)
+            const summary = `${stories} stories, ${criteria} criteria`
+            return build(summary, [`Stories:${stories}`, `Criteria:${criteria}`], content?.summary || content?.description)
+        }
+        case "arch_design": {
+            const apis = count(content?.apis)
+            const tables = count(content?.database_schema?.tables)
+            const summary = `${apis} APIs, ${tables} tables`
+            return build(summary, [`APIs:${apis}`, `Tables:${tables}`], content?.summary || content?.description)
+        }
+        case "security_architecture": {
+            const threats = count(content?.threat_model)
+            const controls = count(content?.security_controls)
+            const summary = `${threats} threats, ${controls} controls`
+            return build(summary, [`Threats:${threats}`, `Controls:${controls}`], content?.summary || content?.description)
+        }
+        case "devops_infrastructure": {
+            const stages = count(content?.cicd?.pipeline_stages)
+            const services = count(content?.infrastructure?.services)
+            const summary = `${stages} stages, ${services} services`
+            return build(summary, [`Stages:${stages}`, `Services:${services}`], content?.summary || content?.description)
+        }
+        case "ui_design": {
+            const pages = count(content?.website_layout?.pages)
+            const components = count(content?.component_specs)
+            const summary = `${pages} pages, ${components} components`
+            return build(summary, [`Pages:${pages}`, `Components:${components}`], content?.summary || content?.description)
+        }
+        case "engineer_impl": {
+            const deps = count(content?.dependencies)
+            const hasFiles = content?.file_structure ? "Yes" : "No"
+            const summary = `${deps} deps, files ${hasFiles}`
+            return build(summary, [`Deps:${deps}`, `Files:${hasFiles}`], content?.summary || content?.description)
+        }
+        case "qa_verification": {
+            const cases = count(content?.test_cases)
+            const summary = `${cases} test cases`
+            return build(summary, [`Tests:${cases}`], content?.summary || content?.description)
+        }
+        default:
+            return null
+    }
+}
+
 interface SidebarTabsProps {
     activeTab: string
     artifacts: any
 }
 
 export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
+    const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
+
     return (
         <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
             <div className="p-4 border-b border-border">
@@ -41,15 +99,65 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
                     const TabIcon = tab.icon
                     const artifact = artifacts?.[tab.id as keyof typeof artifacts]
                     const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
+                    const meta = getArtifactMeta(tab.id, artifact)
+                    const isExpanded = expandedDetails[tab.id]
+                    const tags = meta?.tags ?? []
                     return (
                         <TabsTrigger
                             key={tab.id}
                             value={tab.id}
                             disabled={!hasData}
-                            className="flex items-center gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50"
+                            className="flex items-start gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50"
                         >
                             <TabIcon className={cn("h-4 w-4", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
-                            <span className="font-medium truncate">{tab.label}</span>
+                            <div className="min-w-0 flex-1">
+                                <div className="font-medium truncate">{tab.label}</div>
+                                {meta?.summary && (
+                                    <div className="text-[9px] text-muted-foreground/80 truncate">
+                                        {meta.summary}
+                                    </div>
+                                )}
+                                {tags.length > 0 && (
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                        {tags.slice(0, isExpanded ? tags.length : 2).map(tag => (
+                                            <Badge key={tag} variant="secondary" className="text-[8px] px-1.5 py-0 bg-muted/60">
+                                                {tag}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                                {meta?.details && (
+                                    <span
+                                        role="button"
+                                        tabIndex={0}
+                                        className="mt-1 text-[9px] text-muted-foreground/70 hover:text-foreground cursor-pointer inline-block"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setExpandedDetails(prev => ({
+                                                ...prev,
+                                                [tab.id]: !prev[tab.id]
+                                            }))
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                setExpandedDetails(prev => ({
+                                                    ...prev,
+                                                    [tab.id]: !prev[tab.id]
+                                                }))
+                                            }
+                                        }}
+                                    >
+                                        {isExpanded ? "Hide details" : "Show details"}
+                                    </span>
+                                )}
+                                {meta?.details && isExpanded && (
+                                    <div className="mt-1 text-[9px] text-muted-foreground/70 line-clamp-3">
+                                        {meta.details}
+                                    </div>
+                                )}
+                            </div>
                         </TabsTrigger>
                     )
                 })}
@@ -70,16 +178,39 @@ export function TopTabs({ activeTab, artifacts }: TopTabsProps) {
                 const TabIcon = tab.icon
                 const artifact = artifacts?.[tab.id as keyof typeof artifacts]
                 const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
+                const meta = getArtifactMeta(tab.id, artifact)
                 return (
-                    <TabsTrigger
-                        key={tab.id}
-                        value={tab.id}
-                        disabled={!hasData}
-                        className="flex items-center gap-1.5 py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-disabled:opacity-40 rounded-md text-[10px] min-w-max transition-all"
-                    >
-                        <TabIcon className={cn("h-3.5 w-3.5", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
-                        <span className="font-semibold whitespace-nowrap">{tab.label}</span>
-                    </TabsTrigger>
+                    <TooltipProvider key={tab.id}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <TabsTrigger
+                                    value={tab.id}
+                                    disabled={!hasData}
+                                    className="flex items-center gap-1.5 py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-disabled:opacity-40 rounded-md text-[10px] min-w-max transition-all"
+                                >
+                                    <TabIcon className={cn("h-3.5 w-3.5", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
+                                    <span className="font-semibold whitespace-nowrap">{tab.label}</span>
+                                </TabsTrigger>
+                            </TooltipTrigger>
+                            {meta?.summary && (
+                                <TooltipContent side="bottom" className="max-w-[220px]">
+                                    <div className="text-xs space-y-1">
+                                        <div className="font-semibold text-foreground">{tab.label}</div>
+                                        <div className="text-muted-foreground">{meta.summary}</div>
+                                        {meta.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {meta.tags.map(tag => (
+                                                    <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0 bg-muted/60">
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    </TooltipProvider>
                 )
             })}
         </TabsList>

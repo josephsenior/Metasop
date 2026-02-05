@@ -24,6 +24,7 @@ interface Message {
     role: "user" | "assistant"
     content: string
     type?: "info" | "refinement" | "system"
+    detail?: string
     timestamp: Date
 }
 
@@ -65,6 +66,8 @@ export function ProjectChatPanel({
     const [isUploading, setIsUploading] = useState(false)
     const [transientDocuments, setTransientDocuments] = useState<any[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
+    const [showSystemMessages, setShowSystemMessages] = useState(false)
+    const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
     const scrollRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -407,7 +410,8 @@ export function ProjectChatPanel({
                                     msg.id === refinementMessageId
                                         ? {
                                             ...msg,
-                                            content: `📋 **Edit Plan**: ${edits_count} change(s) across ${artifacts_affected.join(", ")}\n\n_${reasoning}_`
+                                            content: `📋 Plan ready: ${edits_count} change(s) across ${artifacts_affected.join(", ")}`,
+                                            detail: reasoning
                                         }
                                         : msg
                                 ))
@@ -440,11 +444,15 @@ export function ProjectChatPanel({
                                     : ""
 
                                 if (applied > 0) {
+                                    const fullChangelog = changelog
+                                        .map((c: any) => `• ${c.artifact}: ${c.change}`)
+                                        .join("\n")
                                     setMessages(prev => prev.map(msg =>
                                         msg.id === refinementMessageId
                                             ? {
                                                 ...msg,
-                                                content: `✅ Applied ${applied} edit(s)\n\n${changelogSummary}${moreText}`
+                                                content: `✅ Applied ${applied} edit(s)\n\n${changelogSummary}${moreText}`,
+                                                detail: fullChangelog
                                             }
                                             : msg
                                     ))
@@ -463,6 +471,9 @@ export function ProjectChatPanel({
                                     content: applied > 0
                                         ? `✅ Applied ${applied} edit(s)\n\n${changelogSummary}${moreText}`
                                         : (event.payload.message || "No changes needed."),
+                                    detail: applied > 0
+                                        ? changelog.map((c: any) => `• ${c.artifact}: ${c.change}`).join("\n")
+                                        : undefined,
                                     type: "refinement" as const,
                                     timestamp: new Date()
                                 }
@@ -518,7 +529,9 @@ export function ProjectChatPanel({
                 ref={scrollRef}
             >
                 <div className="flex flex-col gap-4 min-h-full">
-                    {messages.map((msg) => (
+                    {messages
+                        .filter((msg) => showSystemMessages || msg.type !== "system")
+                        .map((msg) => (
                         <div
                             key={msg.id}
                             className={cn(
@@ -555,6 +568,27 @@ export function ProjectChatPanel({
                                     )
                             )}>
                                 {msg.content}
+                                {msg.type === "refinement" && msg.detail && (
+                                    <div className="mt-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-[10px] text-amber-700 dark:text-amber-300"
+                                            onClick={() => setExpandedDetails(prev => ({
+                                                ...prev,
+                                                [msg.id]: !prev[msg.id]
+                                            }))}
+                                        >
+                                            {expandedDetails[msg.id] ? "Hide details" : "Show details"}
+                                        </Button>
+                                        {expandedDetails[msg.id] && (
+                                            <div className="mt-2 text-[10px] text-amber-700/80 dark:text-amber-300/80 whitespace-pre-line">
+                                                {msg.detail}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 {msg.type === "refinement" && isRefining && (
                                     <div className="mt-2 flex items-center gap-2">
                                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -637,6 +671,15 @@ export function ProjectChatPanel({
                             <MessageSquare className="h-3 w-3 text-emerald-500" />
                             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">RAG Context</span>
                         </div>
+                        {messages.some(m => m.type === "system") && (
+                            <button
+                                type="button"
+                                className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-60 hover:opacity-100"
+                                onClick={() => setShowSystemMessages(prev => !prev)}
+                            >
+                                {showSystemMessages ? "Hide system" : "Show system"}
+                            </button>
+                        )}
                     </div>
                     <div className="text-[9px] text-muted-foreground/60 font-medium">
                         Target: <span className="text-blue-500 font-bold">{activeTab === 'all' ? 'Full Project' : activeTab}</span>

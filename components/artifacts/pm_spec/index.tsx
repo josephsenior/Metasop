@@ -3,7 +3,7 @@
 import * as React from "react"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   CheckCircle2,
@@ -24,8 +24,11 @@ import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
   CopyButton,
+  EmptyStateCard,
   itemVariants as item
 } from "../shared-components"
 
@@ -228,36 +231,35 @@ export default function PMSpecPanel({
   const opportunities = data.opportunities || []
   const summary = data.summary || ""
   const description = data.description || ""
+  const summaryText = summary || description || "Detailed product requirements and specifications."
+  const descriptionText = summary ? description : undefined
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg, className)}>
       {/* Header Summary */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>Product Specification</h2>
-              <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 text-[10px] px-1.5 h-5">
-                Specification
-              </Badge>
-              <Badge variant="outline" className={cn(
-                "text-[10px] font-mono uppercase px-1.5 h-5",
+      <ArtifactHeaderBlock
+        title="Product Specification"
+        summary={summaryText}
+        summaryClassName="text-indigo-600 dark:text-indigo-400 font-medium"
+        description={descriptionText}
+        badges={(
+          <>
+            <Badge variant="secondary" className={cn(styles.badges.small, "bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20")}>
+              Specification
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                styles.badges.small,
+                "font-mono uppercase",
                 data.ui_multi_section ? "border-indigo-500/30 text-indigo-600 bg-indigo-500/5" : "border-amber-500/30 text-amber-600 bg-amber-500/5"
-              )}>
-                {data.ui_multi_section ? "Nav: Multi-Section" : "Nav: Single-View"}
-              </Badge>
-            </div>
-            <p className={cn(styles.typography.bodySmall, "text-indigo-600 dark:text-indigo-400 font-medium")}>
-              {summary || description || "Detailed product requirements and specifications."}
-            </p>
-            {description && (
-              <p className="text-[11px] text-muted-foreground/80 leading-tight mt-1 max-w-3xl">
-                {description}
-              </p>
-            )}
-          </div>
-        </div>
-
+              )}
+            >
+              {data.ui_multi_section ? "Nav: Multi-Section" : "Nav: Single-View"}
+            </Badge>
+          </>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={TrendingUp}
@@ -323,27 +325,23 @@ export default function PMSpecPanel({
             bg="bg-emerald-500/10"
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="overview" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full flex-wrap">
-                <TabTrigger value="overview" icon={Info} label="Overview" />
-                <TabTrigger value="stories" icon={ListTodo} label="User Stories" count={userStories.length} />
-                <TabTrigger value="acceptance" icon={CheckCircle2} label="Acceptance" count={acceptance.length} />
-                <TabTrigger value="invest" icon={GanttChartSquare} label="INVEST" count={investAnalysis.length} />
-                <TabTrigger value="assumptions" icon={Lightbulb} label="Assumptions" count={assumptions.length} />
-                <TabTrigger value="outofscope" icon={Ban} label="Out of Scope" count={out_of_scope.length} />
-                <TabTrigger value="swot" icon={TrendingUp} label="SWOT" />
-                <TabTrigger value="gaps" icon={AlertTriangle} label="Gaps" count={gaps.length} />
-                <TabTrigger value="opportunities" icon={TrendingUp} label="Opportunities" count={opportunities.length} />
-                <TabTrigger value="stakeholders" icon={Users} label="Stakeholders" count={stakeholders?.length || 0} />
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="overview" icon={Info} label="Overview" />
+            <TabTrigger value="stories" icon={ListTodo} label="User Stories" count={userStories.length} />
+            <TabTrigger value="acceptance" icon={CheckCircle2} label="Acceptance" count={acceptance.length} />
+            <TabTrigger value="invest" icon={GanttChartSquare} label="INVEST" count={investAnalysis.length} />
+            <TabTrigger value="assumptions" icon={Lightbulb} label="Assumptions" count={assumptions.length} />
+            <TabTrigger value="outofscope" icon={Ban} label="Out of Scope" count={out_of_scope.length} />
+            <TabTrigger value="swot" icon={TrendingUp} label="SWOT" />
+            <TabTrigger value="gaps" icon={AlertTriangle} label="Gaps" count={gaps.length} />
+            <TabTrigger value="opportunities" icon={TrendingUp} label="Opportunities" count={opportunities.length} />
+            <TabTrigger value="stakeholders" icon={Users} label="Stakeholders" count={stakeholders?.length || 0} />
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
@@ -354,23 +352,51 @@ export default function PMSpecPanel({
                   ui_multi_section={data.ui_multi_section}
                   swot={swot}
                 />
-                <UserStoriesSection
-                  userStories={userStories}
-                  UserStoryCard={UserStoryCard}
-                />
-                <AcceptanceCriteriaSection
-                  acceptance={acceptance}
-                  CriteriaCard={CriteriaCard}
-                />
-                <InvestAnalysisSection investAnalysis={investAnalysis} />
-                <AssumptionsSection
-                  assumptions={assumptions}
-                  out_of_scope={out_of_scope}
-                  AssumptionCard={AssumptionCard}
-                />
-                {swot && <SWOTSection swot={swot} />}
-                <GapsOpportunitiesSection gaps={gaps} opportunities={opportunities} />
-                <StakeholdersSection stakeholders={stakeholders} />
+                {userStories.length > 0 ? (
+                  <UserStoriesSection
+                    userStories={userStories}
+                    UserStoryCard={UserStoryCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="User Stories" description="No user stories were generated for this run." icon={ListTodo} />
+                )}
+                {acceptance.length > 0 ? (
+                  <AcceptanceCriteriaSection
+                    acceptance={acceptance}
+                    CriteriaCard={CriteriaCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="Acceptance Criteria" description="No acceptance criteria were generated for this run." icon={CheckCircle2} />
+                )}
+                {investAnalysis.length > 0 ? (
+                  <InvestAnalysisSection investAnalysis={investAnalysis} />
+                ) : (
+                  <EmptyStateCard title="INVEST Analysis" description="No INVEST analysis was generated for this run." icon={GanttChartSquare} />
+                )}
+                {assumptions.length > 0 || out_of_scope.length > 0 ? (
+                  <AssumptionsSection
+                    assumptions={assumptions}
+                    out_of_scope={out_of_scope}
+                    AssumptionCard={AssumptionCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="Assumptions" description="No assumptions or out-of-scope items were generated for this run." icon={Lightbulb} />
+                )}
+                {swot ? (
+                  <SWOTSection swot={swot} />
+                ) : (
+                  <EmptyStateCard title="SWOT" description="No SWOT analysis was generated for this run." icon={TrendingUp} />
+                )}
+                {gaps.length > 0 || opportunities.length > 0 ? (
+                  <GapsOpportunitiesSection gaps={gaps} opportunities={opportunities} />
+                ) : (
+                  <EmptyStateCard title="Gaps & Opportunities" description="No gaps or opportunities were generated for this run." icon={AlertTriangle} />
+                )}
+                {stakeholders && stakeholders.length > 0 ? (
+                  <StakeholdersSection stakeholders={stakeholders} />
+                ) : (
+                  <EmptyStateCard title="Stakeholders" description="No stakeholders were identified for this run." icon={Users} />
+                )}
               </div>
             </ScrollArea>
           </div>

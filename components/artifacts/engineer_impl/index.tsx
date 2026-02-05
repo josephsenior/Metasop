@@ -4,7 +4,7 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { cn, downloadFile } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Terminal,
@@ -26,8 +26,11 @@ import { EngineerBackendArtifact } from "@/lib/metasop/artifacts/engineer/types"
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
   CopyButton,
+  EmptyStateCard,
   itemVariants as item
 } from "../shared-components"
 
@@ -166,47 +169,34 @@ export default function EngineerImplPanel({
   const artifactPath = data.artifact_path
 
   const technicalCount = (envVars?.length || 0) + (technicalDecisions?.length || 0) + (technicalPatterns?.length || 0) + (stateManagement ? 1 : 0)
+  const summaryText = data.summary || data.description || "Implementation details and technical specifications."
+  const descriptionText = data.summary ? data.description : undefined
+  const hasScripts = (runResults.setup_commands?.length || 0) + (runResults.dev_commands?.length || 0) + (runResults.test_commands?.length || 0) + (runResults.build_commands?.length || 0) > 0
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Summary */}
-      <div className={styles.layout.header}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={styles.typography.h2}>Engineering Specification</h2>
-              <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 text-[10px] px-1.5 h-5">
-                Implementation
+      <ArtifactHeaderBlock
+        title="Engineering Specification"
+        summary={summaryText}
+        summaryClassName={data.summary ? "text-xs font-semibold text-foreground leading-tight" : undefined}
+        description={descriptionText}
+        badges={(
+          <>
+            <Badge variant="secondary" className={cn(styles.badges.small, "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20")}>
+              Implementation
+            </Badge>
+            {artifactPath && (
+              <Badge variant="outline" className={cn(styles.badges.small, "font-mono text-muted-foreground")}>{artifactPath}</Badge>
+            )}
+            {runResults.test_commands && runResults.test_commands.length > 0 && (
+              <Badge variant="outline" className={cn(styles.badges.small, "font-mono text-green-600 border-green-500/30 uppercase")}>
+                Tests Included
               </Badge>
-              {artifactPath && (
-                <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-mono text-muted-foreground">
-                  {artifactPath}
-                </Badge>
-              )}
-              {runResults.test_commands && runResults.test_commands.length > 0 && (
-                <Badge variant="outline" className="text-[10px] font-mono text-green-600 border-green-500/30 uppercase px-1.5 h-5">
-                  Tests Included
-                </Badge>
-              )}
-            </div>
-            {data.summary && (
-              <p className={cn("text-xs font-semibold text-foreground leading-tight")}>
-                {data.summary}
-              </p>
             )}
-            {data.description && (
-              <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-                {data.description}
-              </p>
-            )}
-            {!data.summary && !data.description && (
-              <p className={cn(styles.typography.bodySmall, styles.colors.textMuted)}>
-                Implementation details and technical specifications.
-              </p>
-            )}
-          </div>
-        </div>
-
+          </>
+        )}
+      >
         <div className={styles.layout.statsGrid}>
           <StatsCard
             icon={Package}
@@ -251,55 +241,71 @@ export default function EngineerImplPanel({
             bg="bg-purple-500/10"
           />
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="plan" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="plan" icon={ListTodo} label="Roadmap" count={roadmapCount} />
-                <TabTrigger value="tech" icon={Layers} label="Technical" count={technicalCount} />
-                <TabTrigger
-                  value="scripts"
-                  icon={Terminal}
-                  label="CLI Scripts"
-                  count={
-                    (data.run_results?.setup_commands?.length || 0) +
-                    (data.run_results?.dev_commands?.length || 0) +
-                    (data.run_results?.test_commands?.length || 0) +
-                    (data.run_results?.build_commands?.length || 0)
-                  }
-                />
-                <TabTrigger value="deps" icon={Package} label="Registry" count={dependencies.length} />
-                <TabTrigger value="struct" icon={Files} label="FS Tree" />
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="plan" icon={ListTodo} label="Roadmap" count={roadmapCount} />
+            <TabTrigger value="tech" icon={Layers} label="Technical" count={technicalCount} />
+            <TabTrigger
+              value="scripts"
+              icon={Terminal}
+              label="CLI Scripts"
+              count={
+                (data.run_results?.setup_commands?.length || 0) +
+                (data.run_results?.dev_commands?.length || 0) +
+                (data.run_results?.test_commands?.length || 0) +
+                (data.run_results?.build_commands?.length || 0)
+              }
+            />
+            <TabTrigger value="deps" icon={Package} label="Registry" count={dependencies.length} />
+            <TabTrigger value="struct" icon={Files} label="FS Tree" />
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
               <div className="p-4">
-                <RoadmapSection phases={phases} implementationPlan={implementationPlan} />
-                <TechnicalSection
-                  envVars={envVars}
-                  technicalDecisions={technicalDecisions}
-                  technicalPatterns={technicalPatterns}
-                  stateManagement={stateManagement}
-                />
-                <ScriptsSection
-                  runResults={runResults}
-                  ScriptCard={ScriptCard}
-                />
-                <RegistrySection dependencies={dependencies} />
-                <FsTreeSection
-                  fileStructure={fileStructure}
-                  FileSystemNode={FileSystemNode}
-                  generateProjectZip={generateProjectZip}
-                  JSZip={JSZip}
-                  downloadFile={downloadFile}
-                />
+                {phases.length > 0 || implementationPlan ? (
+                  <RoadmapSection phases={phases} implementationPlan={implementationPlan} />
+                ) : (
+                  <EmptyStateCard title="Roadmap" description="No implementation roadmap was generated for this run." icon={ListTodo} />
+                )}
+                {technicalCount > 0 ? (
+                  <TechnicalSection
+                    envVars={envVars}
+                    technicalDecisions={technicalDecisions}
+                    technicalPatterns={technicalPatterns}
+                    stateManagement={stateManagement}
+                  />
+                ) : (
+                  <EmptyStateCard title="Technical Details" description="No technical details were generated for this run." icon={Layers} />
+                )}
+                {hasScripts ? (
+                  <ScriptsSection
+                    runResults={runResults}
+                    ScriptCard={ScriptCard}
+                  />
+                ) : (
+                  <EmptyStateCard title="CLI Scripts" description="No CLI scripts were generated for this run." icon={Terminal} />
+                )}
+                {dependencies.length > 0 ? (
+                  <RegistrySection dependencies={dependencies} />
+                ) : (
+                  <EmptyStateCard title="Registry" description="No dependencies were generated for this run." icon={Package} />
+                )}
+                {fileStructure ? (
+                  <FsTreeSection
+                    fileStructure={fileStructure}
+                    FileSystemNode={FileSystemNode}
+                    generateProjectZip={generateProjectZip}
+                    JSZip={JSZip}
+                    downloadFile={downloadFile}
+                  />
+                ) : (
+                  <EmptyStateCard title="File Structure" description="No file structure was generated for this run." icon={Files} />
+                )}
               </div>
             </ScrollArea>
           </div>

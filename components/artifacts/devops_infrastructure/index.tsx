@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Server,
@@ -22,7 +22,10 @@ import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "../shared-styles"
 import {
   StatsCard,
+  ArtifactHeaderBlock,
+  ArtifactTabBar,
   TabTrigger,
+  EmptyStateCard,
 } from "../shared-components"
 
 import { InfrastructureSection } from "./sections/InfrastructureSection"
@@ -59,32 +62,27 @@ export default function DevOpsInfrastructurePanel({
   const tools = cicd?.tools || []
   const triggers = cicd?.triggers || []
   const environments = deployment?.environments || []
+  const summaryText = summary || "Infrastructure design and deployment strategy."
+  const descriptionText = summary ? description : undefined
+  const hasOps = Boolean(containerization || scaling)
 
   return (
     <div className={cn("h-full flex flex-col", styles.colors.bg)}>
       {/* Header Section */}
-      <div className={styles.layout.header}>
-        <div className="flex flex-col gap-2 relative z-10">
-          <div className="flex items-center gap-2">
-            <h2 className={styles.typography.h2}>Infrastructure Specification</h2>
-            {infrastructure?.cloud_provider && (
-              <Badge variant="outline" className="font-mono text-sky-600 dark:text-sky-400 border-sky-500/30 uppercase text-[10px] px-1.5">
-                {infrastructure.cloud_provider}
-              </Badge>
-            )}
-          </div>
-
-          <p className={cn(styles.typography.body, styles.colors.textMuted)}>
-            {summary || "Infrastructure design and deployment strategy."}
-          </p>
-
-          {description && (
-            <p className="text-[11px] text-muted-foreground italic leading-tight max-w-3xl border-l-2 border-primary/20 pl-3 py-1">
-              {description}
-            </p>
-          )}
-
-          <div className={styles.layout.statsGrid + " mt-2"}>
+      <ArtifactHeaderBlock
+        title="Infrastructure Specification"
+        summary={summaryText}
+        description={descriptionText}
+        summaryClassName={cn(styles.typography.body, styles.colors.textMuted)}
+        badges={(
+          infrastructure?.cloud_provider ? (
+            <Badge variant="outline" className={cn(styles.badges.small, "font-mono text-sky-600 dark:text-sky-400 border-sky-500/30 uppercase")}>
+              {infrastructure.cloud_provider}
+            </Badge>
+          ) : null
+        )}
+      >
+        <div className={styles.layout.statsGrid + " mt-2"}>
             <StatsCard icon={Box} label="Services" value={services.length} color="text-sky-500" bg="bg-sky-500/10" />
             <StatsCard icon={Zap} label="Components" value={infra_components || 0} color="text-yellow-500" bg="bg-yellow-500/10" />
             <StatsCard icon={GitBranch} label="Pipelines" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
@@ -93,47 +91,62 @@ export default function DevOpsInfrastructurePanel({
             <StatsCard icon={Activity} label="Scaling" value={scaling?.auto_scaling?.max_replicas || 1} color="text-amber-500" bg="bg-amber-500/10" />
             <StatsCard icon={ShieldAlert} label="Recovery" value={disaster_recovery?.rto ? 1 : 0} color="text-indigo-500" bg="bg-indigo-500/10" />
             <StatsCard icon={ShieldCheck} label="Strategy" value={deployment?.strategy} isText color="text-purple-500" bg="bg-purple-500/10" />
-          </div>
         </div>
-      </div>
+      </ArtifactHeaderBlock>
 
       {/* Main Content Tabs */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="infra" className="h-full flex flex-col">
-          <div className="px-4 pt-4">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="bg-transparent p-0 gap-2 justify-start h-auto w-full">
-                <TabTrigger value="infra" icon={Server} label="Services" count={services.length} />
-                <TabTrigger value="cicd" icon={RefreshCcw} label="CI/CD" count={pipelineStages.length} />
-                <TabTrigger value="deploy" icon={Globe} label="Deployment" count={environments.length} />
-                <TabTrigger value="monitor" icon={Activity} label="Monitoring" count={monitoring?.alerts?.length || 0} />
-                {(containerization || scaling) && (
-                  <TabTrigger value="ops" icon={Zap} label="Operations" />
-                )}
-                {disaster_recovery && (
-                  <TabTrigger value="recovery" icon={ShieldAlert} label="Recovery" />
-                )}
-              </TabsList>
-            </ScrollArea>
-          </div>
+          <ArtifactTabBar>
+            <TabTrigger value="infra" icon={Server} label="Services" count={services.length} />
+            <TabTrigger value="cicd" icon={RefreshCcw} label="CI/CD" count={pipelineStages.length} />
+            <TabTrigger value="deploy" icon={Globe} label="Deployment" count={environments.length} />
+            <TabTrigger value="monitor" icon={Activity} label="Monitoring" count={monitoring?.alerts?.length || 0} />
+            {hasOps && (
+              <TabTrigger value="ops" icon={Zap} label="Operations" />
+            )}
+            {disaster_recovery && (
+              <TabTrigger value="recovery" icon={ShieldAlert} label="Recovery" />
+            )}
+          </ArtifactTabBar>
 
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
               <div className="p-4">
-                <InfrastructureSection infrastructure={infrastructure} regions={regions} services={services} />
-
-                <PipelineSection tools={tools} pipelineStages={pipelineStages} triggers={triggers} />
-
-                {(containerization || scaling) && (
-                  <OperationsSection containerization={containerization} scaling={scaling} />
+                {services.length > 0 || regions.length > 0 ? (
+                  <InfrastructureSection infrastructure={infrastructure} regions={regions} services={services} />
+                ) : (
+                  <EmptyStateCard title="Infrastructure" description="No infrastructure details were generated for this run." icon={Server} />
                 )}
 
-                <DeploymentSection environments={environments} deployment={deployment} />
+                {pipelineStages.length > 0 || tools.length > 0 || triggers.length > 0 ? (
+                  <PipelineSection tools={tools} pipelineStages={pipelineStages} triggers={triggers} />
+                ) : (
+                  <EmptyStateCard title="CI/CD" description="No CI/CD pipeline was generated for this run." icon={RefreshCcw} />
+                )}
 
-                <MonitoringSection monitoring={monitoring} scaling={scaling} />
+                {hasOps ? (
+                  <OperationsSection containerization={containerization} scaling={scaling} />
+                ) : (
+                  <EmptyStateCard title="Operations" description="No operations details were generated for this run." icon={Zap} />
+                )}
 
-                {disaster_recovery && (
+                {environments.length > 0 || deployment ? (
+                  <DeploymentSection environments={environments} deployment={deployment} />
+                ) : (
+                  <EmptyStateCard title="Deployment" description="No deployment plan was generated for this run." icon={Globe} />
+                )}
+
+                {monitoring || scaling ? (
+                  <MonitoringSection monitoring={monitoring} scaling={scaling} />
+                ) : (
+                  <EmptyStateCard title="Monitoring" description="No monitoring plan was generated for this run." icon={Activity} />
+                )}
+
+                {disaster_recovery ? (
                   <RecoverySection disaster_recovery={disaster_recovery} />
+                ) : (
+                  <EmptyStateCard title="Recovery" description="No disaster recovery plan was generated for this run." icon={ShieldAlert} />
                 )}
               </div>
             </ScrollArea>

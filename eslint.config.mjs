@@ -23,7 +23,11 @@ export default [
     },
     rules: {
       // Basic rules - can be extended later
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { 
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
       "no-unused-vars": "off", // Turn off base rule as it conflicts with @typescript-eslint version
       "no-console": "off", // Allow console in development
     },
