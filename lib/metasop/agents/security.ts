@@ -158,14 +158,15 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           authentication: {
             method: llmSecurity.security_architecture?.authentication?.method,
             providers: llmSecurity.security_architecture?.authentication?.providers,
-            mfa_enabled: llmSecurity.security_architecture?.authentication?.mfa_enabled ?? llmSecurity.security_architecture?.authentication?.multi_factor_auth
+            mfa_enabled: llmSecurity.security_architecture?.authentication?.mfa_enabled
           },
           authorization: {
             model: llmSecurity.security_architecture?.authorization?.model,
             roles: llmSecurity.security_architecture?.authorization?.roles,
             policies: llmSecurity.security_architecture?.authorization?.policies
           },
-          session_management: llmSecurity.security_architecture?.session_management
+          session_management: llmSecurity.security_architecture?.session_management,
+          audit_logging: llmSecurity.security_architecture?.audit_logging || { enabled: false }
         },
         threat_model: llmSecurity.threat_model,
         encryption: llmSecurity.encryption,

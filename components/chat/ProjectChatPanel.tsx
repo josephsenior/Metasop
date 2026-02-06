@@ -525,10 +525,23 @@ export function ProjectChatPanel({
 
             {/* Chat Area */}
             <div
-                className="flex-1 overflow-y-auto px-2 py-4 custom-scrollbar"
+                className="flex-1 overflow-y-auto px-2 py-4 custom-scrollbar relative bg-black/80"
                 ref={scrollRef}
             >
-                <div className="flex flex-col gap-4 min-h-full">
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_55%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.06),transparent_60%)]"
+                />
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none flex items-center justify-center"
+                >
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-white/10">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>Ask the Architect</span>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-4 min-h-full relative z-10">
                     {messages
                         .filter((msg) => showSystemMessages || msg.type !== "system")
                         .map((msg) => (
@@ -641,6 +654,8 @@ export function ProjectChatPanel({
                             className="hidden"
                             accept=".txt,.md,.json,.csv,.pdf"
                             onChange={handleFileChange}
+                            aria-label="Upload context documents"
+                            title="Upload context documents"
                         />
                         <VoiceInputButton
                             onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}

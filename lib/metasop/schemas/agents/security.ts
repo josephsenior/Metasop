@@ -5,7 +5,6 @@ const AuthenticationSchema = z.object({
     providers: z.array(z.string()).optional(),
     token_expiry: z.string().optional(),
     refresh_tokens: z.boolean().optional(),
-    multi_factor_auth: z.boolean().optional(),
     description: z.string().optional(),
     mfa_enabled: z.boolean().optional(),
 });

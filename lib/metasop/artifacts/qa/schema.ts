@@ -25,10 +25,10 @@ export const qaSchema = {
             description: "Core test cases. Keep it focused and minimal.",
             items: {
                 type: "object",
-                required: ["id", "name", "expected_result", "type", "priority"],
+                required: ["id", "title", "expected_result", "type", "priority"],
                 properties: {
                     id: { type: "string", maxLength: 10, pattern: "^TC-[0-9]+$", description: "Short ID (e.g., TC-1)." },
-                    name: { type: "string", maxLength: 60, description: "Test case name." },
+                    title: { type: "string", maxLength: 60, description: "Test case title." },
                     description: { type: "string", maxLength: 200, description: "Detailed test scenario." },
                     type: { type: "string", enum: ["unit", "integration", "e2e", "manual"], description: "Test category." },
                     priority: { type: "string", enum: ["high", "medium", "low"] },

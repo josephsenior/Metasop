@@ -15,7 +15,7 @@ The MetaSOP system consists of:
   - DevOps: CI/CD pipelines and infrastructure
   - Security: Threat modeling and security controls
   - UI Designer: Designs UI components
-  - Engineer: Creates implementation plans
+  - Engineer: Creates implementation phases
   - QA: Generates test plans
 
 ## Configuration
@@ -46,7 +46,7 @@ TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
    - DevOps produces CI/CD and infrastructure
    - Security produces threat model and security architecture
    - UI Designer designs components
-   - Engineer creates implementation plan
+  - Engineer creates implementation phases
    - QA generates test plans
 4. MetaSOP artifacts are stored in diagram metadata (`metadata.metasop_artifacts`) and displayed in the artifacts panel.
 5. Diagram is saved with MetaSOP metadata.
@@ -60,7 +60,7 @@ Agents run **sequentially** (no parallelism). Order matches dependency flow:
 3. **DevOps** → CI/CD and infrastructure
 4. **Security** → Threat model and security architecture
 5. **UI Designer** → Designs UI components
-6. **Engineer** → Creates implementation plan
+6. **Engineer** → Creates implementation phases
 7. **QA** → Generates test plans based on all previous artifacts
 
 ### API Endpoint

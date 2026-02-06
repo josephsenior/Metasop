@@ -34,7 +34,7 @@ export const QAArtifactSchema = z.object({
     test_cases: z.array(
         z.object({
             id: z.string().max(10), // REQUIRED
-            name: z.string().min(5).max(60), // REQUIRED
+            title: z.string().min(5).max(60), // REQUIRED
             priority: z.enum(["high", "medium", "low"]), // REQUIRED
             expected_result: z.string().min(5).max(100), // REQUIRED
         })

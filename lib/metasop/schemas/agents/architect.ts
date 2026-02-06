@@ -15,7 +15,6 @@ const DecisionSchema = z.object({
     decision: z.string().min(5, "Decision must be at least 5 characters"),
     status: z.enum(["accepted", "proposed", "superseded"]),
     reason: z.string().min(10, "Reason must be at least 10 characters"),
-    rationale: z.string().optional(),
     tradeoffs: z.string().min(5, "Tradeoffs must be at least 5 characters"),
     consequences: z.string().min(5, "Consequences must be at least 5 characters"),
     alternatives: z.array(z.string()).optional(),

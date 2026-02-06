@@ -136,8 +136,6 @@ export const DevOpsArtifactSchema = z.object({
     }), // REQUIRED
     summary: z.string(), // REQUIRED
     description: z.string(), // REQUIRED
-    cloud_provider: z.string().optional(),
-    infra_components: z.number().optional(),
 });
 
 export function validateDevOpsArtifact(data: unknown) {

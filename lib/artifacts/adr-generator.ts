@@ -69,7 +69,7 @@ An Architecture Decision Record is a document that captures an important archite
 
 ### Context
 
-${decision.reason || decision.rationale || decision.context || "This decision was made to address specific architectural requirements."}
+${decision.reason || decision.context || "This decision was made to address specific architectural requirements."}
 
 ### Decision
 

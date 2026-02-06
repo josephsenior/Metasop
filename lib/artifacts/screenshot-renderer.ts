@@ -1,5 +1,4 @@
 import puppeteer, { Browser } from 'puppeteer';
-import { renderToString } from 'react-dom/server';
 import * as React from 'react';
 
 /**
@@ -45,7 +44,7 @@ export class ScreenshotRenderer {
    * @returns Buffer containing the PNG image
    */
   async renderComponentToImage(
-    component: React.ReactElement,
+    component: React.ReactElement | string,
     width: number = 1920,
     height: number = 1080
   ): Promise<Buffer> {
@@ -59,8 +58,11 @@ export class ScreenshotRenderer {
       // Set viewport size
       await page.setViewport({ width, height });
 
-      // Render React component to HTML string
-      const html = this.wrapComponentInHTML(component);
+      // Render component or HTML to an HTML string. For app routes and Turbopack
+      // environments we avoid statically importing `react-dom/server`.
+      // Accept raw HTML strings or React elements; React elements are not
+      // serialized here to avoid bundler issues — callers should pass HTML.
+      const html = this.wrapComponentInHTML(component as React.ReactElement | string);
 
       // Set the page content
       await page.setContent(html, {
@@ -141,8 +143,20 @@ export class ScreenshotRenderer {
    * @param component - React component to wrap
    * @returns Complete HTML string
    */
-  private wrapComponentInHTML(component: React.ReactElement): string {
-    const componentHTML = renderToString(component);
+  private wrapComponentInHTML(component: React.ReactElement | string): string {
+    let componentHTML: string;
+
+    if (typeof component === 'string') {
+      componentHTML = component;
+    } else {
+      // Rendering React elements to string via `react-dom/server` is not
+      // performed here because importing `react-dom/server` from an app
+      // route can cause Turbopack bundling errors. Ask callers to provide
+      // pre-rendered HTML instead.
+      throw new Error(
+        'Rendering React elements to HTML is disabled in this environment. Provide a pre-rendered HTML string and call `renderHTMLToImage`.'
+      );
+    }
 
     return `
 <!DOCTYPE html>

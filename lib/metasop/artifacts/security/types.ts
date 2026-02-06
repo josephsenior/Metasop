@@ -17,7 +17,6 @@ export interface SecurityBackendArtifact {
             token_expiry?: string;
             refresh_tokens?: boolean;
             mfa_enabled?: boolean; // UI expected field
-            sso_integration?: boolean;
             description?: string;
         }; // REQUIRED
         audit_logging: {
@@ -40,12 +39,9 @@ export interface SecurityBackendArtifact {
         session_management: {
             strategy?: "stateless" | "stateful" | "hybrid";
             session_timeout?: string;
-            timeout?: string;
             secure_cookies?: boolean;
             http_only_cookies?: boolean;
             same_site_policy?: "Strict" | "Lax" | "None";
-            invalidation_strategy?: string;
-            concurrency_control?: string;
         };
         network_boundaries?: Array<{
             zone: string;

@@ -60,7 +60,7 @@ Security Context:
 - Authorization Model: ${securityArtifact.security_architecture?.authorization?.model || "RBAC"}` : ""}
 ${devopsArtifact ? `
 Infrastructure Context:
-- Cloud Provider: ${devopsArtifact.cloud_provider || "AWS"}
+- Cloud Provider: ${devopsArtifact.infrastructure?.cloud_provider || "AWS"}
 - Deployment Strategy: ${devopsArtifact.deployment?.strategy || "Blue/Green"}` : ""}
 ${domainContext ? `\n${domainContext}\n` : ""}
 
@@ -71,14 +71,7 @@ ${TECHNICAL_STANDARDS.errorHandling}
 
 === MISSION OBJECTIVES ===
 
-1. **Implementation Plan Document**
-   - Write a comprehensive technical guide in Markdown (~2000-3000 chars)
-   - Include: Project setup, development workflow, coding conventions
-   - Document key implementation patterns and decisions
-   - Provide code organization principles
-   - Address testing strategy and quality standards
-
-2. **Technical Decisions**
+1. **Technical Decisions**
    - Document critical implementation choices with full context
    - Include: decision, rationale, alternatives considered, tradeoffs
    - Scale to complexity: 2-3 for simple projects, 5+ for complex ones
@@ -87,7 +80,7 @@ ${TECHNICAL_STANDARDS.errorHandling}
      * Why Tailwind over CSS Modules?
      * Why tRPC over REST?
 
-3. **File Structure**
+2. **File Structure**
    - Design a professional, scalable directory structure
    - Follow framework conventions (Next.js App Router, etc.)
    - Organize by feature/domain, not by type
@@ -100,14 +93,14 @@ ${TECHNICAL_STANDARDS.errorHandling}
      * /tests - Test files mirroring src structure
      * Configuration files (tsconfig, eslint, prettier, etc.)
 
-4. **CLI Commands (MANDATORY)**
+3. **CLI Commands (MANDATORY)**
    - **Setup Commands**: Project initialization, dependency installation, database setup
    - **Dev Commands**: Local development server, watch modes
    - **Test Commands**: Unit tests, integration tests, E2E tests, coverage
    - **Build Commands**: Production build, type checking, linting
    - Example: \`pnpm install\`, \`pnpm dev\`, \`pnpm test\`, \`pnpm build\`
 
-5. **Environment Variables**
+4. **Environment Variables**
    - List required configuration variables for this specific project
    - Include: name, description, example value, required/optional
    - Common categories (include only what's needed):
@@ -116,12 +109,12 @@ ${TECHNICAL_STANDARDS.errorHandling}
      * External Services: API keys
      * Runtime: NODE_ENV, PORT
 
-6. **Dependencies**
+5. **Dependencies**
    - List all production and dev dependencies
    - Include version constraints (e.g., "next@^14.0.0")
    - Categorize: Framework, UI, State Management, Testing, Utilities
 
-7. **Implementation Phases**
+6. **Implementation Phases**
    - Break down implementation into logical phases
    - Each phase should be deployable/testable
    - Phase 1: Foundation (auth, database, core API)
@@ -129,7 +122,7 @@ ${TECHNICAL_STANDARDS.errorHandling}
    - Phase 3: Enhancement (performance, polish)
    - Phase 4: Production Readiness (monitoring, documentation)
 
-8. **State Management Strategy**
+7. **State Management Strategy**
    - Define approach for different state types:
      * Server State: React Query, SWR, tRPC
      * Client State: Zustand, Jotai, Context
@@ -137,7 +130,7 @@ ${TECHNICAL_STANDARDS.errorHandling}
      * URL State: nuqs, searchParams
    - Document data fetching and caching strategy
 
-9. **Technical Patterns**
+8. **Technical Patterns**
    - List architectural patterns used:
      * Repository Pattern for data access
      * Factory Pattern for object creation
@@ -181,12 +174,13 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         throw new Error("Engineer agent failed: No structured data received from LLM");
       }
 
+      const impl_phases = llmEngineerImpl.implementation_plan_phases ?? (llmEngineerImpl as any).phases ?? [];
+
       content = {
         summary: llmEngineerImpl.summary,
         description: llmEngineerImpl.description,
         artifact_path: llmEngineerImpl.artifact_path,
-        implementation_plan: llmEngineerImpl.implementation_plan,
-        implementation_plan_phases: llmEngineerImpl.implementation_plan_phases || llmEngineerImpl.phases,
+        implementation_plan_phases: impl_phases,
         state_management: llmEngineerImpl.state_management,
         file_structure: llmEngineerImpl.file_structure,
         technical_patterns: llmEngineerImpl.technical_patterns || [],
@@ -199,13 +193,12 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           dev_commands: llmEngineerImpl.run_results?.dev_commands || [],
           build_commands: llmEngineerImpl.run_results?.build_commands || [],
           notes: llmEngineerImpl.run_results?.notes || ""
-        },
-        phases: llmEngineerImpl.phases || llmEngineerImpl.implementation_plan_phases || []
+        }
       };
 
     // Validation check
-    if (!content.file_structure || !content.implementation_plan) {
-      throw new Error("Engineer agent failed: File structure or implementation plan is missing");
+    if (!content.file_structure || !content.implementation_plan_phases) {
+      throw new Error("Engineer agent failed: File structure or implementation phases are missing");
     }
 
     logger.info("Engineer agent completed");

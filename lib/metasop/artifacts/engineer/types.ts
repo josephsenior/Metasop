@@ -14,7 +14,6 @@ export interface EngineerBackendArtifact {
     description: string;
     artifact_path: string; // REQUIRED: minLength: 1
     file_structure: FileNode; // REQUIRED: Complete recursive file/folder structure (object, NOT array!)
-    implementation_plan: string; // REQUIRED: Multi-phase development plan (string, NOT array!) (minLength: 50)
     implementation_plan_phases: Array<{
         name: string;
         description: string;
@@ -58,7 +57,6 @@ export function isEngineerBackendArtifact(
         typeof artifact.summary === "string" &&
         typeof artifact.description === "string" &&
         typeof artifact.artifact_path === "string" &&
-        typeof artifact.implementation_plan === "string" &&
         Array.isArray(artifact.implementation_plan_phases) &&
         Array.isArray(artifact.dependencies) &&
         typeof artifact.file_structure === "object"

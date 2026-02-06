@@ -46,7 +46,6 @@ export const architectSchema = {
                     decision: { type: "string", maxLength: 100, description: "Clear decision statement (e.g., 'Use PostgreSQL as primary database')" },
                     status: { type: "string", enum: ["accepted", "proposed", "superseded"] },
                     reason: { type: "string", maxLength: 300, description: "Detailed technical reasoning with specific justification." },
-                    rationale: { type: "string", maxLength: 150, description: "One-sentence rationale for quick reference." },
                     tradeoffs: { type: "string", maxLength: 250, description: "What we gain and what we sacrifice with this decision." },
                     consequences: { type: "string", maxLength: 250, description: "What needs to change or be implemented as a result." },
                     alternatives: {

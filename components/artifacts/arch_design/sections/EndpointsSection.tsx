@@ -14,7 +14,7 @@ interface EndpointsSectionProps {
 
 export function EndpointsSection({ apiEndpoints }: EndpointsSectionProps) {
     return (
-        <TabsContent key="endpoints" value="endpoints" className="m-0 outline-none">
+        <TabsContent key="api" value="api" className="m-0 outline-none">
             <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {apiEndpoints.map((endpoint: any, i: number) => (
                     <ApiEndpointCard key={i} api={endpoint} />

@@ -47,8 +47,8 @@ describe("EngineerAgent", () => {
     expect(artifact.content).toBeDefined();
     expect(content.file_structure).toBeDefined();
     expect(typeof content.file_structure).toBe("object");
-    expect(content.implementation_plan).toBeDefined();
-    expect(typeof content.implementation_plan).toBe("string");
+    expect(content.implementation_plan_phases).toBeDefined();
+    expect(Array.isArray(content.implementation_plan_phases)).toBe(true);
     expect(artifact.timestamp).toBeDefined();
   });
 
@@ -85,12 +85,12 @@ describe("EngineerAgent", () => {
     expect(Array.isArray(content.dependencies)).toBe(true);
   });
 
-  it("should include implementation plan as string", async () => {
+  it("should include implementation phases", async () => {
     const artifact = await engineerAgent(context);
     const content = artifact.content as EngineerBackendArtifact;
 
-    expect(typeof content.implementation_plan).toBe("string");
-    expect(content.implementation_plan!.length).toBeGreaterThan(0);
+    expect(Array.isArray(content.implementation_plan_phases)).toBe(true);
+    expect(content.implementation_plan_phases.length).toBeGreaterThan(0);
   });
 
   it("should include artifact path and file structure", async () => {

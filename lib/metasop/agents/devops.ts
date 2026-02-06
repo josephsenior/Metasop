@@ -172,12 +172,12 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
 
       logger.info("DevOps agent received structured LLM response");
 
+      const normalizedInfrastructure = llmDevOps.infrastructure || {} as any;
+
       content = {
         summary: llmDevOps.summary,
         description: llmDevOps.description,
-        cloud_provider: llmDevOps.cloud_provider || llmDevOps.infrastructure?.cloud_provider,
-        infra_components: llmDevOps.infra_components || llmDevOps.infrastructure?.services?.length,
-        infrastructure: llmDevOps.infrastructure,
+        infrastructure: normalizedInfrastructure,
         cicd: llmDevOps.cicd,
         containerization: llmDevOps.containerization,
         monitoring: llmDevOps.monitoring,

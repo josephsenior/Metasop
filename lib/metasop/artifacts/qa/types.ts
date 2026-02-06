@@ -10,7 +10,7 @@
 
 export interface TestCase {
     id: string;      // REQUIRED - Short ID (e.g., TC-1)
-    name: string;    // REQUIRED - Test case name
+    title: string;   // REQUIRED - Test case title
     description?: string;
     type: "unit" | "integration" | "e2e" | "manual";
     priority: "high" | "medium" | "low";

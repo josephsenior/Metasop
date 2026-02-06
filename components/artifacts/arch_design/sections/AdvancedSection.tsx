@@ -25,7 +25,7 @@ export function AdvancedSection({ securityConsiderations, scalabilityApproach }:
                         </h3>
                         <div className="grid gap-2">
                             {securityConsiderations.map((sec: string, i: number) => (
-                                <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground bg-red-500/5 p-3 rounded-lg border border-red-500/10">
+                                <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground bg-black/40 p-3 rounded-lg border border-red-500/20">
                                     <Lock className="h-3 w-3 mt-0.5 text-red-500" />
                                     <span>{sec}</span>
                                 </div>
@@ -52,7 +52,7 @@ export function AdvancedSection({ securityConsiderations, scalabilityApproach }:
                                 const Icon = icons[key] || Settings;
 
                                 return (
-                                    <div key={key} className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10 space-y-2">
+                                    <div key={key} className="bg-black/40 p-3 rounded-xl border border-amber-500/20 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <div className="h-5 w-5 rounded bg-amber-500/10 flex items-center justify-center">
                                                 <Icon className="h-3 w-3 text-amber-600" />

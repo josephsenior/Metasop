@@ -14,14 +14,6 @@ const toRecordEntries = (value: any): Array<{ name: string; type: string }> => {
 const normalizeEngineer = (content: AnyRecord) => {
     if (!content) return
 
-    if (!content.implementation_plan && typeof content.plan === "string") {
-        content.implementation_plan = content.plan
-    }
-
-    if (!content.implementation_plan_phases && Array.isArray(content.phases)) {
-        content.implementation_plan_phases = content.phases
-    }
-
     delete content.plan
     delete content.phases
     delete content.files
@@ -57,14 +49,6 @@ const normalizeDevOps = (content: AnyRecord) => {
 
 const normalizeSecurity = (content: AnyRecord) => {
     if (!content) return
-
-    const auth = content.security_architecture?.authentication
-    if (auth && auth.multi_factor_auth !== undefined && auth.mfa_enabled === undefined) {
-        auth.mfa_enabled = Boolean(auth.multi_factor_auth)
-    }
-    if (auth) {
-        delete auth.multi_factor_auth
-    }
 }
 
 const normalizeArchitect = (content: AnyRecord) => {

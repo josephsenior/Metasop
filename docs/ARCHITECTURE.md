@@ -124,7 +124,7 @@ Specialized AI agents for different roles:
 | DevOps | CI/CD pipelines, infrastructure | DevOps Infrastructure |
 | Security | Threat modeling, security controls | Security Architecture |
 | UI Designer | Design tokens, components | UI Design |
-| Engineer | File structures, implementation plans | Engineer Implementation |
+| Engineer | File structures, implementation phases | Engineer Implementation |
 | QA | Test strategies, test cases | QA Verification |
 
 ### 4. LLM Adapter

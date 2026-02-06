@@ -48,10 +48,10 @@ export default function UIDesignPanel({
   const layoutBreakpoints = data.layout_breakpoints
   const uiPatterns = data.ui_patterns || []
   const websiteLayout = data.website_layout
-  const layoutStrategy = data.layout_strategy
-  const visualPhilosophy = data.visual_philosophy
-  const informationArchitecture = data.information_architecture
-  const responsiveStrategy = data.responsive_strategy
+  const layoutStrategy = (data as any).layout_strategy
+  const visualPhilosophy = (data as any).visual_philosophy
+  const informationArchitecture = (data as any).information_architecture
+  const responsiveStrategy = (data as any).responsive_strategy
   const summaryText = data.summary || "Visual language, component specification, and design patterns."
   const descriptionText = data.summary ? data.description : undefined
 

@@ -159,7 +159,7 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
             md += `### Architectural Decisions (ADRs)\n`;
             arch.decisions.forEach((d: any) => {
                 md += `- **${d.decision}** (${d.status})\n`;
-                md += `  - *Rationale*: ${d.reason || d.rationale}\n`;
+                md += `  - *Reason*: ${d.reason}\n`;
                 if (d.tradeoffs) md += `  - *Tradeoffs*: ${d.tradeoffs}\n`;
                 if (d.consequences) md += `  - *Consequences*: ${d.consequences}\n`;
                 if (d.alternatives && Array.isArray(d.alternatives) && d.alternatives.length > 0) {
@@ -455,15 +455,13 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
         }
 
         md += `### Implementation Roadmap\n`;
-        if (eng.implementation_plan) {
-            md += `${eng.implementation_plan}\n`;
-        } else if (eng.phases && Array.isArray(eng.phases)) {
-            eng.phases.forEach((phase: any) => {
-                md += `#### Phase ${phase.order}: ${phase.name}\n`;
-                md += `${phase.description}\n`;
+        if (eng.implementation_plan_phases && Array.isArray(eng.implementation_plan_phases)) {
+            eng.implementation_plan_phases.forEach((phase: any, index: number) => {
+                md += `#### Phase ${index + 1}: ${phase.name}\n`;
+                md += `${phase.description || ""}\n`;
                 if (phase.tasks && Array.isArray(phase.tasks)) {
                     phase.tasks.forEach((task: any) => {
-                        md += `- [ ] ${task.title}: ${task.description}\n`;
+                        md += `- [ ] ${task}\n`;
                     });
                 }
                 md += `\n`;
@@ -486,7 +484,7 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
                 md += `- **Authentication**: ${sa.authentication.method}\n`;
                 if (sa.authentication.providers) md += `  - *Providers*: ${sa.authentication.providers.join(", ")}\n`;
                 if (sa.authentication.token_expiry) md += `  - *Token Expiry*: ${sa.authentication.token_expiry}\n`;
-                if (sa.authentication.multi_factor_auth !== undefined) md += `  - *MFA Required*: ${sa.authentication.multi_factor_auth ? "Yes" : "No"}\n`;
+                if (sa.authentication.mfa_enabled !== undefined) md += `  - *MFA Required*: ${sa.authentication.mfa_enabled ? "Yes" : "No"}\n`;
             }
             if (sa.authorization) {
                 md += `- **Authorization**: ${sa.authorization.model}\n`;
@@ -563,48 +561,63 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
         md += `## 6. Infrastructure & DevOps\n\n`;
         md += `### DevOps Strategy\n${devops.summary || devops.description || "N/A"}\n\n`;
 
-        if (devops.cloud_provider) {
-            md += `### Cloud Infrastructure\n`;
-            md += `- **Provider**: ${devops.cloud_provider.name}\n`;
-            md += `- **Region**: ${devops.cloud_provider.region}\n`;
-            if (devops.cloud_provider.services && devops.cloud_provider.services.length > 0) {
-                md += `- **Services**: ${devops.cloud_provider.services.join(", ")}\n`;
+        if (devops.infrastructure) {
+            md += `### Infrastructure\n`;
+            md += `- **Provider**: ${devops.infrastructure.cloud_provider}\n`;
+            if (devops.infrastructure.iac) md += `- **IaC**: ${devops.infrastructure.iac}\n`;
+            if (devops.infrastructure.regions && devops.infrastructure.regions.length > 0) {
+                md += `- **Regions**: ${devops.infrastructure.regions.join(", ")}\n`;
+            }
+            if (devops.infrastructure.services && devops.infrastructure.services.length > 0) {
+                md += `- **Services**: ${devops.infrastructure.services.map((s: any) => s.name).join(", ")}\n`;
+            }
+            md += `\n`;
+        }
+
+        if (devops.cicd) {
+            md += `### CI/CD Pipeline\n`;
+            if (devops.cicd.tools && devops.cicd.tools.length > 0) md += `- **Tools**: ${devops.cicd.tools.join(", ")}\n`;
+            if (devops.cicd.pipeline_stages && devops.cicd.pipeline_stages.length > 0) {
+                md += `\n**Stages**:\n`;
+                devops.cicd.pipeline_stages.forEach((s: any) => {
+                    md += `- **${s.name}**: ${s.steps.join(", ")}\n`;
+                });
             }
             md += `\n`;
         }
 
         if (devops.containerization) {
             md += `### Containerization\n`;
-            md += `- **Tool**: ${devops.containerization.tool}\n`;
-            md += `- **Base Image**: ${devops.containerization.base_image}\n`;
-            if (devops.containerization.orchestration) md += `- **Orchestration**: ${devops.containerization.orchestration}\n`;
+            if (devops.containerization.dockerfile) md += `- **Dockerfile**: ${devops.containerization.dockerfile}\n`;
+            if (devops.containerization.docker_compose) md += `- **Compose**: ${devops.containerization.docker_compose}\n`;
+            if (devops.containerization.kubernetes?.namespace) md += `- **Kubernetes Namespace**: ${devops.containerization.kubernetes.namespace}\n`;
             md += `\n`;
         }
 
-        if (devops.ci_cd) {
-            md += `### CI/CD Pipeline\n`;
-            md += `- **Tool**: ${devops.ci_cd.tool}\n`;
-            if (devops.ci_cd.stages && devops.ci_cd.stages.length > 0) {
-                md += `\n**Stages**:\n`;
-                devops.ci_cd.stages.forEach((s: any) => {
-                    md += `- **${s.name}**: ${s.tasks.join(", ")}\n`;
-                });
+        if (devops.deployment) {
+            md += `### Deployment Strategy\n`;
+            md += `- **Strategy**: ${devops.deployment.strategy}\n`;
+            if (devops.deployment.environments && devops.deployment.environments.length > 0) {
+                md += `- **Environments**: ${devops.deployment.environments.map((e: any) => e.name).join(", ")}\n`;
             }
             md += `\n`;
         }
 
-        if (devops.deployment_strategy) {
-            md += `### Deployment Strategy\n`;
-            md += `- **Type**: ${devops.deployment_strategy.type}\n`;
-            if (devops.deployment_strategy.environment) md += `- **Environment**: ${devops.deployment_strategy.environment}\n`;
+        if (devops.scaling) {
+            md += `### Scaling\n`;
+            if (devops.scaling.auto_scaling?.enabled !== undefined) {
+                md += `- **Auto Scaling**: ${devops.scaling.auto_scaling.enabled ? "Enabled" : "Disabled"}\n`;
+            }
+            if (devops.scaling.auto_scaling?.min_replicas) md += `- **Min Replicas**: ${devops.scaling.auto_scaling.min_replicas}\n`;
+            if (devops.scaling.auto_scaling?.max_replicas) md += `- **Max Replicas**: ${devops.scaling.auto_scaling.max_replicas}\n`;
             md += `\n`;
         }
 
-        if (devops.scaling_strategy) {
-            md += `### Scaling Strategy\n`;
-            md += `- **Auto Scaling**: ${devops.scaling_strategy.auto_scaling ? "Enabled" : "Disabled"}\n`;
-            if (devops.scaling_strategy.triggers && devops.scaling_strategy.triggers.length > 0) {
-                md += `- **Triggers**: ${devops.scaling_strategy.triggers.join(", ")}\n`;
+        if (devops.monitoring) {
+            md += `### Monitoring & Observability\n`;
+            if (devops.monitoring.tools && devops.monitoring.tools.length > 0) md += `- **Tools**: ${devops.monitoring.tools.join(", ")}\n`;
+            if (devops.monitoring.metrics && devops.monitoring.metrics.length > 0) {
+                md += `- **Metrics**: ${devops.monitoring.metrics.map((m: any) => m.name).join(", ")}\n`;
             }
             md += `\n`;
         }
@@ -614,12 +627,7 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
             md += `- **RPO**: ${devops.disaster_recovery.rpo}\n`;
             md += `- **RTO**: ${devops.disaster_recovery.rto}\n`;
             md += `- **Backup Strategy**: ${devops.disaster_recovery.backup_strategy}\n`;
-            md += `\n`;
-        }
-
-        if (devops.monitoring && Array.isArray(devops.monitoring)) {
-            md += `### Monitoring & Observability\n`;
-            devops.monitoring.forEach((m: string) => md += `- ${m}\n`);
+            if (devops.disaster_recovery.failover_plan) md += `- **Failover Plan**: ${devops.disaster_recovery.failover_plan}\n`;
             md += `\n`;
         }
     }
@@ -635,39 +643,43 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
             if (ts.unit) md += `- **Unit Testing**: ${ts.unit}\n`;
             if (ts.integration) md += `- **Integration Testing**: ${ts.integration}\n`;
             if (ts.e2e) md += `- **E2E Testing**: ${ts.e2e}\n`;
-            if (ts.performance_testing) md += `- **Performance Testing**: ${ts.performance_testing}\n`;
-            if (ts.accessibility_testing) md += `- **Accessibility Testing**: ${ts.accessibility_testing}\n`;
+            if (ts.approach) md += `- **Approach**: ${ts.approach}\n`;
             if (ts.tools && ts.tools.length > 0) md += `- **Tools**: ${ts.tools.join(", ")}\n`;
             md += `\n`;
         }
 
-        if (qa.coverage_requirements) {
+        if (qa.coverage) {
             md += `### Coverage Requirements\n`;
-            const cr = qa.coverage_requirements;
-            if (cr.unit !== undefined) md += `- **Unit**: ${cr.unit}%\n`;
-            if (cr.integration !== undefined) md += `- **Integration**: ${cr.integration}%\n`;
-            if (cr.e2e !== undefined) md += `- **E2E**: ${cr.e2e}%\n`;
+            const cr = qa.coverage;
+            if (cr.percentage !== undefined) md += `- **Overall**: ${cr.percentage}%\n`;
+            if (cr.threshold !== undefined) md += `- **Target**: ${cr.threshold}%\n`;
+            if (cr.lines !== undefined) md += `- **Lines**: ${cr.lines}%\n`;
+            if (cr.statements !== undefined) md += `- **Statements**: ${cr.statements}%\n`;
+            if (cr.functions !== undefined) md += `- **Functions**: ${cr.functions}%\n`;
+            if (cr.branches !== undefined) md += `- **Branches**: ${cr.branches}%\n`;
             md += `\n`;
         }
 
-        if (qa.security_test_plan) {
+        if (qa.security_plan) {
             md += `### Security Testing\n`;
-            const stp = qa.security_test_plan;
-            if (stp.tools && stp.tools.length > 0) md += `- **Tools**: ${stp.tools.join(", ")}\n`;
-            if (stp.methods && stp.methods.length > 0) md += `- **Methods**: ${stp.methods.join(", ")}\n`;
+            const stp = qa.security_plan;
+            if (stp.auth_verification_steps && stp.auth_verification_steps.length > 0) {
+                md += `- **Auth Verification**: ${stp.auth_verification_steps.join(", ")}\n`;
+            }
+            if (stp.vulnerability_scan_strategy) md += `- **Vulnerability Scan**: ${stp.vulnerability_scan_strategy}\n`;
             md += `\n`;
         }
 
-        if (qa.manual_verification && qa.manual_verification.length > 0) {
+        if (qa.manual_verification_steps && qa.manual_verification_steps.length > 0) {
             md += `### Manual Verification\n`;
-            qa.manual_verification.forEach((v: string) => md += `- ${v}\n`);
+            qa.manual_verification_steps.forEach((v: string) => md += `- ${v}\n`);
             md += `\n`;
         }
 
         md += `### Critical Test Cases\n`;
         if (qa.test_cases && Array.isArray(qa.test_cases)) {
             qa.test_cases.forEach((tc: any) => {
-                md += `- **${tc.name}** (${tc.priority}): ${tc.description}\n`;
+                md += `- **${tc.title}** (${tc.priority}): ${tc.description}\n`;
                 if (tc.expected_result) md += `  - *Expected*: ${tc.expected_result}\n`;
             });
         } else {

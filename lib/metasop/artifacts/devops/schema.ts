@@ -2,7 +2,7 @@
 export const devopsSchema = {
     type: "object",
     required: ["infrastructure", "cicd", "deployment", "monitoring", "containerization", "scaling", "disaster_recovery", "summary", "description"],
-    propertyOrdering: ["summary", "description", "cloud_provider", "infrastructure", "cicd", "deployment", "containerization", "scaling", "monitoring", "disaster_recovery", "infra_components"],
+    propertyOrdering: ["summary", "description", "infrastructure", "cicd", "deployment", "containerization", "scaling", "monitoring", "disaster_recovery"],
     properties: {
         summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the DevOps strategy and infrastructure approach." },
         description: { type: "string", maxLength: 600, description: "Detailed infrastructure philosophy, SRE approach, and operational excellence strategy." },

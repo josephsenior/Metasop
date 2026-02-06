@@ -53,7 +53,6 @@ export default function DevOpsInfrastructurePanel({
     disaster_recovery,
     summary,
     description,
-    infra_components
   } = data
 
   const services = infrastructure?.services || []
@@ -84,7 +83,7 @@ export default function DevOpsInfrastructurePanel({
       >
         <div className={styles.layout.statsGrid + " mt-2"}>
             <StatsCard icon={Box} label="Services" value={services.length} color="text-sky-500" bg="bg-sky-500/10" />
-            <StatsCard icon={Zap} label="Components" value={infra_components || 0} color="text-yellow-500" bg="bg-yellow-500/10" />
+            <StatsCard icon={Box} label="Components" value={services.length} color="text-yellow-500" bg="bg-yellow-500/10" />
             <StatsCard icon={GitBranch} label="Pipelines" value={pipelineStages.length} color="text-orange-500" bg="bg-orange-500/10" />
             <StatsCard icon={Globe} label="Envs" value={environments.length} color="text-emerald-500" bg="bg-emerald-500/10" />
             <StatsCard icon={Bell} label="Alerts" value={monitoring?.alerts?.length || 0} color="text-rose-500" bg="bg-rose-500/10" />

@@ -90,10 +90,18 @@ function TestPlanCard({ tc }: { tc: any }) {
               {tcTitle && <CardTitle className="text-sm font-bold mt-1 text-foreground leading-tight">{tcTitle}</CardTitle>}
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors">
+              <button 
+                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+                title="Copy test case"
+                aria-label="Copy test case"
+              >
                 <Copy className="h-3 w-3" />
               </button>
-              <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors">
+              <button 
+                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+                title="Open external link"
+                aria-label="Open external link"
+              >
                 <ExternalLink className="h-3 w-3" />
               </button>
             </div>

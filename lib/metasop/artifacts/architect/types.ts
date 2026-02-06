@@ -20,7 +20,6 @@ export interface ArchitectBackendArtifact {
         decision: string; // REQUIRED: minLength: 10
         status: "accepted" | "proposed" | "superseded"; // REQUIRED
         reason: string; // REQUIRED: minLength: 20
-        rationale?: string; // UI alias for reason
         tradeoffs: string; // REQUIRED: minLength: 10
         consequences: string; // REQUIRED: minLength: 20
         alternatives?: string[]; // Array of strings (minLength: 5)

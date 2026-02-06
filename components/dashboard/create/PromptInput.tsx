@@ -82,6 +82,7 @@ export function PromptInput({
                         <>
                             <Textarea
                                 id="prompt"
+                                aria-label="Describe your application"
                                 placeholder="Describe your application in plain English…"
                                 value={prompt}
                                 onChange={(e) => onPromptChange(e.target.value)}
@@ -184,7 +185,7 @@ export function PromptInput({
                                         <Badge key={idx} variant="secondary" className="text-[10px] py-0.5 px-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 flex items-center gap-1">
                                             <FileText className="h-2.5 w-2.5" />
                                             <span className="max-w-20 truncate">{doc.name}</span>
-                                            <button onClick={() => onRemoveDocument(idx)} className="hover:text-red-500">
+                                            <button onClick={() => onRemoveDocument(idx)} className="hover:text-red-500" aria-label="Remove document">
                                                 <X className="h-2.5 w-2.5" />
                                             </button>
                                         </Badge>
@@ -200,6 +201,7 @@ export function PromptInput({
                                             className="h-7 w-7 rounded-md text-muted-foreground hover:text-foreground"
                                             onClick={() => fileInputRef.current?.click()}
                                             disabled={isGenerating || isUploading}
+                                            aria-label="Attach documents"
                                         >
                                             {isUploading ? (
                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -217,6 +219,8 @@ export function PromptInput({
                                 className="hidden"
                                 accept=".txt,.md,.json,.csv,.pdf"
                                 onChange={handleFileChange}
+                                aria-label="Upload document"
+                                title="Upload document"
                             />
                             <VoiceInputButton
                                 onTranscription={(text) => onPromptChange(prompt + (prompt ? " " : "") + text)}

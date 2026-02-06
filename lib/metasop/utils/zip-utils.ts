@@ -122,9 +122,13 @@ ${artifact.run_results?.setup_commands?.join("\n") || "npm install"}
 - **Development**: \`${artifact.run_results?.dev_commands?.join(" / ") || "npm run dev"}\`
 - **Testing**: \`${artifact.run_results?.test_commands?.join(" / ") || "npm test"}\`
 
-## 📖 Implementation Plan
+## 📖 Implementation Roadmap
 
-${artifact.implementation_plan || "No implementation plan provided."}
+${artifact.implementation_plan_phases && artifact.implementation_plan_phases.length > 0
+            ? artifact.implementation_plan_phases
+                .map((phase: any, index: number) => `### Phase ${index + 1}: ${phase.name}\n${phase.description || ""}\n${Array.isArray(phase.tasks) && phase.tasks.length > 0 ? phase.tasks.map((task: string) => `- ${task}`).join("\n") : ""}`)
+                .join("\n\n")
+            : "No implementation roadmap provided."}
 
 ## ⚙️ Technical Decisions
 

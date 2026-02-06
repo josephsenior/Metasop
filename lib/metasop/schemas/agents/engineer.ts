@@ -38,18 +38,11 @@ export const EngineerArtifactSchema = z.object({
     file_changes: z.array(FileNodeSchema).optional(),
     components: z.array(FileNodeSchema).optional(),
     file_structure: FileNodeSchema, // REQUIRED: Complete file structure
-    implementation_plan: z.string().min(50, "Implementation plan must be at least 50 characters"),
-    plan: z.string().min(50, "Plan must be at least 50 characters").optional(),
-    phases: z.array(z.object({
-        name: z.string(),
-        description: z.string(),
-        tasks: z.array(z.string()),
-    })).optional(),
     implementation_plan_phases: z.array(z.object({
         name: z.string(),
         description: z.string(),
         tasks: z.array(z.string()),
-    })).optional(),
+    })),
     dependencies: z.array(z.string().min(1, "Dependency must not be empty")), // REQUIRED
     technical_decisions: z.array(TechnicalDecisionSchema), // REQUIRED
     environment_variables: z.array(EnvironmentVariableSchema), // REQUIRED

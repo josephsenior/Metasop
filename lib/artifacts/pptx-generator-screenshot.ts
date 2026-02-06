@@ -250,7 +250,7 @@ export class PPTXGeneratorScreenshot {
         (item, _idx) => `
           <div class="list-item">
             <div class="list-item-title">${item.decision || item.title || item}</div>
-            ${item.rationale ? `<div class="list-item-description">${item.rationale}</div>` : ''}
+            ${item.reason ? `<div class="list-item-description">${item.reason}</div>` : ''}
           </div>
         `
       )
@@ -487,14 +487,8 @@ export class PPTXGeneratorScreenshot {
     const dividerHTML = templates.createSectionDivider("Implementation Plan", "Engineer Agent")
     await this.addImageSlide(pptx, renderer, dividerHTML)
 
-    // Implementation Plan
-    if (engineer.implementation_plan || engineer.overview) {
-      const planHTML = templates.createTextContentSlide("Implementation Plan", engineer.implementation_plan as string || engineer.overview as string)
-      await this.addImageSlide(pptx, renderer, planHTML)
-    }
-
     // Implementation Phases
-    const phases = engineer.implementation_phases as any[] || []
+    const phases = engineer.implementation_plan_phases as any[] || []
     if (phases.length > 0) {
       const phasesHTML = templates.createListSlide(
         "Implementation Phases",
@@ -503,7 +497,7 @@ export class PPTXGeneratorScreenshot {
           <div class="list-item">
             <div class="list-item-title">
               <span class="badge badge-blue">Phase ${_idx + 1}</span>
-              ${item.phase || item.name || item}
+              ${item.name || item}
             </div>
             ${item.description ? `<div class="list-item-description">${item.description}</div>` : ''}
           </div>
@@ -554,9 +548,27 @@ export class PPTXGeneratorScreenshot {
     await this.addImageSlide(pptx, renderer, dividerHTML)
 
     // Test Strategy
-    if (qa.test_strategy || qa.strategy) {
-      const strategyHTML = templates.createTextContentSlide("Test Strategy", qa.test_strategy as string || qa.strategy as string)
-      await this.addImageSlide(pptx, renderer, strategyHTML)
+    const testStrategy = qa.test_strategy as Record<string, unknown> | undefined
+    if (testStrategy) {
+      const strategyLines: string[] = []
+      const unit = testStrategy.unit as string
+      const integration = testStrategy.integration as string
+      const e2e = testStrategy.e2e as string
+      const approach = testStrategy.approach as string
+      const types = testStrategy.types as string[]
+      const tools = testStrategy.tools as string[]
+
+      if (unit) strategyLines.push(`Unit: ${unit}`)
+      if (integration) strategyLines.push(`Integration: ${integration}`)
+      if (e2e) strategyLines.push(`E2E: ${e2e}`)
+      if (approach) strategyLines.push(`Approach: ${approach}`)
+      if (types && types.length > 0) strategyLines.push(`Types: ${types.join(", ")}`)
+      if (tools && tools.length > 0) strategyLines.push(`Tools: ${tools.join(", ")}`)
+
+      if (strategyLines.length > 0) {
+        const strategyHTML = templates.createTextContentSlide("Test Strategy", strategyLines)
+        await this.addImageSlide(pptx, renderer, strategyHTML)
+      }
     }
 
     // Test Cases
@@ -569,9 +581,9 @@ export class PPTXGeneratorScreenshot {
           <div class="list-item">
             <div class="list-item-title">
               <span class="badge badge-green">TC-${_idx + 1}</span>
-              ${item.test || item.title || item}
+              ${item.title || item.id || item}
             </div>
-            ${item.expected ? `<div class="list-item-description">Expected: ${item.expected}</div>` : ''}
+            ${item.expected_result ? `<div class="list-item-description">Expected: ${item.expected_result}</div>` : ''}
           </div>
         `
       )
@@ -579,9 +591,22 @@ export class PPTXGeneratorScreenshot {
     }
 
     // Security Testing
-    if (qa.security_testing || qa.security_plan) {
-      const securityHTML = templates.createTextContentSlide("Security Testing", qa.security_testing as string || qa.security_plan as string)
-      await this.addImageSlide(pptx, renderer, securityHTML)
+    const securityPlan = qa.security_plan as Record<string, unknown> | undefined
+    if (securityPlan) {
+      const securityLines: string[] = []
+      const authSteps = securityPlan.auth_verification_steps as string[]
+      const vulnStrategy = securityPlan.vulnerability_scan_strategy as string
+
+      if (authSteps && authSteps.length > 0) {
+        authSteps.forEach((step) => securityLines.push(`Auth verification: ${step}`))
+      }
+
+      if (vulnStrategy) securityLines.push(`Vulnerability scan: ${vulnStrategy}`)
+
+      if (securityLines.length > 0) {
+        const securityHTML = templates.createTextContentSlide("Security Testing", securityLines)
+        await this.addImageSlide(pptx, renderer, securityHTML)
+      }
     }
 
     // Risk Analysis
@@ -604,15 +629,48 @@ export class PPTXGeneratorScreenshot {
     }
 
     // Accessibility Testing
-    const accessibility = qa.accessibility_testing as string[] || []
-    if (accessibility.length > 0) {
-      const accessibilityHTML = templates.createTextContentSlide("Accessibility Testing", accessibility)
-      await this.addImageSlide(pptx, renderer, accessibilityHTML)
+    const accessibilityPlan = qa.accessibility_plan as Record<string, unknown> | undefined
+    if (accessibilityPlan) {
+      const accessibilityLines: string[] = []
+      const standard = accessibilityPlan.standard as string
+      const automatedTools = accessibilityPlan.automated_tools as string[]
+      const manualChecks = accessibilityPlan.manual_checks as string[]
+      const screenReaders = accessibilityPlan.screen_readers as string[]
+
+      if (standard) accessibilityLines.push(`Standard: ${standard}`)
+      if (automatedTools && automatedTools.length > 0) {
+        accessibilityLines.push(`Automated tools: ${automatedTools.join(", ")}`)
+      }
+      if (manualChecks && manualChecks.length > 0) {
+        accessibilityLines.push(`Manual checks: ${manualChecks.join(", ")}`)
+      }
+      if (screenReaders && screenReaders.length > 0) {
+        accessibilityLines.push(`Screen readers: ${screenReaders.join(", ")}`)
+      }
+
+      if (accessibilityLines.length > 0) {
+        const accessibilityHTML = templates.createTextContentSlide("Accessibility Testing", accessibilityLines)
+        await this.addImageSlide(pptx, renderer, accessibilityHTML)
+      }
+    }
+
+    // Manual Verification
+    const manualSteps = qa.manual_verification_steps as string[]
+    if (manualSteps && manualSteps.length > 0) {
+      const manualHTML = templates.createTextContentSlide("Manual Verification", manualSteps)
+      await this.addImageSlide(pptx, renderer, manualHTML)
+    }
+
+    // Coverage
+    const coverage = qa.coverage as Record<string, unknown> | null | undefined
+    if (coverage && Object.keys(coverage).length > 0) {
+      const coverageHTML = templates.createKeyValueSlide("Coverage", coverage)
+      await this.addImageSlide(pptx, renderer, coverageHTML)
     }
 
     // Performance Testing
-    if (qa.performance_testing) {
-      const performanceHTML = templates.createKeyValueSlide("Performance Testing", qa.performance_testing as Record<string, any>)
+    if (qa.performance_metrics) {
+      const performanceHTML = templates.createKeyValueSlide("Performance Testing", qa.performance_metrics as Record<string, any>)
       await this.addImageSlide(pptx, renderer, performanceHTML)
     }
   }

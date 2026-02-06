@@ -41,7 +41,7 @@ export async function qaAgent(
 "${projectTitle}"
 
 === OUTPUT RULES ===
-- Give each test case a unique ID (max 10 chars, e.g. TC-1, TC-2, TC-01) and a unique name. One scenario per test; no duplicate IDs or names.
+- Give each test case a unique ID (max 10 chars, e.g. TC-1, TC-2, TC-01) and a unique title. One scenario per test; no duplicate IDs or titles.
 - Cover auth, CRUD, validation, error handling, security, and performance where relevant. Stop after scope is covered.
 - Response: Output only the JSON object matching the schema. No markdown, no explanations.
 
@@ -95,7 +95,7 @@ ${domainContext ? `\n${domainContext}\n` : ""}
    - Map each user story to test scenarios
    - Include positive, negative, and edge case scenarios
    - Link test cases to acceptance criteria
-   - Use clear, descriptive names and detailed descriptions
+  - Use clear, descriptive titles and detailed descriptions
    
    **COMPLEX FLOWS - Use Test Case Chaining:**
    Instead of cramming multiple steps into one test case, break into chained tests:

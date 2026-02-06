@@ -95,7 +95,6 @@ EXAMPLE ARCHITECTURAL DECISION (Architect):
   "decision": "Use PostgreSQL as primary database over MongoDB",
   "status": "accepted",
   "reason": "Strong ACID compliance essential for financial transaction integrity, mature ecosystem with excellent TypeScript/Prisma support, and superior query performance for relational data with complex joins.",
-  "rationale": "Financial data requires transactional guarantees that only ACID-compliant databases provide reliably.",
   "tradeoffs": "Less flexible schema evolution requires migrations; horizontal scaling more complex than document stores",
   "consequences": "Need to implement proper migration strategy; may need read replicas for high-read workloads",
   "alternatives": [
@@ -146,7 +145,7 @@ EXAMPLE STRIDE THREAT (Security):
 EXAMPLE TEST CASE (QA):
 {
   "id": "TC-001",
-  "name": "User submits registration form",
+  "title": "User submits registration form",
   "type": "integration",
   "priority": "critical",
   "description": "Verifies registration API creates user record. Password hashed, email stored. Requires database accessible and email service configured.",

@@ -67,8 +67,8 @@ ${TECHNICAL_STANDARDS.database}
    - Consider read/write patterns and query optimization
 
 4. **Architectural Decision Records (ADRs)**
-   - Document 4-6 key decisions with full context
-   - Include: decision, status, rationale, tradeoffs, consequences
+  - Document 4-6 key decisions with full context
+  - Include: decision, status, reason, tradeoffs, consequences
    - List alternatives considered and why they were rejected
    - Be specific about technical tradeoffs
 
@@ -141,7 +141,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           decision: d.decision,
           status: d.status,
           reason: d.reason,
-          rationale: d.rationale || d.reason, // Ensure rationale is populated for UI
           tradeoffs: d.tradeoffs,
           consequences: d.consequences,
           alternatives: d.alternatives

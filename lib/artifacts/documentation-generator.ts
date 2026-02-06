@@ -127,11 +127,20 @@ export class DocumentationGenerator {
     }
 
     // Engineer Section
-    if (engineerArtifact.implementation_plan || engineerArtifact.file_structure || engineerArtifact.dependencies) {
-      markdown += `## Implementation Plan\n\n`
+    if (engineerArtifact.implementation_plan_phases || engineerArtifact.file_structure || engineerArtifact.dependencies) {
+      markdown += `## Implementation Roadmap\n\n`
 
-      if (engineerArtifact.implementation_plan) {
-        markdown += `${engineerArtifact.implementation_plan}\n\n`
+      if (engineerArtifact.implementation_plan_phases && engineerArtifact.implementation_plan_phases.length > 0) {
+        engineerArtifact.implementation_plan_phases.forEach((phase: any, index: number) => {
+          markdown += `### Phase ${index + 1}: ${phase.name}\n\n`
+          markdown += `${phase.description || ""}\n\n`
+          if (Array.isArray(phase.tasks) && phase.tasks.length > 0) {
+            phase.tasks.forEach((task: string) => {
+              markdown += `- ${task}\n`
+            })
+            markdown += `\n`
+          }
+        })
       }
 
       if (engineerArtifact.file_structure) {

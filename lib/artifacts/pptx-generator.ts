@@ -316,7 +316,7 @@ export class PPTXGenerator {
         if (auth) {
           secArchSlide.addText("Authentication:", { x: MARGIN, y: yPos, w: W, h: 0.3, fontSize: 12, bold: true })
           const authMethod = auth.method as string
-          const mfa = auth.multi_factor_auth || auth.mfa_enabled ? " (MFA enabled)" : ""
+          const mfa = auth.mfa_enabled ? " (MFA enabled)" : ""
           secArchSlide.addText(`${authMethod}${mfa}`, { x: MARGIN, y: yPos + 0.35, w: W, h: 0.3, fontSize: 10 })
           yPos += 0.8
         }
@@ -652,16 +652,8 @@ export class PPTXGenerator {
     if (Object.keys(engineer).length > 0) {
       addSectionSlide(pptx, "Implementation", "Engineer Agent")
 
-      // Engineer Slide: Implementation Plan
-      const implPlan = (engineer.implementation_plan as string) || (engineer.plan as string) || (engineer.summary as string) || ""
-      if (implPlan) {
-        const engPlanSlide = pptx.addSlide()
-        engPlanSlide.addText("Engineer: Implementation Plan", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
-        engPlanSlide.addText(truncate(implPlan, 800), { x: MARGIN, y: 1, w: W, h: 4.5, fontSize: 10 })
-      }
-
       // Engineer Slide: Phases
-      const phases = (engineer.phases as unknown[]) || (engineer.implementation_plan_phases as unknown[]) || []
+      const phases = (engineer.implementation_plan_phases as unknown[]) || []
       if (phases.length > 0) {
         const engPhasesSlide = pptx.addSlide()
         engPhasesSlide.addText("Engineer: Implementation Phases", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
@@ -770,9 +762,9 @@ export class PPTXGenerator {
         qaCasesSlide.addText("QA: Test Cases", { x: MARGIN, y: 0.3, w: W, h: 0.5, fontSize: SLIDE_TITLE_FONT, bold: true })
 
         const caseLines = testCases.slice(0, 12).map((tc: unknown) => {
-          const testCase = tc as { id?: string; name?: string; priority?: string }
+          const testCase = tc as { id?: string; title?: string; priority?: string }
           const prioSuffix = testCase.priority ? " [" + testCase.priority.toUpperCase() + "]" : ""
-          return "• " + (testCase.id || "TC") + ": " + truncate(testCase.name || "", 70) + prioSuffix
+          return "• " + (testCase.id || "TC") + ": " + truncate(testCase.title || "", 70) + prioSuffix
         })
         qaCasesSlide.addText(caseLines.join("\n"), { x: MARGIN, y: 1, w: W, h: 4.5, fontSize: 10 })
       }

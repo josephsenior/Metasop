@@ -129,7 +129,7 @@ function summarizeArtifacts(artifacts: Record<string, any>): string {
 
         if (name === "engineer" || name === "engineer_impl") {
             const eng = artifact;
-            summary.push(`- Implementation Steps: ${eng.implementation_plan?.length || 0}`);
+            summary.push(`- Implementation Phases: ${eng.implementation_plan_phases?.length || 0}`);
             summary.push(`- Dependencies: ${eng.dependencies?.length || 0}`);
         }
 

@@ -75,9 +75,25 @@ function ScriptCard({ label, cmds, icon: Icon, color }: any) {
 function FileSystemNode({ node, depth = 0 }: { node: any, depth?: number }) {
   if (!node) return null
 
+  // Calculate padding based on depth: depth * 16 + 8
+  // Use Tailwind classes to avoid inline style warnings
+  const getPaddingClass = (d: number) => {
+    switch (d) {
+      case 0: return "pl-2";   // 8px
+      case 1: return "pl-6";   // 24px
+      case 2: return "pl-10";  // 40px
+      case 3: return "pl-14";  // 56px
+      case 4: return "pl-[72px]"; // 72px
+      case 5: return "pl-[88px]"; // 88px
+      default: return "pl-[104px]"; // 104px+
+    }
+  }
+
+  const paddingClass = getPaddingClass(depth);
+
   if (typeof node === 'string') {
     return (
-      <div className="flex items-center gap-2 py-1.5 hover:bg-muted/50 rounded px-2 text-muted-foreground/80 transition-colors" style={{ paddingLeft: `${depth * 16 + 8}px` }}>
+      <div className={cn("flex items-center gap-2 py-1.5 hover:bg-muted/50 rounded px-2 text-muted-foreground/80 transition-colors", paddingClass)}>
         {node.endsWith('/') ? <Folder className="w-3.5 h-3.5 text-blue-500" /> : <FileCode className="w-3.5 h-3.5 text-muted-foreground/60" />}
         <span className="text-[11px] font-mono truncate">{node.replace(/\/$/, '')}</span>
       </div>
@@ -91,7 +107,7 @@ function FileSystemNode({ node, depth = 0 }: { node: any, depth?: number }) {
 
   return (
     <div className="space-y-0.5">
-      <div className="flex items-center gap-2 py-1.5 hover:bg-muted/50 rounded px-2 text-foreground/80 group cursor-default transition-colors" style={{ paddingLeft: `${depth * 16 + 8}px` }}>
+      <div className={cn("flex items-center gap-2 py-1.5 hover:bg-muted/50 rounded px-2 text-foreground/80 group cursor-default transition-colors", paddingClass)}>
         {isDir ?
           <Folder className="w-3.5 h-3.5 text-blue-500/80 fill-blue-500/10" /> :
           <File className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-emerald-500" />
@@ -153,21 +169,15 @@ export default function EngineerImplPanel({
   const data = (artifact?.content || artifact || {}) as EngineerBackendArtifact
   const dependencies = data.dependencies || []
   const runResults = (data as any).run_results || {}
-  const fileStructure = data.file_structure || data.files || data.file_changes || data.components
+  const fileStructure = (data as any).file_structure || (data as any).files || (data as any).file_changes || (data as any).components
   const technicalDecisions = data.technical_decisions || []
   const envVars = data.environment_variables || []
-  const phases = data.implementation_plan_phases || data.phases || []
-  const implementationPlan = data.implementation_plan || data.plan
-
-  // Count phases in markdown if array is empty
-  const roadmapCount = phases.length > 0
-    ? phases.length
-    : (implementationPlan?.match(/## Phase /g)?.length || (implementationPlan ? 1 : 0))
-
+  const phases = data.implementation_plan_phases || []
   const technicalPatterns = data.technical_patterns || []
   const stateManagement = data.state_management
   const artifactPath = data.artifact_path
 
+  const roadmapCount = phases.length
   const technicalCount = (envVars?.length || 0) + (technicalDecisions?.length || 0) + (technicalPatterns?.length || 0) + (stateManagement ? 1 : 0)
   const summaryText = data.summary || data.description || "Implementation details and technical specifications."
   const descriptionText = data.summary ? data.description : undefined
@@ -267,8 +277,8 @@ export default function EngineerImplPanel({
           <div className="flex-1 overflow-hidden bg-muted/5">
             <ScrollArea className="h-full">
               <div className="p-4">
-                {phases.length > 0 || implementationPlan ? (
-                  <RoadmapSection phases={phases} implementationPlan={implementationPlan} />
+                {phases.length > 0 ? (
+                  <RoadmapSection phases={phases} />
                 ) : (
                   <EmptyStateCard title="Roadmap" description="No implementation roadmap was generated for this run." icon={ListTodo} />
                 )}

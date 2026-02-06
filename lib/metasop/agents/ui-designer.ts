@@ -50,6 +50,44 @@ function sanitizeDesignTokensColors(colors: any): any {
   return sanitized;
 }
 
+function ensureDesignTokensColors(designTokens: any): void {
+  if (!designTokens || typeof designTokens !== "object") return;
+
+  const defaults: Record<string, string> = {
+    primary: "#4F46E5",
+    primary_foreground: "#FFFFFF",
+    secondary: "#64748B",
+    secondary_foreground: "#FFFFFF",
+    background: "#0F172A",
+    foreground: "#E2E8F0",
+    text: "#E2E8F0",
+    muted: "#1E293B",
+    muted_foreground: "#94A3B8",
+    card: "#111827",
+    card_foreground: "#E5E7EB",
+    popover: "#111827",
+    popover_foreground: "#E5E7EB",
+    border: "#334155",
+    input: "#334155",
+    ring: "#4F46E5",
+    accent: "#22D3EE",
+    accent_foreground: "#0F172A",
+    destructive: "#EF4444",
+    destructive_foreground: "#FFFFFF",
+  };
+
+  if (!designTokens.colors || typeof designTokens.colors !== "object" || Array.isArray(designTokens.colors)) {
+    designTokens.colors = {};
+  }
+
+  const colors = designTokens.colors as Record<string, string>;
+  for (const [key, fallback] of Object.entries(defaults)) {
+    const current = colors[key];
+    const sanitized = sanitizeColorValue(typeof current === "string" ? current : undefined);
+    colors[key] = /^#[0-9A-Fa-f]{6}$/.test(sanitized) ? sanitized : fallback;
+  }
+}
+
 const CSS_VALUE_PATTERN = /^[0-9.]*(rem|px|em|%)?$/;
 const FONT_WEIGHT_PATTERN = /^[0-9]+$/;
 
@@ -176,7 +214,7 @@ ${domainContext ? `\n${domainContext}\n` : ""}
 
 === MISSION ===
 1. **Design tokens**: Colors (primary, secondary, background, text + semantic/surface as needed), typography (fontSize, fontWeight), spacing, borderRadius. Keep values to the format above.
-2. **Atomic hierarchy**: Atoms (Button, Input, Label, Icon, etc.), molecules (Form Field, Search Bar, etc.), organisms (Navigation, Card, Modal, Table, etc.), then templates and pages.
+2. **Atomic hierarchy**: Atoms (Button, Input, Label, Icon, etc.), molecules (Form Field, Search Bar, etc.), organisms (Navigation, Card, Modal, Table, etc.).
 3. **Component specs**: For key components include props, variants, sizes, states, accessibility (ARIA, keyboard).
 4. **Accessibility**: WCAG 2.1 AA—contrast 4.5:1, focus rings, keyboard access, ARIA roles/labels, prefers-reduced-motion.
 5. **Responsive**: Breakpoints sm/md/lg/xl/2xl (640–1536px), mobile-first, touch targets ≥44px.
@@ -217,7 +255,8 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
       throw new Error("UI Designer agent failed: No structured data received from LLM");
     }
 
-    // Sanitize color values to prevent malformed hex codes
+    // Ensure color palette is an object with required keys, then sanitize values
+    ensureDesignTokensColors(llmUIDesign.design_tokens);
     if (llmUIDesign.design_tokens?.colors) {
       llmUIDesign.design_tokens.colors = sanitizeDesignTokensColors(llmUIDesign.design_tokens.colors);
     }
@@ -239,24 +278,19 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
       }
     }
 
+    // Map LLM output into the strict UIDesignerBackendArtifact shape.
     content = {
       summary: llmUIDesign.summary,
       description: llmUIDesign.description,
-      schema_version: "0.8",
       design_tokens: llmUIDesign.design_tokens,
-      atomic_structure: llmUIDesign.atomic_structure,
-      accessibility: llmUIDesign.accessibility,
-      component_blueprint: llmUIDesign.component_blueprint,
-      layout_strategy: llmUIDesign.layout_strategy,
-      visual_philosophy: llmUIDesign.visual_philosophy,
-      information_architecture: llmUIDesign.information_architecture,
-      responsive_strategy: llmUIDesign.responsive_strategy,
-      ui_patterns: llmUIDesign.ui_patterns,
       component_hierarchy: llmUIDesign.component_hierarchy,
-      website_layout: llmUIDesign.website_layout,
+      ui_patterns: llmUIDesign.ui_patterns,
       component_specs: llmUIDesign.component_specs,
-      layout_breakpoints: llmUIDesign.layout_breakpoints
-    };
+      layout_breakpoints: llmUIDesign.layout_breakpoints,
+      accessibility: llmUIDesign.accessibility,
+      atomic_structure: llmUIDesign.atomic_structure,
+      website_layout: llmUIDesign.website_layout,
+    } as UIDesignerBackendArtifact;
 
     logger.info("UI Designer agent completed");
 

@@ -12,12 +12,10 @@ import {
 
 interface RoadmapSectionProps {
     phases: any[]
-    implementationPlan?: string
 }
 
 export function RoadmapSection({
-    phases,
-    implementationPlan
+    phases
 }: RoadmapSectionProps) {
     return (
         <TabsContent key="plan" value="plan" className="m-0 outline-none">
@@ -50,14 +48,6 @@ export function RoadmapSection({
                                 </div>
                             </Card>
                         ))}
-                    </div>
-                ) : implementationPlan ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-emerald bg-card border border-border/50 p-6 rounded-xl">
-                        <div className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{
-                            __html: implementationPlan
-                                .replace(/\\n/g, '\n')
-                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
-                        }} />
                     </div>
                 ) : (
                     <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-xl bg-muted/10">

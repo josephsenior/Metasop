@@ -39,7 +39,7 @@ export function SecurityArchitectureSection({ security_architecture, auth, authz
                                 </p>
                             )}
                         </div>
-                        {(auth?.mfa_enabled || auth?.multi_factor_auth) && (
+                        {auth?.mfa_enabled && (
                             <div className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-500/5 p-2 rounded border border-emerald-500/10">
                                 <CheckCircle className="h-3.5 w-3.5" />
                                 Multi-Factor Authentication Enabled

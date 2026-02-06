@@ -1,5 +1,7 @@
 import { EventEmitter } from "events";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 import type { MetaSOPEvent } from "@/lib/metasop/types";
 import { runMetaSOPOrchestration } from "@/lib/metasop/orchestrator";
 import { diagramDb } from "@/lib/diagrams/db";
@@ -65,12 +67,49 @@ export function createGenerationJob(userId: string, diagramId: string): Generati
     emitter: new EventEmitter(),
   };
   jobs.set(jobId, job);
+  // Persist a lightweight job file so other dev worker instances can discover it
+  try {
+    const dir = path.join(process.cwd(), "tmp", "generation_jobs");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, `${jobId}.json`);
+    fs.writeFileSync(filePath, JSON.stringify({ id: jobId, userId, diagramId, status: job.status, createdAt: job.createdAt }));
+  } catch (e) {
+    // ignore persistence errors in dev
+  }
   scheduleCleanup(jobId);
   return job;
 }
 
 export function getGenerationJob(jobId: string): GenerationJob | undefined {
-  return jobs.get(jobId);
+  const job = jobs.get(jobId);
+  if (job) return job;
+
+  // Fallback: try to load job file persisted to disk (helps in dev with multiple workers)
+  try {
+    const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${jobId}.json`);
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      const reconstructed: GenerationJob = {
+        id: parsed.id,
+        userId: parsed.userId,
+        diagramId: parsed.diagramId,
+        status: parsed.status || "pending",
+        createdAt: parsed.createdAt || nowIso(),
+        updatedAt: parsed.updatedAt || nowIso(),
+        events: [],
+        emitter: new EventEmitter(),
+      };
+      // store in memory for future calls
+      jobs.set(jobId, reconstructed);
+      scheduleCleanup(jobId);
+      return reconstructed;
+    }
+  } catch (e) {
+    // ignore read errors
+  }
+
+  return undefined;
 }
 
 export function subscribeToJob(jobId: string, onEvent: (event: MetaSOPEvent) => void): (() => void) | null {
@@ -174,6 +213,14 @@ export function startGenerationJob(params: StartJobParams): void {
       } as MetaSOPEvent);
 
       job.status = "completed";
+
+      // Cleanup persisted job file
+      try {
+        const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (e) {
+        // ignore
+      }
     } catch (error: any) {
       const message = error?.message || "Generation failed";
       try {
@@ -187,6 +234,13 @@ export function startGenerationJob(params: StartJobParams): void {
         timestamp: nowIso(),
       });
       job.status = "failed";
+      // Cleanup persisted job file on failure as well
+      try {
+        const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (e) {
+        // ignore
+      }
       job.error = message;
     }
   };

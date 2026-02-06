@@ -44,9 +44,9 @@ export const artifactStyles = {
     text: "text-foreground",
     textMuted: "text-muted-foreground dark:text-muted-foreground/90", // Improved dark mode contrast
     textSubtle: "text-muted-foreground/70 dark:text-muted-foreground/80",
-    bg: "bg-background",
-    bgMuted: "bg-muted/40 dark:bg-muted/30",
-    bgCard: "bg-card",
+    bg: "bg-black",
+    bgMuted: "bg-neutral-900/60",
+    bgCard: "bg-neutral-950/80",
     border: "border-border",
     borderMuted: "border-border/50 dark:border-border/60", // Better contrast
   },

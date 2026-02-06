@@ -93,7 +93,6 @@ export interface UIDesignerBackendArtifact {
         atoms: string[];
         molecules: string[];
         organisms: string[];
-        templates: string[];
     };
     website_layout: {
         pages: Array<{
@@ -103,11 +102,6 @@ export interface UIDesignerBackendArtifact {
                 name: string;
                 components: string[];
             }>;
-        }>;
-        navigation_structure: Array<{
-            label: string;
-            path: string;
-            children?: Array<any>;
         }>;
     };
 }
