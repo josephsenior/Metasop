@@ -50,16 +50,6 @@ export interface ProductManagerBackendArtifact {
     }>;
     summary: string;
     description: string;
-    gaps: Array<{
-        gap: string;
-        impact: string;
-        priority: "high" | "medium" | "low";
-    }>;
-    opportunities: Array<{
-        opportunity: string;
-        value: string;
-        feasibility: "high" | "medium" | "low";
-    }>;
 }
 
 // ============================================================================
@@ -79,8 +69,6 @@ export function isProductManagerBackendArtifact(
         Array.isArray(artifact.stakeholders) &&
         Array.isArray(artifact.invest_analysis) &&
         typeof artifact.summary === "string" &&
-        typeof artifact.description === "string" &&
-        Array.isArray(artifact.gaps) &&
-        Array.isArray(artifact.opportunities)
+        typeof artifact.description === "string"
     );
 }

@@ -68,7 +68,7 @@ export function StrategySection({
                                     { label: 'TTI', val: performanceMetrics.time_to_interactive, icon: Activity },
                                     { label: 'LCP', val: performanceMetrics.largest_contentful_paint, icon: Gauge },
                                 ].filter(m => m.val).map((m, i) => (
-                                    <div key={i} className="bg-muted/30 p-2.5 rounded-lg border border-border/40 flex items-center justify-between group hover:bg-emerald-500/5 transition-colors">
+                                    <div key={i} className="bg-muted/30 p-2.5 rounded-lg border border-border/40 flex items-center justify-between group hover:bg-muted/40 transition-colors">
                                         <div className="flex items-center gap-2.5">
                                             <div className="p-1.5 rounded-md bg-background border border-border/50">
                                                 <m.icon className="h-3 w-3 text-emerald-500" />

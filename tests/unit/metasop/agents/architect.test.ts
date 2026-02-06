@@ -171,15 +171,6 @@ describe("ArchitectAgent", () => {
     }
   });
 
-  it("should include next_tasks", async () => {
-    const artifact = await architectAgent(context);
-    const content = artifact.content as ArchitectBackendArtifact;
-
-    expect(content.next_tasks).toBeDefined();
-    expect(Array.isArray(content.next_tasks)).toBe(true);
-    expect(content.next_tasks!.length).toBeGreaterThan(0);
-  });
-
   it("should include technology_stack", async () => {
     const artifact = await architectAgent(context);
     const content = artifact.content as ArchitectBackendArtifact;

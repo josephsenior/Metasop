@@ -34,7 +34,6 @@ import { EndpointsSection } from "./sections/EndpointsSection"
 import { DatabaseSection } from "./sections/DatabaseSection"
 import { DecisionsSection } from "./sections/DecisionsSection"
 import { TechStackSection } from "./sections/TechStackSection"
-import { TasksSection } from "./sections/TasksSection"
 import { IntegrationsSection } from "./sections/IntegrationsSection"
 import { AdvancedSection } from "./sections/AdvancedSection"
 
@@ -57,7 +56,6 @@ export default function ArchDesignPanel({
   const integrationPoints = data.integration_points || []
   const securityConsiderations = data.security_considerations || []
   const scalabilityApproach = data.scalability_approach
-  const nextTasks = data.next_tasks || []
   const summaryText = (data as any).summary || (data as any).description || "Architectural design and technical specifications."
   const descriptionText = (data as any).summary ? (data as any).description : undefined
 
@@ -117,13 +115,6 @@ export default function ArchDesignPanel({
             color="text-amber-600 dark:text-amber-400"
             bg="bg-amber-500/10"
           />
-          <StatsCard
-            icon={ListTodo}
-            label="Tasks"
-            value={nextTasks.length}
-            color="text-orange-600 dark:text-orange-400"
-            bg="bg-orange-500/10"
-          />
         </div>
       </ArtifactHeaderBlock>
 
@@ -137,7 +128,6 @@ export default function ArchDesignPanel({
             <TabTrigger value="decisions" icon={ScrollText} label="ADRs" count={decisions.length} />
             <TabTrigger value="integrations" icon={Share2} label="Integrations" count={integrationPoints.length} />
             {technologyStack && <TabTrigger value="stack" icon={Layers} label="Stack" count={Object.keys(technologyStack).length} />}
-            {nextTasks.length > 0 && <TabTrigger value="tasks" icon={ListTodo} label="Next Tasks" count={nextTasks.length} />}
             {(securityConsiderations.length > 0 || scalabilityApproach) && (
               <TabTrigger value="advanced" icon={Settings} label="Advanced" count={securityConsiderations.length + (scalabilityApproach ? 1 : 0)} />
             )}
@@ -176,11 +166,7 @@ export default function ArchDesignPanel({
                 ) : (
                   <EmptyStateCard title="Tech Stack" description="No technology stack was generated for this run." icon={Layers} />
                 )}
-                {nextTasks.length > 0 ? (
-                  <TasksSection nextTasks={nextTasks} />
-                ) : (
-                  <EmptyStateCard title="Next Tasks" description="No next tasks were generated for this run." icon={ListTodo} />
-                )}
+
                 {securityConsiderations.length > 0 || scalabilityApproach ? (
                   <AdvancedSection
                     securityConsiderations={securityConsiderations}

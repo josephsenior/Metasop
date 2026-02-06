@@ -78,13 +78,6 @@ const ScalabilityApproachSchema = z.object({
     performance_targets: z.string().optional(),
 });
 
-const NextTaskSchema = z.object({
-    task: z.string().min(5, "Task must be at least 5 characters"),
-    priority: z.enum(["high", "medium", "low"]),
-    assignee: z.enum(["engineer", "devops", "qa"]),
-    description: z.string().optional(),
-});
-
 export const ArchitectArtifactSchema = z.object({
     design_doc: z.string().min(100, "Design document must be at least 100 characters"),
     apis: z.array(APISchema).min(1, "At least one API is required"),
@@ -94,7 +87,6 @@ export const ArchitectArtifactSchema = z.object({
     integration_points: z.array(IntegrationPointSchema),
     security_considerations: z.array(z.string().min(10, "Security consideration must be at least 10 characters")),
     scalability_approach: ScalabilityApproachSchema,
-    next_tasks: z.array(NextTaskSchema),
     summary: z.string(),
     description: z.string(),
 });

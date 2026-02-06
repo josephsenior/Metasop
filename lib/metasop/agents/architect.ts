@@ -88,10 +88,6 @@ ${TECHNICAL_STANDARDS.database}
    - Define integration patterns (REST, webhooks, message queues)
    - Address failure handling and circuit breakers
 
-8. **Next Tasks**
-   - Provide actionable tasks for engineering, DevOps, and QA teams
-   - Prioritize by dependency and business value
-
 === EXAMPLE ADR (Follow this depth) ===
 ${FEW_SHOT_EXAMPLES.adr}
 
@@ -149,8 +145,7 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
         technology_stack: llmArchitecture.technology_stack,
         security_considerations: llmArchitecture.security_considerations,
         scalability_approach: llmArchitecture.scalability_approach,
-        integration_points: llmArchitecture.integration_points,
-        next_tasks: llmArchitecture.next_tasks
+        integration_points: llmArchitecture.integration_points
       };
 
     logger.info("Architect agent completed");

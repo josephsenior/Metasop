@@ -82,11 +82,11 @@ export function OverviewSection({
 
                             {swot && (
                                 <div className="grid grid-cols-2 gap-2 mt-4">
-                                    <div className="p-2 rounded bg-emerald-500/5 border border-emerald-500/10">
+                                    <div className="p-2 rounded bg-muted/20 border border-emerald-500/10">
                                         <div className="text-[9px] font-bold text-emerald-600 uppercase">Strengths</div>
                                         <div className="text-[10px] text-muted-foreground mt-0.5">{swot.strengths?.length || 0} items</div>
                                     </div>
-                                    <div className="p-2 rounded bg-red-500/5 border border-red-500/10">
+                                    <div className="p-2 rounded bg-muted/20 border border-red-500/10">
                                         <div className="text-[9px] font-bold text-red-600 uppercase">Weaknesses</div>
                                         <div className="text-[10px] text-muted-foreground mt-0.5">{swot.weaknesses?.length || 0} items</div>
                                     </div>

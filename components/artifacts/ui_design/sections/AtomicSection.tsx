@@ -25,7 +25,7 @@ export function AtomicSection({ atomicStructure }: AtomicSectionProps) {
                 {/* Atoms */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
-                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
+                        <div className="p-1.5 rounded-lg bg-muted/20 text-blue-600">
                             <Box className="h-4 w-4" />
                         </div>
                         <h3 className="text-sm font-bold uppercase tracking-wider">Atoms</h3>
@@ -43,7 +43,7 @@ export function AtomicSection({ atomicStructure }: AtomicSectionProps) {
                 {/* Molecules */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
-                        <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
+                        <div className="p-1.5 rounded-lg bg-muted/20 text-purple-600">
                             <Grid className="h-4 w-4" />
                         </div>
                         <h3 className="text-sm font-bold uppercase tracking-wider">Molecules</h3>
@@ -61,7 +61,7 @@ export function AtomicSection({ atomicStructure }: AtomicSectionProps) {
                 {/* Organisms */}
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
-                        <div className="p-1.5 rounded-lg bg-orange-500/10 text-orange-600">
+                        <div className="p-1.5 rounded-lg bg-muted/20 text-orange-600">
                             <Layout className="h-4 w-4" />
                         </div>
                         <h3 className="text-sm font-bold uppercase tracking-wider">Organisms</h3>

@@ -26,7 +26,6 @@ import {
   TabTrigger
 } from "../shared-components"
 
-import { StrategySection } from "./sections/StrategySection"
 import { SitemapSection } from "./sections/SitemapSection"
 import { TokensSection } from "./sections/TokensSection"
 import { ComponentLibrarySection } from "./sections/ComponentLibrarySection"
@@ -48,10 +47,6 @@ export default function UIDesignPanel({
   const layoutBreakpoints = data.layout_breakpoints
   const uiPatterns = data.ui_patterns || []
   const websiteLayout = data.website_layout
-  const layoutStrategy = (data as any).layout_strategy
-  const visualPhilosophy = (data as any).visual_philosophy
-  const informationArchitecture = (data as any).information_architecture
-  const responsiveStrategy = (data as any).responsive_strategy
   const summaryText = data.summary || "Visual language, component specification, and design patterns."
   const descriptionText = data.summary ? data.description : undefined
 
@@ -134,7 +129,6 @@ export default function UIDesignPanel({
         <Tabs defaultValue="tokens" className="h-full flex flex-col">
           <ArtifactTabBar>
             <TabTrigger value="tokens" icon={Palette} label="Tokens" count={(designTokens.colors ? Object.keys(designTokens.colors).length : 0) + (designTokens.spacing ? Object.keys(designTokens.spacing).length : 0)} />
-            <TabTrigger value="strategy" icon={Layout} label="Strategy" />
             <TabTrigger value="sitemap" icon={Monitor} label="Sitemap" count={websiteLayout?.pages?.length || 0} />
             <TabTrigger value="library" icon={Layers} label="Components" count={hierarchyNodes.length} />
             <TabTrigger value="atomic" icon={Box} label="Atomic" count={atomicStructure ? (atomicStructure.atoms?.length ?? 0) + (atomicStructure.molecules?.length ?? 0) + (atomicStructure.organisms?.length ?? 0) : 0} />
@@ -149,16 +143,6 @@ export default function UIDesignPanel({
                   <TokensSection designTokens={designTokens} />
                 ) : (
                   <EmptyStateCard title="Design Tokens" description="No design tokens were generated for this run." icon={Palette} />
-                )}
-                {(visualPhilosophy || layoutStrategy || informationArchitecture || responsiveStrategy) ? (
-                  <StrategySection
-                    visualPhilosophy={visualPhilosophy}
-                    layoutStrategy={layoutStrategy}
-                    informationArchitecture={informationArchitecture}
-                    responsiveStrategy={responsiveStrategy}
-                  />
-                ) : (
-                  <EmptyStateCard title="Design Strategy" description="No strategy details were generated for this run." icon={Layout} />
                 )}
                 {websiteLayout?.pages?.length ? (
                   <SitemapSection websiteLayout={websiteLayout} />

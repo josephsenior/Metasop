@@ -41,10 +41,13 @@ export function SecurityPlanSection({
                                 {securityPlan.auth_verification_steps && securityPlan.auth_verification_steps.length > 0 ? (
                                     <ul className="space-y-2 mt-2">
                                         {securityPlan.auth_verification_steps.map((step: string, i: number) => (
-                                            <motion.li variants={item} key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg border border-border/30">
+                                            <li 
+                                                key={`auth-step-${i}`} 
+                                                className="flex items-start gap-2.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg border border-border/30"
+                                            >
                                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
                                                 <span>{step}</span>
-                                            </motion.li>
+                                            </li>
                                         ))}
                                     </ul>
                                 ) : (
@@ -61,7 +64,7 @@ export function SecurityPlanSection({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-4">
-                                <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4">
+                                <div className="bg-muted/20 border border-red-500/10 rounded-xl p-4">
                                     <p className="text-xs text-foreground/80 leading-relaxed font-mono">
                                         {securityPlan.vulnerability_scan_strategy || "No strategy defined."}
                                     </p>

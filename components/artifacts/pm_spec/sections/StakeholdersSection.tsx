@@ -23,7 +23,7 @@ export function StakeholdersSection({ stakeholders }: StakeholdersSectionProps) 
                     <motion.div key={i} variants={item} className="p-4 rounded-xl border border-border/50 bg-card hover:border-blue-500/30 transition-all flex flex-col gap-4 group">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-lg bg-blue-500/5 border border-blue-500/10 flex items-center justify-center shrink-0">
+                                <div className="h-10 w-10 rounded-lg bg-muted/20 border border-blue-500/10 flex items-center justify-center shrink-0">
                                     <Users className="h-5 w-5 text-blue-500" />
                                 </div>
                                 <div>

@@ -25,7 +25,7 @@ export function TechStackSection({ technologyStack }: TechStackSectionProps) {
                         className="bg-card border border-border/50 p-4 rounded-xl shadow-sm"
                     >
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="h-6 w-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                            <div className="h-6 w-6 rounded-md bg-muted/20 flex items-center justify-center">
                                 <Cpu className="h-3.5 w-3.5 text-blue-500" />
                             </div>
                             <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{category}</h4>

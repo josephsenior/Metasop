@@ -38,7 +38,6 @@ import { AcceptanceCriteriaSection } from "./sections/AcceptanceCriteriaSection"
 import { InvestAnalysisSection } from "./sections/InvestAnalysisSection"
 import { AssumptionsSection } from "./sections/AssumptionsSection"
 import { SWOTSection } from "./sections/SWOTSection"
-import { GapsOpportunitiesSection } from "./sections/GapsOpportunitiesSection"
 import { StakeholdersSection } from "./sections/StakeholdersSection"
 
 // --- Helper Components (Internal to this module) ---
@@ -132,7 +131,7 @@ function UserStoryCard({ story, index }: { story: any, index: number }) {
           )}
 
           {typeof story === 'object' && story.user_value && (
-            <div className="mt-3 flex items-start gap-3 bg-blue-500/5 p-2.5 rounded-lg border border-blue-500/10">
+            <div className="mt-3 flex items-start gap-3 bg-muted/20 p-2.5 rounded-lg border border-blue-500/10">
               <Target className="h-3.5 w-3.5 text-blue-500 mt-0.5" />
               <div className="space-y-0.5">
                 <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Business Value</span>
@@ -227,8 +226,6 @@ export default function PMSpecPanel({
   const swot = data.swot
   const stakeholders = data.stakeholders
   const investAnalysis = data.invest_analysis || []
-  const gaps = data.gaps || []
-  const opportunities = data.opportunities || []
   const summary = data.summary || ""
   const description = data.description || ""
   const summaryText = summary || description || "Detailed product requirements and specifications."
@@ -310,20 +307,6 @@ export default function PMSpecPanel({
             color="text-blue-600 dark:text-blue-400"
             bg="bg-blue-500/10"
           />
-          <StatsCard
-            icon={AlertTriangle}
-            label="Gaps"
-            value={gaps.length}
-            color="text-red-600 dark:text-red-400"
-            bg="bg-red-500/10"
-          />
-          <StatsCard
-            icon={TrendingUp}
-            label="Opportunities"
-            value={opportunities.length}
-            color="text-emerald-600 dark:text-emerald-400"
-            bg="bg-emerald-500/10"
-          />
         </div>
       </ArtifactHeaderBlock>
 
@@ -338,8 +321,6 @@ export default function PMSpecPanel({
             <TabTrigger value="assumptions" icon={Lightbulb} label="Assumptions" count={assumptions.length} />
             <TabTrigger value="outofscope" icon={Ban} label="Out of Scope" count={out_of_scope.length} />
             <TabTrigger value="swot" icon={TrendingUp} label="SWOT" />
-            <TabTrigger value="gaps" icon={AlertTriangle} label="Gaps" count={gaps.length} />
-            <TabTrigger value="opportunities" icon={TrendingUp} label="Opportunities" count={opportunities.length} />
             <TabTrigger value="stakeholders" icon={Users} label="Stakeholders" count={stakeholders?.length || 0} />
           </ArtifactTabBar>
 
@@ -386,11 +367,6 @@ export default function PMSpecPanel({
                   <SWOTSection swot={swot} />
                 ) : (
                   <EmptyStateCard title="SWOT" description="No SWOT analysis was generated for this run." icon={TrendingUp} />
-                )}
-                {gaps.length > 0 || opportunities.length > 0 ? (
-                  <GapsOpportunitiesSection gaps={gaps} opportunities={opportunities} />
-                ) : (
-                  <EmptyStateCard title="Gaps & Opportunities" description="No gaps or opportunities were generated for this run." icon={AlertTriangle} />
                 )}
                 {stakeholders && stakeholders.length > 0 ? (
                   <StakeholdersSection stakeholders={stakeholders} />

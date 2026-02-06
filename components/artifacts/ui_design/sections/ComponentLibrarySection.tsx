@@ -29,7 +29,16 @@ export function ComponentLibrarySection({
         return nodes.map((child: any, i: number) => {
             const nextKey = `${keyPath}.${i}`
             return (
-                <div key={nextKey} className="relative space-y-2" style={{ marginLeft: `${depth * 12}px` }}>
+                <div 
+                    key={nextKey} 
+                    className={cn(
+                        "relative space-y-2",
+                        depth === 1 && "ml-3",
+                        depth === 2 && "ml-6",
+                        depth === 3 && "ml-9",
+                        depth >= 4 && "ml-12"
+                    )}
+                >
                     <div className={cn("bg-card border border-border/40 p-3 rounded-lg shadow-sm hover:border-primary/20 transition-colors", styles.colors.bgCard)}>
                         <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[11px] font-bold text-foreground flex items-center gap-2">
@@ -62,7 +71,7 @@ export function ComponentLibrarySection({
                 <div className="lg:col-span-2 space-y-4">
                     {rootNode && (
                         <div className="mb-4">
-                            <div className={cn("bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl shadow-sm", styles.colors.bgCard)}>
+                            <div className={cn("bg-muted/10 border border-indigo-500/20 p-4 rounded-xl shadow-sm", styles.colors.bgCard)}>
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                                         <Zap className="h-4 w-4" />

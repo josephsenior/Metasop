@@ -209,15 +209,6 @@ export function generateAgentContextMarkdown(diagram: any, options?: ContextOpti
             md += `\n`;
         }
 
-        if (arch.next_tasks && Array.isArray(arch.next_tasks)) {
-            md += `### Next Implementation Tasks\n`;
-            arch.next_tasks.forEach((t: any) => {
-                md += `- [ ] **${t.role}**: ${t.task || t.title} (${t.priority || 'medium'})\n`;
-                if (t.description) md += `  - *Details*: ${t.description}\n`;
-            });
-            md += `\n`;
-        }
-
         md += `### Database Schema\n`;
         if (arch.database_schema && arch.database_schema.tables && Array.isArray(arch.database_schema.tables)) {
             arch.database_schema.tables.forEach((table: any) => {

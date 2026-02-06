@@ -1,37 +1,11 @@
 
 export const pmSchema = {
     type: "object",
-    required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis", "gaps", "opportunities"],
-    propertyOrdering: ["summary", "description", "gaps", "opportunities", "user_stories", "acceptance_criteria", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
+    required: ["user_stories", "acceptance_criteria", "summary", "description", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
+    propertyOrdering: ["summary", "description", "user_stories", "acceptance_criteria", "assumptions", "out_of_scope", "swot", "stakeholders", "invest_analysis"],
     properties: {
         summary: { type: "string", maxLength: 250, description: "A technical, 1-2 sentence summary of the product. No conversational filler." },
         description: { type: "string", maxLength: 500, description: "Detailed product vision, target audience, and value proposition." },
-        gaps: {
-            type: "array",
-            description: "Identified product gaps or user pain points.",
-            items: {
-                type: "object",
-                required: ["gap", "impact", "priority"],
-                properties: {
-                    gap: { type: "string", maxLength: 50 },
-                    impact: { type: "string", maxLength: 100 },
-                    priority: { type: "string", enum: ["high", "medium", "low"] }
-                }
-            }
-        },
-        opportunities: {
-            type: "array",
-            description: "Product opportunities and growth areas.",
-            items: {
-                type: "object",
-                required: ["opportunity", "value", "feasibility"],
-                properties: {
-                    opportunity: { type: "string", maxLength: 50 },
-                    value: { type: "string", maxLength: 100 },
-                    feasibility: { type: "string", enum: ["high", "medium", "low"] }
-                }
-            }
-        },
         user_stories: {
             type: "array",
             description: "Array of INVEST-compliant user stories.",

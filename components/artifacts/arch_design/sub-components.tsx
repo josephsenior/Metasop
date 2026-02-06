@@ -98,7 +98,7 @@ interface BlueprintHeaderProps {
 
 export function BlueprintHeader({ summary, title }: BlueprintHeaderProps) {
     return (
-        <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 mb-8 group">
+        <div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-muted/10 p-6 mb-8 group">
             {/* Blueprint Grid Overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#3b82f6_1px,transparent_1px),linear-gradient(to_bottom,#3b82f6_1px,transparent_1px)] bg-size-[20px_20px]" />
 
@@ -110,7 +110,7 @@ export function BlueprintHeader({ summary, title }: BlueprintHeaderProps) {
 
             <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-inner group-hover:scale-105 transition-transform">
+                    <div className="h-10 w-10 rounded-xl bg-muted/20 flex items-center justify-center border border-blue-500/20 shadow-inner group-hover:scale-105 transition-transform">
                         <Cpu className="h-5 w-5 text-blue-500 animate-pulse" />
                     </div>
                     <div>

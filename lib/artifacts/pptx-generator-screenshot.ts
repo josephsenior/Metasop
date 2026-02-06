@@ -414,12 +414,6 @@ export class PPTXGeneratorScreenshot {
       await this.addImageSlide(pptx, renderer, tokensHTML)
     }
 
-    // Design Strategy
-    if (ui.design_strategy || ui.strategy) {
-      const strategyHTML = templates.createTextContentSlide("Design Strategy", ui.design_strategy as string || ui.strategy as string)
-      await this.addImageSlide(pptx, renderer, strategyHTML)
-    }
-
     // Sitemap
     const sitemap = ui.sitemap as any[] || []
     if (sitemap.length > 0) {

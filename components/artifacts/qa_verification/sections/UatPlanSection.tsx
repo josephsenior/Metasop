@@ -22,7 +22,7 @@ export function UatPlanSection({
     return (
         <TabsContent key="uat" value="uat" className="m-0 outline-none">
             <motion.div variants={container} initial="hidden" animate="show">
-                <Card className={cn("border-blue-500/20 bg-blue-500/5 shadow-sm overflow-hidden", styles.colors.bgCard)}>
+                <Card className={cn("border-blue-500/20 bg-muted/10 shadow-sm overflow-hidden", styles.colors.bgCard)}>
                     <CardHeader className="pb-2 border-b border-blue-500/10 px-4 pt-4">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <UserCheck className="h-4 w-4 text-blue-500" />

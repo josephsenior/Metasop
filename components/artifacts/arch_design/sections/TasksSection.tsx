@@ -25,7 +25,7 @@ export function TasksSection({ nextTasks }: TasksSectionProps) {
                         variants={item}
                         className="group bg-card border border-border/50 p-4 rounded-xl shadow-sm hover:border-orange-500/30 transition-all flex items-start gap-4"
                     >
-                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center flex-none">
+                        <div className="h-10 w-10 rounded-xl bg-muted/20 flex items-center justify-center flex-none">
                             <Settings className="h-5 w-5 text-orange-600" />
                         </div>
                         <div className="flex-1 min-w-0">

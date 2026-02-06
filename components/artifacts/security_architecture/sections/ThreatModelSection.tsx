@@ -103,7 +103,7 @@ export function ThreatModelSection({ threat_model, getSeverityStyles }: ThreatMo
                             )}
 
                             {threat.mitigation && (
-                                <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-2.5">
+                                <div className="bg-muted/10 border border-emerald-500/10 rounded-lg p-2.5">
                                     <div className="text-[9px] font-bold text-emerald-600 uppercase flex items-center gap-1 mb-1">
                                         <ShieldCheck className="h-3 w-3" /> Mitigation
                                     </div>

@@ -48,12 +48,7 @@ ${domainContext ? `\n${domainContext}\n` : ""}
    - Define the product vision with clear success metrics
    - Identify the primary user persona and their core pain points
 
-2. **Feature Gaps & Opportunities**
-   - Analyze competitive landscape and identify differentiators
-   - Map user pain points to specific feature opportunities
-   - Prioritize opportunities by business value and technical feasibility
-
-3. **User Stories (INVEST-Compliant)**
+2. **User Stories (INVEST-Compliant)**
    - Each story must be: Independent, Negotiable, Valuable, Estimable, Small, Testable
    - Use format: "As a [role], I want [feature] so that [benefit]"
    - Include specific, measurable acceptance criteria for each story
@@ -65,12 +60,12 @@ ${domainContext ? `\n${domainContext}\n` : ""}
    - Include both functional and non-functional requirements
    - Use Given/When/Then format where applicable
 
-5. **SWOT Analysis & Stakeholder Mapping**
+4. **SWOT Analysis & Stakeholder Mapping**
    - Be realistic about weaknesses and threats
    - Identify key stakeholders with their interests and influence levels
    - Map stakeholder communication strategies
 
-6. **Project Scope Definition**
+5. **Project Scope Definition**
    - Explicitly list assumptions (technical, business, resource)
    - Define clear out-of-scope items to prevent scope creep
    - Identify potential risks and dependencies
@@ -143,8 +138,6 @@ Respond with ONLY the structured JSON object matching the schema. No explanation
           swot: llmPMSpec.swot,
           stakeholders: llmPMSpec.stakeholders,
           invest_analysis: llmPMSpec.invest_analysis,
-          gaps: llmPMSpec.gaps,
-          opportunities: llmPMSpec.opportunities,
         };
       } else {
         throw new Error("Product Manager agent failed: No structured data received from LLM");
