@@ -14,10 +14,12 @@ import {
   Code, 
   Palette, 
   CheckCircle, 
-  User 
+  User,
+  TrendingUp
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "./shared-styles"
+import { EstimatesGenerator } from "@/lib/artifacts/estimates-generator"
 
 const agentIcons: Record<string, any> = {
   pm_spec: User,
@@ -27,6 +29,7 @@ const agentIcons: Record<string, any> = {
   engineer_impl: Code,
   ui_design: Palette,
   qa_verification: CheckCircle,
+  estimates: TrendingUp,
 }
 
 const agentColors: Record<string, string> = {
@@ -37,6 +40,7 @@ const agentColors: Record<string, string> = {
   engineer_impl: "text-orange-600 bg-orange-500/10 border-orange-200 dark:border-orange-900",
   ui_design: "text-pink-600 bg-pink-500/10 border-pink-200 dark:border-pink-900",
   qa_verification: "text-teal-600 bg-teal-500/10 border-teal-200 dark:border-teal-900",
+  estimates: "text-orange-600 bg-orange-500/10 border-orange-200 dark:border-orange-900",
 }
 
 const agentLabels: Record<string, string> = {
@@ -47,6 +51,7 @@ const agentLabels: Record<string, string> = {
   engineer_impl: "Software Engineer",
   ui_design: "UI/UX Designer",
   qa_verification: "QA Engineer",
+  estimates: "Project Estimates",
 }
 
 // Animation variants
@@ -81,6 +86,20 @@ export default function ProjectSummary({ artifacts, onTabChange }: { artifacts: 
   })
   
   console.log("[ProjectSummary] Available artifacts:", availableArtifacts.length, availableArtifacts.map(([k]) => k))
+
+  // Add Estimates card if there are artifacts
+  if (availableArtifacts.length > 0) {
+    const generator = new EstimatesGenerator(artifacts)
+    const dev = generator.calculateDevelopmentEstimate()
+    const cost = generator.calculateCostEstimate(dev)
+    
+    availableArtifacts.unshift(["estimates", {
+      content: {
+        title: "Project Execution Estimates",
+        summary: `Estimated ${dev.totalHours}h project effort. Total first year cost: $${cost.totalFirstYear.toLocaleString()}. Timeline: ${dev.timeline} weeks.`,
+      }
+    }])
+  }
 
   return (
     <div className={cn("h-full flex flex-col p-4", styles.colors.bg)}>

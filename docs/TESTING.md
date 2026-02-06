@@ -1,6 +1,6 @@
 # Testing Documentation
 
-This document covers unit tests, integration tests, and reliability checks for MetaSOP.
+This document covers unit tests, integration tests, and reliability checks for Blueprinta.
 
 ## Quick Commands
 

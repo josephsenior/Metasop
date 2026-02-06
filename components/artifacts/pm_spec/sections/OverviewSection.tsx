@@ -59,7 +59,7 @@ export function OverviewSection({
                 </Card>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className={cn("border-none shadow-sm h-full", styles.colors.bgCard)}>
+                    <Card className={cn("border-none shadow-sm h-full md:col-span-2", styles.colors.bgCard)}>
                         <CardHeader>
                             <CardTitle className="text-sm font-bold flex items-center gap-2">
                                 <Layers className="h-4 w-4 text-indigo-500" />

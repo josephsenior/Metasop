@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying MetaSOP to production environments.
+This guide covers deploying Blueprinta to production environments.
 
 ---
 
@@ -18,7 +18,7 @@ This guide covers deploying MetaSOP to production environments.
 
 ## Prerequisites
 
-Before deploying MetaSOP, ensure you have:
+Before deploying Blueprinta, ensure you have:
 
 - **Node.js** 18+ installed
 - **pnpm** package manager
@@ -55,7 +55,7 @@ NODE_ENV=production
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 
 # Database
-DATABASE_URL=postgresql://user:password@host:5432/metasop
+DATABASE_URL=postgresql://user:password@host:5432/Blueprinta
 
 # Authentication
 NEXTAUTH_URL=https://your-domain.com
@@ -193,7 +193,7 @@ docker build -t metasop:latest .
 
 ```bash
 docker run -d \
-  --name metasop \
+  --name Blueprinta \
   -p 3000:3000 \
   --env-file .env.production \
   metasop:latest
@@ -213,7 +213,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:password@db:5432/metasop
+      - DATABASE_URL=postgresql://postgres:password@db:5432/Blueprinta
       - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
     depends_on:
       - db
@@ -224,7 +224,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=metasop
+      - POSTGRES_DB=Blueprinta
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -308,9 +308,9 @@ sudo -u postgres psql
 Create database:
 
 ```sql
-CREATE DATABASE metasop;
+CREATE DATABASE Blueprinta;
 CREATE USER metasop_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE metasop TO metasop_user;
+GRANT ALL PRIVILEGES ON DATABASE Blueprinta TO metasop_user;
 \q
 ```
 
@@ -327,14 +327,14 @@ Create `ecosystem.config.js`:
 ```javascript
 module.exports = {
   apps: [{
-    name: 'metasop',
+    name: 'Blueprinta',
     script: 'node_modules/next/dist/bin/next',
     args: 'start',
-    cwd: '/var/www/Metasop',
+    cwd: '/var/www/Blueprinta',
     env: {
       NODE_ENV: 'production',
       PORT: 3000,
-      DATABASE_URL: 'postgresql://metasop_user:password@localhost:5432/metasop',
+      DATABASE_URL: 'postgresql://metasop_user:password@localhost:5432/Blueprinta',
       GOOGLE_AI_API_KEY: 'your-api-key',
     },
     instances: 'max',
@@ -353,7 +353,7 @@ pm2 startup
 
 #### Step 8: Configure Nginx
 
-Create `/etc/nginx/sites-available/metasop`:
+Create `/etc/nginx/sites-available/Blueprinta`:
 
 ```nginx
 server {
@@ -374,7 +374,7 @@ server {
 Enable site:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/metasop /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/Blueprinta /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -397,7 +397,7 @@ sudo certbot --nginx -d your-domain.com
 #### PostgreSQL
 
 ```env
-DATABASE_URL=postgresql://user:password@host:5432/metasop?schema=public
+DATABASE_URL=postgresql://user:password@host:5432/Blueprinta?schema=public
 ```
 
 #### Connection Pooling
@@ -477,13 +477,13 @@ Access logs:
 
 ```bash
 # PM2 logs
-pm2 logs metasop
+pm2 logs Blueprinta
 
 # Docker logs
-docker logs metasop
+docker logs Blueprinta
 
 # Application logs
-tail -f /var/www/Metasop/logs/app.log
+tail -f /var/www/Blueprinta/logs/app.log
 ```
 
 ### Database Monitoring
@@ -556,19 +556,19 @@ Create `deployment.yaml`:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metasop
+  name: Blueprinta
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: metasop
+      app: Blueprinta
   template:
     metadata:
       labels:
-        app: metasop
+        app: Blueprinta
     spec:
       containers:
-      - name: metasop
+      - name: Blueprinta
         image: metasop:latest
         ports:
         - containerPort: 3000
@@ -576,7 +576,7 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: metasop-secrets
+              name: Blueprinta-secrets
               key: database-url
 ```
 
@@ -586,7 +586,7 @@ spec:
 
 ```bash
 # PM2 instances
-pm2 scale metasop 4
+pm2 scale Blueprinta 4
 
 # Docker resources
 docker run -d \
@@ -621,7 +621,7 @@ sudo systemctl restart postgresql
 **Solution**:
 ```bash
 # Check logs
-pm2 logs metasop
+pm2 logs Blueprinta
 
 # Check port availability
 netstat -tulpn | grep 3000
@@ -637,7 +637,7 @@ pm2 env 0
 **Solution**:
 ```bash
 # Test connection
-psql -U user -h host -d metasop
+psql -U user -h host -d Blueprinta
 
 # Check DATABASE_URL
 echo $DATABASE_URL
@@ -653,7 +653,7 @@ sudo systemctl status postgresql
 **Solution**:
 ```bash
 # Increase Node.js memory
-NODE_OPTIONS="--max-old-space-size=4096" pm2 restart metasop
+NODE_OPTIONS="--max-old-space-size=4096" pm2 restart Blueprinta
 
 # Check memory usage
 free -h
@@ -734,10 +734,10 @@ const limiter = rateLimit({
 
 ```bash
 # Database backup
-pg_dump -U user metasop > backup.sql
+pg_dump -U user Blueprinta > backup.sql
 
 # Automated backup
-0 2 * * * pg_dump -U user metasop > /backups/metasop_$(date +\%Y\%m\%d).sql
+0 2 * * * pg_dump -U user Blueprinta > /backups/METASOP_$(date +\%Y\%m\%d).sql
 ```
 
 ---
@@ -748,17 +748,17 @@ pg_dump -U user metasop > backup.sql
 
 ```bash
 # Manual backup
-pg_dump -U user -h host metasop > backup.sql
+pg_dump -U user -h host Blueprinta > backup.sql
 
 # Restore
-psql -U user -h host metasop < backup.sql
+psql -U user -h host Blueprinta < backup.sql
 ```
 
 ### Application Backup
 
 ```bash
 # Backup code
-tar -czf metasop-backup.tar.gz /var/www/Metasop
+tar -czf Blueprinta-backup.tar.gz /var/www/Blueprinta
 
 # Backup environment
 cp .env.production .env.production.backup

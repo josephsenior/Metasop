@@ -172,7 +172,7 @@ MultiAgentPlatform/
 ├── app/                    # Next.js app directory
 ├── components/             # React components
 ├── lib/                    # Core libraries
-│   ├── metasop/           # MetaSOP orchestrator
+│   ├── metasop/             # Blueprinta orchestrator
 │   ├── diagrams/          # Diagram generation
 │   └── ...
 ├── docs/                   # Documentation

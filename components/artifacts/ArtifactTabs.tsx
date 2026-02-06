@@ -8,7 +8,8 @@ import {
     Code,
     Palette,
     CheckCircle,
-    LayoutDashboard
+    LayoutDashboard,
+    TrendingUp
 } from "lucide-react"
 import { TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils"
 
 export const agentTabs = [
     { id: "summary", label: "Summary", icon: LayoutDashboard, color: "text-blue-500", bgColor: "bg-blue-500/10" },
+    { id: "estimates", label: "Estimates", icon: TrendingUp, color: "text-orange-600", bgColor: "bg-orange-500/10" },
     { id: "pm_spec", label: "PM Spec", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
     { id: "arch_design", label: "Architect", icon: FileText, color: "text-blue-600", bgColor: "bg-blue-500/10" },
     { id: "devops_infrastructure", label: "DevOps", icon: Server, color: "text-green-600", bgColor: "bg-green-500/10" },
@@ -28,6 +30,13 @@ export const agentTabs = [
 
 function getArtifactMeta(tabId: string, artifact: any) {
     if (!artifact || tabId === "summary") return null
+    if (tabId === "estimates") {
+        return { 
+            summary: "Project time & cost estimates", 
+            tags: ["Cost", "Timeline"],
+            details: "Derived effort analysis and budget projection."
+        }
+    }
     const content = artifact?.content ?? artifact
     const count = (value: any) => (Array.isArray(value) ? value.length : 0)
     const build = (summary: string, tags: string[], details?: string) => ({ summary, tags, details })

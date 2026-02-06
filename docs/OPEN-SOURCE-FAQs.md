@@ -54,7 +54,7 @@
 ### Q: Should I open source everything?
 
 **A:** No. Open source:
-- ✅ Core MetaSOP orchestrator
+- ✅ Core Blueprinta orchestrator
 - ✅ Basic agent implementations
 - ✅ Diagram generation logic
 - ✅ Frontend components

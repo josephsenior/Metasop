@@ -1,12 +1,12 @@
-# MetaSOP Integration Guide
+# Blueprinta Integration Guide
 
 ## Overview
 
-This project includes an integrated MetaSOP multi-agent system written in TypeScript to generate architecture diagrams using AI agents. The system is fully self-contained within the Next.js application.
+This project includes an integrated Blueprinta multi-agent system written in TypeScript to generate architecture diagrams using AI agents. The system is fully self-contained within the Next.js application.
 
 ## Architecture
 
-The MetaSOP system consists of:
+The Blueprinta system consists of:
 
 - **Orchestrator** (`lib/metasop/orchestrator.ts`): Coordinates the execution of multiple agents
 - **Agents** (`lib/metasop/agents/`): All seven run **sequentially** in this order:
@@ -40,7 +40,7 @@ TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
 
 1. User submits a prompt on `/dashboard/create`
 2. Frontend calls `/api/diagrams/generate`
-3. API route uses the integrated MetaSOP orchestrator (agents run sequentially):
+3. API route uses the integrated Blueprinta orchestrator (agents run sequentially):
    - Product Manager generates specifications
    - Architect designs system architecture
    - DevOps produces CI/CD and infrastructure
@@ -48,8 +48,8 @@ TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
    - UI Designer designs components
   - Engineer creates implementation phases
    - QA generates test plans
-4. MetaSOP artifacts are stored in diagram metadata (`metadata.metasop_artifacts`) and displayed in the artifacts panel.
-5. Diagram is saved with MetaSOP metadata.
+4. Blueprinta artifacts are stored in diagram metadata (`metadata.metasop_artifacts`) and displayed in the artifacts panel.
+5. Diagram is saved with Blueprinta metadata.
 
 ### Agent Execution Order
 
@@ -114,7 +114,7 @@ POST /api/diagrams/generate
 The `OrchestrationPanel` component displays:
 - **Flow Tab**: React Flow visualization of the diagram
 - **Steps Tab**: List of orchestration steps with status
-- **Artifacts Tab**: Raw MetaSOP artifacts (PM, Architect, Engineer, UI)
+- **Artifacts Tab**: Raw Blueprinta artifacts (PM, Architect, Engineer, UI)
 
 ### Real-time Updates
 

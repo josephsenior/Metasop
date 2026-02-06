@@ -115,16 +115,18 @@ export default function CreateDiagramPage() {
     }
   }
 
-  const handleDownloadSpecs = () => {
-    if (!currentDiagram?.metadata?.metasop_artifacts) return
-    const data = JSON.stringify(currentDiagram?.metadata?.metasop_artifacts, null, 2)
-    downloadFile(data, `metasop-spec-${currentDiagram?.id?.substring(0, 8) || 'export'}.json`, "application/json")
-    toast({ title: "Export Successful", description: "Technical specification downloaded as JSON." })
-  }
-
   const handleExportContext = () => {
     if (!currentDiagram?.metadata?.metasop_artifacts) return
-    const md = generateAgentContextMarkdown(currentDiagram)
+    const exportDiagram = {
+      ...currentDiagram,
+      metadata: {
+        ...(currentDiagram.metadata || {}),
+        prompt: (currentDiagram.metadata && currentDiagram.metadata.prompt) || prompt || ""
+      },
+      documents: (currentDiagram as any).documents || uploadedDocuments || []
+    }
+
+    const md = generateAgentContextMarkdown(exportDiagram)
     downloadFile(md, `metasop-context-${currentDiagram?.id?.substring(0, 8) || 'export'}.md`, "text/markdown")
     toast({ title: "Context Exported", description: "Markdown context downloaded for AI usage." })
   }
@@ -148,7 +150,6 @@ export default function CreateDiagramPage() {
           onToggleLeftPanel={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
           onToggleChat={() => setIsChatOpen(!isChatOpen)}
           onSave={handleSave}
-          onDownloadSpecs={handleDownloadSpecs}
           onExportContext={handleExportContext}
         />
 

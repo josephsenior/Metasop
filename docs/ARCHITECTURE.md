@@ -1,6 +1,6 @@
-# MetaSOP Architecture
+# Blueprinta Architecture
 
-This document provides a comprehensive overview of MetaSOP's architecture, design decisions, and system components.
+This document provides a comprehensive overview of Blueprinta's architecture, design decisions, and system components.
 
 ---
 
@@ -20,7 +20,7 @@ This document provides a comprehensive overview of MetaSOP's architecture, desig
 
 ## Overview
 
-MetaSOP is a multi-agent orchestration platform that automates the software development lifecycle. The system coordinates specialized AI agents to generate synchronized, production-ready artifacts from natural language requests.
+Blueprinta is a multi-agent orchestration platform that automates the software development lifecycle. The system coordinates specialized AI agents to generate synchronized, production-ready artifacts from natural language requests.
 
 ### Key Architectural Goals
 
@@ -313,7 +313,7 @@ interface MetaSOPArtifact {
 A single **runtime config** module (`lib/runtime-config.ts`) provides env + defaults + feature flags so behavior is easy to reason about for both API routes and `lib/metasop`. All defaults live there; env vars override.
 
 - **`getRuntimeConfig()`** – full config (llm, agents, performance, logging, featureFlags).
-- **MetaSOP** – `getConfig()` in `lib/metasop/config.ts` reads from `getRuntimeConfig()` and merges into MetaSOP defaults.
+- **Blueprinta** – `getConfig()` in `lib/metasop/config.ts` reads from `getRuntimeConfig()` and merges into Blueprinta defaults.
 - **Env vars** – `METASOP_LLM_*`, `METASOP_AGENT_*`, etc. See `.env.example` and `lib/runtime-config.ts`.
 
 ---

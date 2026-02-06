@@ -11,7 +11,7 @@
 
 <div align="center">
 
-**MetaSOP** is a high-fidelity, multi-agent orchestration platform designed to automate the end-to-end software development lifecycle. By coordinating specialized AI agents—Product Managers, Architects, Engineers, Security Experts, and DevOps—MetaSOP generates synchronized, production-ready system designs and implementation plans from simple natural language requests.
+**Blueprinta** is a high-fidelity, multi-agent orchestration platform designed to automate the end-to-end software development lifecycle. By coordinating specialized AI agents—Product Managers, Architects, Engineers, Security Experts, and DevOps—Blueprinta generates synchronized, production-ready system designs and implementation plans from simple natural language requests.
 
 [⚡ Quick Start](#-quick-start) • [📚 Documentation](#-documentation) • [🤝 Contributing](#-contributing) • [💬 Community](#-community) • [⭐ Star us on GitHub](https://github.com/josephsenior/Metasop)
 
@@ -19,9 +19,9 @@
 
 ---
 
-## 🌟 Why MetaSOP?
+## 🌟 Why Blueprinta?
 
-Building software today requires coordinating multiple specialized roles, each with their own expertise and tools. MetaSOP automates this entire process by:
+Building software today requires coordinating multiple specialized roles, each with their own expertise and tools. Blueprinta automates this entire process by:
 
 - **Eliminating manual coordination** between PMs, Architects, Engineers, Security, DevOps, and QA
 - **Ensuring consistency** across artifacts via tool-based refinement (Edit Artifacts API)
@@ -36,6 +36,9 @@ Building software today requires coordinating multiple specialized roles, each w
 - **Context-Aware Agents**: Each agent operates with deep awareness of upstream dependencies, ensuring architectural decisions are consistent across the stack.
 - **LLM-Native Caching**: Leverages advanced Gemini context caching to minimize latency and token consumption during generation.
 - **Structured Validation**: All agent outputs are validated against strict Zod schemas and JSON structures, ensuring reliable, machine-readable artifacts.
+- **Documentation Exports**: Export documentation as Markdown, PDF, HTML, or PPTX via the export endpoint.
+- **Project Estimates**: UI and exports include time, cost, and complexity estimates derived from artifacts.
+- **Draft Persistence**: Create prompts, settings, and uploads persist across reloads on the create page.
 - **Agent-to-Agent (A2A) Communication**: Specialized protocol for inter-agent delegation and task management.
 - **Generation Jobs + SSE**: Long-running generation is queued, with progress streamed via Server-Sent Events.
 - **Guest Support**: Limited diagram generation for non-authenticated users with session tracking.
@@ -43,7 +46,7 @@ Building software today requires coordinating multiple specialized roles, each w
 
 ## 🏗️ Architecture
 
-MetaSOP utilizes a sequential pipeline:
+Blueprinta utilizes a sequential pipeline:
 
 1.  **Product Manager**: Defines user stories and acceptance criteria.
 2.  **Architect**: Generates API contracts, database schemas, and ADRs.
@@ -57,7 +60,7 @@ MetaSOP utilizes a sequential pipeline:
 
 ### ⚡ Quick Start
 
-Get MetaSOP up and running in under 5 minutes:
+Get Blueprinta up and running in under 5 minutes:
 
 ```bash
 # Clone the repository
@@ -144,7 +147,7 @@ pnpm start
 
 ### Testing
 
-The project uses [Vitest](https://vitest.dev/) for unit tests. The suite covers the MetaSOP pipeline: orchestrator, agents, services, adapters, and utilities.
+The project uses [Vitest](https://vitest.dev/) for unit tests. The suite covers the Blueprinta pipeline: orchestrator, agents, services, adapters, and utilities.
 
 ```bash
 pnpm test              # Run unit tests once
@@ -165,14 +168,14 @@ If `pnpm test` fails with **spawn EPERM** in Cursor's terminal (common on Window
 - [Architecture Overview](docs/ARCHITECTURE.md) - Deep dive into the system architecture
 - [API Reference](docs/API.md) - Complete API documentation with examples
 - [Deployment Guide](docs/DEPLOYMENT.md) - Deploy to production (Vercel, Docker, VPS)
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute to MetaSOP
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to Blueprinta
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ---
 
 ## 🏗️ Architecture
 
-MetaSOP utilizes a sequential pipeline with feedback loops:
+Blueprinta utilizes a sequential pipeline with feedback loops:
 
 ```mermaid
 graph LR
@@ -246,16 +249,16 @@ git push origin feature/my-feature
 ## 💬 Community
 
 - **GitHub Discussions**: [Join the conversation](https://github.com/josephsenior/Metasop/discussions)
-- **Discord Server**: [Join our Discord](https://discord.gg/metasop) (coming soon)
+- **Discord Server**: [Join our Discord](https://discord.gg/Blueprinta) (coming soon)
 - **Twitter/X**: Follow [@MetaSOP_AI](https://twitter.com/MetaSOP_AI) for updates
-- **Blog**: Read our [latest posts](https://blog.metasop.dev) (coming soon)
+- **Blog**: Read our [latest posts](https://blog.Blueprinta.dev) (coming soon)
 
 ### Getting Help
 
 - 📖 Check the [Documentation](docs/)
 - 🐛 Report bugs on [GitHub Issues](https://github.com/josephsenior/Metasop/issues)
 - 💡 Ask questions on [GitHub Discussions](https://github.com/josephsenior/Metasop/discussions)
-- 💬 Join our [Discord community](https://discord.gg/metasop)
+- 💬 Join our [Discord community](https://discord.gg/Blueprinta)
 
 ---
 
@@ -279,7 +282,7 @@ See [ROADMAP.md](ROADMAP.md) for detailed plans.
 
 ## 🌟 Sponsors
 
-Support MetaSOP's development by becoming a sponsor! Your support helps us:
+Support Blueprinta's development by becoming a sponsor! Your support helps us:
 
 - Maintain and improve the core platform
 - Add new features and integrations
@@ -308,7 +311,7 @@ Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information
 
 <div align="center">
 
-**Built with ❤️ by the MetaSOP community**
+**Built with ❤️ by the Blueprinta community**
 
 [⭐ Star us on GitHub](https://github.com/josephsenior/Metasop) • [🐛 Report a Bug](https://github.com/josephsenior/Metasop/issues) • [💡 Request a Feature](https://github.com/josephsenior/Metasop/issues)
 

@@ -11,6 +11,7 @@ import { agentTabs, SidebarTabs, TopTabs } from "./ArtifactTabs"
 
 // Import all artifact display components
 import ProjectSummary from "@/components/artifacts/ProjectSummary"
+import ProjectEstimates from "@/components/artifacts/ProjectEstimates"
 import PMSpecArtifact from "@/components/artifacts/pm_spec"
 import ArchDesignArtifact from "@/components/artifacts/arch_design"
 import DevOpsArtifact from "@/components/artifacts/devops_infrastructure"
@@ -56,6 +57,10 @@ export function ArtifactsPanel({
 
     const availableTabs = agentTabs.filter((tab) => {
         if (tab.id === "summary") return true
+        if (tab.id === "estimates") {
+            // Estimates are available if we have at least one real artifact
+            return Object.keys(artifacts || {}).some(k => artifacts[k as keyof typeof artifacts])
+        }
         const artifact = artifacts?.[tab.id as keyof typeof artifacts]
         if (!artifact) return false
         return artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)
@@ -119,6 +124,7 @@ export function ArtifactsPanel({
                                     {(() => {
                                         const artifact = artifacts[activeTab as keyof typeof artifacts]
                                         if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} onTabChange={setActiveTab} />
+                                        if (activeTab === "estimates") return <ProjectEstimates artifacts={artifacts} />
                                         if (!artifact) return <div className="text-xs text-muted-foreground p-4">No artifact data available</div>
 
                                         switch (activeTab) {

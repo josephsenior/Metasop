@@ -9,7 +9,7 @@ Frontend (Next.js/TypeScript)
     ↓
 API Routes (TypeScript)
     ↓
-MetaSOP Orchestrator (TypeScript)
+Blueprinta Orchestrator (TypeScript)
     ↓
 Agents (TypeScript)
 ```

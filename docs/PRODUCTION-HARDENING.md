@@ -1,6 +1,6 @@
 # Production Hardening Guide
 
-This document describes the production hardening features implemented for MetaSOP, including database configuration, rate limiting, and monitoring.
+This document describes the production hardening features implemented for Blueprinta, including database configuration, rate limiting, and monitoring.
 
 ## Overview
 

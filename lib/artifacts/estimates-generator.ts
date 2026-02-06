@@ -38,12 +38,16 @@ export interface CostEstimate {
 }
 
 export class EstimatesGenerator {
-  private diagram: Diagram
+  private diagram?: Diagram
   private artifacts: any
 
-  constructor(diagram: Diagram) {
-    this.diagram = diagram
-    this.artifacts = diagram.metadata?.metasop_artifacts || {}
+  constructor(diagramOrArtifacts: Diagram | any) {
+    if (diagramOrArtifacts && "metadata" in diagramOrArtifacts) {
+      this.diagram = diagramOrArtifacts as Diagram
+      this.artifacts = this.diagram.metadata?.metasop_artifacts || {}
+    } else {
+      this.artifacts = diagramOrArtifacts || {}
+    }
   }
 
   /**

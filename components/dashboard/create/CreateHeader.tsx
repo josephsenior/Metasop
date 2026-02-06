@@ -37,7 +37,6 @@ interface CreateHeaderProps {
     onToggleLeftPanel: () => void
     onToggleChat: () => void
     onSave: () => void
-    onDownloadSpecs: () => void
     onExportContext: () => void
 }
 
@@ -49,7 +48,6 @@ export function CreateHeader({
     onToggleLeftPanel,
     onToggleChat,
     onSave,
-    onDownloadSpecs,
     onExportContext
 }: CreateHeaderProps) {
     const router = useRouter()
@@ -226,7 +224,6 @@ export function CreateHeader({
                                 currentDiagram={currentDiagram}
                                 isAuthenticated={isAuthenticated}
                                 onSave={onSave}
-                                onDownloadSpecs={onDownloadSpecs}
                                 onExportContext={onExportContext}
                             />
                         </div>

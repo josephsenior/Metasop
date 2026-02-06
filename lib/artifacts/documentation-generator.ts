@@ -1,4 +1,5 @@
 import type { Diagram } from "@/types/diagram"
+import { EstimatesGenerator } from "./estimates-generator"
 
 export interface DocumentationOptions {
   includeDiagrams?: boolean
@@ -31,6 +32,8 @@ export class DocumentationGenerator {
     const artifacts = this.diagram.metadata?.metasop_artifacts || {}
     const pmSpec = artifacts.pm_spec?.content || {}
     const archContent = artifacts.arch_design?.content || {}
+    const devOpsArtifact = artifacts.devops_infrastructure?.content || {}
+    const securityArtifact = artifacts.security_architecture?.content || {}
     const engineerArtifact = artifacts.engineer_impl?.content || {}
     const uiDesignerArtifact = artifacts.ui_design?.content || {}
     const qaArtifact = artifacts.qa_verification?.content || {}
@@ -126,6 +129,56 @@ export class DocumentationGenerator {
       }
     }
 
+    // DevOps Section
+    if (devOpsArtifact.infrastructure || devOpsArtifact.cicd) {
+      markdown += `## DevOps & Infrastructure\n\n`
+      
+      if (devOpsArtifact.infrastructure) {
+        markdown += `### Infrastructure Components\n\n`
+        const infra = devOpsArtifact.infrastructure
+        if (infra.cloud_provider) markdown += `- **Cloud Provider:** ${infra.cloud_provider}\n`
+        if (infra.region) markdown += `- **Region:** ${infra.region}\n`
+        if (Array.isArray(infra.services)) {
+          markdown += `\n**Services:**\n`
+          infra.services.forEach((s: any) => markdown += `- ${typeof s === 'string' ? s : s.name}\n`)
+        }
+        markdown += `\n`
+      }
+
+      if (devOpsArtifact.cicd) {
+        markdown += `### CI/CD Pipeline\n\n`
+        const cicd = devOpsArtifact.cicd
+        if (Array.isArray(cicd.pipeline_stages)) {
+          cicd.pipeline_stages.forEach((stage: any, idx: number) => {
+            markdown += `${idx + 1}. **${stage.name || stage}**\n`
+            if (stage.description) markdown += `   ${stage.description}\n`
+          })
+          markdown += `\n`
+        }
+      }
+    }
+
+    // Security Section
+    if (securityArtifact.threat_model || securityArtifact.security_controls) {
+      markdown += `## Security Architecture\n\n`
+
+      if (Array.isArray(securityArtifact.threat_model)) {
+        markdown += `### Threat Model\n\n`
+        securityArtifact.threat_model.forEach((threat: any) => {
+          markdown += `- **${threat.threat || threat}**: ${threat.mitigation || ""}\n`
+        })
+        markdown += `\n`
+      }
+
+      if (Array.isArray(securityArtifact.security_controls)) {
+        markdown += `### Security Controls\n\n`
+        securityArtifact.security_controls.forEach((control: any) => {
+          markdown += `- **${control.control || control}**: ${control.description || ""}\n`
+        })
+        markdown += `\n`
+      }
+    }
+
     // Engineer Section
     if (engineerArtifact.implementation_plan_phases || engineerArtifact.file_structure || engineerArtifact.dependencies) {
       markdown += `## Implementation Roadmap\n\n`
@@ -214,17 +267,21 @@ export class DocumentationGenerator {
     if (this.options.includeEstimates) {
       markdown += `---\n\n`
       markdown += `## Estimates\n\n`
-      const estimates = this.calculateEstimates()
-      markdown += `### Development Time\n\n`
-      markdown += `- **Estimated Total:** ${estimates.totalHours} hours (${estimates.totalDays} days)\n`
-      markdown += `- **Team Size Recommended:** ${estimates.recommendedTeamSize} developers\n`
-      markdown += `- **Timeline:** ${estimates.timeline} weeks\n\n`
       
-      if (estimates.costEstimate) {
+      const estimatesGen = new EstimatesGenerator(this.diagram)
+      const devEstimate = estimatesGen.calculateDevelopmentEstimate()
+      const costEstimate = estimatesGen.calculateCostEstimate(devEstimate)
+
+      markdown += `### Development Time\n\n`
+      markdown += `- **Estimated Total:** ${devEstimate.totalHours} hours (${devEstimate.totalDays} days)\n`
+      markdown += `- **Team Size Recommended:** ${devEstimate.recommendedTeamSize} developers\n`
+      markdown += `- **Timeline:** ${devEstimate.timeline} weeks\n\n`
+      
+      if (costEstimate) {
         markdown += `### Cost Estimate\n\n`
-        markdown += `- **Infrastructure (Monthly):** $${estimates.costEstimate.infrastructure}\n`
-        markdown += `- **Development Cost:** $${estimates.costEstimate.development}\n`
-        markdown += `- **Total First Year:** $${estimates.costEstimate.totalFirstYear}\n\n`
+        markdown += `- **Infrastructure (Monthly):** $${costEstimate.infrastructure.monthly}\n`
+        markdown += `- **Development Cost:** $${costEstimate.development.total.toLocaleString()}\n`
+        markdown += `- **Total First Year:** $${costEstimate.totalFirstYear.toLocaleString()}\n\n`
       }
     }
 
@@ -273,62 +330,6 @@ export class DocumentationGenerator {
     }
 
     return result
-  }
-
-  /**
-   * Calculate development estimates
-   */
-  private calculateEstimates() {
-    const artifacts = this.diagram.metadata?.metasop_artifacts || {}
-    const archContent = artifacts.arch_design?.content || {}
-    const apis = archContent.apis || []
-    const tables = archContent.database_schema?.tables || []
-    const apiCount = Array.isArray(apis) ? apis.length : 0
-    const tableCount = Array.isArray(tables) ? tables.length : 0
-
-    // Base estimates
-    let totalHours = 0
-
-    // Product Manager work
-    if (artifacts.pm_spec) totalHours += 8
-
-    // Architect work
-    if (artifacts.arch_design) totalHours += 16
-
-    // Engineer work - estimate from artifacts (APIs, DB tables)
-    totalHours += apiCount * 8
-    totalHours += tableCount * 12
-    
-    // UI Designer work
-    if (artifacts.ui_design) totalHours += 12
-    
-    // QA work
-    if (artifacts.qa_verification) totalHours += 8
-    
-    // Add 20% buffer
-    totalHours = Math.ceil(totalHours * 1.2)
-    
-    const totalDays = Math.ceil(totalHours / 8)
-    const timeline = Math.ceil(totalDays / 5) // 5 working days per week
-    const recommendedTeamSize = totalDays > 20 ? 3 : totalDays > 10 ? 2 : 1
-
-    // Cost estimates (rough)
-    const hourlyRate = 100 // Average developer rate
-    const developmentCost = totalHours * hourlyRate
-    const infrastructure = 200 // Monthly cloud costs
-    const totalFirstYear = developmentCost + (infrastructure * 12)
-
-    return {
-      totalHours,
-      totalDays,
-      timeline,
-      recommendedTeamSize,
-      costEstimate: {
-        infrastructure,
-        development: developmentCost,
-        totalFirstYear,
-      },
-    }
   }
 }
 

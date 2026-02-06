@@ -23,7 +23,7 @@ TOKEN_FACTORY_API_KEY=your-api-key-here
 TOKEN_FACTORY_BASE_URL=https://tokenfactory.esprit.tn/api
 METASOP_LLM_MODEL=hosted_vllm/Llama-3.1-70B-Instruct
 
-# MetaSOP Configuration
+# Blueprinta Configuration
 METASOP_LLM_PROVIDER=tokenfactory
 ```
 

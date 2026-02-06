@@ -22,7 +22,6 @@ interface HeaderActionsMenuProps {
     currentDiagram: DiagramData | null
     isAuthenticated: boolean
     onSave: () => void
-    onDownloadSpecs: () => void
     onExportContext: () => void
 }
 
@@ -30,19 +29,27 @@ export function HeaderActionsMenu({
     currentDiagram,
     isAuthenticated,
     onSave,
-    onDownloadSpecs,
     onExportContext
 }: HeaderActionsMenuProps) {
     const router = useRouter()
 
-    const handleExportPptx = () => {
-        const guestSessionId = typeof document !== 'undefined' ? document.cookie
+    const getGuestQuery = () => {
+        if (typeof document === 'undefined') return ''
+        const guestSessionId = document.cookie
             .split('; ')
             .find(row => row.startsWith('guest_session_id='))
-            ?.split('=')[1] : undefined
+            ?.split('=')[1]
+        return guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
+    }
 
-        const query = guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
+    const handleExportPptx = () => {
+        const query = getGuestQuery()
         window.location.href = `/api/diagrams/${currentDiagram?.id}/export/pptx${query}`
+    }
+
+    const handleExportPdf = () => {
+        const query = getGuestQuery()
+        window.location.href = `/api/diagrams/${currentDiagram?.id}/export?artifact=documentation&format=pdf${query}`
     }
 
     return (
@@ -76,7 +83,10 @@ export function HeaderActionsMenu({
 
                 <DropdownMenuSeparator className="bg-border/50 my-1.5" />
 
-                {/* Secondary Actions */}
+                <div className="px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Downloads
+                </div>
+
                 <DropdownMenuItem
                     onClick={onExportContext}
                     className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
@@ -85,12 +95,16 @@ export function HeaderActionsMenu({
                     <span>Export Context</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="bg-border/50 my-1.5" />
+                <DropdownMenuItem
+                    onClick={handleExportPdf}
+                    disabled={!currentDiagram?.id}
+                    className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
+                >
+                    <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span>Export PDF Specs</span>
+                </DropdownMenuItem>
 
-                {/* Downloads */}
-                <div className="px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Downloads
-                </div>
+                <DropdownMenuSeparator className="bg-border/50 my-1.5" />
 
                 <DropdownMenuItem
                     onClick={handleExportPptx}
@@ -99,14 +113,6 @@ export function HeaderActionsMenu({
                 >
                     <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
                     <span>PowerPoint (.pptx)</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                    onClick={onDownloadSpecs}
-                    className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
-                >
-                    <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    <span>Download JSON Specs</span>
                 </DropdownMenuItem>
 
             </DropdownMenuContent>

@@ -19,7 +19,7 @@ This document outlines a comprehensive open source strategy that balances commun
 **Rationale:** These are foundational features that benefit from community contributions and demonstrate technical capability.
 
 #### Core Features to Open Source:
-1. **MetaSOP Orchestrator**
+1. **Blueprinta Orchestrator**
    - Multi-agent orchestration system
    - Agent execution framework
    - Retry logic and error handling
@@ -153,7 +153,7 @@ MultiAgentPlatform/
 ├── CHANGELOG.md                 # Version history
 │
 ├── packages/
-│   ├── core/                    # Core MetaSOP orchestrator
+│   ├── core/                    # Core Blueprinta orchestrator
 │   │   ├── lib/metasop/
 │   │   └── README.md
 │   │
@@ -351,7 +351,7 @@ Apache 2.0
 
 #### 3. ARCHITECTURE.md
 - System architecture
-- MetaSOP explanation
+- Blueprinta explanation
 - Agent system design
 - Data flow diagrams
 
@@ -550,7 +550,7 @@ Apache 2.0
 - "multi-agent AI platform"
 - "architecture diagram generator"
 - "TypeScript AI agents"
-- "MetaSOP orchestration"
+- "Blueprinta orchestration"
 - "AI diagram tool"
 
 **Content:**

@@ -1,6 +1,6 @@
-# MetaSOP Documentation
+# Blueprinta Documentation
 
-Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
+Complete documentation index for Blueprinta - Multi-Agent Orchestration Platform.
 
 ---
 
@@ -12,6 +12,14 @@ Complete documentation index for MetaSOP - Multi-Agent Orchestration Platform.
 - [Development](#development)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## ✨ Platform Highlights
+
+- **Documentation exports**: Markdown, PDF, HTML, and PPTX exports from `/api/diagrams/[id]/export`.
+- **Project estimates**: Time, cost, and complexity estimates shown in the UI and included in exports.
+- **Draft persistence**: Create prompts, settings, and uploads persist across reloads on the create page.
 
 ---
 
@@ -210,10 +218,7 @@ pnpm dev
 ### Getting Help
 
 - 📖 Check [Documentation](../README.md)
-- 💬 Join [Discord](https://discord.gg/metasop)
-- 🐛 Report [Issues](https://github.com/josephsenior/Metasop/issues)
-
----
+- 💬 Join [Discord](https://discord.gg/Blueprinta)
 
 ## 📖 Additional Resources
 
@@ -236,7 +241,6 @@ pnpm dev
 - **[Open Source Launch Checklist](OPEN-SOURCE-LAUNCH-CHECKLIST.md)** - Launch preparation
 
 ---
-
 ## 🎓 Learning Path
 
 ### Beginner
@@ -271,7 +275,7 @@ pnpm dev
 
 ### Community
 
-- 💬 [Discord](https://discord.gg/metasop) - Real-time chat
+- 💬 [Discord](https://discord.gg/Blueprinta) - Real-time chat
 - 🐦 [Twitter](https://twitter.com/MetaSOP_AI) - Latest updates
 - 💡 [GitHub Discussions](https://github.com/josephsenior/Metasop/discussions) - Q&A
 
@@ -288,4 +292,4 @@ See [CHANGELOG.md](../CHANGELOG.md) for version history and release notes.
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: February 2026

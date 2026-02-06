@@ -1,6 +1,6 @@
-# MetaSOP API Reference
+# Blueprinta API Reference
 
-This document provides a comprehensive reference for the MetaSOP API.
+This document provides a comprehensive reference for the Blueprinta API.
 
 ---
 
@@ -18,7 +18,7 @@ This document provides a comprehensive reference for the MetaSOP API.
 
 ## Overview
 
-The MetaSOP API provides programmatic access to the multi-agent orchestration platform. All endpoints are RESTful and return JSON responses.
+The Blueprinta API provides programmatic access to the multi-agent orchestration platform. All endpoints are RESTful and return JSON responses.
 
 ### Features
 
@@ -60,7 +60,7 @@ Production: set NEXT_PUBLIC_API_URL in your deployment (e.g. https://your-app.co
 POST /api/diagrams/generate
 ```
 
-Enqueues the MetaSOP orchestration and creates a diagram. Use **guest session** (cookie or `x-guest-session-id`); no login or API key required for the app.
+Enqueues the Blueprinta orchestration and creates a diagram. Use **guest session** (cookie or `x-guest-session-id`); no login or API key required for the app.
 
 **Request Body**:
 
@@ -231,7 +231,22 @@ Exports diagram in specified format.
 
 | Parameter | Type | Required | Description |
 |-----------|-------|-----------|-------------|
-| `format` | string | Yes | Export format: `json`, `pdf`, `markdown` |
+| `artifact` | string | No | Export artifact type (default: `documentation`). |
+| `format` | string | No | Format varies by artifact (default: `markdown`). |
+
+**Artifacts & formats**:
+
+- `documentation`: `markdown`, `pdf`, `html`, `pptx`
+- `openapi`: `json`
+- `sql`: `migration`, `seed`
+- `estimates`: `json`
+- `deployment`: `markdown`
+- `adr`: `markdown`
+- `erd`: `mermaid`, `plantuml`, `markdown`
+- `tech-comparison`: `markdown`
+- `test-plan`: `markdown`
+- `security-audit`: `markdown`
+- `mermaid`: `flowchart`, `sequence`
 
 **Response**: File download
 
