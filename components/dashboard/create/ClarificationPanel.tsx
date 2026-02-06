@@ -112,7 +112,7 @@ export function ClarificationPanel({
                             </div>
                             <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
                                 <motion.div 
-                                    className="h-full bg-linear-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                    className="h-full bg-linear-to-r from-blue-500 to-purple-500 progress-glow"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${completionPercent}%` }}
                                     transition={{ duration: 0.5, ease: "circOut" }}

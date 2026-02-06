@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
+import { Logo } from "@/components/ui/Logo"
 
 export function DashboardHeader() {
   return (
@@ -9,10 +10,8 @@ export function DashboardHeader() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-              <span className="text-lg font-bold text-white">A</span>
-            </div>
-            <span className="text-lg font-semibold text-foreground gradient-primary-text">ArchitectAI</span>
+            <Logo className="h-8 w-8" />
+            <span className="text-lg font-semibold text-foreground gradient-primary-text">Blueprinta</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

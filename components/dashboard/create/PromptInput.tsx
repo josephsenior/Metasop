@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useRef } from "react"
 import {
     Sparkles,
     HelpCircle,
@@ -11,8 +11,7 @@ import {
     Paperclip,
     Loader2,
     X,
-    ChevronDown,
-    ChevronUp,
+    // ChevronDown, ChevronUp removed (unused)
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -64,7 +63,7 @@ export function PromptInput({
     onFileUpload,
     isUploading = false
 }: PromptInputProps) {
-    const [isCollapsed, setIsCollapsed] = useState(false)
+    // input is always visible; collapse control removed per UX request
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,39 +77,26 @@ export function PromptInput({
         <div className="absolute bottom-0 left-0 right-0 z-40 p-4">
             <div className="max-w-3xl mx-auto">
                 <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-lg overflow-hidden relative">
-                    {!isCollapsed && (
-                        <>
-                            <Textarea
-                                id="prompt"
-                                aria-label="Describe your application"
-                                placeholder="Describe your application in plain English…"
-                                value={prompt}
-                                onChange={(e) => onPromptChange(e.target.value)}
-                                className="min-h-[52px] max-h-[140px] resize-none text-sm rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 pt-3 pb-2 placeholder:text-muted-foreground/70"
-                                disabled={isGenerating || isScoping}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                        e.preventDefault()
-                                        if (prompt.trim().length >= 20 && !isGenerating && !isScoping) {
-                                            onGenerate()
-                                        }
-                                    }
-                                }}
-                            />
-                        </>
-                    )}
-
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="absolute top-2 left-2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-all z-50"
-                        title={isCollapsed ? "Expand" : "Collapse"}
-                    >
-                        {isCollapsed ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                    </button>
+                    <Textarea
+                        id="prompt"
+                        aria-label="Describe your application"
+                        placeholder="Describe your application in plain English…"
+                        value={prompt}
+                        onChange={(e) => onPromptChange(e.target.value)}
+                        className="min-h-[52px] max-h-[140px] resize-none text-sm rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 pt-3 pb-2 placeholder:text-muted-foreground/70"
+                        disabled={isGenerating || isScoping}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
+                                if (prompt.trim().length >= 20 && !isGenerating && !isScoping) {
+                                    onGenerate()
+                                }
+                            }
+                        }}
+                    />
 
                     <div className={cn(
-                        "flex items-center justify-between gap-4 px-3 py-2 border-t border-border/50 bg-muted/30",
-                        isCollapsed && "border-t-0 py-1.5"
+                        "flex items-center justify-between gap-4 px-3 py-2 border-t border-border/50 bg-muted/30"
                     )}>
                         <div className="flex items-center gap-3 min-w-0">
                             <TooltipProvider>

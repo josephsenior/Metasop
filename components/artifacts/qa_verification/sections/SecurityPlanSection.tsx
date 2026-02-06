@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "../../shared-styles"
 import {
     containerVariants as container,
-    itemVariants as item
+    // itemVariants removed (unused)
 } from "../../shared-components"
 
 interface SecurityPlanSectionProps {

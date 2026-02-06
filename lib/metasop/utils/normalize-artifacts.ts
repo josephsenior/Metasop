@@ -60,7 +60,7 @@ const normalizeArchitect = (content: AnyRecord) => {
                 return { ...api, path: api.endpoint, endpoint: undefined }
             }
             if (api && api.endpoint) {
-                const { endpoint, ...rest } = api
+                const { endpoint: _endpoint, ...rest } = api
                 return rest
             }
             return api
@@ -86,7 +86,7 @@ const normalizeQa = (content: AnyRecord) => {
     if (Array.isArray(content.test_cases)) {
         content.test_cases = content.test_cases.map((testCase: AnyRecord) => {
             if (testCase && typeof testCase.priority !== "string") {
-                const { priority, ...rest } = testCase
+                const { priority: _priority, ...rest } = testCase
                 return rest
             }
             return testCase

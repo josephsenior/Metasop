@@ -11,7 +11,8 @@ import {
     Sparkles,
     Loader2,
     MessageSquare,
-    Paperclip
+    Paperclip,
+    // X removed (unused)
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { fetchDiagramApi } from "@/lib/api/diagram-fetch"
@@ -42,7 +43,8 @@ export function ProjectChatPanel({
     artifacts,
     activeTab = "all",
     initialHistory = [],
-    onRefineComplete
+    onRefineComplete,
+    onClose: _onClose
 }: ProjectChatPanelProps) {
     const { toast } = useToast()
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -55,7 +57,7 @@ export function ProjectChatPanel({
         return [{
             id: "1",
             role: "assistant",
-            content: "Hello! I'm your Project Architect AI. I have full context of your architecture blueprints. You can ask me questions about the design, or tell me to refine specific parts of the project.",
+            content: "Hello! I'm Blueprinta, your AI Architect. I have full context of your blueprints. You can ask me questions about the design, or tell me to refine specific parts of the project.",
             type: "system",
             timestamp: new Date()
         }]
@@ -67,7 +69,10 @@ export function ProjectChatPanel({
     const [transientDocuments, setTransientDocuments] = useState<any[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
     const [showSystemMessages, setShowSystemMessages] = useState(false)
-    const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
+    const [isInputHidden, setIsInputHidden] = useState(false)
+    const hasSystemMessages = messages.some((msg) => msg.type === "system")
+    const statusLabel = isLoading || isRefining ? "Working" : "Ready"
+    
     const scrollRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -380,6 +385,7 @@ export function ProjectChatPanel({
             let buffer = ""
             let finalArtifacts: any = null
             let changelog: any[] = []
+            let appliedCount = 0
 
             while (true) {
                 const { done, value } = await reader.read()
@@ -433,6 +439,7 @@ export function ProjectChatPanel({
                                 finalArtifacts = event.payload.updated_artifacts
                                 changelog = event.payload.changelog || []
                                 const applied = event.payload.applied ?? 0
+                                appliedCount = applied
 
                                 const changelogSummary = applied > 0
                                     ? changelog.slice(0, 3)
@@ -502,6 +509,11 @@ export function ProjectChatPanel({
                 }
             }
 
+            // If the refinement applied edits, hide the chat input (permanent until reload)
+            if (finalArtifacts && appliedCount > 0) {
+                setIsInputHidden(true)
+            }
+
         } catch (error: any) {
             setMessages(prev => prev.map(msg =>
                 msg.id === refinementMessageId
@@ -520,25 +532,46 @@ export function ProjectChatPanel({
 
 
     return (
-        <div className="flex flex-col h-full bg-background relative z-40 w-full min-h-0">
-
+        <div className="flex flex-col h-full bg-card/90 border border-border/60 rounded-2xl overflow-hidden shadow-lg shadow-black/10 relative z-40 w-full min-h-0">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-background/70 backdrop-blur">
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+                        <Bot className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-semibold tracking-[0.15em] uppercase text-foreground">Blueprinta Console</span>
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+                            <span className={cn(
+                                "inline-flex items-center gap-1",
+                                isLoading || isRefining ? "text-amber-500" : "text-emerald-500"
+                            )}>
+                                <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                {statusLabel}
+                            </span>
+                            <span className="text-muted-foreground/50">•</span>
+                            <span>{transientDocuments.length} context file{transientDocuments.length === 1 ? "" : "s"}</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Close button intentionally removed per design request */}
+            </div>
 
             {/* Chat Area */}
             <div
-                className="flex-1 overflow-y-auto px-2 py-4 custom-scrollbar relative bg-black/80"
+                className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar relative bg-background/70"
                 ref={scrollRef}
             >
-                <div
-                    aria-hidden="true"
-                    className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_55%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.06),transparent_60%)]"
-                />
+                <div aria-hidden="true" className="absolute inset-0 pointer-events-none blueprint-grid" />
+                {/* Subtle vignette to add depth without heavy color overlays */}
+                <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-linear-to-b from-black/4 to-transparent" />
                 <div
                     aria-hidden="true"
                     className="absolute inset-0 pointer-events-none flex items-center justify-center"
                 >
-                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-white/10">
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.4em] text-foreground/10 font-mono">
                         <Sparkles className="h-3.5 w-3.5" />
-                        <span>Ask the Architect</span>
+                        <span>Blueprint Channel</span>
                     </div>
                 </div>
                 <div className="flex flex-col gap-4 min-h-full relative z-10">
@@ -548,68 +581,54 @@ export function ProjectChatPanel({
                         <div
                             key={msg.id}
                             className={cn(
-                                "flex flex-col max-w-[96%]",
+                                "flex flex-col max-w-[94%]",
                                 msg.role === "user" ? "ml-auto items-end" : "mr-auto items-start"
                             )}
                         >
                             <div className={cn(
-                                "flex items-center gap-1.5 mb-1",
+                                "flex items-center gap-2 mb-1",
                                 msg.role === "user" ? "flex-row-reverse" : "flex-row"
                             )}>
                                 {msg.role === "assistant" ? (
-                                    <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                        <Bot className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                    <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+                                        <Bot className="h-3.5 w-3.5 text-blue-500" />
                                     </div>
                                 ) : (
-                                    <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                        <User className="h-3 w-3 text-slate-600 dark:text-slate-400" />
+                                    <div className="w-6 h-6 rounded-lg bg-foreground/5 border border-border/60 flex items-center justify-center">
+                                        <User className="h-3.5 w-3.5 text-foreground/70" />
                                     </div>
                                 )}
-                                <span className="text-[10px] font-semibold text-muted-foreground">
-                                    {msg.role === "assistant" ? "Architect" : "You"}
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground font-mono">
+                                    {msg.role === "assistant" ? "Architect" : "Operator"}
                                 </span>
+                                {msg.type === "refinement" && (
+                                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-amber-500">Refine</span>
+                                )}
+                                {msg.type === "system" && (
+                                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-blue-500">System</span>
+                                )}
                             </div>
 
                             <div className={cn(
-                                "p-3 rounded-2xl text-xs leading-relaxed shadow-sm",
+                                "p-3 rounded-xl text-[12px] leading-relaxed shadow-sm border",
                                 msg.role === "user"
-                                    ? "bg-blue-600 text-white rounded-tr-none"
+                                    ? "bg-blue-600/90 text-white border-blue-400/30 rounded-tr-sm"
                                     : cn(
-                                        "bg-muted/50 text-foreground border border-border/50 rounded-tl-none",
-                                        msg.type === "refinement" && "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400",
-                                        msg.type === "system" && "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400"
+                                        "bg-background/80 text-foreground border-border/60 rounded-tl-sm",
+                                        msg.type === "refinement" && "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400",
+                                        msg.type === "system" && "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400"
                                     )
                             )}>
                                 {msg.content}
-                                {msg.type === "refinement" && msg.detail && (
-                                    <div className="mt-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 px-2 text-[10px] text-amber-700 dark:text-amber-300"
-                                            onClick={() => setExpandedDetails(prev => ({
-                                                ...prev,
-                                                [msg.id]: !prev[msg.id]
-                                            }))}
-                                        >
-                                            {expandedDetails[msg.id] ? "Hide details" : "Show details"}
-                                        </Button>
-                                        {expandedDetails[msg.id] && (
-                                            <div className="mt-2 text-[10px] text-amber-700/80 dark:text-amber-300/80 whitespace-pre-line">
-                                                {msg.detail}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                {/* details removed: Show details toggle intentionally omitted */}
                                 {msg.type === "refinement" && isRefining && (
                                     <div className="mt-2 flex items-center gap-2">
                                         <Loader2 className="h-3 w-3 animate-spin" />
-                                        <span className="text-[10px] font-medium italic">Agents are working...</span>
+                                        <span className="text-[10px] font-medium italic text-muted-foreground">Agents are working...</span>
                                     </div>
                                 )}
                             </div>
-                            <span className="text-[9px] text-muted-foreground/50 mt-1 px-1">
+                            <span className="text-[9px] text-muted-foreground/60 mt-1 px-1 font-mono">
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
@@ -617,90 +636,94 @@ export function ProjectChatPanel({
                     {isLoading && !isRefining && (
                         <div className="flex items-center gap-2 text-muted-foreground animate-pulse ml-2">
                             <Bot className="h-4 w-4" />
-                            <span className="text-[10px] font-medium">Architect is thinking...</span>
+                            <span className="text-[10px] font-medium font-mono">Architect is thinking...</span>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 border-t border-border bg-muted/20">
-                <form onSubmit={handleSendMessage} className="relative">
-                    <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Ask a question..."
-                        className="pr-26 h-11 bg-background border-border/50 focus-visible:ring-blue-500/30 text-[11px] rounded-xl shadow-inner"
-                        disabled={isLoading || isRefining}
-                    />
-                    <div className="absolute right-2 top-1.5 flex items-center gap-1.5 z-10">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground hover:text-blue-500 shrink-0"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isLoading || isRefining || isUploading}
-                        >
-                            {isUploading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Paperclip className="h-4 w-4" />
-                            )}
-                        </Button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".txt,.md,.json,.csv,.pdf"
-                            onChange={handleFileChange}
-                            aria-label="Upload context documents"
-                            title="Upload context documents"
-                        />
-                        <VoiceInputButton
-                            onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
-                            disabled={isLoading || isRefining || isUploading}
-                            className="h-9 w-9 shrink-0"
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            disabled={!input.trim() || isLoading || isRefining || isUploading}
-                            className="h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md shrink-0"
-                        >
-                            {isLoading || isRefining ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Send className="h-4 w-4" />
-                            )}
-                        </Button>
-                    </div>
-                </form>
-                <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-help">
-                            <Sparkles className="h-3 w-3 text-blue-500" />
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">AI Refine</span>
+            {/* Input Area (hidden after successful generation/refinement) */}
+            {!isInputHidden && (
+                <div className="p-4 border-t border-border/60 bg-background/80 backdrop-blur">
+                    <form onSubmit={handleSendMessage} className="flex items-end gap-2">
+                        <div className="flex-1">
+                            <Input
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Ask a question..."
+                                className="h-11 bg-background border-border/60 focus-visible:ring-blue-500/30 text-[12px] rounded-xl shadow-inner"
+                                disabled={isLoading || isRefining}
+                            />
                         </div>
-                        <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-help">
-                            <MessageSquare className="h-3 w-3 text-emerald-500" />
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">RAG Context</span>
-                        </div>
-                        {messages.some(m => m.type === "system") && (
-                            <button
+                        <div className="flex items-center gap-1.5">
+                            <Button
                                 type="button"
-                                className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-60 hover:opacity-100"
-                                onClick={() => setShowSystemMessages(prev => !prev)}
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 text-muted-foreground hover:text-blue-500 shrink-0"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isLoading || isRefining || isUploading}
                             >
-                                {showSystemMessages ? "Hide system" : "Show system"}
-                            </button>
-                        )}
-                    </div>
-                    <div className="text-[9px] text-muted-foreground/60 font-medium">
-                        Target: <span className="text-blue-500 font-bold">{activeTab === 'all' ? 'Full Project' : activeTab}</span>
+                                {isUploading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Paperclip className="h-4 w-4" />
+                                )}
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".txt,.md,.json,.csv,.pdf"
+                                onChange={handleFileChange}
+                                aria-label="Upload context documents"
+                                title="Upload context documents"
+                            />
+                            <VoiceInputButton
+                                onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
+                                disabled={isLoading || isRefining || isUploading}
+                                className="h-10 w-10 shrink-0"
+                            />
+                            <Button
+                                type="submit"
+                                size="icon"
+                                disabled={!input.trim() || isLoading || isRefining || isUploading}
+                                className="h-10 w-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md shrink-0"
+                            >
+                                {isLoading || isRefining ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Send className="h-4 w-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                    <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                                <Sparkles className="h-3 w-3 text-blue-500" />
+                                AI Refine
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                                <MessageSquare className="h-3 w-3 text-emerald-500" />
+                                RAG Context
+                            </div>
+                            {hasSystemMessages && (
+                                <button
+                                    type="button"
+                                    className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70 hover:text-foreground"
+                                    onClick={() => setShowSystemMessages(prev => !prev)}
+                                >
+                                    {showSystemMessages ? "Hide system" : "Show system"}
+                                </button>
+                            )}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground/60 font-mono">
+                            Target: <span className="text-blue-500 font-semibold">{activeTab === 'all' ? 'Full Project' : activeTab}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

@@ -52,28 +52,52 @@ export default function DashboardPage() {
       // Calculate stats
       const now = new Date()
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const thisMonthDiagrams = result.diagrams.filter(
+      
+      // Calculate This Month count correctly
+      const thisMonthCount = result.diagrams.filter(
         (d) => new Date(d.createdAt) >= startOfMonth
-      )
+      ).length
 
-      // Calculate Average Generation Time
-      const completedDiagrams = result.diagrams.filter(d => d.status === "completed")
-      let avgTime = 0
-      if (completedDiagrams.length > 0) {
-        const totalTime = completedDiagrams.reduce((acc, d) => {
+      // Calculate Average Generation Time across all diagrams for more stability
+      const validGenerations = result.diagrams
+        .filter((d) => d.status === "completed")
+        .map((d) => {
           const start = new Date(d.createdAt).getTime()
-          const end = new Date(d.updatedAt).getTime()
-          // Ensure we don't have negative time or outliers (e.g. diagrams that took days)
-          const diff = Math.max(0, end - start)
-          return acc + diff
-        }, 0)
-        avgTime = totalTime / completedDiagrams.length / 1000 // Convert to seconds
+          // Prefer metadata.generated_at if it exists, otherwise use updatedAt
+          const metadata = d.metadata as any
+          const endStr = metadata?.generated_at || d.updatedAt
+          const end = new Date(endStr).getTime()
+          const diff = end - start
+          
+          // Filter out negative values and extreme outliers (> 30 minutes)
+          // Real generations usually take 45s to 3m.
+          const MAX_WAIT_MS = 30 * 60 * 1000
+          if (diff > 0 && diff < MAX_WAIT_MS) {
+            return diff
+          }
+          return null
+        })
+        .filter((diff): diff is number => diff !== null)
+
+      const avgTimeSeconds = validGenerations.length > 0
+        ? (validGenerations.reduce((acc, diff) => acc + diff, 0) / validGenerations.length) / 1000
+        : 0
+
+      // Format average generation time nicely (s or m)
+      let displayAvg = "0s"
+      if (avgTimeSeconds > 0) {
+        if (avgTimeSeconds < 60) {
+          displayAvg = `${avgTimeSeconds.toFixed(1)}s`
+        } else {
+          const mins = avgTimeSeconds / 60
+          displayAvg = `${mins.toFixed(1)}m`
+        }
       }
 
       setStats({
         total: result.total,
-        thisMonth: thisMonthDiagrams.length,
-        avgGeneration: avgTime > 0 ? `${avgTime.toFixed(1)}s` : "0s",
+        thisMonth: thisMonthCount,
+        avgGeneration: displayAvg,
       })
     } catch (error: any) {
       toast({
@@ -100,8 +124,12 @@ export default function DashboardPage() {
     return date.toLocaleDateString()
   }
 
-  const avgGenTimeValue = parseFloat(stats.avgGeneration)
-  const isFasterThanAverage = avgGenTimeValue > 0 && avgGenTimeValue < 10
+  const avgGenTimeValue = stats.avgGeneration.includes('m') 
+    ? parseFloat(stats.avgGeneration) * 60 
+    : parseFloat(stats.avgGeneration)
+  
+  // A reasonable "fast" baseline for complex architecting is < 60s
+  const isFasterThanAverage = avgGenTimeValue > 0 && avgGenTimeValue < 60
 
   const statsData = [
     { label: "Total Diagrams", value: stats.total.toString(), icon: FileText, change: `+${stats.thisMonth} this month`, trend: "up" as const },
@@ -290,7 +318,7 @@ export default function DashboardPage() {
             <Card className="border-border bg-card/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle>Quick Tips</CardTitle>
-                <CardDescription>Get the most out of ArchitectAI</CardDescription>
+                <CardDescription>Get the most out of Blueprinta</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-3 rounded-lg bg-blue-600/10 border border-blue-600/20">
@@ -308,7 +336,7 @@ export default function DashboardPage() {
                 <div className="p-3 rounded-lg bg-blue-600/10 border border-blue-600/20">
                   <p className="text-sm text-foreground font-medium mb-1">Iterate & Refine</p>
                   <p className="text-xs text-muted-foreground">
-                    Generate multiple versions and refine your architecture based on feedback.
+                    Generate multiple versions and refine your architecture with Blueprinta.
                   </p>
                 </div>
               </CardContent>

@@ -54,7 +54,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
 
     return (
         <div className="relative w-full max-w-sm mx-auto aspect-square py-12 select-none h-full flex items-center justify-center">
-            <div className="relative overflow-visible" style={{ width: W, height: H }}>
+            <div className="relative overflow-visible w-[320px] h-[340px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">
@@ -88,18 +88,11 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                     const summary = summaries[node.id]
 
                     return (
-                        <div
+                        <motion.div
                             key={node.id}
-                            className="absolute z-20"
-                            style={{
-                                left: node.x,
-                                top: node.y,
-                                width: 0,
-                                height: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
+                            className="absolute z-20 generation-flow-node"
+                            initial={{ x: node.x, y: node.y }}
+                            animate={{ x: node.x, y: node.y }}
                         >
                             <motion.div
                                 initial={{ opacity: 0, scale: 0 }}
@@ -109,7 +102,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                             >
                                 <div className={cn(
                                     "relative w-14 h-14 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
-                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" :
+                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/10 step-running-glow" :
                                         stepStatus === 'success' ? "bg-green-500/10 shadow-sm" :
                                             "bg-muted/30 border border-white/5"
                                 )}>
@@ -155,7 +148,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                     )}
                                 </div>
                             </motion.div>
-                        </div>
+                        </motion.div>
                     )
                 })}
             </div>

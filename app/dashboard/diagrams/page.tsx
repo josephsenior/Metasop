@@ -27,6 +27,16 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function MyDiagramsPage() {
   useAuth() // guest-only: auth context for future use
@@ -38,6 +48,7 @@ export default function MyDiagramsPage() {
   const [sortBy, setSortBy] = useState<"date" | "name">("date")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [diagramToDelete, setDiagramToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     loadDiagrams()
@@ -110,17 +121,16 @@ export default function MyDiagramsPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this diagram? This action cannot be undone.")) {
-      return
-    }
+  const handleDelete = async () => {
+    if (!diagramToDelete) return
 
     try {
-      await diagramsApi.delete(id)
+      await diagramsApi.delete(diagramToDelete)
       toast({
         title: "Diagram deleted",
         description: "The diagram has been permanently deleted.",
       })
+      setDiagramToDelete(null)
       loadDiagrams()
     } catch (err: any) {
       toast({
@@ -362,10 +372,10 @@ export default function MyDiagramsPage() {
                             Share
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="text-destructive"
+                            className="text-destructive font-medium"
                             onClick={(e) => {
                               e.preventDefault()
-                              handleDelete(diagram.id)
+                              setDiagramToDelete(diagram.id)
                             }}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -445,6 +455,24 @@ export default function MyDiagramsPage() {
           )}
         </main>
         <FloatingCreateButton />
+
+        <AlertDialog open={!!diagramToDelete} onOpenChange={(open) => !open && setDiagramToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your
+                architecture diagram and remove all associated data from local storage.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AuthGuard>
   )

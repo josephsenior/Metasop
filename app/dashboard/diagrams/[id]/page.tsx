@@ -58,6 +58,16 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Kbd } from "@/components/ui/kbd"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function DiagramViewPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -120,6 +130,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   }, [compactView, isFullscreen])
 
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     loadDiagram()
@@ -214,10 +225,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
   const handleDelete = async () => {
     if (!diagram) return
-
-    if (!confirm("Are you sure you want to delete this diagram? This action cannot be undone.")) {
-      return
-    }
 
     try {
       await diagramsApi.delete(resolvedParams.id)
@@ -499,7 +506,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
-                  <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                  <DropdownMenuItem className="text-destructive font-medium" onClick={() => setShowDeleteDialog(true)}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
@@ -507,6 +514,24 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
               </DropdownMenu>
             </div>
           </div>
+
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your
+                  architecture diagram and remove all associated data from local storage.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Main Content Area */}
           <div className="flex flex-col lg:flex-row gap-6 items-stretch">

@@ -73,7 +73,7 @@ export function createGenerationJob(userId: string, diagramId: string): Generati
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const filePath = path.join(dir, `${jobId}.json`);
     fs.writeFileSync(filePath, JSON.stringify({ id: jobId, userId, diagramId, status: job.status, createdAt: job.createdAt }));
-  } catch (e) {
+  } catch (_e) {
     // ignore persistence errors in dev
   }
   scheduleCleanup(jobId);
@@ -105,7 +105,7 @@ export function getGenerationJob(jobId: string): GenerationJob | undefined {
       scheduleCleanup(jobId);
       return reconstructed;
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore read errors
   }
 
@@ -218,7 +218,7 @@ export function startGenerationJob(params: StartJobParams): void {
       try {
         const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (e) {
+      } catch (_e) {
         // ignore
       }
     } catch (error: any) {
@@ -238,7 +238,7 @@ export function startGenerationJob(params: StartJobParams): void {
       try {
         const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (e) {
+      } catch (_e) {
         // ignore
       }
       job.error = message;

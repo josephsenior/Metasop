@@ -126,6 +126,9 @@ export function useDiagramGeneration() {
     // Initial load from storage
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            const savedPrompt = localStorage.getItem("metasop_prompt")
+            if (savedPrompt) setPrompt(savedPrompt)
+
             const savedModel = localStorage.getItem("metasop_selected_model")
             if (savedModel) setSelectedModel(savedModel)
 
@@ -134,10 +137,25 @@ export function useDiagramGeneration() {
 
             const savedGuided = localStorage.getItem("metasop_guided_mode")
             if (savedGuided !== null) setGuidedMode(savedGuided === "true")
+            
+            const savedDocs = localStorage.getItem("metasop_uploaded_documents")
+            if (savedDocs) {
+                try {
+                    setUploadedDocuments(JSON.parse(savedDocs))
+                } catch (e) {
+                    console.error("Failed to parse saved documents", e)
+                }
+            }
         }
     }, [])
 
     // Persist changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem("metasop_prompt", prompt)
+        }
+    }, [prompt])
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem("metasop_selected_model", selectedModel)
@@ -155,6 +173,12 @@ export function useDiagramGeneration() {
             localStorage.setItem("metasop_guided_mode", String(guidedMode))
         }
     }, [guidedMode])
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem("metasop_uploaded_documents", JSON.stringify(uploadedDocuments))
+        }
+    }, [uploadedDocuments])
 
     // Cleanup timeouts on unmount
     useEffect(() => {
@@ -349,6 +373,15 @@ export function useDiagramGeneration() {
                             metadata: diagram.metadata,
                         })
                     }
+                    
+                    // Clear the draft state on successful generation
+                    setPrompt("")
+                    setUploadedDocuments([])
+                    if (typeof window !== 'undefined') {
+                        localStorage.removeItem("metasop_prompt")
+                        localStorage.removeItem("metasop_uploaded_documents")
+                    }
+
                     setGenerationSteps(prev => prev.map(s => s.status === "running" ? { ...s, status: "success" as const } : s))
                 } else if (event.type === "orchestration_failed") {
                     throw new Error(event.error || "Orchestration failed")

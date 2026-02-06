@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Twitter, Github, Linkedin } from "lucide-react"
+import { Logo } from "@/components/ui/Logo"
 
 const footerLinks = {
   product: [
@@ -44,10 +45,8 @@ export function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8 md:gap-12">
             <div className="col-span-2">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary group-hover:opacity-90 transition-opacity">
-                  <span className="text-lg font-bold text-white">A</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground gradient-primary-text">ArchitectAI</span>
+                <Logo className="h-8 w-8 group-hover:opacity-90 transition-opacity" />
+                <span className="text-lg font-semibold text-foreground gradient-primary-text">Blueprinta</span>
               </Link>
               <p className="mt-4 text-sm text-muted-foreground max-w-xs leading-relaxed">
                 Generate professional architecture diagrams from simple descriptions using AI-powered multi-agent planning.
@@ -134,7 +133,7 @@ export function Footer() {
 
         <div className="border-t border-border/50 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ArchitectAI. All rights reserved.
+            © {new Date().getFullYear()} Blueprinta. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
             Built with <span className="text-red-500">❤️</span> for teams everywhere

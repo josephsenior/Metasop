@@ -73,7 +73,7 @@ export function getGuestSession(sessionId?: string, ipAddress?: string, overridd
 /**
  * Check if guest can create a diagram (open-source: no limit)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature kept for API consistency
+ 
 export function canGuestCreateDiagram(_: GuestSession): {
   allowed: boolean;
   reason?: string;

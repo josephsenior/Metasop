@@ -16,7 +16,7 @@ import {
   Share2,
   BookOpen,
   ScrollText,
-  ListTodo,
+  // ListTodo removed (unused)
 } from "lucide-react"
 
 import { ArchitectBackendArtifact } from "@/lib/metasop/artifacts/architect/types"

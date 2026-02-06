@@ -226,23 +226,25 @@ export default function CreateDiagramPage() {
 
                 {/* Bottom Prompt Area */}
                 <div className="shrink-0">
-                  <PromptInput
-                    prompt={prompt}
-                    onPromptChange={setPrompt}
-                    onGenerate={handleGenerate}
-                    isGenerating={isGenerating}
-                    isScoping={isScoping}
-                    guidedMode={guidedMode}
-                    onToggleGuided={setGuidedMode}
-                    selectedModel={selectedModel}
-                    onSelectModel={setSelectedModel}
-                    isReasoningEnabled={isReasoningEnabled}
-                    onToggleReasoning={setIsReasoningEnabled}
-                    uploadedDocuments={uploadedDocuments}
-                    onRemoveDocument={removeDocument}
-                    onFileUpload={handleFileUpload}
-                    isUploading={isUploading}
-                  />
+                  {!isGenerating && !currentDiagram && !showClarificationPanel && (
+                    <PromptInput
+                      prompt={prompt}
+                      onPromptChange={setPrompt}
+                      onGenerate={handleGenerate}
+                      isGenerating={isGenerating}
+                      isScoping={isScoping}
+                      guidedMode={guidedMode}
+                      onToggleGuided={setGuidedMode}
+                      selectedModel={selectedModel}
+                      onSelectModel={setSelectedModel}
+                      isReasoningEnabled={isReasoningEnabled}
+                      onToggleReasoning={setIsReasoningEnabled}
+                      uploadedDocuments={uploadedDocuments}
+                      onRemoveDocument={removeDocument}
+                      onFileUpload={handleFileUpload}
+                      isUploading={isUploading}
+                    />
+                  )}
                 </div>
 
                 {/* Clarification Overlay */}

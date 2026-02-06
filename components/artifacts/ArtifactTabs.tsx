@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { } from "react"
 import {
     FileText,
     Shield,
@@ -85,7 +85,6 @@ interface SidebarTabsProps {
 }
 
 export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
-    const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({})
 
     return (
         <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
@@ -100,7 +99,6 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
                     const artifact = artifacts?.[tab.id as keyof typeof artifacts]
                     const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
                     const meta = getArtifactMeta(tab.id, artifact)
-                    const isExpanded = expandedDetails[tab.id]
                     const tags = meta?.tags ?? []
                     return (
                         <TabsTrigger
@@ -119,42 +117,11 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
                                 )}
                                 {tags.length > 0 && (
                                     <div className="mt-1 flex flex-wrap gap-1">
-                                        {tags.slice(0, isExpanded ? tags.length : 2).map(tag => (
+                                        {tags.slice(0, 2).map(tag => (
                                             <Badge key={tag} variant="secondary" className="text-[8px] px-1.5 py-0 bg-muted/60">
                                                 {tag}
                                             </Badge>
                                         ))}
-                                    </div>
-                                )}
-                                {meta?.details && (
-                                    <span
-                                        role="button"
-                                        tabIndex={0}
-                                        className="mt-1 text-[9px] text-muted-foreground/70 hover:text-foreground cursor-pointer inline-block"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setExpandedDetails(prev => ({
-                                                ...prev,
-                                                [tab.id]: !prev[tab.id]
-                                            }))
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                                setExpandedDetails(prev => ({
-                                                    ...prev,
-                                                    [tab.id]: !prev[tab.id]
-                                                }))
-                                            }
-                                        }}
-                                    >
-                                        {isExpanded ? "Hide details" : "Show details"}
-                                    </span>
-                                )}
-                                {meta?.details && isExpanded && (
-                                    <div className="mt-1 text-[9px] text-muted-foreground/70 line-clamp-3">
-                                        {meta.details}
                                     </div>
                                 )}
                             </div>

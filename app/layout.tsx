@@ -7,9 +7,9 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "ArchitectAI - Generate React Architecture Diagrams with AI",
+  title: "Blueprinta - Generate React Architecture Diagrams with AI",
   description:
-    "Transform your app ideas into professional React architecture diagrams in seconds. AI-powered multi-agent planning for React developers.",
+    "Transform your app ideas into professional React architecture blueprints in seconds. AI-powered multi-agent planning for developers.",
   generator: 'v0.app'
 }
 

@@ -8,8 +8,22 @@ import {
     PanelRight,
     Save,
     Plus,
+    Trash,
 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
+import { diagramsApi } from "@/lib/api/diagrams"
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogAction,
+    AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { HeaderActionsMenu } from "./HeaderActionsMenu"
@@ -39,6 +53,27 @@ export function CreateHeader({
     onExportContext
 }: CreateHeaderProps) {
     const router = useRouter()
+    const { toast } = useToast()
+
+    const handleDelete = async () => {
+        if (!currentDiagram) return
+        const id = currentDiagram.id
+        if (!id) {
+            toast({ title: "Delete Failed", description: "Diagram id is missing.", variant: 'destructive' })
+            return
+        }
+
+        try {
+            await diagramsApi.delete(id)
+            toast({ title: "Diagram Deleted", description: "Redirecting to create new diagram." })
+            router.push('/dashboard/create')
+            // ensure state is fresh
+            window.location.reload()
+        } catch (err) {
+            console.error(err)
+            toast({ title: "Delete Failed", description: "Unable to delete diagram.", variant: 'destructive' })
+        }
+    }
 
     return (
         <div className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-3 sm:px-4 shrink-0 z-50">
@@ -146,6 +181,41 @@ export function CreateHeader({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     Create New Diagram
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+                            {/* Delete Diagram Button (with confirmation dialog) */}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg text-foreground hover:bg-muted transition-all"
+                                            >
+                                                <Trash className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Diagram</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. Are you sure you want to delete this diagram?
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Delete Diagram
                                 </TooltipContent>
                             </Tooltip>
 

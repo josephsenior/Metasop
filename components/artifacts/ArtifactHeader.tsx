@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -80,11 +81,13 @@ export default function ArtifactHeader({
                   </span>
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-12 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={cn("h-full rounded-full transition-all duration-500", 
+                      <motion.div 
+                        className={cn("h-full rounded-full", 
                           confidence > 0.8 ? "bg-emerald-500" : confidence > 0.5 ? "bg-amber-500" : "bg-red-500"
                         )} 
-                        style={{ width: `${confidence * 100}%` }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${confidence * 100}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
                       />
                     </div>
                     <span className="text-xs font-mono font-bold text-foreground">{Math.round(confidence * 100)}%</span>
