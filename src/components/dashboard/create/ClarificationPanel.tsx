@@ -96,26 +96,26 @@ export function ClarificationPanel({
     }
 
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="fixed left-0 right-0 bottom-8 z-50 flex items-end justify-center p-2 pointer-events-none">
             <motion.div
                 initial={{ opacity: 0, translateY: 8 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                className="w-full max-w-sm pointer-events-auto"
+                className="w-full max-w-xs pointer-events-auto"
             >
-                <div className="border border-border/30 bg-background/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg">
-                    <div className="px-3 pt-3 pb-2">
+                <div className="border border-border/20 bg-background/95 backdrop-blur-sm rounded-lg overflow-hidden shadow-md">
+                    <div className="px-2 pt-2 pb-1">
                         <div className="flex items-center justify-between gap-2">
                             <h2 className="text-sm font-medium text-foreground">Refine</h2>
                             <div className="text-xs text-muted-foreground">{currentStep + 1}/{questions.length}</div>
                         </div>
 
-                        <div className="mt-2 h-1 bg-muted/20 rounded-full overflow-hidden">
-                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.2 }} />
+                        <div className="mt-2 h-1 bg-muted/15 rounded-full overflow-hidden">
+                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.15 }} />
                         </div>
                     </div>
 
-                    <div className="px-3 pb-3">
-                        <div className="min-h-[90px] relative">
+                    <div className="px-2 pb-2">
+                        <div className="min-h-[72px] relative">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
                                 <motion.div
                                     key={currentStep}

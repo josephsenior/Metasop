@@ -198,19 +198,25 @@ export default function CreateDiagramPage() {
                           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                             Imagine your <span className="text-blue-600">application</span>
                           </h1>
-                          <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto leading-relaxed">
-                            Describe your software vision in the prompt below. Seven specialized AI agents
-                            will collaborate in real-time to architect every layer of your project.
-                          </p>
-                        </div>
+                          { !showClarificationPanel && (
+                            <>
+                              <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto leading-relaxed">
+                                Describe your software vision in the prompt below. Seven specialized AI agents
+                                will collaborate in real-time to architect every layer of your project.
+                              </p>
+                            </>
+                          ) }
 
-{/* Generation flow centered under the intro - moved up significantly */}
-                        <div className="flex items-center justify-center -mt-12">
-                            <GenerationFlow
-                              steps={generationSteps}
-                              summaries={stepSummaries}
-                            />
                           </div>
+
+                          { !showClarificationPanel && (
+                            <div className="flex items-center justify-center -mt-12">
+                              <GenerationFlow
+                                steps={generationSteps}
+                                summaries={stepSummaries}
+                              />
+                            </div>
+                          ) }
 
                       </motion.div>
                     ) : (
