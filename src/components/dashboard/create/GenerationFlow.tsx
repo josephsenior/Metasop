@@ -20,10 +20,10 @@ interface GenerationFlowProps {
     summaries: Record<string, string>
 }
 
-const W = 380
-const H = 400
-const GRID_X = [70, 190, 310]
-const GRID_Y = [60, 190, 320]
+const W = 320
+const H = 340
+const GRID_X = [50, 160, 270]
+const GRID_Y = [50, 160, 270]
 
 const AGENTS_CONFIG = [
     { id: "pm_spec", name: "Product Management", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
@@ -40,7 +40,7 @@ const AGENTS_CONFIG = [
 }))
 
 export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
-    const bend = 60
+    const bend = 50
     const p = AGENTS_CONFIG
     const path = `
         M ${p[0].x} ${p[0].y}
@@ -54,7 +54,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
 
     return (
         <div className="relative w-full max-w-sm mx-auto select-none flex items-center justify-center">
-            <div className="relative overflow-visible w-[380px] h-[400px]">
+            <div className="relative overflow-visible w-[320px] h-[340px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">
@@ -101,13 +101,13 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 className="relative flex flex-col items-center"
                             >
                                 <div className={cn(
-                                    "relative w-14 h-14 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
+                                    "relative w-11 h-11 rounded-xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
                                     stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/14 step-running-glow" :
                                         stepStatus === 'success' ? "bg-green-500/14 shadow-sm" :
                                             "bg-muted/50 border border-white/7"
                                 )}>
                                     <Icon className={cn(
-                                        "h-6 w-6 transition-colors duration-500",
+                                        "h-5 w-5 transition-colors duration-500",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/70"
@@ -117,20 +117,20 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                     <div className="absolute -top-1 -right-1">
                                         {stepStatus === 'running' ? (
                                             <div className="bg-blue-600 rounded-full p-1 shadow-lg">
-                                                <Loader2 className="h-2.5 w-2.5 text-white animate-spin" />
+                                                <Loader2 className="h-2 w-2 text-white animate-spin" />
                                             </div>
                                         ) : stepStatus === 'success' ? (
                                             <div className="bg-green-500 rounded-full p-1 shadow-lg">
-                                                <CheckCircle className="h-2.5 w-2.5 text-white" />
+                                                <CheckCircle className="h-2 w-2 text-white" />
                                             </div>
                                         ) : null}
                                     </div>
                                 </div>
 
                                 {/* Label & Summary */}
-                                <div className="absolute -bottom-12 w-40 text-center pointer-events-none">
+                                <div className="absolute -bottom-10 w-32 text-center pointer-events-none">
                                     <span className={cn(
-                                        "text-[10px] font-semibold tracking-tight block",
+                                        "text-[9px] font-semibold tracking-tight block",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/70"
@@ -141,7 +141,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                         <motion.span
                                             initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="text-[9px] font-medium text-muted-foreground/60 leading-tight block mt-0.5 line-clamp-2 italic"
+                                            className="text-[8px] font-medium text-muted-foreground/60 leading-tight block mt-0.5 line-clamp-2 italic"
                                         >
                                             {summary}
                                         </motion.span>

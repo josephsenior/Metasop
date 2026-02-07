@@ -210,7 +210,7 @@ export default function CreateDiagramPage() {
                           </div>
 
                           { !showClarificationPanel && (
-                            <div className="flex items-center justify-center -mt-12">
+                            <div className="flex items-center justify-center mt-6">
                               <GenerationFlow
                                 steps={generationSteps}
                                 summaries={stepSummaries}
