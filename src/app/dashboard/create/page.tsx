@@ -191,10 +191,10 @@ export default function CreateDiagramPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="h-full flex flex-col items-center justify-start pt-24 px-6"
+                        className="h-full flex flex-col items-center justify-center px-6"
                       >
                         {/* Intro positioned lower */}
-                        <div className="text-center mb-8 px-6">
+                          <div className="text-center mb-6 px-6">
                           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                             Imagine your <span className="text-blue-600">application</span>
                           </h1>
@@ -204,19 +204,19 @@ export default function CreateDiagramPage() {
                           </p>
                         </div>
 
-                        {/* Generation flow pulled up slightly and slightly reduced */}
-                        <div className="-mt-17 scale-[1]">
-                          <GenerationFlow
-                            steps={generationSteps}
-                            summaries={stepSummaries}
-                          />
-                        </div>
+                          {/* Generation flow centered under the intro */}
+                          <div className="flex items-center justify-center mt-4">
+                            <GenerationFlow
+                              steps={generationSteps}
+                              summaries={stepSummaries}
+                            />
+                          </div>
 
                       </motion.div>
                     ) : (
                       <motion.div
                         key="content"
-                        initial={{ opacity: 0, scale: 0.98 }}
+                        initial={{ opacity: 0.4, scale: 1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="h-full"
                       >
