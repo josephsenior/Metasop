@@ -24,15 +24,15 @@ function ColorTokenCard({ name, value }: { name: string, value: string }) {
 
     return (
         <motion.div variants={item} className="group flex flex-col items-center">
-            <div
+            <motion.div
                 className="h-16 w-16 rounded-2xl border border-border shadow-soft group-hover:scale-110 transition-transform cursor-pointer relative flex items-center justify-center overflow-hidden"
-                style={{ backgroundColor: value }}
+                initial={{ backgroundColor: value }}
                 onClick={handleCopy}
             >
                 <div className="absolute inset-0 bg-black/10 dark:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     {copied ? <Check className="h-4 w-4 text-white drop-shadow-md" /> : <Copy className="h-4 w-4 text-white drop-shadow-md" />}
                 </div>
-            </div>
+            </motion.div>
             <span className="text-[10px] font-bold mt-2 uppercase tracking-tighter text-foreground/80 truncate max-w-full px-1">{name}</span>
             <span className="text-[9px] text-muted-foreground font-mono">{value}</span>
         </motion.div>
@@ -150,7 +150,7 @@ export function TokensSection({ designTokens }: TokensSectionProps) {
                                         <div className="flex flex-wrap gap-2">
                                             {Object.entries(designTokens.borderRadius).map(([k, v]: [string, any]) => (
                                                 <div key={k} className="flex flex-col items-center gap-1">
-                                                    <div className="w-8 h-8 border border-foreground/20 bg-muted/20" style={{ borderRadius: v }} />
+                                                    <motion.div className="w-8 h-8 border border-foreground/20 bg-muted/20" initial={{ borderRadius: v }} />
                                                     <span className="text-[8px] font-mono text-muted-foreground">{k}</span>
                                                 </div>
                                             ))}
@@ -163,9 +163,9 @@ export function TokensSection({ designTokens }: TokensSectionProps) {
                                         <div className="flex flex-wrap gap-4">
                                             {Object.entries(designTokens.shadows).map(([k, v]: [string, any]) => (
                                                 <div key={k} className="flex flex-col items-center gap-2 group">
-                                                    <div
+                                                    <motion.div
                                                         className="w-10 h-10 border border-border bg-card rounded-lg transition-transform group-hover:scale-110"
-                                                        style={{ boxShadow: v as string }}
+                                                        initial={{ boxShadow: v as string }}
                                                     />
                                                     <span className="text-[8px] font-mono text-muted-foreground">{k}</span>
                                                 </div>

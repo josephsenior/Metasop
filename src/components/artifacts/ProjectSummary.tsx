@@ -68,7 +68,15 @@ const item = {
   show: { opacity: 1, y: 0 }
 }
 
-export default function ProjectSummary({ artifacts, onTabChange }: { artifacts: any; onTabChange?: (tab: string) => void }) {
+export default function ProjectSummary({ 
+  artifacts, 
+  onTabChange,
+  modifiedArtifacts = [] 
+}: { 
+  artifacts: any; 
+  onTabChange?: (tab: string) => void;
+  modifiedArtifacts?: string[];
+}) {
   // Debug: Log what we receive
   console.log("[ProjectSummary] Received artifacts:", {
     artifacts,
@@ -153,9 +161,20 @@ export default function ProjectSummary({ artifacts, onTabChange }: { artifacts: 
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{agentLabels[key]}</span>
                     </div>
-                    <Badge variant="outline" className="text-[9px] h-5 bg-background font-mono px-1.5">
-                      ACTIVE
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {modifiedArtifacts.includes(key) && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400">MODIFIED</span>
+                        </div>
+                      )}
+                      <Badge variant="outline" className="text-[9px] h-5 bg-background font-mono px-1.5">
+                        ACTIVE
+                      </Badge>
+                    </div>
                   </div>
                   <h3 className={cn("font-bold truncate pr-2 group-hover:text-primary transition-colors", styles.typography.h3)}>
                     {title}

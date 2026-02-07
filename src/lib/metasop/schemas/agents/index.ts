@@ -1,4 +1,4 @@
-export * from "./pm";
+export * from "./product-manager";
 export * from "./architect";
 export * from "./engineer";
 export * from "./qa";

@@ -69,7 +69,7 @@ export function ProjectChatPanel({
     const [transientDocuments, setTransientDocuments] = useState<any[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
     const [showSystemMessages, setShowSystemMessages] = useState(false)
-    const [isInputHidden, setIsInputHidden] = useState(false)
+    const [isInputHidden, _setIsInputHidden] = useState(false)
     const hasSystemMessages = messages.some((msg) => msg.type === "system")
     const statusLabel = isLoading || isRefining ? "Working" : "Ready"
     
@@ -385,7 +385,6 @@ export function ProjectChatPanel({
             let buffer = ""
             let finalArtifacts: any = null
             let changelog: any[] = []
-            let appliedCount = 0
 
             while (true) {
                 const { done, value } = await reader.read()
@@ -439,7 +438,6 @@ export function ProjectChatPanel({
                                 finalArtifacts = event.payload.updated_artifacts
                                 changelog = event.payload.changelog || []
                                 const applied = event.payload.applied ?? 0
-                                appliedCount = applied
 
                                 const changelogSummary = applied > 0
                                     ? changelog.slice(0, 3)
@@ -498,7 +496,7 @@ export function ProjectChatPanel({
                 }
             }
 
-            // Update artifacts in parent if we got results
+            // If the refinement applied edits, update the parent state
             if (finalArtifacts) {
                 onRefineComplete?.({ artifacts: finalArtifacts })
                 if (changelog.length > 0) {
@@ -507,11 +505,6 @@ export function ProjectChatPanel({
                         description: `${changelog.length} change(s) made.`,
                     })
                 }
-            }
-
-            // If the refinement applied edits, hide the chat input (permanent until reload)
-            if (finalArtifacts && appliedCount > 0) {
-                setIsInputHidden(true)
             }
 
         } catch (error: any) {

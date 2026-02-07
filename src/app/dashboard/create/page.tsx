@@ -17,7 +17,9 @@ import { useDiagramGeneration } from "@/hooks/use-diagram-generation"
 import { diagramsApi } from "@/lib/api/diagrams"
 import { generateAgentContextMarkdown } from "@/lib/metasop/utils/export-context"
 import { downloadFile } from "@/lib/utils"
-import { useSearchParams } from "next/navigation"
+// useSearchParams requires special Suspense handling in some Next.js setups.
+// Read search params directly from `window.location` on the client to avoid
+// introducing a Suspense boundary in this client page.
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 
@@ -32,7 +34,6 @@ import { GenerationProgress } from "@/components/diagrams/generation-progress"
 export default function CreateDiagramPage() {
   const { isAuthenticated } = useAuth()
   const { toast } = useToast()
-  const searchParams = useSearchParams()
 
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -60,13 +61,22 @@ export default function CreateDiagramPage() {
     isUploading
   } = useDiagramGeneration()
 
-  // Load diagram if ID is in URL
+  // Load diagram if ID is in URL (read from window.location on mount)
   useEffect(() => {
-    const id = searchParams.get("id")
+    if (typeof window === 'undefined') return
+    const id = new URLSearchParams(window.location.search).get("id")
     if (id && (!currentDiagram || currentDiagram.id !== id)) {
       loadDiagram(id)
     }
-  }, [searchParams])
+
+    // Optional: listen for URL changes (back/forward) and reload if needed
+    const onPop = () => {
+      const newId = new URLSearchParams(window.location.search).get("id")
+      if (newId && newId !== currentDiagram?.id) loadDiagram(newId)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   const loadDiagram = async (id: string) => {
     try {

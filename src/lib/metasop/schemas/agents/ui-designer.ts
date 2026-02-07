@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-const A2UINodeSchema: z.ZodType<any> = z.lazy(() =>
-    z.object({
-        type: z.enum(["View", "Container", "ScrollView", "Stack", "Grid", "Card", "Button", "TextInput", "Text", "Image", "Icon", "Divider", "List"]),
-        props: z.record(z.string(), z.any()).optional(),
-        children: z.array(z.lazy(() => A2UINodeSchema)).optional(),
-    })
-);
-
 const WebsiteLayoutSchema = z.object({
     pages: z.array(z.object({
         name: z.string(),
@@ -33,25 +25,19 @@ const ComponentHierarchySchema = z.object({
 });
 
 const DesignTokensSchema = z.object({
-    colors: z.object({
-        primary: z.string(),
-        secondary: z.string(),
-        background: z.string(),
-        text: z.string(), // Required (aligned with JSON schema)
-        accent: z.string().optional(),
-        error: z.string().optional(),
-        success: z.string().optional(),
-        warning: z.string().optional(),
-    }),
-    spacing: z.record(z.string(), z.string()),
+    colors: z.record(z.string(), z.string()).optional(),
+    spacing: z.record(z.string(), z.string()).optional(),
     typography: z.object({
-        fontFamily: z.string(),
-        fontSize: z.record(z.string(), z.string()),
+        fontFamily: z.string().optional(),
+        headingFont: z.string().optional(),
+        monoFont: z.string().optional(),
+        fontSize: z.record(z.string(), z.string()).optional(),
         fontWeight: z.record(z.string(), z.string()).optional(),
         lineHeight: z.record(z.string(), z.string()).optional(),
-    }),
+    }).optional(),
     borderRadius: z.record(z.string(), z.string()).optional(),
     shadows: z.record(z.string(), z.string()).optional(),
+    animations: z.record(z.string(), z.string()).optional(),
 });
 
 const ComponentSpecSchema = z.object({
@@ -74,9 +60,6 @@ const ComponentSpecSchema = z.object({
 
 export const UIDesignerArtifactSchema = z.object({
     schema_version: z.string().optional(),
-    a2ui_manifest: z.object({
-        root: A2UINodeSchema,
-    }).optional(),
     component_hierarchy: ComponentHierarchySchema,
     design_tokens: DesignTokensSchema,
     ui_patterns: z.array(z.string()),
@@ -98,7 +81,7 @@ export const UIDesignerArtifactSchema = z.object({
     website_layout: WebsiteLayoutSchema,
     summary: z.string(),
     description: z.string(),
-});
+}).transform(({ schema_version: _schemaVersion, ...rest }) => rest);
 
 export function validateUIDesignerArtifact(data: unknown) {
     return UIDesignerArtifactSchema.parse(data);

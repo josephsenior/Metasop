@@ -10,7 +10,6 @@ export default defineConfig({
     include: [
       "tests/**/*.{test,spec}.ts",
       "tests/**/*.{test,spec}.tsx",
-      "lib/**/__tests__/**/*.{ts,tsx}",
     ],
     // Increase default test timeout to reduce flaky timeouts on CI/slow machines
     testTimeout: 30000,

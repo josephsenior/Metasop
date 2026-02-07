@@ -38,6 +38,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useFullscreen } from "@/hooks/use-fullscreen"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
+import { appendGuestSession } from "@/lib/utils/url"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
   const [activeArtifactTab, setActiveArtifactTab] = useState("summary")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true)
+  const [modifiedArtifacts, setModifiedArtifacts] = useState<string[]>([])
   const diagramViewerRef = useRef<HTMLDivElement>(null)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
@@ -168,6 +170,20 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
   const handleRefineComplete = (result?: any) => {
     if (result && result.artifacts && diagram) {
+      // Track modified artifacts for UI highlighting
+      const newKeys = Object.keys(result.artifacts)
+      const oldArtifacts = (diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts) ?? {}
+      
+      const modified = newKeys.filter(key => {
+        // Simple heuristic: if the length of JSON string changed, it's modified
+        // This is efficient and works well for small delta updates
+        return JSON.stringify(result.artifacts[key]) !== JSON.stringify(oldArtifacts[key])
+      })
+      
+      if (modified.length > 0) {
+        setModifiedArtifacts(prev => [...new Set([...prev, ...modified])])
+      }
+
       // Optimistic update: update the local state with new artifacts
       setDiagram({
         ...diagram,
@@ -481,25 +497,22 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem onClick={() => {
-                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
-                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : '';
-                        window.open(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation${query}`, "_blank")
+                        const url = appendGuestSession(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation`)
+                        window.open(url, "_blank")
                       }}>
                         <FileText className="mr-2 h-4 w-4" />
                         Markdown
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
-                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
-                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : '';
-                        window.open(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation${query}`, "_blank")
+                        const url = appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation`)
+                        window.open(url, "_blank")
                       }}>
                         <FileText className="mr-2 h-4 w-4" />
                         PDF
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
-                        const guestSessionId = document.cookie.split('; ').find(row => row.startsWith('guest_session_id='))?.split('=')[1];
-                        const query = guestSessionId ? `&guestSessionId=${guestSessionId}` : ''; // append to existing query params
-                        window.open(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation${query}`, "_blank")
+                        const url = appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`)
+                        window.open(url, "_blank")
                       }}>
                         <Presentation className="mr-2 h-4 w-4" />
                         PowerPoint (.pptx)
@@ -567,6 +580,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                               activeTab={activeArtifactTab}
                               onTabChange={setActiveArtifactTab}
                               sidebarMode={isLeftPanelOpen}
+                              modifiedArtifacts={modifiedArtifacts}
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center h-full p-12 text-center text-muted-foreground">

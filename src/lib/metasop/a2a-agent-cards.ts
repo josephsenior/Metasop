@@ -83,7 +83,7 @@ export const uiDesignerAgentCard: A2AAgentCard = {
     name: "UIDesigner",
     version: "1.0",
     description: "Designs the user interface, component hierarchy, and design tokens.",
-    capabilities: ["ui_design", "component_hierarchy", "design_tokens", "a2ui_manifest"],
+    capabilities: ["ui_design", "component_hierarchy", "design_tokens"],
     inputArtifacts: ["user_request", "pm_spec", "arch_design", "engineer_impl"],
     outputArtifacts: ["ui_design"],
 };

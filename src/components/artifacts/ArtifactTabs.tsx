@@ -91,9 +91,10 @@ function getArtifactMeta(tabId: string, artifact: any) {
 interface SidebarTabsProps {
     activeTab: string
     artifacts: any
+    modifiedArtifacts?: string[]
 }
 
-export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
+export function SidebarTabs({ activeTab, artifacts, modifiedArtifacts = [] }: SidebarTabsProps) {
 
     return (
         <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
@@ -107,6 +108,7 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
                     const TabIcon = tab.icon
                     const artifact = artifacts?.[tab.id as keyof typeof artifacts]
                     const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
+                    const isModified = modifiedArtifacts.includes(tab.id)
                     const meta = getArtifactMeta(tab.id, artifact)
                     const tags = meta?.tags ?? []
                     return (
@@ -114,11 +116,16 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
                             key={tab.id}
                             value={tab.id}
                             disabled={!hasData}
-                            className="flex items-start gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50"
+                            className="flex items-start gap-3 py-2.5 px-3 data-[state=active]:bg-blue-600/10 data-[state=active]:text-blue-600 data-disabled:opacity-40 rounded-lg text-xs justify-start transition-all hover:bg-muted/50 relative group"
                         >
                             <TabIcon className={cn("h-4 w-4", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
                             <div className="min-w-0 flex-1">
-                                <div className="font-medium truncate">{tab.label}</div>
+                                <div className="font-medium truncate flex items-center gap-1.5">
+                                    {tab.label}
+                                    {isModified && (
+                                        <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)] animate-pulse" />
+                                    )}
+                                </div>
                                 {meta?.summary && (
                                     <div className="text-[9px] text-muted-foreground/80 truncate">
                                         {meta.summary}
@@ -145,9 +152,10 @@ export function SidebarTabs({ activeTab, artifacts }: SidebarTabsProps) {
 interface TopTabsProps {
     activeTab: string
     artifacts: any
+    modifiedArtifacts?: string[]
 }
 
-export function TopTabs({ activeTab, artifacts }: TopTabsProps) {
+export function TopTabs({ activeTab, artifacts, modifiedArtifacts = [] }: TopTabsProps) {
     return (
         <TabsList className="flex items-center w-full h-auto gap-1 bg-muted/20 p-1 rounded-lg overflow-x-auto no-scrollbar scroll-smooth">
             {agentTabs.map((tab) => {
@@ -155,6 +163,7 @@ export function TopTabs({ activeTab, artifacts }: TopTabsProps) {
                 const artifact = artifacts?.[tab.id as keyof typeof artifacts]
                 const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
                 const meta = getArtifactMeta(tab.id, artifact)
+                const isModified = modifiedArtifacts.includes(tab.id)
                 return (
                     <TooltipProvider key={tab.id}>
                         <Tooltip>
@@ -162,16 +171,24 @@ export function TopTabs({ activeTab, artifacts }: TopTabsProps) {
                                 <TabsTrigger
                                     value={tab.id}
                                     disabled={!hasData}
-                                    className="flex items-center gap-1.5 py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-disabled:opacity-40 rounded-md text-[10px] min-w-max transition-all"
+                                    className="flex items-center gap-1.5 py-1.5 px-3 data-[state=active]:bg-background data-[state=active]:text-blue-600 data-[state=active]:shadow-sm data-disabled:opacity-40 rounded-md text-[10px] min-w-max transition-all relative"
                                 >
                                     <TabIcon className={cn("h-3.5 w-3.5", hasData && activeTab === tab.id ? tab.color : "text-muted-foreground")} />
-                                    <span className="font-semibold whitespace-nowrap">{tab.label}</span>
+                                    <span className="font-semibold whitespace-nowrap flex items-center gap-1">
+                                        {tab.label}
+                                        {isModified && (
+                                            <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                                        )}
+                                    </span>
                                 </TabsTrigger>
                             </TooltipTrigger>
                             {meta?.summary && (
                                 <TooltipContent side="bottom" className="max-w-[220px]">
                                     <div className="text-xs space-y-1">
-                                        <div className="font-semibold text-foreground">{tab.label}</div>
+                                        <div className="font-semibold text-foreground flex items-center justify-between">
+                                            {tab.label}
+                                            {isModified && <Badge className="text-[8px] h-3 px-1 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Recently Modified</Badge>}
+                                        </div>
                                         <div className="text-muted-foreground">{meta.summary}</div>
                                         {meta.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1">

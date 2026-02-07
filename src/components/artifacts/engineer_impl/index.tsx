@@ -169,7 +169,7 @@ export default function EngineerImplPanel({
   const data = (artifact?.content || artifact || {}) as EngineerBackendArtifact
   const dependencies = data.dependencies || []
   const runResults = (data as any).run_results || {}
-  const fileStructure = (data as any).file_structure || (data as any).files || (data as any).file_changes || (data as any).components
+  const fileStructure = (data as any).file_structure
   const technicalDecisions = data.technical_decisions || []
   const envVars = data.environment_variables || []
   const phases = data.implementation_plan_phases || []

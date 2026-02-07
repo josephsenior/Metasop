@@ -3,8 +3,8 @@
  * prisma and diagramDb modules as the Next.js API. Run from project root:
  *   pnpm exec tsx scripts/tools/verify-db.ts
  */
-import { checkDatabaseHealth, getDatabaseInfo, prisma } from "../../lib/database/prisma";
-import { diagramDb } from "../../lib/diagrams/db";
+import { checkDatabaseHealth, getDatabaseInfo, prisma } from "../../src/lib/database/prisma";
+import { diagramDb } from "../../src/lib/diagrams/db";
 
 const TEST_USER_ID = "verify-db-test-user";
 

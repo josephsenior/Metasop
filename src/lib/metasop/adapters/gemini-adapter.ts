@@ -12,52 +12,13 @@ import { MetaSOPEvent } from "../types";
 import { getSessionDebugDir } from "../utils/debug-session";
 import * as fs from "fs";
 import * as path from "path";
+import { calculateGeminiCost } from "./gemini/cost";
+import { convertToGeminiSchema, processDynamicFields } from "./gemini/schema-utils";
 
 export class GeminiLLMProvider implements LLMProvider {
   private apiKey: string;
   private baseUrl: string = "https://generativelanguage.googleapis.com/v1beta";
   private defaultModel: string = "gemini-3-flash-preview";
-
-  /**
-   * Calculate cost based on model and token usage
-   */
-  private calculateCost(model: string, usage: any): number {
-    const promptTokens = usage.promptTokenCount || 0;
-    const responseTokens = usage.candidatesTokenCount || 0;
-    const cachedTokens = usage.cachedContentTokenCount || 0;
-    const thoughtsTokens = usage.thoughtsTokenCount || 0;
-
-    // Gemini pricing per 1M tokens (as of 2026)
-    // Input: Live prompt tokens
-    // Cached: Tokens read from context cache (discounted)
-    // Output: Candidate tokens + native thoughts tokens
-    const pricing: Record<string, { input: number; output: number; cached: number }> = {
-      'gemini-3-pro-preview': { input: 1.25, output: 5.0, cached: 0.3125 },
-      'gemini-3-flash-preview': { input: 0.1, output: 0.4, cached: 0.025 },
-      'gemini-2.0-flash': { input: 0.1, output: 0.4, cached: 0.025 },
-      'gemini-2.5-flash-native-audio-dialog': { input: 0.1, output: 0.4, cached: 0.025 },
-    };
-
-    // Extract base model name
-    const isPro = model.toLowerCase().includes('pro');
-    const isFlash2 = model.toLowerCase().includes('gemini-2.0-flash');
-    const isNativeAudio = model.toLowerCase().includes('native-audio');
-
-    let rates = pricing['gemini-3-flash-preview'];
-    if (isPro) rates = pricing['gemini-3-pro-preview'];
-    else if (isFlash2) rates = pricing['gemini-2.0-flash'];
-    else if (isNativeAudio) rates = pricing['gemini-2.5-flash-native-audio-dialog'];
-    else if (model.includes('gemini-3')) rates = pricing['gemini-3-flash-preview'];
-
-    // Live prompt tokens = Total prompt - Cached
-    const livePromptTokens = Math.max(0, promptTokens - cachedTokens);
-
-    const inputCost = (livePromptTokens / 1_000_000) * rates.input;
-    const cachedCost = (cachedTokens / 1_000_000) * rates.cached;
-    const outputCost = ((responseTokens + thoughtsTokens) / 1_000_000) * rates.output;
-
-    return inputCost + cachedCost + outputCost;
-  }
 
   constructor(apiKey: string, model?: string) {
     this.apiKey = (apiKey || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "").trim();
@@ -98,6 +59,14 @@ ${prompt}`
         requestBody.cachedContent = options.cacheId;
       }
 
+      // Apply system instruction if provided (Gemini only allows one or the other)
+      // If using a cache, the system instruction was already baked into the cache
+      if (options?.systemInstruction && !options?.cacheId) {
+        requestBody.systemInstruction = {
+          parts: [{ text: options.systemInstruction }]
+        };
+      }
+
       const response = await axios.post(
         `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`,
         requestBody,
@@ -123,7 +92,7 @@ ${prompt}`
         const total = usage.totalTokenCount || 0;
         const cached = usage.cachedContentTokenCount || 0;
         const savedPercent = total > 0 ? Math.round((cached / (total + cached)) * 100) : 0;
-        const cost = this.calculateCost(model, usage);
+        const cost = calculateGeminiCost(model, usage);
 
         console.log("\n" + "-".repeat(40));
         console.log(`   TOKEN ECONOMY : ${model}`);
@@ -225,6 +194,13 @@ ${prompt}`
       // Apply context cache if provided
       if (options?.cacheId) {
         requestBody.cachedContent = options.cacheId;
+      }
+
+      // Apply system instruction if provided
+      if (options?.systemInstruction && !options?.cacheId) {
+        requestBody.systemInstruction = {
+          parts: [{ text: options.systemInstruction }]
+        };
       }
 
       // Use streamGenerateContent endpoint with SSE format
@@ -443,7 +419,7 @@ ${prompt}`
       const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (data.usageMetadata) {
-        const cost = this.calculateCost(model, data.usageMetadata);
+        const cost = calculateGeminiCost(model, data.usageMetadata);
         logger.info("Transcription completed", {
           latency: Date.now() - startTime,
           tokens: data.usageMetadata.totalTokenCount,
@@ -562,7 +538,7 @@ ${prompt}`
       // Gemini supports structured output via responseSchema parameter
       // Convert our schema to Gemini's schema format
       const dynamicPaths = new Set<string>();
-      const geminiSchema = this.convertToGeminiSchema(finalSchema, dynamicPaths);
+      const geminiSchema = convertToGeminiSchema(finalSchema, dynamicPaths);
 
       const requestBody: any = {
         contents: [
@@ -589,8 +565,9 @@ ${prompt}`
         const uiDesignerAddition = options?.role === "UI Designer"
           ? " Every string value in the JSON must contain only the intended value (e.g. 0.25rem or 400). Do not append any explanations or extra words to any field."
           : "";
+        const customInstruction = options?.systemInstruction ? `\n\n${options.systemInstruction}` : "";
         requestBody.systemInstruction = {
-          parts: [{ text: baseInstruction + uiDesignerAddition }]
+          parts: [{ text: baseInstruction + uiDesignerAddition + customInstruction }]
         };
       }
 
@@ -698,7 +675,7 @@ ${prompt}`
         const total = usage.totalTokenCount || 0;
         const cached = usage.cachedContentTokenCount || 0;
         const savedPercent = total > 0 ? Math.round((cached / (total + cached)) * 100) : 0;
-        const cost = this.calculateCost(model, usage);
+        const cost = calculateGeminiCost(model, usage);
 
         const finishReason = data.candidates?.[0]?.finishReason;
 
@@ -871,7 +848,7 @@ ${prompt}`
 
       // Post-process dynamic fields (JSON strings to objects)
       if (dynamicPaths.size > 0) {
-        this.processDynamicFields(result, dynamicPaths);
+        processDynamicFields(result, dynamicPaths);
       }
 
       // Extract and stream injected reasoning if present
@@ -959,178 +936,5 @@ ${prompt}`
         clearInterval(progressInterval);
       }
     }
-  }
-
-  /**
-   * Process dynamic fields that were stringified for Gemini API
-   */
-  private processDynamicFields(obj: any, dynamicPaths: Set<string>, currentPath: string = ""): void {
-    if (!obj || typeof obj !== "object") return;
-
-    for (const [key, value] of Object.entries(obj)) {
-      const path = currentPath ? `${currentPath}.${key}` : key;
-
-      // Check if this path or a wildcard path matches
-      // Wildcard example: apis.0.request_schema matches apis.*.request_schema
-      const isDynamic = Array.from(dynamicPaths).some(dp => {
-        if (dp === path) return true;
-
-        // Handle array wildcards: apis.*.request_schema
-        const pattern = dp.replace(/\./g, "\\.").replace(/\*/g, "[^.]+");
-        const regex = new RegExp(`^${pattern}$`);
-        return regex.test(path);
-      });
-
-      if (isDynamic && typeof value === "string") {
-        console.log(`[Gemini] Attempting to parse dynamic field: ${path}`);
-        try {
-          // Attempt to parse the stringified JSON
-          let cleaned = value.trim();
-          // Remove potential markdown braces if the LLM added them inside the string
-          cleaned = cleaned.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
-
-          // Handle potential double-stringification
-          if (cleaned.startsWith('"') && cleaned.endsWith('"') && cleaned.length > 2) {
-            try {
-              cleaned = JSON.parse(cleaned);
-            } catch {
-              // Ignore parse error and keep cleaned as is
-            }
-          }
-
-          obj[key] = JSON.parse(cleaned);
-        } catch {
-          // If it's not valid JSON, try to wrap it in an object if it looks like key-value pairs
-          if (typeof value === 'string' && value.includes(":") && !value.includes("{")) {
-            try {
-              const lines = value.split("\n").filter(l => l.includes(":"));
-              const partialObj: any = {};
-              lines.forEach(l => {
-                const parts = l.split(":");
-                if (parts.length >= 2) {
-                  const k = parts[0].trim().replace(/^["']|["']$/g, "");
-                  const v = parts.slice(1).join(":").trim().replace(/^["']|["']$/g, "");
-                  if (k) partialObj[k] = v;
-                }
-              });
-              if (Object.keys(partialObj).length > 0) {
-                obj[key] = partialObj;
-              } else {
-                obj[key] = { value: value };
-              }
-            } catch {
-              logger.warn(`Failed to parse dynamic field at ${path} even with heuristics`, { value });
-              obj[key] = { value: value };
-            }
-          } else {
-            logger.warn(`Failed to parse dynamic field at ${path}`, { value });
-            // Fallback: provide an object with the value so Zod doesn't fail on "string" type
-            obj[key] = { value: value };
-          }
-        }
-
-        // Final sanity check: if it's still not an object, make it an object to satisfy Zod/Schema
-        // Only if we are sure it's supposed to be an object (which it is if it's in dynamicPaths)
-        if (typeof obj[key] !== "object" || obj[key] === null) {
-          obj[key] = { "value": obj[key] };
-        }
-      } else if (value && typeof value === "object") {
-        // Recurse into objects/arrays
-        this.processDynamicFields(value, dynamicPaths, path);
-      }
-    }
-  }
-
-  /**
-   * Convert JSON Schema to Gemini's schema format
-   */
-  private convertToGeminiSchema(schema: any, dynamicPaths: Set<string>): any {
-    if (schema.type === "object") {
-      const geminiSchema: any = {
-        type: "object",
-        properties: {},
-        required: schema.required || [],
-      };
-
-      if (schema.properties) {
-        for (const [key, value] of Object.entries(schema.properties)) {
-          const prop = value as any;
-          geminiSchema.properties[key] = this.convertProperty(prop, key, dynamicPaths);
-        }
-      }
-
-      return geminiSchema;
-    }
-
-    // Fallback: return schema as-is
-    return schema;
-  }
-
-  /**
-   * Convert a JSON Schema property to Gemini format
-   */
-  private convertProperty(prop: any, path: string, dynamicPaths: Set<string>): any {
-    // Handle oneOf/anyOf by picking the first option if it's an object or string
-    // This is a simplification as Gemini doesn't support unions in responseSchema
-    if (prop.oneOf || prop.anyOf) {
-      const options = prop.oneOf || prop.anyOf;
-      // Prefer object type if available for better structure
-      const bestOption = options.find((opt: any) => opt.type === "object") || options[0];
-      return this.convertProperty(bestOption, path, dynamicPaths);
-    }
-
-    // Default type to object if missing but properties exist
-    const type = prop.type || (prop.properties ? "object" : "string");
-
-    const geminiProp: any = {
-      type: type,
-    };
-
-    if (prop.description) {
-      geminiProp.description = prop.description;
-    }
-
-    if (type === "array" && prop.items) {
-      geminiProp.items = this.convertProperty(prop.items, `${path}.*`, dynamicPaths);
-    }
-
-    if (type === "object") {
-      if (prop.required) {
-        geminiProp.required = prop.required;
-      }
-
-      const hasProperties = prop.properties && Object.keys(prop.properties).length > 0;
-
-      if (hasProperties) {
-        geminiProp.properties = {};
-        for (const [key, value] of Object.entries(prop.properties)) {
-          geminiProp.properties[key] = this.convertProperty(value as any, `${path}.${key}`, dynamicPaths);
-        }
-      } else {
-        // This is a dynamic object (e.g., z.record or z.object({}).catchall())
-        // Gemini's responseSchema doesn't support additionalProperties or empty properties for type: object.
-        // We convert it to a string and ask Gemini to provide JSON stringified content.
-        dynamicPaths.add(path);
-        return {
-          type: "string",
-          description: (prop.description ? prop.description + " " : "") +
-            "[REQUIREMENT: This field must be a valid JSON string representing the object data]"
-        };
-      }
-    }
-
-    if (prop.enum) {
-      geminiProp.enum = prop.enum;
-    }
-
-    // Pass through JSON Schema constraints that Gemini supports
-    if (prop.pattern) geminiProp.pattern = prop.pattern;
-    if (prop.minLength !== undefined) geminiProp.minLength = prop.minLength;
-    if (prop.maxLength !== undefined) geminiProp.maxLength = prop.maxLength;
-    if (prop.format) geminiProp.format = prop.format;
-    if (prop.minItems !== undefined) geminiProp.minItems = prop.minItems;
-    if (prop.maxItems !== undefined) geminiProp.maxItems = prop.maxItems;
-
-    return geminiProp;
   }
 }

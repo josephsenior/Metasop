@@ -200,23 +200,10 @@ function ChartTooltipContent({
                     <itemConfig.icon />
                   ) : (
                     !hideIndicator && (
-                      <div
-                        className={cn(
-                          'shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)',
-                          {
-                            'h-2.5 w-2.5': indicator === 'dot',
-                            'w-1': indicator === 'line',
-                            'w-0 border-[1.5px] border-dashed bg-transparent':
-                              indicator === 'dashed',
-                            'my-0.5': nestLabel && indicator === 'dashed',
-                          },
-                        )}
-                        style={
-                          {
-                            '--color-bg': indicatorColor,
-                            '--color-border': indicatorColor,
-                          } as React.CSSProperties
-                        }
+                      <TooltipIndicator
+                        color={indicatorColor}
+                        indicator={indicator}
+                        nestLabel={nestLabel}
                       />
                     )
                   )}
@@ -289,18 +276,73 @@ function ChartLegendContent({
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />
             ) : (
-              <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item.color,
-                }}
-              />
+              <LegendIndicator color={item.color} />
             )}
             {itemConfig?.label}
           </div>
         )
       })}
     </div>
+  )
+}
+
+type TooltipIndicatorVariant = 'line' | 'dot' | 'dashed'
+
+function TooltipIndicator({
+  color,
+  indicator = 'dot',
+  nestLabel = false,
+}: {
+  color?: string
+  indicator?: TooltipIndicatorVariant
+  nestLabel?: boolean
+}) {
+  const ref = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (!ref.current) {
+      return
+    }
+
+    ref.current.style.setProperty(
+      '--indicator-color',
+      color ?? 'currentColor',
+    )
+  }, [color])
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'shrink-0 rounded-[2px]',
+        indicator === 'dot' && 'h-2.5 w-2.5',
+        indicator === 'line' && 'h-2.5 w-1',
+        indicator === 'dashed'
+          ? 'w-0 border-[1.5px] border-dashed bg-transparent'
+          : 'border-(--indicator-color) bg-(--indicator-color)',
+        indicator === 'dashed' && 'border-(--indicator-color)',
+        indicator === 'dashed' && nestLabel && 'my-0.5',
+      )}
+    />
+  )
+}
+
+function LegendIndicator({ color }: { color?: string }) {
+  const ref = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (!ref.current) {
+      return
+    }
+
+    ref.current.style.setProperty('--legend-color', color ?? 'currentColor')
+  }, [color])
+
+  return (
+    <div
+      ref={ref}
+      className="h-2 w-2 shrink-0 rounded-[2px] bg-(--legend-color)"
+    />
   )
 }
 

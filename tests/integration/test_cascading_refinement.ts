@@ -7,9 +7,9 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-import { MetaSOPOrchestrator } from "../../lib/metasop/orchestrator";
-import { applyEditOps, type ArtifactRecord } from "../../lib/artifacts/edit-tools";
-import { resetLLMProvider } from "../../lib/metasop/utils/llm-helper";
+import { MetaSOPOrchestrator } from "../../src/lib/metasop/orchestrator";
+import { applyEditOps, type ArtifactRecord } from "../../src/lib/artifacts/edit-tools";
+import { resetLLMProvider } from "../../src/lib/metasop/utils/llm-helper";
 import path from "path";
 import fs from "fs";
 
@@ -34,7 +34,7 @@ async function testToolBasedRefinement() {
   const initialResult = await orchestrator.run(
     initialPrompt,
     { includeAPIs: true },
-    (event) => {
+    (event: any) => {
       if (event.type === "step_start") process.stdout.write(`\n[${event.step_id}] `);
       else if (event.type === "step_complete") process.stdout.write(`✅`);
     }

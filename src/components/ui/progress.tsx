@@ -10,6 +10,20 @@ function Progress({
   value,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  const indicatorRef = React.useRef<HTMLDivElement>(null)
+  const clampedValue = Math.max(0, Math.min(100, value ?? 0))
+
+  React.useEffect(() => {
+    if (!indicatorRef.current) {
+      return
+    }
+
+    indicatorRef.current.style.setProperty(
+      '--progress-transform',
+      `translateX(-${100 - clampedValue}%)`,
+    )
+  }, [clampedValue])
+
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -22,7 +36,7 @@ function Progress({
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
         className="bg-primary h-full w-full flex-1 transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        ref={indicatorRef}
       />
     </ProgressPrimitive.Root>
   )

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import { Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,7 @@ interface ArtifactsPanelProps {
     activeTab?: string
     onTabChange?: (tab: string) => void
     sidebarMode?: boolean
+    modifiedArtifacts?: string[]
 }
 
 export function ArtifactsPanel({
@@ -45,7 +47,8 @@ export function ArtifactsPanel({
     className = "",
     activeTab: externalActiveTab,
     onTabChange,
-    sidebarMode = false
+    sidebarMode = false,
+    modifiedArtifacts = []
 }: ArtifactsPanelProps) {
     const [internalActiveTab, setInternalActiveTab] = useState("summary")
 
@@ -92,7 +95,7 @@ export function ArtifactsPanel({
             <Tabs value={activeTab} onValueChange={setActiveTab} className={cn("flex-1 flex min-h-0 overflow-hidden", sidebarMode ? "flex-row" : "flex-col")}>
 
                 {/* Sidebar Mode Tabs */}
-                {sidebarMode && <SidebarTabs activeTab={activeTab} artifacts={artifacts} />}
+                {sidebarMode && <SidebarTabs activeTab={activeTab} artifacts={artifacts} modifiedArtifacts={modifiedArtifacts} />}
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     <div className="border-b border-border bg-background px-3 pt-3 pb-2 sticky top-0 z-20 shrink-0">
@@ -101,14 +104,17 @@ export function ArtifactsPanel({
                                 <Icon className="h-4 w-4" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-xs font-semibold text-foreground truncate">
+                                <h3 className="text-xs font-semibold text-foreground truncate flex items-center gap-2">
                                     {currentTab.label}
+                                    {modifiedArtifacts.includes(activeTab) && (
+                                        <Badge className="text-[8px] h-3 px-1 py-0 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Modified</Badge>
+                                    )}
                                 </h3>
                             </div>
                         </div>
 
                         {/* Top Mode Tabs (only if not sidebar) */}
-                        {!sidebarMode && <TopTabs activeTab={activeTab} artifacts={artifacts} />}
+                        {!sidebarMode && <TopTabs activeTab={activeTab} artifacts={artifacts} modifiedArtifacts={modifiedArtifacts} />}
                     </div>
 
                     <div className="flex-1 min-h-0 overflow-hidden relative">
@@ -123,7 +129,7 @@ export function ArtifactsPanel({
                                 >
                                     {(() => {
                                         const artifact = artifacts[activeTab as keyof typeof artifacts]
-                                        if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} onTabChange={setActiveTab} />
+                                        if (activeTab === "summary") return <ProjectSummary artifacts={artifacts} onTabChange={setActiveTab} modifiedArtifacts={modifiedArtifacts} />
                                         if (activeTab === "estimates") return <ProjectEstimates artifacts={artifacts} />
                                         if (!artifact) return <div className="text-xs text-muted-foreground p-4">No artifact data available</div>
 

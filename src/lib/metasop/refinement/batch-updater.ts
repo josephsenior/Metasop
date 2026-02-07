@@ -18,31 +18,28 @@ const BATCH_UPDATER_PROMPT = `You are a precise software artifact editor. Apply 
 
 ## INSTRUCTIONS
 1. Apply ONLY the changes specified in the Edit Plan
-2. Preserve ALL other fields exactly as they are
-3. For each edit, update the specified field_path
-4. For cascading_effects, ensure consistency with the primary edit
-5. Generate a changelog entry for each change you make
-
-## FIELD PATH NOTATION
-- Dot notation for nested objects: "infrastructure.cloud_provider"
-- Bracket notation for arrays: "apis[0].path"
-- You can add to arrays: "apis[+]" means append
-- You can remove from arrays: "apis[-2]" means remove index 2
+2. For each edit, identify the exact field_path and provide the minimal delta update (patch)
+3. Generate a changelog entry for each change you make
 
 ## OUTPUT FORMAT
 Return a JSON object with:
 {
-  "updated_artifacts": {
-    "<artifact_name>": { ...full updated artifact... },
-    // Only include artifacts that have changes
+  "patches": {
+    "<artifact_name>": [
+      { "path": "dot.notation.path", "value": <new_data>, "op": "set" | "add" | "remove" }
+    ]
   },
   "changelog": [
     { "artifact": "name", "field": "path", "change": "human-readable description" }
   ]
 }
 
-IMPORTANT: Return the COMPLETE artifact objects for any artifact you modify.
-Respond ONLY with valid JSON, no markdown code blocks.`;
+## PATCH RULES
+- path: Use dot notation for nested objects (e.g., "database_schema.tables[0].columns")
+- op: "set" to update/replace value, "add" to append to array, "remove" to delete from array
+- value: The new value for the field. For "remove", value is index or null.
+
+IMPORTANT: Respond ONLY with valid JSON. Use minimal patches to save tokens. Do NOT return the full artifact.`;
 
 /**
  * Normalizes artifact keys for consistent naming
@@ -77,6 +74,47 @@ function denormalizeArtifactKey(key: string): string {
 }
 
 /**
+ * Deeply applies a patch to an object using dot/bracket notation
+ */
+function applyPatch(obj: any, path: string, value: any, op: "set" | "add" | "remove"): void {
+    const parts = path.split(/[.\[\]]+/).filter(Boolean);
+    let current = obj;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        const nextPart = parts[i + 1];
+        
+        // If next part is a number, current part should be an array
+        const isNextArray = !isNaN(Number(nextPart));
+
+        if (!(part in current)) {
+            current[part] = isNextArray ? [] : {};
+        }
+        current = current[part];
+    }
+
+    const lastPart = parts[parts.length - 1];
+
+    if (op === "set") {
+        current[lastPart] = value;
+    } else if (op === "add") {
+        if (!Array.isArray(current[lastPart])) {
+            current[lastPart] = [];
+        }
+        current[lastPart].push(value);
+    } else if (op === "remove") {
+        if (Array.isArray(current)) {
+            current.splice(Number(lastPart), 1);
+        } else if (current[lastPart] && Array.isArray(current[lastPart])) {
+             const idx = typeof value === 'number' ? value : 0;
+             current[lastPart].splice(idx, 1);
+        } else {
+            delete current[lastPart];
+        }
+    }
+}
+
+/**
  * Layer 2: Apply batch updates based on EditPlan
  */
 export async function applyBatchUpdate(
@@ -98,7 +136,7 @@ export async function applyBatchUpdate(
     const response = await generateWithLLM(prompt, {
         temperature: 0.1, // Very low for precise execution
         role: "Batch Updater",
-        model: "gemini-3-pro-preview", // Use Pro for accurate JSON generation
+        model: "gemini-3-flash-preview", // Use Flash for efficiency and speed
     });
 
     try {
@@ -116,19 +154,40 @@ export async function applyBatchUpdate(
 
         const output: RefinementOutput = JSON.parse(cleanResponse.trim());
 
-        // Validate structure
-        if (!output.updated_artifacts || !output.changelog) {
-            throw new Error("Invalid output structure: missing updated_artifacts or changelog");
+        // Validate structure - support both old and new format for transition
+        if (!output.changelog || (!output.updated_artifacts && !output.patches)) {
+            throw new Error("Invalid output structure: missing updates/patches or changelog");
         }
 
-        // Denormalize artifact keys back to backend format
-        const denormalizedArtifacts: Record<string, any> = {};
-        for (const [key, value] of Object.entries(output.updated_artifacts)) {
-            denormalizedArtifacts[denormalizeArtifactKey(key)] = value;
+        const updatedArtifacts: Record<string, any> = {};
+
+        // 1. Process legacy "full replacement" if present
+        if (output.updated_artifacts) {
+            for (const [key, value] of Object.entries(output.updated_artifacts)) {
+                updatedArtifacts[denormalizeArtifactKey(key)] = value;
+            }
+        }
+
+        // 2. Process modern "delta patches" (Highly Preferred)
+        if (output.patches) {
+            for (const [key, patches] of Object.entries(output.patches)) {
+                const backendKey = denormalizeArtifactKey(key);
+                // Create a deep clone to avoid mutating original context until merged
+                const artifact = JSON.parse(JSON.stringify(currentArtifacts[backendKey] || {}));
+                
+                for (const patch of patches) {
+                    try {
+                        applyPatch(artifact, patch.path, patch.value, patch.op);
+                    } catch (e) {
+                        console.warn(`[Batch Updater] Failed to apply patch to ${key}: ${patch.path}`, e);
+                    }
+                }
+                updatedArtifacts[backendKey] = artifact;
+            }
         }
 
         return {
-            updated_artifacts: denormalizedArtifacts,
+            updated_artifacts: updatedArtifacts,
             changelog: output.changelog
         };
     } catch (error: any) {

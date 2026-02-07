@@ -96,7 +96,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
                   <span className="font-semibold">{devEstimate.totalDays}</span>
                 </div>
                 <div className="w-full bg-blue-100 dark:bg-blue-900/20 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '75%' }} />
+                  <div className="bg-blue-600 h-full rounded-full w-3/4" />
                 </div>
               </div>
             </CardContent>

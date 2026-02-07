@@ -34,7 +34,7 @@ export default function JSONViewer({ data, collapsed = true }: { data: any; coll
       </div>
 
       {isOpen && (
-        <pre className="overflow-auto rounded bg-slate-950 p-3 text-xs text-white" style={{ maxHeight: 420 }}>
+        <pre className="max-h-[420px] overflow-auto rounded bg-slate-950 p-3 text-xs text-white">
           {json}
         </pre>
       )}

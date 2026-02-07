@@ -50,12 +50,6 @@ export function ApiEndpointCard({ api }: ApiEndpointCardProps) {
             </p>
 
             <div className="space-y-2 pt-3 border-t border-border/20">
-                {api.endpoint && (
-                    <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground">Endpoint:</span>
-                        <span className="font-mono text-blue-500 break-all">{api.endpoint}</span>
-                    </div>
-                )}
                 {api.rate_limit && (
                     <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground">Rate Limit:</span>

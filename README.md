@@ -145,6 +145,8 @@ pnpm build
 pnpm start
 ```
 
+On Windows, `pnpm build` may fail with an **EPERM symlink** error when Next.js generates `.next/standalone`. See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#build-pnpm-build-fails-with-eperm-symlink-windows).
+
 ### Testing
 
 The project uses [Vitest](https://vitest.dev/) for unit tests. The suite covers the Blueprinta pipeline: orchestrator, agents, services, adapters, and utilities.

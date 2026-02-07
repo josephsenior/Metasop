@@ -16,6 +16,13 @@ interface InvestAnalysisSectionProps {
     investAnalysis: any[]
 }
 
+function computeInvestScore(item: any): number {
+    if (typeof item?.score === "number" && Number.isFinite(item.score)) return item.score
+    const keys = ["independent", "negotiable", "valuable", "estimatable", "small", "testable"] as const
+    const total = keys.reduce((acc, k) => acc + (item?.[k] ? 1 : 0), 0)
+    return Math.round((total / keys.length) * 10)
+}
+
 export function InvestAnalysisSection({
     investAnalysis
 }: InvestAnalysisSectionProps) {
@@ -31,11 +38,14 @@ export function InvestAnalysisSection({
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                         {investAnalysis.map((dataItem: any, i: number) => (
                             <motion.div key={i} variants={item}>
+                                {(() => {
+                                    const score = computeInvestScore(dataItem)
+                                    return (
                                 <Card className="overflow-hidden border border-border/50 shadow-sm relative group hover:border-blue-500/30 transition-all">
                                     <div className={cn("absolute top-0 left-0 w-1 h-full rounded-l-2xl transition-colors",
-                                        dataItem.score >= 9 ? "bg-emerald-500" :
-                                            dataItem.score >= 7 ? "bg-blue-500" :
-                                                dataItem.score >= 5 ? "bg-amber-500" : "bg-red-500"
+                                        score >= 9 ? "bg-emerald-500" :
+                                            score >= 7 ? "bg-blue-500" :
+                                                score >= 5 ? "bg-amber-500" : "bg-red-500"
                                     )} />
                                     <CardHeader className="pb-3 px-5 pt-4 flex flex-row items-center justify-between">
                                         <div className="space-y-1">
@@ -46,12 +56,12 @@ export function InvestAnalysisSection({
                                             </div>
                                         </div>
                                         <Badge variant="outline" className={cn("font-mono font-bold",
-                                            dataItem.score >= 9 ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" :
-                                                dataItem.score >= 7 ? "text-blue-600 bg-blue-500/10 border-blue-500/20" :
-                                                    dataItem.score >= 5 ? "text-amber-600 bg-amber-500/10 border-amber-500/20" :
+                                            score >= 9 ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" :
+                                                score >= 7 ? "text-blue-600 bg-blue-500/10 border-blue-500/20" :
+                                                    score >= 5 ? "text-amber-600 bg-amber-500/10 border-amber-500/20" :
                                                         "text-red-600 bg-red-500/10 border-red-500/20"
                                         )}>
-                                            SCORE: {dataItem.score}/10
+                                            SCORE: {score}/10
                                         </Badge>
                                     </CardHeader>
                                     <CardContent className="px-5 pb-5">
@@ -83,6 +93,8 @@ export function InvestAnalysisSection({
                                         )}
                                     </CardContent>
                                 </Card>
+                                    )
+                                })()}
                             </motion.div>
                         ))}
                     </div>

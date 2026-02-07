@@ -161,9 +161,9 @@ export function OperationsSection({ containerization, scaling }: OperationsSecti
                                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Status</span>
                                     <Badge variant="outline" className={cn(
                                         "text-[8px] h-4 px-1 uppercase",
-                                        scaling.auto_scaling.enabled !== false ? "text-emerald-500 border-emerald-500/30 bg-emerald-500/5" : "text-muted-foreground border-border bg-muted/20"
+                                        "text-emerald-500 border-emerald-500/30 bg-emerald-500/5"
                                     )}>
-                                        {scaling.auto_scaling.enabled !== false ? 'Enabled' : 'Disabled'}
+                                        Enabled
                                     </Badge>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">

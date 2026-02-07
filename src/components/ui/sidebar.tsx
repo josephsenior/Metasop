@@ -27,9 +27,6 @@ import {
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = '16rem'
-const SIDEBAR_WIDTH_MOBILE = '18rem'
-const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
 
 type SidebarContextProps = {
@@ -58,7 +55,6 @@ function SidebarProvider({
   open: openProp,
   onOpenChange: setOpenProp,
   className,
-  style,
   children,
   ...props
 }: React.ComponentProps<'div'> & {
@@ -131,13 +127,6 @@ function SidebarProvider({
       <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
-          style={
-            {
-              '--sidebar-width': SIDEBAR_WIDTH,
-              '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
-              ...style,
-            } as React.CSSProperties
-          }
           className={cn(
             'group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full',
             className,
@@ -188,11 +177,6 @@ function Sidebar({
           data-slot="sidebar"
           data-mobile="true"
           className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-          style={
-            {
-              '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
           side={side}
         >
           <SheetHeader className="sr-only">
@@ -291,7 +275,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        'hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex',
+        'hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 sm:flex',
         'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
         '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
         'hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full',
@@ -606,9 +590,15 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
+  const widthClass = React.useMemo(() => {
+    const choices = [
+      'max-w-[50%]',
+      'max-w-[60%]',
+      'max-w-[70%]',
+      'max-w-[80%]',
+      'max-w-[90%]',
+    ]
+    return choices[Math.floor(Math.random() * choices.length)]
   }, [])
 
   return (
@@ -625,13 +615,8 @@ function SidebarMenuSkeleton({
         />
       )}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className={cn('h-4 flex-1', widthClass)}
         data-sidebar="menu-skeleton-text"
-        style={
-          {
-            '--skeleton-width': width,
-          } as React.CSSProperties
-        }
       />
     </div>
   )

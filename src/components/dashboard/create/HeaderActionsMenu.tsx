@@ -17,6 +17,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { DiagramData } from "@/hooks/use-diagram-generation"
+import { appendGuestSession } from "@/lib/utils/url"
 
 interface HeaderActionsMenuProps {
     currentDiagram: DiagramData | null
@@ -33,23 +34,16 @@ export function HeaderActionsMenu({
 }: HeaderActionsMenuProps) {
     const router = useRouter()
 
-    const getGuestQuery = () => {
-        if (typeof document === 'undefined') return ''
-        const guestSessionId = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('guest_session_id='))
-            ?.split('=')[1]
-        return guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
-    }
-
     const handleExportPptx = () => {
-        const query = getGuestQuery()
-        window.location.href = `/api/diagrams/${currentDiagram?.id}/export/pptx${query}`
+        const base = `/api/diagrams/${currentDiagram?.id}/export/pptx`
+        const url = appendGuestSession(base)
+        window.location.href = url
     }
 
     const handleExportPdf = () => {
-        const query = getGuestQuery()
-        window.location.href = `/api/diagrams/${currentDiagram?.id}/export?artifact=documentation&format=pdf${query}`
+        const base = `/api/diagrams/${currentDiagram?.id}/export?artifact=documentation&format=pdf`
+        const url = appendGuestSession(base)
+        window.location.href = url
     }
 
     return (

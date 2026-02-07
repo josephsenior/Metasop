@@ -23,6 +23,13 @@ const AuthorizationSchema = z.object({
     description: z.string().optional(),
 });
 
+const AuditLoggingSchema = z.object({
+    enabled: z.boolean().optional(),
+    retention: z.string().optional(),
+    storage_location: z.string().optional(),
+    events: z.array(z.string()).optional(),
+});
+
 const SessionManagementSchema = z.object({
     strategy: z.enum(["stateless", "stateful", "hybrid"]),
     session_timeout: z.string().optional(),
@@ -35,6 +42,13 @@ const SecurityArchitectureSchema = z.object({
     authentication: AuthenticationSchema,
     authorization: AuthorizationSchema,
     session_management: SessionManagementSchema.optional(),
+    // Optional UI/LLM extensions
+    audit_logging: AuditLoggingSchema.optional(),
+    network_boundaries: z.array(z.object({
+        boundary: z.string().optional(),
+        description: z.string().optional(),
+        controls: z.array(z.string()).optional(),
+    })).optional(),
 });
 
 const ThreatModelSchema = z.object({

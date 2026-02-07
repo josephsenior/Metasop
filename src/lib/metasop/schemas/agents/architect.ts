@@ -1,15 +1,16 @@
 import { z } from "zod";
 
-const APISchema = z.object({
-    path: z.string().regex(/^\/.*/, "API path must start with /"),
-    method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
-    endpoint: z.string().optional(),
-    description: z.string().min(10, "API description must be at least 10 characters"),
-    request_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
-    response_schema: z.record(z.string(), z.any()).optional().describe("A map of field names to their types/descriptions"),
-    auth_required: z.boolean().optional(),
-    rate_limit: z.string().optional(),
-});
+const APISchema = z
+    .object({
+        path: z.string().regex(/^\/.*/, "API path must start with /"),
+        method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
+        description: z.string().min(10, "API description must be at least 10 characters"),
+        request_schema: z.record(z.string()).describe("A map of field names to their types"),
+        response_schema: z.record(z.string()).describe("A map of field names to their types"),
+        auth_required: z.boolean(),
+        rate_limit: z.string().optional(),
+    })
+    .strict();
 
 const DecisionSchema = z.object({
     decision: z.string().min(5, "Decision must be at least 5 characters"),
@@ -63,13 +64,13 @@ const TechnologyStackSchema = z.object({
     other: z.array(z.string()).optional(),
 });
 
-const IntegrationPointSchema = z.object({
-    service: z.string().min(1, "Service name is required"),
-    name: z.string().optional(),
-    system: z.string().optional(),
-    purpose: z.string().min(1, "Purpose is required"),
-    api_docs: z.string().url("API docs must be a valid URL").optional(),
-});
+const IntegrationPointSchema = z
+    .object({
+        service: z.string().min(1, "Service name is required"),
+        purpose: z.string().min(1, "Purpose is required"),
+        api_docs: z.string().url("API docs must be a valid URL").optional(),
+    })
+    .strict();
 
 const ScalabilityApproachSchema = z.object({
     horizontal_scaling: z.string().optional(),
@@ -78,18 +79,20 @@ const ScalabilityApproachSchema = z.object({
     performance_targets: z.string().optional(),
 });
 
-export const ArchitectArtifactSchema = z.object({
-    design_doc: z.string().min(100, "Design document must be at least 100 characters"),
-    apis: z.array(APISchema).min(1, "At least one API is required"),
-    decisions: z.array(DecisionSchema).min(1, "At least one decision is required"),
-    database_schema: DatabaseSchemaSchema,
-    technology_stack: TechnologyStackSchema,
-    integration_points: z.array(IntegrationPointSchema),
-    security_considerations: z.array(z.string().min(10, "Security consideration must be at least 10 characters")),
-    scalability_approach: ScalabilityApproachSchema,
-    summary: z.string(),
-    description: z.string(),
-});
+export const ArchitectArtifactSchema = z
+    .object({
+        design_doc: z.string().min(100, "Design document must be at least 100 characters"),
+        apis: z.array(APISchema).min(1, "At least one API is required"),
+        decisions: z.array(DecisionSchema).min(1, "At least one decision is required"),
+        database_schema: DatabaseSchemaSchema,
+        technology_stack: TechnologyStackSchema,
+        integration_points: z.array(IntegrationPointSchema),
+        security_considerations: z.array(z.string().min(10, "Security consideration must be at least 10 characters")),
+        scalability_approach: ScalabilityApproachSchema,
+        summary: z.string(),
+        description: z.string(),
+    })
+    .strict();
 
 export function validateArchitectArtifact(data: unknown) {
     return ArchitectArtifactSchema.parse(data);

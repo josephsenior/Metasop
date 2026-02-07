@@ -139,6 +139,32 @@ DATABASE_URL="postgresql://postgres.xxxxx:password@aws-0-region.pooler.supabase.
 
 **Note:** This won't work for migrations. Use Direct connection for `db:push`.
 
+## Build: `pnpm build` fails with EPERM symlink (Windows)
+
+If `pnpm build` fails on Windows with an error like:
+
+- `EPERM: operation not permitted, symlink ... -> .next/standalone/...`
+
+This typically happens because Next.js standalone output (`output: 'standalone'` in `next.config.mjs`) uses symlinks when assembling `.next/standalone`, and Windows requires elevated permissions unless **Developer Mode** is enabled.
+
+**Fix options (try in order):**
+
+1. **Enable Windows Developer Mode (recommended)**
+   - Windows Settings → Privacy & security → For developers → **Developer Mode**
+   - Restart your terminal/editor and re-run `pnpm build`
+
+2. **Run your terminal as Administrator**
+   - Open PowerShell/Terminal “Run as administrator”
+   - Re-run `pnpm build`
+
+3. **Disable standalone output for local Windows builds (workaround)**
+   - Run the build with standalone disabled:
+     - PowerShell: ` $env:NEXT_DISABLE_STANDALONE = "1"; pnpm build `
+     - cmd.exe: ` set NEXT_DISABLE_STANDALONE=1 && pnpm build `
+   - Or, if you prefer, you can remove/conditionally disable `output: 'standalone'` in `next.config.mjs` for your local environment.
+
+If you’re contributing on Windows and CI/build is part of your workflow, enabling Developer Mode is usually the smoothest path.
+
 ## Tests: spawn EPERM in Cursor terminal
 
 If `pnpm test` fails with **Error: spawn EPERM** (common in Cursor's integrated terminal on Windows), the terminal sandbox is blocking child processes that Vitest/esbuild use.

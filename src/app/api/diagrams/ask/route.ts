@@ -18,17 +18,28 @@ export async function POST(request: NextRequest) {
         const rawBody = await request.json();
         const body = validateAskQuestionRequest(rawBody);
 
-        const systemInstruction = `
-You are an expert Diagram Architect and Project Manager assistant. 
-You have full context of a diagram's technical artifacts including PM specifications, architecture design, DevOps infrastructure, security protocols, and engineering implementation.
-Additionally, you have access to user-uploaded research papers and supplemental documents.
+        const artifactNames: Record<string, string> = {
+            pm_spec: "Product Specification",
+            arch_design: "Architecture Design",
+            ui_design: "UI & Design System",
+            engineer_impl: "Engineering Blueprint",
+            security_architecture: "Security Architecture",
+            devops_infrastructure: "Infrastructure & DevOps",
+            qa_verification: "Quality Assurance & Testing"
+        };
 
-INSTRUCTIONS:
-1. Provide concise, accurate answers based ONLY on the provided diagram context and uploaded documents.
-2. If the answer comes from an uploaded document, briefly identify the document name.
-3. If the answer is not in the context, be honest and say you don't have that specific information yet.
-4. Use a professional, helpful tone. Be direct and to the point - avoid unnecessary elaboration.
-5. Keep responses under 300 words unless the question requires detailed technical explanation.
+        const systemInstruction = `
+You are Blueprinta, an expert AI Software Architect and Project Manager.
+You have full context of a project's technical blueprints including product specifications, architecture design, infrastructure, security, and implementation plans.
+
+STRICT GUIDELINES:
+1. RESPONSE FORMAT: Provide direct, concise, and technical answers. 
+2. NO FILLER: Do not start responses with conversational filler like "Hello", "I'd be happy to help", or "I see you are looking at...". 
+3. DIRECT ANSWERS: If asked a question, answer it immediately. If no question is asked or just a greeting, provide a very brief (1-sentence) technical status update of the blueprints you are analyzing.
+4. MARKDOWN: Use clean markdown. Avoid excessive bolding or complex layouts that might break in chat bubbles.
+5. SOURCE ATTRIBUTION: If an answer comes from a specific artifact or document, mention it briefly (e.g., "According to the Security Architecture...").
+6. ACCURACY: Base your answers ONLY on the provided context. If unsure, state that the information is not present.
+7. TONE: Professional, technical, and efficient.
 `.trim();
 
         let cacheId = body.cacheId;
@@ -56,23 +67,19 @@ INSTRUCTIONS:
             ? `\n\nPREVIOUS CONVERSATION:\n${body.conversationHistory}\n\n`
             : '';
 
+        const activeArtifactNote = body.activeTab && body.activeTab !== 'summary' && body.activeTab !== 'all' 
+            ? `Note: The user is currently looking at the ${artifactNames[body.activeTab] || body.activeTab} blueprint.`
+            : '';
+
         const prompt = cacheId 
-            ? `USER QUESTION: "${body.question}"${conversationContext}${body.activeTab && body.activeTab !== 'summary' && body.activeTab !== 'all' ? `Note: The user is currently looking at the ${body.activeTab} artifact.` : ''}\n\nANSWER:`
+            ? `USER QUESTION: "${body.question}"${conversationContext}${activeArtifactNote}\n\nANSWER:`
             : `
 PROJECT CONTEXT:
 ${body.contextMarkdown}
 
 USER QUESTION:
 "${body.question}"${conversationContext}
-${body.activeTab && body.activeTab !== 'summary' && body.activeTab !== 'all' ? `Note: The user is currently looking at the ${body.activeTab} artifact.` : ''}
-
-INSTRUCTIONS:
-1. Provide a concise, accurate answer based ONLY on the provided project context.
-2. If the answer is not in the context, be honest and say you don't have that specific information yet.
-3. Use a professional, helpful tone. Be direct and to the point.
-4. Keep responses under 300 words unless the question requires detailed technical explanation.
-5. You can use markdown for formatting, but keep it minimal.
-${body.conversationHistory ? '6. Consider the previous conversation context when answering to maintain continuity.' : ''}
+${activeArtifactNote}
 
 ANSWER:`.trim();
 
@@ -96,8 +103,9 @@ ANSWER:`.trim();
                             },
                             {
                                 temperature: 0.2,
-                                role: "Project Architect Assistant",
-                                cacheId: cacheId
+                                role: "Blueprinta Assistant",
+                                cacheId: cacheId,
+                                systemInstruction: cacheId ? undefined : systemInstruction
                             }
                         );
 
@@ -136,8 +144,9 @@ ANSWER:`.trim();
         try {
             const answer = await generateWithLLM(prompt, {
                 temperature: 0.2, // Lower temperature for more factual answers
-                role: "Project Architect Assistant",
-                cacheId: cacheId
+                role: "Blueprinta Assistant",
+                cacheId: cacheId,
+                systemInstruction: cacheId ? undefined : systemInstruction
             });
 
             return createSuccessResponse(
@@ -161,20 +170,14 @@ ${body.contextMarkdown}
 USER QUESTION:
 "${body.question}"
 
-${body.activeTab && body.activeTab !== 'summary' && body.activeTab !== 'all' ? `Note: The user is currently looking at the ${body.activeTab} artifact.` : ''}
-
-INSTRUCTIONS:
-1. Provide a concise, accurate answer based ONLY on the provided project context.
-2. If the answer is not in the context, be honest and say you don't have that specific information yet.
-3. Use a professional, helpful tone. Be direct and to the point.
-4. Keep responses under 300 words unless the question requires detailed technical explanation.
-5. You can use markdown for formatting, but keep it minimal.
+${activeArtifactNote}
 
 ANSWER:`.trim();
 
                 const answer = await generateWithLLM(retryPrompt, {
                     temperature: 0.2,
-                    role: "Project Architect Assistant"
+                    role: "Blueprinta Assistant",
+                    systemInstruction: systemInstruction
                 });
 
                 return createSuccessResponse(

@@ -4,7 +4,6 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Share2, Lock, BookOpen } from "lucide-react"
 import {
     containerVariants as container
@@ -29,15 +28,7 @@ export function IntegrationsSection({ integrationPoints }: IntegrationsSectionPr
                                             <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
                                                 <Share2 className="h-3.5 w-3.5" />
                                             </div>
-                                            <div className="font-bold text-sm tracking-tight">{point.name || point.service || point.system}</div>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            {point.system && point.system !== point.name && (
-                                                <Badge variant="outline" className="text-[8px] uppercase font-bold text-muted-foreground/60">{point.system}</Badge>
-                                            )}
-                                            {point.service && point.service !== (point.name || point.system) && (
-                                                <Badge variant="outline" className="text-[8px] uppercase font-bold text-muted-foreground/60">{point.service}</Badge>
-                                            )}
+                                            <div className="font-bold text-sm tracking-tight">{point.service}</div>
                                         </div>
                                     </div>
 

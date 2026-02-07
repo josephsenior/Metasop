@@ -1,13 +1,13 @@
 
 import 'dotenv/config';
-import { productManagerAgent } from '../../lib/metasop/agents/product-manager';
-import { architectAgent } from '../../lib/metasop/agents/architect';
-import { engineerAgent } from '../../lib/metasop/agents/engineer';
-import { devopsAgent } from '../../lib/metasop/agents/devops';
-import { securityAgent } from '../../lib/metasop/agents/security';
-import { uiDesignerAgent } from '../../lib/metasop/agents/ui-designer';
-import { qaAgent } from '../../lib/metasop/agents/qa';
-import { AgentContext } from '../../lib/metasop/types';
+import { productManagerAgent } from '../../src/lib/metasop/agents/product-manager';
+import { architectAgent } from '../../src/lib/metasop/agents/architect';
+import { engineerAgent } from '../../src/lib/metasop/agents/engineer';
+import { devopsAgent } from '../../src/lib/metasop/agents/devops';
+import { securityAgent } from '../../src/lib/metasop/agents/security';
+import { uiDesignerAgent } from '../../src/lib/metasop/agents/ui-designer';
+import { qaAgent } from '../../src/lib/metasop/agents/qa';
+import { AgentContext } from '../../src/lib/metasop/types';
 import type {
     ArchitectBackendArtifact,
     DevOpsBackendArtifact,
@@ -16,7 +16,7 @@ import type {
     QABackendArtifact,
     SecurityBackendArtifact,
     UIDesignerBackendArtifact,
-} from '../../lib/metasop/types';
+} from '../../src/lib/metasop/types';
 
 async function runFullVerification() {
     console.log("🚀 Starting Full Agent Pipeline Verification...\n");

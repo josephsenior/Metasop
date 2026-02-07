@@ -107,7 +107,6 @@ export const pmSchema = {
         ui_multi_section: {
             type: "boolean",
             description: "Whether the UI has multiple sections",
-            default: false,
         },
         assumptions: {
             type: "array",

@@ -39,6 +39,7 @@ export async function generateWithLLM(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    systemInstruction?: string;
     model?: string; // Per-call model override
   }
 ): Promise<string> {
@@ -52,6 +53,7 @@ export async function generateWithLLM(
     reasoning: options?.reasoning,
     cacheId: options?.cacheId,
     role: options?.role,
+    systemInstruction: options?.systemInstruction,
   });
 }
 
@@ -68,6 +70,7 @@ export async function generateStructuredWithLLM<T>(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    systemInstruction?: string;
     model?: string;
   }
 ): Promise<T> {
@@ -81,6 +84,7 @@ export async function generateStructuredWithLLM<T>(
     reasoning: options?.reasoning,
     cacheId: options?.cacheId,
     role: options?.role,
+    systemInstruction: options?.systemInstruction,
   });
 }
 
@@ -97,6 +101,7 @@ export async function generateStreamingStructuredWithLLM<T>(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    systemInstruction?: string;
     model?: string; // Per-agent model override
   }
 ): Promise<T> {
@@ -114,6 +119,7 @@ export async function generateStreamingStructuredWithLLM<T>(
       reasoning: options?.reasoning,
       cacheId: options?.cacheId,
       role: options?.role,
+      systemInstruction: options?.systemInstruction,
     });
   }
 
@@ -147,6 +153,7 @@ export async function generateStreamWithLLM(
     reasoning?: boolean;
     cacheId?: string;
     role?: string;
+    systemInstruction?: string;
   }
 ): Promise<string> {
   const provider = getLLMProvider();
@@ -171,6 +178,7 @@ export async function generateStreamWithLLM(
     reasoning: options?.reasoning,
     cacheId: options?.cacheId,
     role: options?.role,
+    systemInstruction: options?.systemInstruction,
   });
 }
 

@@ -1,8 +1,12 @@
 import path from 'node:path';
 
 /** @type {import('next').NextConfig} */
+const disableStandalone =
+  process.env.NEXT_DISABLE_STANDALONE === '1' ||
+  process.env.NEXT_DISABLE_STANDALONE === 'true';
+
 const nextConfig = {
-  output: 'standalone',
+  ...(disableStandalone ? {} : { output: 'standalone' }),
   typescript: {
     ignoreBuildErrors: true,
   },

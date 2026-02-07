@@ -59,8 +59,14 @@ export class EstimatesGenerator {
     const tables = archContent.database_schema?.tables || []
     const apiCount = Array.isArray(apis) ? apis.length : 0
     const dbCount = Array.isArray(tables) ? tables.length : 0
-    const componentCount = 0
-    const serviceCount = 0
+    const uiContent = this.artifacts.ui_design?.content || {}
+    const componentSpecs = (uiContent.component_specs as unknown[]) || []
+    const componentCount = Array.isArray(componentSpecs) ? componentSpecs.length : 0
+
+    const devopsContent = this.artifacts.devops_infrastructure?.content || {}
+    const infrastructure = devopsContent.infrastructure || {}
+    const services = (infrastructure.services as unknown[]) || []
+    const serviceCount = Array.isArray(services) ? services.length : 0
 
     // Base estimates (in hours)
     let planning = 0
@@ -150,8 +156,12 @@ export class EstimatesGenerator {
 
     const archContent = this.artifacts.arch_design?.content || {}
     const tables = archContent.database_schema?.tables || []
-    const serviceCount = 0
     const dbCount = Array.isArray(tables) ? tables.length : 0
+
+    const devopsContent = this.artifacts.devops_infrastructure?.content || {}
+    const infrastructure = devopsContent.infrastructure || {}
+    const services = (infrastructure.services as unknown[]) || []
+    const serviceCount = Array.isArray(services) ? services.length : 0
 
     // Base infrastructure
     let infrastructureMonthly = 50 // Base hosting
@@ -206,8 +216,15 @@ export class EstimatesGenerator {
     const tables = archContent.database_schema?.tables || []
     const apiCount = Array.isArray(apis) ? apis.length : 0
     const dbCount = Array.isArray(tables) ? tables.length : 0
-    const componentCount = 0
-    const serviceCount = 0
+
+    const uiContent = this.artifacts.ui_design?.content || {}
+    const componentSpecs = (uiContent.component_specs as unknown[]) || []
+    const componentCount = Array.isArray(componentSpecs) ? componentSpecs.length : 0
+
+    const devopsContent = this.artifacts.devops_infrastructure?.content || {}
+    const infrastructure = devopsContent.infrastructure || {}
+    const services = (infrastructure.services as unknown[]) || []
+    const serviceCount = Array.isArray(services) ? services.length : 0
     let score = 0
     const factors: string[] = []
 

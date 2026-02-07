@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { appendGuestSession } from "@/lib/utils/url"
 
 export default function MyDiagramsPage() {
   useAuth() // guest-only: auth context for future use
@@ -353,15 +354,15 @@ export default function MyDiagramsPage() {
                               Export
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation`, "_blank")}>
+                              <DropdownMenuItem onClick={() => window.open(appendGuestSession(`/api/diagrams/${diagram.id}/export?format=markdown&artifact=documentation`), "_blank")}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 Markdown
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation`, "_blank")}>
+                              <DropdownMenuItem onClick={() => window.open(appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation`), "_blank")}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 PDF
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`, "_blank")}>
+                              <DropdownMenuItem onClick={() => window.open(appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`), "_blank")}>
                                 <Presentation className="mr-2 h-4 w-4" />
                                 PowerPoint (.pptx)
                               </DropdownMenuItem>

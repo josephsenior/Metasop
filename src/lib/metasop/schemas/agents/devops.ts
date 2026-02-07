@@ -104,22 +104,46 @@ const MonitoringSchema = z.object({
     logging: MonitoringLoggingSchema.optional(),
 });
 
-const AutoScalingSchema = z.object({
-    enabled: z.boolean(),
-    min_replicas: z.number().int().min(1).optional(),
-    max_replicas: z.number().int().min(1).optional(),
-    target_cpu: z.number().min(0).max(100).optional(),
-    target_memory: z.number().min(0).max(100).optional(),
-});
+const AutoScalingSchema = z
+    .object({
+        // Legacy redundant field. Canonical rule: if auto_scaling exists, it's enabled.
+        enabled: z.boolean().optional(),
+        min_replicas: z.number().int().min(1).optional(),
+        max_replicas: z.number().int().min(1).optional(),
+        target_cpu: z.number().min(0).max(100).optional(),
+        target_memory: z.number().min(0).max(100).optional(),
+    })
+    .transform(({ enabled, ...rest }) => ({
+        ...rest,
+        // If explicitly disabled, drop auto_scaling entirely in the parent transform.
+        __enabled: enabled,
+    }));
 
 const ManualScalingSchema = z.object({
     replicas: z.number().int().min(1),
 });
 
-const ScalingSchema = z.object({
-    auto_scaling: AutoScalingSchema.optional(),
-    manual_scaling: ManualScalingSchema.optional(),
-});
+const ScalingSchema = z
+    .object({
+        auto_scaling: AutoScalingSchema.optional(),
+        manual_scaling: ManualScalingSchema.optional(),
+    })
+    .transform((scaling) => {
+        const isDisabled = (scaling.auto_scaling as any)?.__enabled === false;
+        const auto_scaling = isDisabled
+            ? undefined
+            : scaling.auto_scaling
+                ? (() => {
+                    const { __enabled: _ignore, ...rest } = scaling.auto_scaling as any;
+                    return rest;
+                })()
+                : undefined;
+
+        return {
+            auto_scaling,
+            manual_scaling: scaling.manual_scaling,
+        };
+    });
 
 export const DevOpsArtifactSchema = z.object({
     infrastructure: InfrastructureSchema, // REQUIRED

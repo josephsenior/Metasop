@@ -89,8 +89,15 @@ export interface ChangelogEntry {
     change: string;
 }
 
+export interface ArtifactPatch {
+    path: string;
+    value: any;
+    op: "set" | "add" | "remove";
+}
+
 export interface RefinementOutput {
-    updated_artifacts: Record<string, any>;
+    updated_artifacts: Record<string, any>; // Still supported for full replacement if needed
+    patches?: Record<string, ArtifactPatch[]>; // Delta updates
     changelog: ChangelogEntry[];
 }
 

@@ -37,6 +37,9 @@
   --sidebar-accent-foreground: oklch(0.30 0.01 250);
   --sidebar-border: oklch(0.922 0.01 250);
   --sidebar-ring: oklch(0.55 0.22 250);
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+  --sidebar-width-mobile: 18rem;
 }
 
 .dark {
@@ -72,6 +75,10 @@
   --sidebar-accent-foreground: oklch(0.90 0.002 90);
   --sidebar-border: oklch(0.25 0.01 250);
   --sidebar-ring: oklch(0.65 0.22 250);
+}
+
+[data-slot='sidebar'][data-mobile='true'] {
+  --sidebar-width: var(--sidebar-width-mobile);
 }
 
 @theme inline {
@@ -227,3 +234,13 @@
     border-color: #22d3ee;
   }
 }
+
+  .toaster {
+    --normal-bg: var(--popover);
+    --normal-text: var(--popover-foreground);
+    --normal-border: var(--border);
+  }
+
+  [data-slot='progress-indicator'] {
+    transform: var(--progress-transform, translateX(-100%));
+  }
