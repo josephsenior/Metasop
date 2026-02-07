@@ -181,21 +181,21 @@ export default function CreateDiagramPage() {
                 {/* Persistent Progress Bar */}
                 <GenerationProgress steps={generationSteps} summaries={stepSummaries} />
 
-                {/* Top banner (minimal, non-distracting) shown when there's no diagram and no generation steps */}
+                {/* Top intro (minimal, typographic) shown when there's no diagram and no generation steps */}
                 {!currentDiagram && generationSteps.length === 0 && (
-                  <div className="px-6 pt-6">
-                    <div className="max-w-2xl mx-auto">
-                      <div className="flex items-center gap-3 bg-muted/30 backdrop-blur-md border border-border/50 rounded-xl px-4 py-3 shadow-sm">
-                        <div className="flex-shrink-0 p-2 bg-blue-500/10 rounded-lg">
-                          <Sparkles className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-semibold text-foreground tracking-tight italic">Imagine your application</h3>
-                          <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                            Briefly describe your idea below — seven specialized AI agents will collaborate in real-time to architect your project.
-                          </p>
-                        </div>
+                  <div className="px-10 pt-16 pb-8">
+                    <div className="max-w-4xl">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="h-1 w-12 bg-blue-600 rounded-full" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Architect your vision</span>
                       </div>
+                      <h1 className="text-5xl font-extrabold tracking-tight text-foreground mb-6">
+                        Imagine your <span className="text-blue-600">application</span>
+                      </h1>
+                      <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed font-light">
+                        Describe your software vision in the prompt below. Seven specialized AI agents 
+                        will collaborate in real-time to architect <span className="text-foreground font-normal italic underline decoration-blue-500/30 decoration-2 underline-offset-4">every layer</span> of your project.
+                      </p>
                     </div>
                   </div>
                 )}
