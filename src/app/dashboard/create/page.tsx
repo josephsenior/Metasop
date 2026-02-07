@@ -181,20 +181,7 @@ export default function CreateDiagramPage() {
                 {/* Persistent Progress Bar */}
                 <GenerationProgress steps={generationSteps} summaries={stepSummaries} />
 
-                {/* Top intro (minimal, dashboard-style) */}
-                {!currentDiagram && generationSteps.length === 0 && (
-                  <div className="px-8 pt-10 pb-4">
-                    <div className="max-w-3xl">
-                      <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                        Imagine your <span className="text-blue-600">application</span>
-                      </h1>
-                      <p className="text-sm text-muted-foreground mt-2 max-w-lg leading-relaxed">
-                        Describe your software vision in the prompt below. Seven specialized AI agents 
-                        will collaborate in real-time to architect every layer of your project.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {/* Empty state: centered intro + larger generation flow */}
 
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
                   <AnimatePresence mode="wait">
@@ -204,10 +191,21 @@ export default function CreateDiagramPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="h-full flex flex-col items-center justify-center p-4"
+                        className="h-full flex flex-col items-center justify-center p-6"
                       >
-                        <div className="relative mb-12">
-                          <div className="absolute -inset-8 bg-blue-500/10 rounded-full blur-3xl" />
+                        {/* Centered intro */}
+                        <div className="text-center mb-6 px-6">
+                          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                            Imagine your <span className="text-blue-600">application</span>
+                          </h1>
+                          <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto leading-relaxed">
+                            Describe your software vision in the prompt below. Seven specialized AI agents
+                            will collaborate in real-time to architect every layer of your project.
+                          </p>
+                        </div>
+
+                        {/* Larger generation flow moved slightly up */}
+                        <div className="-mt-6 scale-[1.05]">
                           <GenerationFlow
                             steps={generationSteps}
                             summaries={stepSummaries}

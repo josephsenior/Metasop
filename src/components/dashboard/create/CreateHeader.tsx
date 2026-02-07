@@ -52,10 +52,11 @@ export function CreateHeader({
 }: CreateHeaderProps) {
     const router = useRouter()
     const { toast } = useToast()
+    const diagramId = currentDiagram?.id
 
     const handleDelete = async () => {
         if (!currentDiagram) return
-        const id = currentDiagram.id
+        const { id } = currentDiagram
         if (!id) {
             toast({ title: "Delete Failed", description: "Diagram id is missing.", variant: 'destructive' })
             return

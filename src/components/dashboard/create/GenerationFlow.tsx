@@ -20,10 +20,10 @@ interface GenerationFlowProps {
     summaries: Record<string, string>
 }
 
-const W = 320
-const H = 340
-const GRID_X = [50, 160, 270]
-const GRID_Y = [50, 170, 290]
+const W = 420
+const H = 460
+const GRID_X = [70, 210, 350]
+const GRID_Y = [70, 230, 390]
 
 const AGENTS_CONFIG = [
     { id: "pm_spec", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
@@ -53,8 +53,8 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
     `
 
     return (
-        <div className="relative w-full max-w-sm mx-auto aspect-square py-12 select-none h-full flex items-center justify-center">
-            <div className="relative overflow-visible w-[320px] h-[340px]">
+        <div className="relative w-full max-w-md mx-auto py-8 select-none h-full flex items-center justify-center">
+            <div className="relative overflow-visible w-[420px] h-[460px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">
@@ -101,13 +101,13 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 className="relative flex flex-col items-center"
                             >
                                 <div className={cn(
-                                    "relative w-14 h-14 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
+                                    "relative w-16 h-16 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
                                     stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/10 step-running-glow" :
                                         stepStatus === 'success' ? "bg-green-500/10 shadow-sm" :
                                             "bg-muted/30 border border-white/5"
                                 )}>
                                     <Icon className={cn(
-                                        "h-7 w-7 transition-colors duration-500",
+                                        "h-8 w-8 transition-colors duration-500",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/40"
@@ -128,9 +128,9 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 </div>
 
                                 {/* Label & Summary */}
-                                <div className="absolute -bottom-10 w-40 text-center pointer-events-none">
+                                <div className="absolute -bottom-12 w-52 text-center pointer-events-none">
                                     <span className={cn(
-                                        "text-[9px] font-black tracking-tighter uppercase block",
+                                        "text-[10px] font-black tracking-tighter uppercase block",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/40"
@@ -141,7 +141,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                         <motion.span
                                             initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="text-[8px] font-medium text-muted-foreground/60 leading-tight block mt-0.5 line-clamp-2 italic"
+                                            className="text-[9px] font-medium text-muted-foreground/60 leading-tight block mt-0.5 line-clamp-2 italic"
                                         >
                                             {summary}
                                         </motion.span>
