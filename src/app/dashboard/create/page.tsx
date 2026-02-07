@@ -205,7 +205,7 @@ export default function CreateDiagramPage() {
                         </div>
 
                         {/* Generation flow pulled up slightly and slightly reduced */}
-                        <div className="-mt-6 scale-[0.95]">
+                        <div className="-mt-17 scale-[1]">
                           <GenerationFlow
                             steps={generationSteps}
                             summaries={stepSummaries}
