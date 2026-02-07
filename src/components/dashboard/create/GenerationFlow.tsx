@@ -21,8 +21,8 @@ interface GenerationFlowProps {
 }
 
 const W = 380
-const H = 420
-const GRID_X = [60, 170, 280]
+const H = 400
+const GRID_X = [70, 190, 310]
 const GRID_Y = [60, 190, 320]
 
 const AGENTS_CONFIG = [
@@ -53,8 +53,8 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
     `
 
     return (
-        <div className="relative w-full max-w-sm mx-auto py-6 select-none h-full flex items-center justify-center">
-            <div className="relative overflow-visible w-[380px] h-[420px]">
+        <div className="relative w-full max-w-sm mx-auto select-none flex items-center justify-center">
+            <div className="relative overflow-visible w-[380px] h-[400px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">

@@ -188,13 +188,13 @@ export default function CreateDiagramPage() {
                     {!currentDiagram ? (
                       <motion.div
                         key="empty"
-                        initial={{ opacity: 0 }}
+                        initial={{ opacity: 0.4 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="h-full flex flex-col items-center justify-center px-6"
+                        className="h-full flex flex-col items-center justify-start pt-[12vh] px-6"
                       >
                         {/* Intro positioned lower */}
-                          <div className="text-center mb-6 px-6">
+                          <div className="text-center mb-8 px-6">
                           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                             Imagine your <span className="text-blue-600">application</span>
                           </h1>
@@ -205,7 +205,7 @@ export default function CreateDiagramPage() {
                         </div>
 
                           {/* Generation flow centered under the intro */}
-                          <div className="flex items-center justify-center mt-4">
+                          <div className="flex items-center justify-center">
                             <GenerationFlow
                               steps={generationSteps}
                               summaries={stepSummaries}
