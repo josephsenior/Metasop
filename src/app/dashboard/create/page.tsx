@@ -181,20 +181,16 @@ export default function CreateDiagramPage() {
                 {/* Persistent Progress Bar */}
                 <GenerationProgress steps={generationSteps} summaries={stepSummaries} />
 
-                {/* Top intro (minimal, typographic) shown when there's no diagram and no generation steps */}
+                {/* Top intro (minimal, dashboard-style) */}
                 {!currentDiagram && generationSteps.length === 0 && (
-                  <div className="px-10 pt-16 pb-8">
-                    <div className="max-w-4xl">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="h-1 w-12 bg-blue-600 rounded-full" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">Architect your vision</span>
-                      </div>
-                      <h1 className="text-5xl font-extrabold tracking-tight text-foreground mb-6">
+                  <div className="px-8 pt-10 pb-4">
+                    <div className="max-w-3xl">
+                      <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Imagine your <span className="text-blue-600">application</span>
                       </h1>
-                      <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed font-light">
+                      <p className="text-sm text-muted-foreground mt-2 max-w-lg leading-relaxed">
                         Describe your software vision in the prompt below. Seven specialized AI agents 
-                        will collaborate in real-time to architect <span className="text-foreground font-normal italic underline decoration-blue-500/30 decoration-2 underline-offset-4">every layer</span> of your project.
+                        will collaborate in real-time to architect every layer of your project.
                       </p>
                     </div>
                   </div>
