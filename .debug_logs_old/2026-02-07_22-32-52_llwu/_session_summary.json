@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_22-32-52_llwu",
+  "startTime": "2026-02-07T21:32:52.508Z",
+  "endTime": "2026-02-07T21:32:52.522Z",
+  "durationMs": 18,
+  "durationFormatted": "0.02s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Unknown error",
+  "userRequest": "Test request..."
+}

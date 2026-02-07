@@ -1,0 +1,818 @@
+{
+  "agent": "Architect",
+  "model": "gemini-3-flash-preview",
+  "timestamp": "2026-02-07T21:34:54.001Z",
+  "status": 400,
+  "statusText": "Bad Request",
+  "request": {
+    "prompt": "Based on the cached context, please perform your task as Architect.\n\n          You are a Principal Software Architect with 15+ years of experience designing scalable, secure, and maintainable systems. Design a production-ready system architecture for:\n\n\"restaurant management platform\"\n\nProject Goals: A multi-tenant SaaS back-office platform providing real-time inventory tracking, automated stock replenishment, and vendor management for restaurant operations.\nTarget Audience: The platform centralizes back-of-house operations for restaurant owners and managers. It focuses on reducing COGS through precise inventory management, waste tracking, and automated purchasing workflows, catering to both single-location and multi-unit enterprises.\nKey User Stories: Multi-tenant Account Setup, Inventory Item Cataloging, Automated Low-Stock Alerts\n\n\n=== TECHNICAL STANDARDS ===\n\nNAMING CONVENTIONS:\n- Database tables: snake_case (e.g., user_profiles, order_items)\n- API endpoints: kebab-case paths (e.g., /api/user-profiles)\n- JSON fields: camelCase (e.g., userId, createdAt)\n- Environment variables: SCREAMING_SNAKE_CASE (e.g., DATABASE_URL)\n- TypeScript interfaces: PascalCase (e.g., UserProfile)\n- Constants: SCREAMING_SNAKE_CASE (e.g., MAX_RETRY_COUNT)\n\n\nAPI DESIGN STANDARDS:\n- Use RESTful conventions: GET (read), POST (create), PUT (replace), PATCH (update), DELETE (remove)\n- HTTP Status Codes: 200 (OK), 201 (Created), 204 (No Content), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 409 (Conflict), 422 (Unprocessable Entity), 500 (Server Error)\n- Error Response Format: { \"error\": { \"code\": \"VALIDATION_ERROR\", \"message\": \"Human readable message\", \"details\": [...] } }\n- Pagination: Use cursor-based pagination with ?cursor=&limit= for large datasets\n- Versioning: URL path versioning (/api/v1/) for breaking changes\n- Rate Limiting: Include X-RateLimit-* headers in responses\n\n\nDATABASE DESIGN STANDARDS:\n- Every table must have: id (UUID/ULID), created_at, updated_at\n- Use soft deletes (deleted_at) for recoverable data\n- Foreign keys must have ON DELETE CASCADE or ON DELETE SET NULL explicitly defined\n- Index strategy: Primary key auto-indexed, add indexes for frequently queried columns and foreign keys\n- Use database-level constraints (NOT NULL, UNIQUE, CHECK) over application-level validation where possible\n\n=== MISSION OBJECTIVES ===\n\n1. **Architecture Design Document**\n   - Write comprehensive markdown documentation (~2000-3000 chars)\n   - Include system overview, component interactions, and data flow\n   - Document key architectural patterns used (MVC, CQRS, Event Sourcing, etc.)\n   - Address cross-cutting concerns (logging, monitoring, caching)\n\n2. **API Specification**\n   - Design RESTful APIs following REST maturity level 2+\n   - Include proper HTTP methods, status codes, and error responses\n   - Define request/response schemas with types\n   - Specify authentication requirements and rate limits\n   - Consider API versioning strategy\n\n3. **Database Architecture**\n   - Design normalized schema (3NF minimum for transactional data)\n   - Define all tables with columns, types, and constraints\n   - Map relationships (1:1, 1:N, M:N) with proper foreign keys\n   - Include indexes for frequently queried columns\n   - Consider read/write patterns and query optimization\n\n4. **Architectural Decision Records (ADRs)**\n  - Document key decisions with full context\n  - Include: decision, status, reason, tradeoffs, consequences\n   - List alternatives considered and why they were rejected\n   - Be specific about technical tradeoffs\n\n5. **Technology Stack**\n   - Justify each technology choice\n   - Consider team expertise, ecosystem maturity, and long-term support\n   - Balance innovation with stability\n\n6. **Scalability & Performance**\n   - Define horizontal and vertical scaling strategies\n   - Address database scaling (read replicas, sharding if needed)\n   - Specify caching layers and strategies\n   - Set performance targets (latency, throughput)\n\n7. **Integration Points**\n   - List external services and APIs\n   - Define integration patterns (REST, webhooks, message queues)\n   - Address failure handling and circuit breakers\n\n=== EXAMPLE ADR (Follow this depth) ===\n\nEXAMPLE ARCHITECTURAL DECISION (Architect):\n{\n  \"decision\": \"Use PostgreSQL as primary database over MongoDB\",\n  \"status\": \"accepted\",\n  \"reason\": \"Strong ACID compliance essential for financial transaction integrity, mature ecosystem with excellent TypeScript/Prisma support, and superior query performance for relational data with complex joins.\",\n  \"tradeoffs\": \"Less flexible schema evolution requires migrations; horizontal scaling more complex than document stores\",\n  \"consequences\": \"Need to implement proper migration strategy; may need read replicas for high-read workloads\",\n  \"alternatives\": [\n    \"MongoDB (rejected: eventual consistency unsuitable for financial data)\",\n    \"CockroachDB (considered: overkill for current scale)\",\n    \"MySQL (rejected: weaker JSON support)\"\n  ]\n}\n\n=== EXAMPLE API ENDPOINT (Follow this format) ===\n\nEXAMPLE API ENDPOINT (Architect):\n{\n  \"path\": \"/api/v1/users\",\n  \"method\": \"POST\",\n  \"endpoint\": \"Create User\",\n  \"description\": \"Create a new user account with email verification\",\n  \"request_schema\": {\n    \"email\": \"string\",\n    \"password\": \"string\",\n    \"name\": \"string\"\n  },\n  \"response_schema\": {\n    \"id\": \"string\",\n    \"email\": \"string\",\n    \"createdAt\": \"string\",\n    \"emailVerified\": \"boolean\"\n  },\n  \"auth_required\": false,\n  \"rate_limit\": \"10 req/min\"\n}\n\n\nQUALITY SELF-CHECK (ensure your output meets these criteria):\n1. ADRs include alternatives considered and tradeoffs\n2. API design follows REST conventions with proper status codes\n3. Database schema is normalized with proper relationships\n4. Technology choices are justified with rationale\n5. Scalability approach addresses realistic growth scenarios\n\nRevise your output so all criteria above are met before returning.\n\nRespond with ONLY the structured JSON object matching the schema. No explanations or markdown.\n\n        === JSON SCHEMA ===\n        {\n  \"type\": \"object\",\n  \"required\": [\n    \"design_doc\",\n    \"apis\",\n    \"decisions\",\n    \"technology_stack\",\n    \"database_schema\",\n    \"integration_points\",\n    \"security_considerations\",\n    \"scalability_approach\",\n    \"summary\",\n    \"description\"\n  ],\n  \"propertyOrdering\": [\n    \"summary\",\n    \"description\",\n    \"technology_stack\",\n    \"decisions\",\n    \"apis\",\n    \"security_considerations\",\n    \"scalability_approach\",\n    \"integration_points\",\n    \"database_schema\",\n    \"design_doc\"\n  ],\n  \"properties\": {\n    \"design_doc\": {\n      \"type\": \"string\",\n      \"maxLength\": 5000,\n      \"description\": \"Comprehensive architecture design document in markdown format. Aim for ~2500-4000 characters for complex systems.\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"maxLength\": 250,\n      \"description\": \"Technical executive summary of the architecture.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"maxLength\": 500,\n      \"description\": \"Brief overview of the system architecture.\"\n    },\n    \"apis\": {\n      \"type\": \"array\",\n      \"description\": \"CRUD-focused API specification. Technical and concise.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"path\",\n          \"method\",\n          \"description\",\n          \"request_schema\",\n          \"response_schema\",\n          \"auth_required\"\n        ],\n        \"properties\": {\n          \"path\": {\n            \"type\": \"string\",\n            \"pattern\": \"^/.*\",\n            \"maxLength\": 50,\n            \"description\": \"API path (e.g., '/api/users')\"\n          },\n          \"method\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"GET\",\n              \"POST\",\n              \"PUT\",\n              \"DELETE\",\n              \"PATCH\"\n            ]\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"maxLength\": 100,\n            \"description\": \"Concise purpose.\"\n          },\n          \"request_schema\": {\n            \"type\": \"object\",\n            \"description\": \"Request mapping (field: type). No descriptions. Keep concise.\",\n            \"additionalProperties\": {\n              \"type\": \"string\",\n              \"maxLength\": 50\n            }\n          },\n          \"response_schema\": {\n            \"type\": \"object\",\n            \"description\": \"Response mapping (field: type). No descriptions. Keep concise.\",\n            \"additionalProperties\": {\n              \"type\": \"string\",\n              \"maxLength\": 50\n            }\n          },\n          \"auth_required\": {\n            \"type\": \"boolean\"\n          },\n          \"rate_limit\": {\n            \"type\": \"string\",\n            \"maxLength\": 20\n          }\n        }\n      }\n    },\n    \"decisions\": {\n      \"type\": \"array\",\n      \"description\": \"Core architectural decisions (ADRs).\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"decision\",\n          \"status\",\n          \"reason\",\n          \"tradeoffs\",\n          \"consequences\"\n        ],\n        \"properties\": {\n          \"decision\": {\n            \"type\": \"string\",\n            \"maxLength\": 100,\n            \"description\": \"Clear decision statement (e.g., 'Use PostgreSQL as primary database')\"\n          },\n          \"status\": {\n            \"type\": \"string\",\n            \"enum\": [\n              \"accepted\",\n              \"proposed\",\n              \"superseded\"\n            ]\n          },\n          \"reason\": {\n            \"type\": \"string\",\n            \"maxLength\": 300,\n            \"description\": \"Detailed technical reasoning with specific justification.\"\n          },\n          \"tradeoffs\": {\n            \"type\": \"string\",\n            \"maxLength\": 250,\n            \"description\": \"What we gain and what we sacrifice with this decision.\"\n          },\n          \"consequences\": {\n            \"type\": \"string\",\n            \"maxLength\": 250,\n            \"description\": \"What needs to change or be implemented as a result.\"\n          },\n          \"alternatives\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\",\n              \"maxLength\": 100\n            },\n            \"description\": \"Alternatives considered with brief rejection reason (e.g., 'MongoDB - rejected due to eventual consistency')\"\n          }\n        }\n      }\n    },\n    \"database_schema\": {\n      \"type\": \"object\",\n      \"description\": \"Relational database schema. Snake_case only.\",\n      \"properties\": {\n        \"tables\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"required\": [\n              \"name\",\n              \"columns\"\n            ],\n            \"properties\": {\n              \"name\": {\n                \"type\": \"string\",\n                \"maxLength\": 30,\n                \"description\": \"Table name (snake_case)\"\n              },\n              \"description\": {\n                \"type\": \"string\",\n                \"maxLength\": 100\n              },\n              \"columns\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"name\",\n                    \"type\",\n                    \"constraints\"\n                  ],\n                  \"properties\": {\n                    \"name\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 30,\n                      \"description\": \"Column name (snake_case)\"\n                    },\n                    \"type\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 20,\n                      \"description\": \"SQL type (e.g., 'UUID', 'VARCHAR(255)')\"\n                    },\n                    \"constraints\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"string\",\n                        \"maxLength\": 20\n                      }\n                    },\n                    \"description\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 80\n                    }\n                  }\n                }\n              },\n              \"indexes\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"columns\"\n                  ],\n                  \"properties\": {\n                    \"columns\": {\n                      \"type\": \"array\",\n                      \"items\": {\n                        \"type\": \"string\",\n                        \"maxLength\": 30\n                      }\n                    },\n                    \"type\": {\n                      \"type\": \"string\",\n                      \"enum\": [\n                        \"btree\",\n                        \"hash\",\n                        \"gin\",\n                        \"gist\"\n                      ]\n                    },\n                    \"reason\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 100\n                    }\n                  }\n                }\n              },\n              \"relationships\": {\n                \"type\": \"array\",\n                \"items\": {\n                  \"type\": \"object\",\n                  \"required\": [\n                    \"type\",\n                    \"from\",\n                    \"to\"\n                  ],\n                  \"properties\": {\n                    \"type\": {\n                      \"type\": \"string\",\n                      \"enum\": [\n                        \"one-to-one\",\n                        \"one-to-many\",\n                        \"many-to-one\",\n                        \"many-to-many\"\n                      ]\n                    },\n                    \"from\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 30,\n                      \"description\": \"Source column\"\n                    },\n                    \"to\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 50,\n                      \"description\": \"Target table.column\"\n                    },\n                    \"through\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 30,\n                      \"description\": \"Junction table for M2M\"\n                    },\n                    \"description\": {\n                      \"type\": \"string\",\n                      \"maxLength\": 100\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    },\n    \"technology_stack\": {\n      \"type\": \"object\",\n      \"description\": \"Specific technology choices with justification.\",\n      \"required\": [\n        \"frontend\",\n        \"backend\",\n        \"database\",\n        \"authentication\",\n        \"hosting\"\n      ],\n      \"properties\": {\n        \"frontend\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Frontend stack\"\n        },\n        \"backend\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Backend stack\"\n        },\n        \"database\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Database choice\"\n        },\n        \"authentication\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Auth solutions\"\n        },\n        \"hosting\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Deployment/Cloud\"\n        },\n        \"other\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\",\n            \"maxLength\": 30\n          },\n          \"description\": \"Cache, Queue, etc.\"\n        }\n      }\n    },\n    \"integration_points\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"service\",\n          \"purpose\"\n        ],\n        \"properties\": {\n          \"service\": {\n            \"type\": \"string\",\n            \"maxLength\": 30,\n            \"description\": \"External service\"\n          },\n          \"purpose\": {\n            \"type\": \"string\",\n            \"maxLength\": 100,\n            \"description\": \"Purpose of integration\"\n          },\n          \"api_docs\": {\n            \"type\": \"string\",\n            \"format\": \"uri\",\n            \"maxLength\": 100,\n            \"description\": \"Docs URL\"\n          }\n        }\n      }\n    },\n    \"security_considerations\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\",\n        \"maxLength\": 100\n      },\n      \"description\": \"Specific security considerations for this architecture\"\n    },\n    \"scalability_approach\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"horizontal_scaling\": {\n          \"type\": \"string\",\n          \"maxLength\": 150\n        },\n        \"database_scaling\": {\n          \"type\": \"string\",\n          \"maxLength\": 150\n        },\n        \"caching_strategy\": {\n          \"type\": \"string\",\n          \"maxLength\": 150\n        },\n        \"performance_targets\": {\n          \"type\": \"string\",\n          \"maxLength\": 150\n        }\n      }\n    }\n  }\n}\n\n        === CRITICAL REQUIREMENTS ===\n        1. You MUST respond with ONLY a valid JSON object matching the provided schema.\n        2. Ensure ALL fields are present according to the schema.\n        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.",
+    "schema": {
+      "type": "object",
+      "required": [
+        "design_doc",
+        "apis",
+        "decisions",
+        "technology_stack",
+        "database_schema",
+        "integration_points",
+        "security_considerations",
+        "scalability_approach",
+        "summary",
+        "description"
+      ],
+      "propertyOrdering": [
+        "summary",
+        "description",
+        "technology_stack",
+        "decisions",
+        "apis",
+        "security_considerations",
+        "scalability_approach",
+        "integration_points",
+        "database_schema",
+        "design_doc"
+      ],
+      "properties": {
+        "design_doc": {
+          "type": "string",
+          "maxLength": 5000,
+          "description": "Comprehensive architecture design document in markdown format. Aim for ~2500-4000 characters for complex systems."
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 250,
+          "description": "Technical executive summary of the architecture."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Brief overview of the system architecture."
+        },
+        "apis": {
+          "type": "array",
+          "description": "CRUD-focused API specification. Technical and concise.",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "method",
+              "description",
+              "request_schema",
+              "response_schema",
+              "auth_required"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^/.*",
+                "maxLength": 50,
+                "description": "API path (e.g., '/api/users')"
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "PATCH"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 100,
+                "description": "Concise purpose."
+              },
+              "request_schema": {
+                "type": "object",
+                "description": "Request mapping (field: type). No descriptions. Keep concise.",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              },
+              "response_schema": {
+                "type": "object",
+                "description": "Response mapping (field: type). No descriptions. Keep concise.",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 50
+                }
+              },
+              "auth_required": {
+                "type": "boolean"
+              },
+              "rate_limit": {
+                "type": "string",
+                "maxLength": 20
+              }
+            }
+          }
+        },
+        "decisions": {
+          "type": "array",
+          "description": "Core architectural decisions (ADRs).",
+          "items": {
+            "type": "object",
+            "required": [
+              "decision",
+              "status",
+              "reason",
+              "tradeoffs",
+              "consequences"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "maxLength": 100,
+                "description": "Clear decision statement (e.g., 'Use PostgreSQL as primary database')"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "accepted",
+                  "proposed",
+                  "superseded"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "Detailed technical reasoning with specific justification."
+              },
+              "tradeoffs": {
+                "type": "string",
+                "maxLength": 250,
+                "description": "What we gain and what we sacrifice with this decision."
+              },
+              "consequences": {
+                "type": "string",
+                "maxLength": 250,
+                "description": "What needs to change or be implemented as a result."
+              },
+              "alternatives": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "description": "Alternatives considered with brief rejection reason (e.g., 'MongoDB - rejected due to eventual consistency')"
+              }
+            }
+          }
+        },
+        "database_schema": {
+          "type": "object",
+          "description": "Relational database schema. Snake_case only.",
+          "properties": {
+            "tables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "columns"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "description": "Table name (snake_case)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "columns": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "type",
+                        "constraints"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 30,
+                          "description": "Column name (snake_case)"
+                        },
+                        "type": {
+                          "type": "string",
+                          "maxLength": 20,
+                          "description": "SQL type (e.g., 'UUID', 'VARCHAR(255)')"
+                        },
+                        "constraints": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      }
+                    }
+                  },
+                  "indexes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "columns"
+                      ],
+                      "properties": {
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 30
+                          }
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "btree",
+                            "hash",
+                            "gin",
+                            "gist"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      }
+                    }
+                  },
+                  "relationships": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "from",
+                        "to"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "one-to-one",
+                            "one-to-many",
+                            "many-to-one",
+                            "many-to-many"
+                          ]
+                        },
+                        "from": {
+                          "type": "string",
+                          "maxLength": 30,
+                          "description": "Source column"
+                        },
+                        "to": {
+                          "type": "string",
+                          "maxLength": 50,
+                          "description": "Target table.column"
+                        },
+                        "through": {
+                          "type": "string",
+                          "maxLength": 30,
+                          "description": "Junction table for M2M"
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 100
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "technology_stack": {
+          "type": "object",
+          "description": "Specific technology choices with justification.",
+          "required": [
+            "frontend",
+            "backend",
+            "database",
+            "authentication",
+            "hosting"
+          ],
+          "properties": {
+            "frontend": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Frontend stack"
+            },
+            "backend": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Backend stack"
+            },
+            "database": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Database choice"
+            },
+            "authentication": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Auth solutions"
+            },
+            "hosting": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Deployment/Cloud"
+            },
+            "other": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "description": "Cache, Queue, etc."
+            }
+          }
+        },
+        "integration_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "service",
+              "purpose"
+            ],
+            "properties": {
+              "service": {
+                "type": "string",
+                "maxLength": 30,
+                "description": "External service"
+              },
+              "purpose": {
+                "type": "string",
+                "maxLength": 100,
+                "description": "Purpose of integration"
+              },
+              "api_docs": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 100,
+                "description": "Docs URL"
+              }
+            }
+          }
+        },
+        "security_considerations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "description": "Specific security considerations for this architecture"
+        },
+        "scalability_approach": {
+          "type": "object",
+          "properties": {
+            "horizontal_scaling": {
+              "type": "string",
+              "maxLength": 150
+            },
+            "database_scaling": {
+              "type": "string",
+              "maxLength": 150
+            },
+            "caching_strategy": {
+              "type": "string",
+              "maxLength": 150
+            },
+            "performance_targets": {
+              "type": "string",
+              "maxLength": 150
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "temperature": 0.2,
+      "maxOutputTokens": 64000,
+      "responseMimeType": "application/json",
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "design_doc": {
+            "type": "string",
+            "description": "Comprehensive architecture design document in markdown format. Aim for ~2500-4000 characters for complex systems.",
+            "maxLength": 5000
+          },
+          "summary": {
+            "type": "string",
+            "description": "Technical executive summary of the architecture.",
+            "maxLength": 250
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief overview of the system architecture.",
+            "maxLength": 500
+          },
+          "apis": {
+            "type": "array",
+            "description": "CRUD-focused API specification. Technical and concise.",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "method",
+                "description",
+                "request_schema",
+                "response_schema",
+                "auth_required"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "API path (e.g., '/api/users')",
+                  "pattern": "^/.*",
+                  "maxLength": 50
+                },
+                "method": {
+                  "type": "string",
+                  "enum": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "DELETE",
+                    "PATCH"
+                  ]
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Concise purpose.",
+                  "maxLength": 100
+                },
+                "request_schema": {
+                  "type": "string",
+                  "description": "Request mapping (field: type). No descriptions. Keep concise. [REQUIREMENT: This field must be a valid JSON string representing the object data]"
+                },
+                "response_schema": {
+                  "type": "string",
+                  "description": "Response mapping (field: type). No descriptions. Keep concise. [REQUIREMENT: This field must be a valid JSON string representing the object data]"
+                },
+                "auth_required": {
+                  "type": "boolean"
+                },
+                "rate_limit": {
+                  "type": "string",
+                  "maxLength": 20
+                }
+              }
+            }
+          },
+          "decisions": {
+            "type": "array",
+            "description": "Core architectural decisions (ADRs).",
+            "items": {
+              "type": "object",
+              "required": [
+                "decision",
+                "status",
+                "reason",
+                "tradeoffs",
+                "consequences"
+              ],
+              "properties": {
+                "decision": {
+                  "type": "string",
+                  "description": "Clear decision statement (e.g., 'Use PostgreSQL as primary database')",
+                  "maxLength": 100
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "accepted",
+                    "proposed",
+                    "superseded"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Detailed technical reasoning with specific justification.",
+                  "maxLength": 300
+                },
+                "tradeoffs": {
+                  "type": "string",
+                  "description": "What we gain and what we sacrifice with this decision.",
+                  "maxLength": 250
+                },
+                "consequences": {
+                  "type": "string",
+                  "description": "What needs to change or be implemented as a result.",
+                  "maxLength": 250
+                },
+                "alternatives": {
+                  "type": "array",
+                  "description": "Alternatives considered with brief rejection reason (e.g., 'MongoDB - rejected due to eventual consistency')",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          },
+          "database_schema": {
+            "type": "object",
+            "description": "Relational database schema. Snake_case only.",
+            "properties": {
+              "tables": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "columns"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Table name (snake_case)",
+                      "maxLength": 30
+                    },
+                    "description": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "columns": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "type",
+                          "constraints"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Column name (snake_case)",
+                            "maxLength": 30
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "SQL type (e.g., 'UUID', 'VARCHAR(255)')",
+                            "maxLength": 20
+                          },
+                          "constraints": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 20
+                            }
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      }
+                    },
+                    "indexes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "columns"
+                        ],
+                        "properties": {
+                          "columns": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 30
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "btree",
+                              "hash",
+                              "gin",
+                              "gist"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "maxLength": 100
+                          }
+                        }
+                      }
+                    },
+                    "relationships": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "type",
+                          "from",
+                          "to"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "one-to-one",
+                              "one-to-many",
+                              "many-to-one",
+                              "many-to-many"
+                            ]
+                          },
+                          "from": {
+                            "type": "string",
+                            "description": "Source column",
+                            "maxLength": 30
+                          },
+                          "to": {
+                            "type": "string",
+                            "description": "Target table.column",
+                            "maxLength": 50
+                          },
+                          "through": {
+                            "type": "string",
+                            "description": "Junction table for M2M",
+                            "maxLength": 30
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 100
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "technology_stack": {
+            "type": "object",
+            "description": "Specific technology choices with justification.",
+            "required": [
+              "frontend",
+              "backend",
+              "database",
+              "authentication",
+              "hosting"
+            ],
+            "properties": {
+              "frontend": {
+                "type": "array",
+                "description": "Frontend stack",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "backend": {
+                "type": "array",
+                "description": "Backend stack",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "database": {
+                "type": "array",
+                "description": "Database choice",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "authentication": {
+                "type": "array",
+                "description": "Auth solutions",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "hosting": {
+                "type": "array",
+                "description": "Deployment/Cloud",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "other": {
+                "type": "array",
+                "description": "Cache, Queue, etc.",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                }
+              }
+            }
+          },
+          "integration_points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "service",
+                "purpose"
+              ],
+              "properties": {
+                "service": {
+                  "type": "string",
+                  "description": "External service",
+                  "maxLength": 30
+                },
+                "purpose": {
+                  "type": "string",
+                  "description": "Purpose of integration",
+                  "maxLength": 100
+                },
+                "api_docs": {
+                  "type": "string",
+                  "description": "Docs URL",
+                  "maxLength": 100,
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "security_considerations": {
+            "type": "array",
+            "description": "Specific security considerations for this architecture",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          "scalability_approach": {
+            "type": "object",
+            "properties": {
+              "horizontal_scaling": {
+                "type": "string",
+                "maxLength": 150
+              },
+              "database_scaling": {
+                "type": "string",
+                "maxLength": 150
+              },
+              "caching_strategy": {
+                "type": "string",
+                "maxLength": 150
+              },
+              "performance_targets": {
+                "type": "string",
+                "maxLength": 150
+              }
+            }
+          }
+        },
+        "required": [
+          "design_doc",
+          "apis",
+          "decisions",
+          "technology_stack",
+          "database_schema",
+          "integration_points",
+          "security_considerations",
+          "scalability_approach",
+          "summary",
+          "description"
+        ]
+      }
+    }
+  },
+  "error": {
+    "error": {
+      "code": 400,
+      "message": "Model used by GenerateContent request (models/gemini-3-flash-preview) and CachedContent (models/gemini-3-pro-preview) has to be the same.",
+      "status": "INVALID_ARGUMENT"
+    }
+  }
+}

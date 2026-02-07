@@ -69,7 +69,7 @@ export function createGenerationJob(userId: string, diagramId: string): Generati
   jobs.set(jobId, job);
   // Persist a lightweight job file so other dev worker instances can discover it
   try {
-    const dir = path.join(process.cwd(), "tmp", "generation_jobs");
+    const dir = path.join(process.cwd(), ".tmp", "generation_jobs");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     const filePath = path.join(dir, `${jobId}.json`);
     fs.writeFileSync(filePath, JSON.stringify({ id: jobId, userId, diagramId, status: job.status, createdAt: job.createdAt }));
@@ -86,7 +86,7 @@ export function getGenerationJob(jobId: string): GenerationJob | undefined {
 
   // Fallback: try to load job file persisted to disk (helps in dev with multiple workers)
   try {
-    const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${jobId}.json`);
+    const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${jobId}.json`);
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, "utf-8");
       const parsed = JSON.parse(raw);
@@ -216,7 +216,7 @@ export function startGenerationJob(params: StartJobParams): void {
 
       // Cleanup persisted job file
       try {
-        const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
+        const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${job.id}.json`);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       } catch (_e) {
         // ignore
@@ -236,7 +236,7 @@ export function startGenerationJob(params: StartJobParams): void {
       job.status = "failed";
       // Cleanup persisted job file on failure as well
       try {
-        const filePath = path.join(process.cwd(), "tmp", "generation_jobs", `${job.id}.json`);
+        const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${job.id}.json`);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       } catch (_e) {
         // ignore

@@ -1,0 +1,149 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "timestamp": "2026-02-07T02:15:28.911Z",
+  "content": {
+    "summary": "test",
+    "description": "test",
+    "user_stories": [
+      {
+        "title": "test",
+        "story": "test",
+        "description": "test",
+        "priority": "critical",
+        "story_points": 1,
+        "acceptance_criteria": [
+          "test"
+        ],
+        "estimated_complexity": "small",
+        "user_value": "test",
+        "dependencies": [
+          "test"
+        ]
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "criteria": "test",
+        "priority": "must"
+      }
+    ],
+    "assumptions": [
+      "test"
+    ],
+    "out_of_scope": [
+      "test"
+    ],
+    "swot": {
+      "strengths": [
+        "test"
+      ],
+      "weaknesses": [
+        "test"
+      ],
+      "opportunities": [
+        "test"
+      ],
+      "threats": [
+        "test"
+      ]
+    },
+    "stakeholders": [
+      {
+        "role": "test",
+        "interest": "test",
+        "influence": "high"
+      }
+    ],
+    "invest_analysis": [
+      {
+        "user_story_id": "test",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 1
+      }
+    ]
+  },
+  "validation_errors": [
+    "PM: user_stories.0.title - Title must be at least 5 characters",
+    "PM: user_stories.0.story - Story must be at least 10 characters",
+    "PM: user_stories.0.acceptance_criteria.0 - Acceptance criterion must be at least 5 characters",
+    "PM: user_stories.0.user_value - User value must be at least 5 characters",
+    "PM: acceptance_criteria.0.criteria - Criteria must be at least 10 characters"
+  ],
+  "full_artifact": {
+    "step_id": "pm_spec",
+    "role": "Product Manager",
+    "content": {
+      "summary": "test",
+      "description": "test",
+      "user_stories": [
+        {
+          "title": "test",
+          "story": "test",
+          "description": "test",
+          "priority": "critical",
+          "story_points": 1,
+          "acceptance_criteria": [
+            "test"
+          ],
+          "estimated_complexity": "small",
+          "user_value": "test",
+          "dependencies": [
+            "test"
+          ]
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "criteria": "test",
+          "priority": "must"
+        }
+      ],
+      "assumptions": [
+        "test"
+      ],
+      "out_of_scope": [
+        "test"
+      ],
+      "swot": {
+        "strengths": [
+          "test"
+        ],
+        "weaknesses": [
+          "test"
+        ],
+        "opportunities": [
+          "test"
+        ],
+        "threats": [
+          "test"
+        ]
+      },
+      "stakeholders": [
+        {
+          "role": "test",
+          "interest": "test",
+          "influence": "high"
+        }
+      ],
+      "invest_analysis": [
+        {
+          "user_story_id": "test",
+          "independent": true,
+          "negotiable": true,
+          "valuable": true,
+          "estimatable": true,
+          "small": true,
+          "testable": true,
+          "score": 1
+        }
+      ]
+    },
+    "timestamp": "2026-02-07T02:15:28.910Z"
+  }
+}

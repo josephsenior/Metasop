@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_03-15-39_ikt1",
+  "startTime": "2026-02-07T02:15:39.508Z",
+  "endTime": "2026-02-07T02:15:39.511Z",
+  "durationMs": 4,
+  "durationFormatted": "0.00s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Unknown error",
+  "userRequest": "Test request..."
+}

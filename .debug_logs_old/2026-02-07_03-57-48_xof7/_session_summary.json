@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_03-57-48_xof7",
+  "startTime": "2026-02-07T02:57:48.620Z",
+  "endTime": "2026-02-07T02:57:52.146Z",
+  "durationMs": 3527,
+  "durationFormatted": "3.53s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Artifact validation failed: PM: user_stories.0.id - Required; PM: user_stories.0.title - Title must be at least 5 characters; PM: user_stories.0.story - Story must be at least 10 characters; PM: user_stories.0.acceptance_criteria.0 - Acceptance criterion must be at least 5 characters; PM: user_stories.0.user_value - User value must be at least 5 characters; PM: acceptance_criteria.0.criteria - Criteria must be at least 10 characters; PM: invest_analysis.0 - Unrecognized key(s) in object: 'score'",
+  "userRequest": "Test request..."
+}

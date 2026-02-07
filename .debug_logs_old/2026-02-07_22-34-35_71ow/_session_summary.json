@@ -1,0 +1,16 @@
+{
+  "sessionId": "2026-02-07_22-34-35_71ow",
+  "startTime": "2026-02-07T21:34:35.461Z",
+  "endTime": "2026-02-07T21:34:54.031Z",
+  "durationMs": 18570,
+  "durationFormatted": "18.57s",
+  "success": false,
+  "agentsCompleted": [
+    "pm_spec"
+  ],
+  "agentsFailed": [
+    "arch_design"
+  ],
+  "error": "Gemini API error (400): Model used by GenerateContent request (models/gemini-3-flash-preview) and CachedContent (models/gemini-3-pro-preview) has to be the same.",
+  "userRequest": "restaurant management platform..."
+}

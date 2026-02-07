@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_19-51-49_umru",
+  "startTime": "2026-02-07T18:51:49.519Z",
+  "endTime": "2026-02-07T18:51:49.532Z",
+  "durationMs": 18,
+  "durationFormatted": "0.02s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Agent failure",
+  "userRequest": "Test request..."
+}

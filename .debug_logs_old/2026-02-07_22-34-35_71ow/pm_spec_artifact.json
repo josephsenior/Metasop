@@ -1,0 +1,171 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "timestamp": "2026-02-07T21:34:52.691Z",
+  "content": {
+    "summary": "A multi-tenant SaaS back-office platform providing real-time inventory tracking, automated stock replenishment, and vendor management for restaurant operations.",
+    "description": "The platform centralizes back-of-house operations for restaurant owners and managers. It focuses on reducing COGS through precise inventory management, waste tracking, and automated purchasing workflows, catering to both single-location and multi-unit enterprises.",
+    "user_stories": [
+      {
+        "title": "Multi-tenant Account Setup",
+        "story": "As a restaurant owner, I want to create a secure tenant account so that my inventory and financial data are isolated from other businesses.",
+        "description": "Implement a multi-tenant architecture using schema-based isolation. Include secure sign-up with organization profile creation.",
+        "priority": "critical",
+        "story_points": 5,
+        "acceptance_criteria": [
+          "System creates a unique organization ID for every new registration",
+          "Users from Tenant A cannot access or query data belonging to Tenant B",
+          "Registration requires email verification and 2FA setup",
+          "Organization profile includes currency, timezone, and tax settings"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Ensures data privacy and security in a shared SaaS environment.",
+        "dependencies": [],
+        "id": "US-1"
+      },
+      {
+        "title": "Inventory Item Cataloging",
+        "story": "As a kitchen manager, I want to define inventory items with unit costs and par levels so that I can track stock accurately.",
+        "description": "Create a CRUD interface for inventory items including SKU, category, unit of measure, and minimum stock thresholds.",
+        "priority": "critical",
+        "story_points": 8,
+        "acceptance_criteria": [
+          "User can add, edit, or archive inventory items with unique SKUs",
+          "System supports multiple units of measure (e.g., kg, liters, cases)",
+          "Each item must have a defined 'Par Level' (minimum stock)",
+          "System calculates total value of stock based on last purchase price"
+        ],
+        "estimated_complexity": "medium",
+        "user_value": "Provides a single source of truth for all raw materials and supplies.",
+        "dependencies": [
+          "US-1"
+        ],
+        "id": "US-2"
+      },
+      {
+        "title": "Automated Low-Stock Alerts",
+        "story": "As a back-office admin, I want to receive notifications when stock falls below par levels so that I can prevent ingredient shortages.",
+        "description": "Implement a background worker that compares current stock levels against par levels and triggers system notifications.",
+        "priority": "high",
+        "story_points": 3,
+        "acceptance_criteria": [
+          "System checks stock levels every 15 minutes against par levels",
+          "Notifications appear in the dashboard sidebar in real-time",
+          "Email alerts are sent to designated admins for 'Critical' shortages",
+          "Alerts include the item name, current quantity, and vendor info"
+        ],
+        "estimated_complexity": "small",
+        "user_value": "Reduces manual monitoring and prevents stockouts that disrupt service.",
+        "dependencies": [
+          "US-2"
+        ],
+        "id": "US-3"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "criteria": "The system must maintain 99.9% uptime for the inventory dashboard.",
+        "priority": "must",
+        "description": "High availability requirement for business-critical back-office operations.",
+        "id": "AC-1",
+        "title": "System Availability"
+      },
+      {
+        "criteria": "All API responses for inventory queries must return in under 200ms.",
+        "priority": "should",
+        "description": "Performance benchmark for smooth user experience during high-volume data entry.",
+        "id": "AC-2",
+        "title": "Response Latency"
+      },
+      {
+        "criteria": "Data must be encrypted at rest using AES-256 standards.",
+        "priority": "must",
+        "description": "Security requirement to protect sensitive financial and vendor data.",
+        "id": "AC-3",
+        "title": "Data Encryption"
+      }
+    ],
+    "ui_multi_section": true,
+    "assumptions": [
+      "Users have stable internet access for the web dashboard",
+      "Third-party POS systems provide accessible webhooks or APIs",
+      "Initial inventory data migration will be handled via CSV uploads"
+    ],
+    "out_of_scope": [
+      "Front-of-house POS hardware sales",
+      "Customer-facing loyalty mobile applications",
+      "Employee payroll processing and tax filing"
+    ],
+    "swot": {
+      "strengths": [
+        "Multi-tenant data isolation",
+        "Real-time stock alerting",
+        "Scalable cloud architecture"
+      ],
+      "weaknesses": [
+        "Dependency on POS API stability",
+        "High initial data entry effort"
+      ],
+      "opportunities": [
+        "AI-driven predictive ordering",
+        "Direct vendor marketplace integration"
+      ],
+      "threats": [
+        "Established competitors like Toast",
+        "Rising cloud infrastructure costs"
+      ]
+    },
+    "stakeholders": [
+      {
+        "role": "Restaurant Owner",
+        "interest": "Profitability, COGS reduction, and multi-unit oversight",
+        "influence": "high"
+      },
+      {
+        "role": "Kitchen Manager",
+        "interest": "Ease of stock counting and preventing shortages",
+        "influence": "high"
+      },
+      {
+        "role": "Vendor Representative",
+        "interest": "Accurate purchase orders and timely payments",
+        "influence": "medium"
+      }
+    ],
+    "invest_analysis": [
+      {
+        "user_story_id": "US-1",
+        "independent": true,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 10,
+        "comments": "Foundational story for multi-tenancy."
+      },
+      {
+        "user_story_id": "US-2",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 8,
+        "comments": "Depends on US-1 for tenant context."
+      },
+      {
+        "user_story_id": "US-3",
+        "independent": false,
+        "negotiable": true,
+        "valuable": true,
+        "estimatable": true,
+        "small": true,
+        "testable": true,
+        "score": 9,
+        "comments": "High value for operational efficiency."
+      }
+    ]
+  }
+}

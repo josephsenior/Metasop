@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_03-25-39_42cn",
+  "startTime": "2026-02-07T02:25:39.451Z",
+  "endTime": "2026-02-07T02:25:39.465Z",
+  "durationMs": 19,
+  "durationFormatted": "0.02s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Agent failure",
+  "userRequest": "Test request..."
+}

@@ -1,0 +1,13 @@
+{
+  "step_id": "pm_spec",
+  "role": "Product Manager",
+  "timestamp": "2026-02-07T20:27:49.379Z",
+  "error": {
+    "message": "Agent failure",
+    "name": "Error",
+    "stack": "Error: Agent failure\n    at C:/Users/GIGABYTE/Desktop/MultiAGentPLatform/tests/unit/metasop/orchestrator/orchestrator.test.ts:56:9\n    at file:///C:/Users/GIGABYTE/Desktop/MultiAGentPLatform/node_modules/.pnpm/@vitest+runner@4.0.14/node_modules/@vitest/runner/dist/index.js:919:20"
+  },
+  "executionTime": 0,
+  "attempts": 1,
+  "partialResult": null
+}

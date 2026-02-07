@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_03-57-34_r7qb",
+  "startTime": "2026-02-07T02:57:34.390Z",
+  "endTime": "2026-02-07T02:57:34.502Z",
+  "durationMs": 112,
+  "durationFormatted": "0.11s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Step execution timeout after 100ms",
+  "userRequest": "Test request..."
+}

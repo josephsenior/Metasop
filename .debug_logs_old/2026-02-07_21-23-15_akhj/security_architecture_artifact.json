@@ -1,0 +1,246 @@
+{
+  "step_id": "security_architecture",
+  "role": "Security",
+  "timestamp": "2026-02-07T20:25:27.863Z",
+  "content": {
+    "summary": "A Zero-Trust architecture enforcing strict multi-tenant isolation via PostgreSQL Row-Level Security and securing offline-first data synchronization with cryptographic validation. The system leverages AWS managed security services (WAF, KMS, Cognito/Auth0) to mitigate threats across the hybrid cloud/edge environment.",
+    "description": "The security architecture is designed to protect a distributed, offline-capable restaurant platform. The primary attack surface involves the synchronization of data between untrusted POS tablets and the cloud backend. To mitigate tampering, the system employs server-side validation of all synced UUIDv7 records. Multi-tenancy is secured not just at the application layer, but enforced at the database level using PostgreSQL Row-Level Security (RLS) to prevent cross-tenant data leaks. Real-time WebSockets are protected via rate limiting and strict JWT authentication to prevent DoS. All sensitive data is encrypted at rest using envelope encryption via AWS KMS, and payments are offloaded to Stripe to minimize PCI-DSS scope.",
+    "security_architecture": {
+      "authentication": {
+        "method": "JWT",
+        "providers": [
+          "Auth0",
+          "Google",
+          "Email/Password"
+        ],
+        "mfa_enabled": true
+      },
+      "authorization": {
+        "model": "RBAC",
+        "roles": [
+          "owner",
+          "manager",
+          "server",
+          "cook"
+        ],
+        "policies": [
+          {
+            "resource": "orders",
+            "permissions": [
+              "create",
+              "read",
+              "update"
+            ],
+            "roles": [
+              "server",
+              "manager"
+            ]
+          },
+          {
+            "resource": "menu_config",
+            "permissions": [
+              "create",
+              "update",
+              "delete"
+            ],
+            "roles": [
+              "manager",
+              "owner"
+            ]
+          },
+          {
+            "resource": "financial_reports",
+            "permissions": [
+              "read"
+            ],
+            "roles": [
+              "owner"
+            ]
+          }
+        ]
+      },
+      "session_management": {
+        "http_only_cookies": true,
+        "same_site_policy": "Strict",
+        "secure_cookies": true,
+        "session_timeout": "12h",
+        "strategy": "stateless"
+      },
+      "audit_logging": {
+        "enabled": true,
+        "events": [
+          "login_success",
+          "login_failed",
+          "order_voided",
+          "menu_price_change",
+          "payment_refund"
+        ],
+        "retention": "1y",
+        "storage_location": "AWS S3 (Immutable Object Lock)"
+      }
+    },
+    "threat_model": [
+      {
+        "threat": "Cross-Tenant Data Leak via RLS Bypass",
+        "mitigation": "Enforce Row-Level Security (RLS) on all tables with extensive unit tests for tenant isolation policies.",
+        "severity": "critical",
+        "affected_components": [
+          "PostgreSQL",
+          "API Layer"
+        ],
+        "category": "Information Disclosure",
+        "cwe_ref": "CWE-200",
+        "description": "An attacker exploits a flaw in the query logic to access data belonging to another restaurant tenant.",
+        "impact": "Massive data breach, loss of customer trust, legal penalties.",
+        "likelihood": "medium",
+        "owasp_ref": "A01:2021 - Broken Access Control"
+      },
+      {
+        "threat": "WebSocket Connection Exhaustion (DoS)",
+        "mitigation": "Implement strict rate limiting per IP/Tenant and enforce max concurrent connection limits in Nginx and Socket.io.",
+        "severity": "high",
+        "affected_components": [
+          "Socket.io Service",
+          "Load Balancer"
+        ],
+        "category": "Denial of Service",
+        "cwe_ref": "CWE-400",
+        "description": "Malicious actor floods the WebSocket server with connection requests, preventing KDS updates.",
+        "impact": "Kitchen operations halt, inability to process orders.",
+        "likelihood": "medium",
+        "owasp_ref": "A05:2021 - Security Misconfiguration"
+      },
+      {
+        "threat": "Offline Transaction Tampering",
+        "mitigation": "Implement cryptographic checksums for offline order batches and server-side validation of all synced data.",
+        "severity": "high",
+        "affected_components": [
+          "POS Tablet",
+          "Sync Engine"
+        ],
+        "category": "Tampering",
+        "cwe_ref": "CWE-353",
+        "description": "Attacker modifies local SQLite data on the tablet before connectivity is restored to alter prices or totals.",
+        "impact": "Financial loss, inventory discrepancies.",
+        "likelihood": "medium",
+        "owasp_ref": "A08:2021 - Software and Data Integrity Failures"
+      },
+      {
+        "threat": "Privilege Escalation via API Parameter Manipulation",
+        "mitigation": "Strict DTO validation using Zod and backend role checks for every API endpoint, ignoring client-sent role params.",
+        "severity": "critical",
+        "affected_components": [
+          "API Layer",
+          "NestJS Guards"
+        ],
+        "category": "Elevation of Privilege",
+        "cwe_ref": "CWE-269",
+        "description": "A server modifies API requests to perform manager-level actions like voiding items or changing prices.",
+        "impact": "Unauthorized financial changes, theft facilitation.",
+        "likelihood": "medium",
+        "owasp_ref": "A01:2021 - Broken Access Control"
+      }
+    ],
+    "encryption": {
+      "data_at_rest": {
+        "method": "AES-256-GCM",
+        "key_management": "AWS KMS (Key Management Service)",
+        "description": "Full disk encryption for RDS and ElastiCache; field-level encryption for PII."
+      },
+      "data_in_transit": {
+        "method": "TLS 1.3",
+        "certificate_management": "AWS Certificate Manager (ACM) with auto-renewal",
+        "description": "Enforced HTTPS for all API and WebSocket traffic; HSTS enabled."
+      },
+      "key_management": {
+        "strategy": "Centralized Key Management via AWS KMS",
+        "description": "Customer Master Keys (CMKs) managed in KMS with strict IAM usage policies.",
+        "rotation_policy": "Automatic annual rotation"
+      },
+      "envelope_encryption": true,
+      "secrets_management": "AWS Secrets Manager"
+    },
+    "security_controls": [
+      {
+        "control": "Web Application Firewall (WAF)",
+        "implementation": "AWS WAF rules configured for SQLi, XSS, and rate limiting on API Gateway.",
+        "category": "preventive",
+        "description": "Filters malicious web traffic before it reaches the application.",
+        "id": "SC-01",
+        "priority": "critical",
+        "type": "Network Security"
+      },
+      {
+        "control": "Row-Level Security (RLS)",
+        "implementation": "PostgreSQL policies enforcing 'restaurant_id' checks on every query.",
+        "category": "preventive",
+        "description": "Database-level isolation to prevent cross-tenant data leakage.",
+        "id": "SC-02",
+        "priority": "critical",
+        "type": "Data Security"
+      },
+      {
+        "control": "Automated Vulnerability Scanning",
+        "implementation": "GitHub Dependabot for deps and AWS Inspector for container/EC2 scanning.",
+        "category": "detective",
+        "description": "Continuous monitoring of dependencies and infrastructure for CVEs.",
+        "id": "SC-03",
+        "priority": "high",
+        "type": "Vulnerability Mgmt"
+      },
+      {
+        "control": "Centralized Audit Logging",
+        "implementation": "NestJS interceptors sending structured logs to CloudWatch/S3.",
+        "category": "detective",
+        "description": "Immutable record of all critical system actions for forensics.",
+        "id": "SC-04",
+        "priority": "high",
+        "type": "Logging"
+      }
+    ],
+    "compliance": [
+      {
+        "standard": "PCI-DSS",
+        "requirements": [
+          "Requirement 3: Protect stored cardholder data",
+          "Requirement 4: Encrypt transmission of cardholder data"
+        ],
+        "implementation_status": "compliant",
+        "description": "Utilizing Stripe Elements (SAQ-A) to ensure no raw card data touches our servers."
+      },
+      {
+        "standard": "GDPR",
+        "requirements": [
+          "Article 32: Security of processing",
+          "Article 17: Right to erasure"
+        ],
+        "implementation_status": "in-progress",
+        "description": "Implementing automated data purging workflows and consent management for staff data."
+      },
+      {
+        "standard": "SOC2",
+        "requirements": [
+          "CC6.1: Logical Access Security",
+          "CC6.7: Transmission Security"
+        ],
+        "implementation_status": "planned",
+        "description": "Establishing baseline controls for future audit readiness."
+      }
+    ],
+    "vulnerability_management": {
+      "remediation_sla": "Critical: 24h, High: 7d, Medium: 30d",
+      "scanning_frequency": "Continuous (CI/CD) + Weekly Deep Scans",
+      "tools": [
+        "AWS Inspector",
+        "Snyk",
+        "OWASP ZAP",
+        "Dependabot"
+      ]
+    },
+    "security_monitoring": {
+      "alerting_thresholds": "5 failed logins/min, >100 orders/min per tenant, >1% 5xx error rate",
+      "logging_strategy": "Structured JSON logging with correlation IDs across microservices; centralized in CloudWatch.",
+      "siem_solution": "AWS Security Hub / CloudWatch Logs Insights"
+    }
+  }
+}

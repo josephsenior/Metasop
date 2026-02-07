@@ -34,7 +34,7 @@ export interface DebugSession {
  */
 export function createDebugSession(userRequest: string): DebugSession {
     const sessionId = generateSessionId();
-    const debugBaseDir = path.join(process.cwd(), 'debug_logs');
+    const debugBaseDir = path.join(process.cwd(), '.debug_logs');
     const sessionDir = path.join(debugBaseDir, sessionId);
 
     try {
@@ -67,7 +67,7 @@ export function createDebugSession(userRequest: string): DebugSession {
         };
     } catch (error: any) {
         logger.error("Failed to create debug session", { error: error.message });
-        // Fallback to root debug_logs if session folder creation fails
+        // Fallback to root .debug_logs if session folder creation fails
         return {
             sessionId,
             sessionDir: debugBaseDir,
@@ -163,6 +163,6 @@ export function getSessionDebugDir(): string {
     if (currentSession) {
         return currentSession.sessionDir;
     }
-    // Fallback to root debug_logs
-    return path.join(process.cwd(), 'debug_logs');
+    // Fallback to root .debug_logs
+    return path.join(process.cwd(), '.debug_logs');
 }

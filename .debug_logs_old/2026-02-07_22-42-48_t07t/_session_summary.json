@@ -1,0 +1,19 @@
+{
+  "sessionId": "2026-02-07_22-42-48_t07t",
+  "startTime": "2026-02-07T21:42:48.349Z",
+  "endTime": "2026-02-07T21:47:30.234Z",
+  "durationMs": 281892,
+  "durationFormatted": "281.89s",
+  "success": true,
+  "agentsCompleted": [
+    "pm_spec",
+    "arch_design",
+    "security_architecture",
+    "devops_infrastructure",
+    "ui_design",
+    "engineer_impl",
+    "qa_verification"
+  ],
+  "agentsFailed": [],
+  "userRequest": "restaurant management platform..."
+}

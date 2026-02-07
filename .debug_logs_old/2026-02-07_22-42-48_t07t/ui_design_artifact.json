@@ -1,0 +1,421 @@
+{
+  "step_id": "ui_design",
+  "role": "UI Designer",
+  "timestamp": "2026-02-07T21:46:23.247Z",
+  "content": {
+    "summary": "A high-contrast, touch-optimized design system built for speed and accuracy in fast-paced restaurant environments. The UI prioritizes legibility, large touch targets, and clear visual feedback for state changes.",
+    "description": "The visual design follows a clean, modern aesthetic using a slate and indigo color palette to convey professionalism and reliability. Key principles include 'Touch-First' sizing (min 44px targets), 'Information Density' balanced for quick scanning, and 'State Visibility' to prevent order errors. The system utilizes a strict atomic structure to ensure consistency across the POS tablet interface and the Kitchen Display System (KDS).",
+    "design_tokens": {
+      "colors": {
+        "primary": "#4F46E5",
+        "primary_foreground": "#FFFFFF",
+        "secondary": "#64748B",
+        "secondary_foreground": "#FFFFFF",
+        "background": "#0F172A",
+        "foreground": "#E2E8F0",
+        "text": "#E2E8F0",
+        "muted": "#1E293B",
+        "muted_foreground": "#94A3B8",
+        "card": "#111827",
+        "card_foreground": "#E5E7EB",
+        "popover": "#111827",
+        "popover_foreground": "#E5E7EB",
+        "border": "#334155",
+        "input": "#334155",
+        "ring": "#4F46E5",
+        "accent": "#22D3EE",
+        "accent_foreground": "#0F172A",
+        "destructive": "#EF4444",
+        "destructive_foreground": "#FFFFFF"
+      },
+      "spacing": {
+        "xs": "0.25rem",
+        "sm": "0.5rem",
+        "md": "0.75rem",
+        "lg": "1rem",
+        "xl": "1.25rem",
+        "2xl": "1.5rem",
+        "3xl": "2rem"
+      },
+      "typography": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "headingFont": "Inter, system-ui, sans-serif",
+        "monoFont": "JetBrains Mono, monospace",
+        "fontSize": {
+          "xs": "0.75rem",
+          "sm": "0.875rem",
+          "base": "1rem",
+          "lg": "1.125rem",
+          "xl": "1.25rem",
+          "2xl": "1.5rem",
+          "3xl": "1.875rem"
+        },
+        "fontWeight": {
+          "light": "300",
+          "normal": "400",
+          "medium": "500",
+          "semibold": "600",
+          "bold": "700"
+        },
+        "lineHeight": {
+          "tight": "1.25",
+          "normal": "1.5",
+          "relaxed": "1.625",
+          "loose": "2"
+        }
+      },
+      "borderRadius": {
+        "none": "0px",
+        "sm": "0.125rem",
+        "md": "0.375rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "shadows": {
+        "sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "md": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+        "lg": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+        "xl": "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+        "inner": "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)",
+        "none": "none"
+      },
+      "animations": {
+        "fast": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "normal": "300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "slow": "500ms cubic-bezier(0.4, 0, 0.2, 1)"
+      }
+    },
+    "component_hierarchy": {
+      "root": "App",
+      "children": [
+        {
+          "name": "AuthProvider",
+          "props": [
+            "role: string"
+          ]
+        },
+        {
+          "name": "Layout",
+          "props": [
+            "variant: string"
+          ]
+        },
+        {
+          "name": "POSView",
+          "props": [
+            "tableId: string"
+          ]
+        },
+        {
+          "name": "MenuGrid",
+          "props": [
+            "categoryId: string"
+          ]
+        },
+        {
+          "name": "OrderTicket",
+          "props": [
+            "orderId: string"
+          ]
+        }
+      ]
+    },
+    "ui_patterns": [
+      "Split Screen POS Layout",
+      "Card-based Menu Grid",
+      "Sidebar Navigation",
+      "Modal Dialogs for Modifiers",
+      "Toast Notifications for Success/Error",
+      "Kanban Board for Kitchen View"
+    ],
+    "component_specs": [
+      {
+        "name": "Button",
+        "description": "Primary interactive element for actions like 'Add to Cart' or 'Checkout'.",
+        "accessibility": {
+          "aria_label": "Required if no visible text",
+          "keyboard": "Enter/Space to activate",
+          "role": "button"
+        },
+        "category": "atom",
+        "props": [
+          {
+            "default": "primary",
+            "description": "Visual style: primary, secondary, ghost",
+            "name": "variant",
+            "type": "string"
+          },
+          {
+            "default": "md",
+            "description": "Size: sm, md, lg",
+            "name": "size",
+            "type": "string"
+          },
+          {
+            "default": "false",
+            "description": "Shows spinner when true",
+            "name": "isLoading",
+            "type": "boolean"
+          }
+        ],
+        "sizes": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "states": [
+          "default",
+          "hover",
+          "active",
+          "disabled",
+          "loading"
+        ],
+        "variants": [
+          "primary",
+          "secondary",
+          "ghost",
+          "destructive"
+        ]
+      },
+      {
+        "name": "MenuItemCard",
+        "description": "Clickable card representing a menu item with name, price, and image.",
+        "accessibility": {
+          "aria_label": "Item name and price",
+          "keyboard": "Enter to add to order",
+          "role": "button"
+        },
+        "category": "molecule",
+        "props": [
+          {
+            "default": "",
+            "description": "Name of the dish",
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "default": "0.00",
+            "description": "Price of the dish",
+            "name": "price",
+            "type": "number"
+          },
+          {
+            "default": "false",
+            "description": "If true, item cannot be selected",
+            "name": "isSoldOut",
+            "type": "boolean"
+          }
+        ],
+        "sizes": [
+          "md"
+        ],
+        "states": [
+          "default",
+          "hover",
+          "active",
+          "disabled"
+        ],
+        "variants": [
+          "default",
+          "compact"
+        ]
+      },
+      {
+        "name": "OrderTicket",
+        "description": "List of selected items for the current table with totals and actions.",
+        "accessibility": {
+          "aria_label": "Current order summary",
+          "keyboard": "Tab to navigate items",
+          "role": "region"
+        },
+        "category": "organism",
+        "props": [
+          {
+            "default": "[]",
+            "description": "Array of order items",
+            "name": "items",
+            "type": "array"
+          },
+          {
+            "default": "Draft",
+            "description": "Current status of order",
+            "name": "status",
+            "type": "string"
+          }
+        ],
+        "sizes": [
+          "full"
+        ],
+        "states": [
+          "empty",
+          "populated",
+          "locked"
+        ],
+        "variants": [
+          "sidebar",
+          "modal"
+        ]
+      },
+      {
+        "name": "KitchenOrderCard",
+        "description": "Card displayed on KDS showing table number, items, and timer.",
+        "accessibility": {
+          "aria_label": "Order for table X",
+          "keyboard": "Enter to bump order",
+          "role": "article"
+        },
+        "category": "organism",
+        "props": [
+          {
+            "default": "",
+            "description": "Table identifier",
+            "name": "tableNumber",
+            "type": "string"
+          },
+          {
+            "default": "0",
+            "description": "Minutes since submission",
+            "name": "elapsedTime",
+            "type": "number"
+          }
+        ],
+        "sizes": [
+          "md"
+        ],
+        "states": [
+          "new",
+          "late",
+          "completed"
+        ],
+        "variants": [
+          "default",
+          "urgent"
+        ]
+      }
+    ],
+    "layout_breakpoints": {
+      "2xl": "1536px",
+      "lg": "1024px",
+      "md": "768px",
+      "sm": "640px",
+      "xl": "1280px"
+    },
+    "accessibility": {
+      "aria_labels": true,
+      "checklist": [
+        "Ensure all interactive elements have min 44x44px target size",
+        "Verify color contrast is at least 4.5:1 for text",
+        "Support full keyboard navigation for order entry",
+        "Provide audible feedback for error states"
+      ],
+      "focus_indicators": true,
+      "guidelines": [
+        "Use semantic HTML5 elements",
+        "Provide alt text for menu images",
+        "Ensure focus order is logical",
+        "Avoid reliance on color alone for status"
+      ],
+      "keyboard_navigation": true,
+      "screen_reader_support": true,
+      "standard": "WCAG 2.1",
+      "wcag_level": "AA"
+    },
+    "atomic_structure": {
+      "atoms": [
+        "Button",
+        "Input",
+        "Label",
+        "Icon",
+        "Badge",
+        "Spinner",
+        "Avatar"
+      ],
+      "molecules": [
+        "MenuItemCard",
+        "OrderLineItem",
+        "SearchInput",
+        "FormField",
+        "Toast"
+      ],
+      "organisms": [
+        "OrderTicket",
+        "MenuGrid",
+        "KitchenOrderCard",
+        "PaymentModal",
+        "TopBar"
+      ]
+    },
+    "website_layout": {
+      "pages": [
+        {
+          "name": "Login",
+          "route": "/login",
+          "sections": [
+            {
+              "name": "AuthForm",
+              "components": [
+                "Input",
+                "Button",
+                "Logo"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "POS Dashboard",
+          "route": "/pos",
+          "sections": [
+            {
+              "name": "Sidebar",
+              "components": [
+                "Navigation",
+                "UserProfile"
+              ]
+            },
+            {
+              "name": "MenuArea",
+              "components": [
+                "CategoryTabs",
+                "MenuGrid"
+              ]
+            },
+            {
+              "name": "OrderSidebar",
+              "components": [
+                "OrderTicket",
+                "PaymentControls"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Kitchen Display",
+          "route": "/kitchen",
+          "sections": [
+            {
+              "name": "OrderBoard",
+              "components": [
+                "KitchenOrderCard",
+                "Timer"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Admin Settings",
+          "route": "/admin",
+          "sections": [
+            {
+              "name": "MenuManagement",
+              "components": [
+                "DataTable",
+                "FormModal"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

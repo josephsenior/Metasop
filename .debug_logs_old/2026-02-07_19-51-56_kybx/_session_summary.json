@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_19-51-56_kybx",
+  "startTime": "2026-02-07T18:51:56.625Z",
+  "endTime": "2026-02-07T18:51:56.743Z",
+  "durationMs": 123,
+  "durationFormatted": "0.12s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Step execution timeout after 100ms",
+  "userRequest": "Test request..."
+}

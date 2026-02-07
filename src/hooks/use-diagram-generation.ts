@@ -224,7 +224,6 @@ export function useDiagramGeneration() {
     }
 
     const doStartGeneration = useCallback(async (answers?: Record<string, string>) => {
-        console.log("[useGEN] doStartGeneration called", { answersPresent: !!answers, answersCount: answers ? Object.keys(answers).length : 0 })
         setIsGenerating(true)
         setCurrentDiagram(null)
         setStepSummaries({})
@@ -261,14 +260,12 @@ export function useDiagramGeneration() {
                 documents: uploadedDocuments,
                 ...(answers && Object.keys(answers).length > 0 ? { clarificationAnswers: answers } : {}),
             }
-            console.log("[useGEN] POST body:", { hasAnswers: !!postBody.clarificationAnswers, answerKeys: postBody.clarificationAnswers ? Object.keys(postBody.clarificationAnswers) : [] })
             const response = await fetchDiagramApi("/api/diagrams/generate", {
                 method: "POST",
                 body: JSON.stringify(postBody),
             })
 
             const responseJson = await response.json().catch(() => ({}))
-            console.log("[useGEN] Response status:", response.status, "Data:", responseJson?.data ? { jobId: responseJson.data.jobId, hasStreamUrl: !!responseJson.data.streamUrl } : responseJson?.message)
             if (!response.ok) {
                 throw new Error(responseJson?.message || `Failed to generate: ${response.statusText}`)
             }
@@ -278,7 +275,6 @@ export function useDiagramGeneration() {
             if (!jobId || !streamUrl) {
                 throw new Error("Missing job information from server")
             }
-            console.log("[useGEN] Got job:", jobId)
 
             const streamResponse = await fetchDiagramApi(streamUrl, { method: "GET" })
             if (!streamResponse.ok) {
@@ -448,13 +444,11 @@ export function useDiagramGeneration() {
         }
 
         if (!guidedMode) {
-            console.log("[useGEN] No guided mode, starting generation directly")
             await doStartGeneration()
             return
         }
 
         setIsScoping(true)
-        console.log("[useGEN] Scoping prompt...")
         try {
             const scopeRes = await fetchDiagramApi("/api/diagrams/scope", {
                 method: "POST",
@@ -463,27 +457,22 @@ export function useDiagramGeneration() {
             })
             const scopeJson = await scopeRes.json().catch(() => ({}))
             const data = scopeJson?.data
-            console.log("[useGEN] Scoping result:", { status: scopeRes.status, proceed: data?.proceed, questionsCount: data?.questions?.length })
             if (!scopeRes.ok) {
                 toast({ title: "Scoping failed", description: scopeJson?.message || scopeRes.statusText, variant: "destructive" })
                 return
             }
             if (data?.proceed === true) {
-                console.log("[useGEN] Proceeding directly, no clarification needed")
                 await doStartGeneration()
                 return
             }
             if (data?.proceed === false && Array.isArray(data?.questions) && data.questions.length > 0) {
-                console.log("[useGEN] Showing clarification panel with", data.questions.length, "questions")
                 setClarificationQuestions(data.questions)
                 setClarificationAnswers({})
                 setShowClarificationPanel(true)
                 return
             }
-            console.log("[useGEN] Unexpected scope response, starting generation anyway")
             await doStartGeneration()
         } catch (e: any) {
-            console.error("[useGEN] Scoping error:", e?.message || e)
             toast({ title: "Scoping failed", description: e?.message || "Could not check scope", variant: "destructive" })
         } finally {
             setIsScoping(false)

@@ -1,0 +1,13 @@
+{
+  "step_id": "arch_design",
+  "role": "Architect",
+  "timestamp": "2026-02-07T21:34:54.022Z",
+  "error": {
+    "message": "Gemini API error (400): Model used by GenerateContent request (models/gemini-3-flash-preview) and CachedContent (models/gemini-3-pro-preview) has to be the same.",
+    "name": "Error",
+    "stack": "Error: Gemini API error (400): Model used by GenerateContent request (models/gemini-3-flash-preview) and CachedContent (models/gemini-3-pro-preview) has to be the same.\n    at GeminiLLMProvider.generateStructured (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:2718:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async GeminiLLMProvider.generateStreamingStructured (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:2983:28)\n    at async architectAgent (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:4395:31)\n    at async executionPromise.retryService.executeWithRetry.stepId.stepId (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:8455:32)\n    at async RetryService.executeWithRetry (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:8240:32)\n    at async ExecutionService.executeStep (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:8472:33)\n    at async MetaSOPOrchestrator.executeStep (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:9872:24)\n    at async MetaSOPOrchestrator.run (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:9729:13)\n    at async run (C:\\Users\\GIGABYTE\\Desktop\\MultiAGentPLatform\\.next\\dev\\server\\chunks\\[root-of-the-server]__e5b8a822._.js:10456:41)"
+  },
+  "executionTime": 322,
+  "attempts": 1,
+  "partialResult": null
+}

@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-02-07_21-27-45_15mb",
+  "startTime": "2026-02-07T20:27:45.830Z",
+  "endTime": "2026-02-07T20:27:49.367Z",
+  "durationMs": 3539,
+  "durationFormatted": "3.54s",
+  "success": false,
+  "agentsCompleted": [],
+  "agentsFailed": [
+    "pm_spec"
+  ],
+  "error": "Artifact validation failed: PM: user_stories.0.id - Required; PM: user_stories.0.title - Title must be at least 5 characters; PM: user_stories.0.story - Story must be at least 10 characters; PM: user_stories.0.acceptance_criteria.0 - Acceptance criterion must be at least 5 characters; PM: user_stories.0.user_value - User value must be at least 5 characters; PM: acceptance_criteria.0.criteria - Criteria must be at least 10 characters",
+  "userRequest": "Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a system. Create a syst..."
+}

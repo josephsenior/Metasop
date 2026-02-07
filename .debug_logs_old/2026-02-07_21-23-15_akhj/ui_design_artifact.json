@@ -1,0 +1,319 @@
+{
+  "step_id": "ui_design",
+  "role": "UI Designer",
+  "timestamp": "2026-02-07T20:26:47.539Z",
+  "content": {
+    "summary": "A unified design system prioritizing touch ergonomics for POS tablets and high-contrast legibility for Kitchen Display Systems, utilizing a shared React/React Native component library with strict accessibility compliance.",
+    "description": "The visual language centers on 'Clarity under Pressure.' The POS interface uses large touch targets (min 48px) and distinct color coding to prevent errors during rush hours. The KDS utilizes dark mode by default to reduce glare, with high-contrast status indicators (Green/Yellow/Red) for ticket aging. The Admin portal follows a clean, data-dense dashboard layout using a 4pt grid system to manage complex inventory and reporting data effectively.",
+    "design_tokens": {
+      "colors": {
+        "primary": "#4F46E5",
+        "primary_foreground": "#FFFFFF",
+        "secondary": "#64748B",
+        "secondary_foreground": "#FFFFFF",
+        "background": "#0F172A",
+        "foreground": "#E2E8F0",
+        "text": "#E2E8F0",
+        "muted": "#1E293B",
+        "muted_foreground": "#94A3B8",
+        "card": "#111827",
+        "card_foreground": "#E5E7EB",
+        "popover": "#111827",
+        "popover_foreground": "#E5E7EB",
+        "border": "#334155",
+        "input": "#334155",
+        "ring": "#4F46E5",
+        "accent": "#22D3EE",
+        "accent_foreground": "#0F172A",
+        "destructive": "#EF4444",
+        "destructive_foreground": "#FFFFFF"
+      },
+      "spacing": {
+        "xs": "0.25rem",
+        "sm": "0.5rem",
+        "md": "1rem",
+        "lg": "1.5rem",
+        "xl": "2rem",
+        "2xl": "3rem",
+        "3xl": "4rem"
+      },
+      "typography": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "headingFont": "Inter, system-ui, sans-serif",
+        "monoFont": "JetBrains Mono, monospace",
+        "fontSize": {
+          "xs": "0.75rem",
+          "sm": "0.875rem",
+          "base": "1rem",
+          "lg": "1.125rem",
+          "xl": "1.25rem",
+          "2xl": "1.5rem",
+          "3xl": "1.875rem"
+        },
+        "fontWeight": {
+          "light": "300",
+          "normal": "400",
+          "medium": "500",
+          "semibold": "600",
+          "bold": "700"
+        },
+        "lineHeight": {
+          "tight": "1.25",
+          "normal": "1.5",
+          "relaxed": "1.625",
+          "loose": "2"
+        }
+      },
+      "borderRadius": {
+        "none": "0px",
+        "sm": "0.125rem",
+        "md": "0.375rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "shadows": {
+        "sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "md": "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+        "lg": "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+        "xl": "0 20px 25px -5px rgb(0 0 0 / 0.1)",
+        "inner": "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)",
+        "none": "none"
+      },
+      "animations": {
+        "fast": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "normal": "300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "slow": "500ms cubic-bezier(0.4, 0, 0.2, 1)"
+      }
+    },
+    "component_hierarchy": {
+      "root": "App",
+      "children": [
+        {
+          "name": "AuthProvider",
+          "props": [
+            "session: object"
+          ]
+        },
+        {
+          "name": "ThemeProvider",
+          "props": [
+            "theme: string"
+          ]
+        },
+        {
+          "name": "Router",
+          "children": [
+            {
+              "name": "POSLayout",
+              "props": [
+                "mode: tablet"
+              ]
+            },
+            {
+              "name": "KDSLayout",
+              "props": [
+                "station: string"
+              ]
+            },
+            {
+              "name": "AdminLayout",
+              "props": [
+                "role: manager"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "ui_patterns": [
+      "Master-Detail Layout (POS Menu)",
+      "Kanban Board (KDS Tickets)",
+      "Interactive Floor Plan (Table Management)",
+      "Modal Workflows (Modifiers/Splitting)",
+      "Toast Notifications (System Alerts)"
+    ],
+    "component_specs": [
+      {
+        "name": "OrderTicket",
+        "description": "Card component displaying a single order for the kitchen with timer and items.",
+        "category": "organism",
+        "props": [
+          {
+            "name": "status",
+            "type": "string"
+          },
+          {
+            "name": "elapsedTime",
+            "type": "number"
+          },
+          {
+            "name": "items",
+            "type": "array"
+          }
+        ],
+        "sizes": [
+          "md",
+          "lg"
+        ],
+        "states": [
+          "new",
+          "cooking",
+          "late",
+          "done"
+        ],
+        "variants": [
+          "default",
+          "urgent",
+          "vip"
+        ]
+      },
+      {
+        "name": "TableNode",
+        "description": "Interactive draggable table representation for the floor plan.",
+        "category": "molecule",
+        "props": [
+          {
+            "name": "status",
+            "type": "string"
+          },
+          {
+            "name": "seats",
+            "type": "number"
+          },
+          {
+            "name": "shape",
+            "type": "string"
+          }
+        ],
+        "sizes": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "states": [
+          "open",
+          "seated",
+          "billed",
+          "dirty"
+        ],
+        "variants": [
+          "round",
+          "square",
+          "booth"
+        ]
+      },
+      {
+        "name": "ModifierGrid",
+        "description": "Grid of toggle buttons for selecting item customizations.",
+        "category": "organism",
+        "props": [
+          {
+            "name": "options",
+            "type": "array"
+          },
+          {
+            "name": "multiSelect",
+            "type": "boolean"
+          }
+        ],
+        "sizes": [
+          "md"
+        ],
+        "states": [
+          "default",
+          "loading"
+        ],
+        "variants": [
+          "default"
+        ]
+      }
+    ],
+    "layout_breakpoints": {
+      "sm": "640px",
+      "xl": "1280px"
+    },
+    "accessibility": {
+      "standard": "WCAG 2.1 AA",
+      "wcag_level": "AA"
+    },
+    "atomic_structure": {
+      "atoms": [
+        "Button",
+        "Input",
+        "Badge",
+        "Icon",
+        "Typography",
+        "Avatar"
+      ],
+      "molecules": [
+        "FormField",
+        "SearchInput",
+        "StatCard",
+        "TableNode",
+        "MenuItemCard"
+      ],
+      "organisms": [
+        "OrderTicket",
+        "FloorPlan",
+        "Sidebar",
+        "Header",
+        "ModifierModal"
+      ]
+    },
+    "website_layout": {
+      "pages": [
+        {
+          "name": "POS Terminal",
+          "route": "/pos",
+          "sections": [
+            {
+              "name": "Floor Plan",
+              "components": [
+                "FloorMap",
+                "TableNode",
+                "ServerStatus"
+              ]
+            },
+            {
+              "name": "Order Entry",
+              "components": [
+                "MenuGrid",
+                "OrderSummary",
+                "ActionButtons"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Kitchen Display",
+          "route": "/kds",
+          "sections": [
+            {
+              "name": "Ticket Rail",
+              "components": [
+                "TicketGrid",
+                "OrderTicket",
+                "ExpediterBar"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Admin Dashboard",
+          "route": "/admin",
+          "sections": [
+            {
+              "name": "Overview",
+              "components": [
+                "SalesChart",
+                "InventoryAlerts",
+                "StaffList"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

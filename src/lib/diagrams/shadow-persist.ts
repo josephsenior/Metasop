@@ -4,7 +4,7 @@ import type { Diagram } from "@/types/diagram";
 
 export function persistDiagramShadow(diagram: Diagram): void {
   try {
-    const saveDir = path.join(process.cwd(), "saved_diagrams");
+    const saveDir = path.join(process.cwd(), ".saved_diagrams");
     if (!fs.existsSync(saveDir)) {
       fs.mkdirSync(saveDir, { recursive: true });
     }

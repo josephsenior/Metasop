@@ -51,7 +51,13 @@ temp/
 tsconfig.tsbuildinfo
 
 # debug session logs (each generation run creates a folder)
+/.debug_logs/
 /debug_logs/
 
+# temporary job files
+/.tmp/
+/tmp/
+
 # generated outputs
+/.saved_diagrams/
 /saved_diagrams/
