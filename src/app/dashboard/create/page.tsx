@@ -184,12 +184,12 @@ export default function CreateDiagramPage() {
                 {/* Top banner (minimal, non-distracting) shown when there's no diagram and no generation steps */}
                 {!currentDiagram && generationSteps.length === 0 && (
                   <div className="px-6 pt-6">
-                    <div className="max-w-3xl mx-auto">
-                      <div className="flex items-start gap-4 bg-blue-500/6 border border-border/10 rounded-lg px-4 py-3">
-                        <Sparkles className="h-6 w-6 text-blue-500 mt-0.5" />
+                    <div className="max-w-2xl mx-auto">
+                      <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50/60 to-transparent border border-blue-200/40 rounded-lg px-4 py-2">
+                        <Sparkles className="h-5 w-5 text-blue-600" />
                         <div>
-                          <h3 className="text-lg font-semibold text-foreground">Imagine Your Application</h3>
-                          <p className="text-sm text-muted-foreground mt-1">Describe your software vision in the prompt below. Seven specialized AI agents will collaborate in real-time to architect every layer of your project.</p>
+                          <h3 className="text-sm font-semibold text-blue-600">Imagine your application</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">Briefly describe the idea below — seven AI agents will collaborate to architect your project.</p>
                         </div>
                       </div>
                     </div>
