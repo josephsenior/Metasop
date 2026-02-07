@@ -204,8 +204,8 @@ export default function CreateDiagramPage() {
                           </p>
                         </div>
 
-                          {/* Generation flow centered under the intro */}
-                          <div className="flex items-center justify-center">
+{/* Generation flow centered under the intro - moved up significantly */}
+                        <div className="flex items-center justify-center -mt-12">
                             <GenerationFlow
                               steps={generationSteps}
                               summaries={stepSummaries}
