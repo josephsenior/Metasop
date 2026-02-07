@@ -96,27 +96,26 @@ export function ClarificationPanel({
     }
 
     return (
-        <div className="fixed left-0 right-0 bottom-6 z-50 flex items-end justify-center p-4 pointer-events-none">
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
-                initial={{ opacity: 0, translateY: 12 }}
+                initial={{ opacity: 0, translateY: 8 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                className="w-full max-w-md pointer-events-auto"
+                className="w-full max-w-sm pointer-events-auto"
             >
-                <div className="border border-border/40 bg-background/85 backdrop-blur-md rounded-xl overflow-hidden shadow-lg">
-                    <div className="px-4 pt-4 pb-3">
-                        <div className="flex items-center justify-between gap-3">
-                            <h2 className="text-sm font-semibold tracking-tight text-foreground">Refine details</h2>
+                <div className="border border-border/30 bg-background/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg">
+                    <div className="px-3 pt-3 pb-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <h2 className="text-sm font-medium text-foreground">Refine</h2>
                             <div className="text-xs text-muted-foreground">{currentStep + 1}/{questions.length}</div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Quick choices to improve the first draft.</p>
 
-                        <div className="mt-3 h-1 bg-muted/20 rounded-full overflow-hidden">
-                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.25 }} />
+                        <div className="mt-2 h-1 bg-muted/20 rounded-full overflow-hidden">
+                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.2 }} />
                         </div>
                     </div>
 
-                    <div className="px-4 pb-4">
-                        <div className="min-h-[120px] relative">
+                    <div className="px-3 pb-3">
+                        <div className="min-h-[90px] relative">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
                                 <motion.div
                                     key={currentStep}
