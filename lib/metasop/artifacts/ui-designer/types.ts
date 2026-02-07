@@ -104,6 +104,16 @@ export interface UIDesignerBackendArtifact {
             }>;
         }>;
     };
+
+    // Legacy / alternative fields supported by some consumers
+    layout_strategy?: string;
+    visual_philosophy?: string;
+    information_architecture?: string;
+    responsive_strategy?: string;
+    schema_version?: string | number;
+
+    // Allow additional/legacy fields to be present without breaking consumers
+    [key: string]: any;
 }
 
 // ============================================================================

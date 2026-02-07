@@ -43,6 +43,9 @@ export interface EngineerBackendArtifact {
         build_commands: string[];
         notes?: string;
     };
+
+    // Allow additional/legacy fields to be present without breaking consumers
+    [key: string]: any;
 }
 
 // ============================================================================

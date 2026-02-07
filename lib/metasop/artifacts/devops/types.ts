@@ -111,6 +111,9 @@ export interface DevOpsBackendArtifact {
         backup_strategy: string;
         failover_plan: string;
     };
+
+    // Allow additional/legacy fields to be present without breaking consumers
+    [key: string]: any;
 }
 
 // ============================================================================
