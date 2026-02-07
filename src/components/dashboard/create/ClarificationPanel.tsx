@@ -96,36 +96,27 @@ export function ClarificationPanel({
     }
 
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-background/55 backdrop-blur-sm">
+        <div className="fixed left-0 right-0 bottom-6 z-50 flex items-end justify-center p-4 pointer-events-none">
             <motion.div
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="w-full max-w-lg"
+                initial={{ opacity: 0, translateY: 12 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                className="w-full max-w-md pointer-events-auto"
             >
-                <div className="border border-border/50 bg-background/80 backdrop-blur-xl rounded-2xl overflow-hidden">
-                    <div className="px-6 pt-6 pb-4">
-                        <div className="flex items-baseline justify-between gap-4">
-                            <h2 className="text-lg font-semibold tracking-tight text-foreground">Refine details</h2>
-                            <div className="text-xs text-muted-foreground">
-                                {currentStep + 1}/{questions.length}
-                            </div>
+                <div className="border border-border/40 bg-background/85 backdrop-blur-md rounded-xl overflow-hidden shadow-lg">
+                    <div className="px-4 pt-4 pb-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-sm font-semibold tracking-tight text-foreground">Refine details</h2>
+                            <div className="text-xs text-muted-foreground">{currentStep + 1}/{questions.length}</div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Quick choices help generate a better first draft.
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Quick choices to improve the first draft.</p>
 
-                        <div className="mt-4 h-1 bg-muted/30 rounded-full overflow-hidden">
-                            <motion.div
-                                className="h-full bg-foreground/70"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${completionPercent}%` }}
-                                transition={{ duration: 0.35, ease: "circOut" }}
-                            />
+                        <div className="mt-3 h-1 bg-muted/20 rounded-full overflow-hidden">
+                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.25 }} />
                         </div>
                     </div>
 
-                    <div className="px-6 pb-6">
-                        <div className="min-h-[190px] relative">
+                    <div className="px-4 pb-4">
+                        <div className="min-h-[120px] relative">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
                                 <motion.div
                                     key={currentStep}
@@ -141,7 +132,7 @@ export function ClarificationPanel({
                                     className="space-y-6"
                                 >
                                     <div className="space-y-6">
-                                        <h3 className="text-base font-semibold text-foreground leading-snug">
+                                        <h3 className="text-sm font-medium text-foreground leading-snug">
                                             {currentQuestion.label}
                                         </h3>
 
@@ -159,7 +150,7 @@ export function ClarificationPanel({
                                                     />
                                                     <Label
                                                         htmlFor={`${currentQuestion.id}-${option}`}
-                                                        className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-border/50 bg-background/40 hover:bg-muted/30 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/20 cursor-pointer transition-colors"
+                                                        className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/40 bg-background/30 hover:bg-muted/20 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors"
                                                     >
                                                         <span className="truncate">{option}</span>
                                                         <span className="text-xs text-muted-foreground">Select</span>
@@ -175,7 +166,7 @@ export function ClarificationPanel({
                                                 />
                                                 <Label
                                                     htmlFor={`${currentQuestion.id}-${CUSTOM_OPTION_VALUE}`}
-                                                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium rounded-xl border border-border/50 bg-background/40 hover:bg-muted/30 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/20 cursor-pointer transition-colors"
+                                                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/40 bg-background/30 hover:bg-muted/20 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors"
                                                 >
                                                     <span className="truncate">Other (type your own)</span>
                                                     <span className="text-xs text-muted-foreground">Type</span>
@@ -184,10 +175,7 @@ export function ClarificationPanel({
                                         </RadioGroup>
 
                                         {selectedValue === CUSTOM_OPTION_VALUE && (
-                                            <div className="space-y-2">
-                                                <Label className="text-xs text-muted-foreground">
-                                                    Your answer
-                                                </Label>
+                                            <div className="mt-2">
                                                 <Textarea
                                                     value={customByQuestionId[currentQuestion.id] ?? (answers[currentQuestion.id] || "")}
                                                     onChange={(e) => {
@@ -196,7 +184,7 @@ export function ClarificationPanel({
                                                         onAnswerChange(currentQuestion.id, value)
                                                     }}
                                                     placeholder="Type a short answer…"
-                                                    className="min-h-[90px] resize-none bg-background/40"
+                                                    className="min-h-[70px] resize-none bg-background/30 text-sm"
                                                 />
                                             </div>
                                         )}
@@ -206,51 +194,15 @@ export function ClarificationPanel({
                         </div>
 
                         {/* Navigation Buttons */}
-                        <div className="flex flex-col gap-3 mt-6">
-                            <div className="flex items-center justify-between gap-4">
-                                <Button
-                                    variant="outline"
-                                    className="h-10 px-4 rounded-xl border-border/50 bg-background/40 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors flex items-center gap-2"
-                                    onClick={prevStep}
-                                    disabled={isFirstStep || isGenerating}
-                                >
-                                    <ArrowLeft className="h-4 w-4" />
-                                    <span className="text-xs font-semibold">Back</span>
-                                </Button>
-
-                                {!isLastStep ? (
-                                    <Button
-                                        className="h-10 px-5 rounded-xl bg-foreground text-background hover:opacity-90 transition-opacity flex items-center gap-2 group"
-                                        onClick={nextStep}
-                                        disabled={!answers[currentQuestion.id]}
-                                    >
-                                        <span className="text-xs font-semibold">Next</span>
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        className="h-10 px-5 rounded-xl bg-foreground text-background hover:opacity-90 transition-opacity flex items-center gap-2 group disabled:opacity-50"
-                                        onClick={onConfirm}
-                                        disabled={isGenerating || !isComplete}
-                                    >
-                                        <span className="text-xs font-semibold">Start</span>
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
-                                )}
-                            </div>
-
-                            <div className="flex justify-center pt-1">
-                                <Button
-                                    variant="ghost"
-                                    className="text-muted-foreground/70 hover:text-foreground text-xs font-semibold gap-2 py-0 h-auto opacity-80 hover:opacity-100 transition-opacity"
-                                    onClick={onSkip}
-                                    disabled={isGenerating || !isHalfComplete}
-                                    title={!isHalfComplete ? `Answer at least ${Math.ceil(questions.length * 0.5)} questions to skip` : undefined}
-                                >
-                                    <SkipForward className="h-3 w-3" />
-                                    Skip & Start with Defaults
-                                </Button>
-                            </div>
+                        <div className="flex items-center gap-3 mt-3">
+                            <Button variant="outline" className="h-9 px-3 rounded-lg text-sm" onClick={prevStep} disabled={isFirstStep || isGenerating}><ArrowLeft className="h-3.5 w-3.5" /></Button>
+                            <div className="flex-1" />
+                            {!isLastStep ? (
+                                <Button className="h-9 px-3 rounded-lg text-sm" onClick={nextStep} disabled={!answers[currentQuestion.id]}>Next</Button>
+                            ) : (
+                                <Button className="h-9 px-3 rounded-lg text-sm" onClick={onConfirm} disabled={isGenerating || !isComplete}>Start</Button>
+                            )}
+                            <Button variant="ghost" className="h-9 px-3 text-xs" onClick={onSkip} disabled={isGenerating || !isHalfComplete} title={!isHalfComplete ? `Answer at least ${Math.ceil(questions.length * 0.5)} questions to skip` : undefined}>Skip</Button>
                         </div>
                     </div>
                 </div>
