@@ -86,10 +86,11 @@ USER REQUEST:
 RULES:
 1. If the request is specific enough (clear domain, scope, tech hints, or product type), respond with { "proceed": true }.
 2. If the request is vague or missing key choices (e.g. "build an app", "help me with a project"), respond with { "proceed": false, "needClarification": true, "questions": [...] }.
-3. Ask SHORT, focused questions. Each question has: id (snake_case, e.g. "domain"), label (user-facing text, 5-12 words), options (array of selectable strings).
-4. Good question ids: domain, scale, platform, priority, tech_preference. Keep options concise (e.g. "E-commerce", "SaaS", "Internal tool").
-5. Do NOT ask overlapping questions (avoid "scale" AND "team_size"). Do NOT ask for full spec — only high-level choices that disambiguate.
-6. Provide exactly 3-4 options per question, max 5. Options should be distinct and avoid redundancy (don't say "Web App" and "Web Application").
+3. Ask 2-3 SHORT questions max. Each question has: id (snake_case), label (user-facing text, 2-6 words), options (array of strings).
+4. Keep labels direct (no long phrasing like "Who is the primary target audience for this system?"). Prefer: "Primary audience?", "Platform?", "Scale?".
+5. Do NOT ask overlapping questions (avoid "scale" AND "team_size"). Do NOT ask for full specs; only pick-the-lane choices.
+6. Provide 3-4 options per question. Options must be short (1-4 words), distinct, and non-overlapping.
+7. Use consistent style (Title Case options, no punctuation).
 
 Respond with ONLY a JSON object: either { "proceed": true } or { "proceed": false, "needClarification": true, "questions": [ { "id": "...", "label": "...", "options": ["...", "..."] } ] }.`;
 }
