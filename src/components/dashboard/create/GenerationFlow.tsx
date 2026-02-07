@@ -22,7 +22,7 @@ interface GenerationFlowProps {
 
 const W = 360
 const H = 380
-const GRID_X = [50, 140, 230]
+const GRID_X = [60, 180, 300]
 const GRID_Y = [50, 170, 290]
 
 const AGENTS_CONFIG = [
@@ -65,7 +65,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                             <stop offset="100%" stopColor="#22d3ee" />
                         </linearGradient>
                     </defs>
-                    <path d={path} fill="none" stroke="currentColor" strokeWidth="2" className="text-border/30" strokeLinecap="round" />
+                    <path d={path} fill="none" stroke="currentColor" strokeWidth="2" className="text-border/60" strokeLinecap="round" />
 
                     {steps.some(s => s.status === 'running') && (
                         <motion.path
@@ -102,15 +102,15 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                             >
                                 <div className={cn(
                                     "relative w-12 h-12 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
-                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/10 step-running-glow" :
-                                        stepStatus === 'success' ? "bg-green-500/10 shadow-sm" :
-                                            "bg-muted/30 border border-white/5"
+                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/12 step-running-glow" :
+                                        stepStatus === 'success' ? "bg-green-500/12 shadow-sm" :
+                                            "bg-muted/50 border border-white/7"
                                 )}>
                                     <Icon className={cn(
                                         "h-5 w-5 transition-colors duration-500",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
-                                                "text-muted-foreground/40"
+                                                "text-muted-foreground/70"
                                     )} />
 
                                     {/* Status Indicators */}
@@ -133,7 +133,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                         "text-[10px] font-semibold tracking-tight block",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
-                                                "text-muted-foreground/40"
+                                                "text-muted-foreground/70"
                                     )}>
                                         {node.name}
                                     </span>
