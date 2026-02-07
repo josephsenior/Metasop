@@ -74,7 +74,6 @@ ${TECHNICAL_STANDARDS.errorHandling}
 1. **Technical Decisions**
    - Document critical implementation choices with full context
    - Include: decision, rationale, alternatives considered, tradeoffs
-   - Scale to complexity: 2-3 for simple projects, 5+ for complex ones
    - Example decisions:
      * Why React Query over Redux for server state?
      * Why Tailwind over CSS Modules?

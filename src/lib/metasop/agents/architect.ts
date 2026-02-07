@@ -67,7 +67,7 @@ ${TECHNICAL_STANDARDS.database}
    - Consider read/write patterns and query optimization
 
 4. **Architectural Decision Records (ADRs)**
-  - Document 4-6 key decisions with full context
+  - Document key decisions with full context
   - Include: decision, status, reason, tradeoffs, consequences
    - List alternatives considered and why they were rejected
    - Be specific about technical tradeoffs

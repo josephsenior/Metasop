@@ -463,7 +463,7 @@ export function useDiagramGeneration() {
                 await doStartGeneration()
                 return
             }
-            if (data?.needClarification === true && Array.isArray(data?.questions) && data.questions.length > 0) {
+            if (data?.proceed === false && Array.isArray(data?.questions) && data.questions.length > 0) {
                 setClarificationQuestions(data.questions)
                 setClarificationAnswers({})
                 setShowClarificationPanel(true)

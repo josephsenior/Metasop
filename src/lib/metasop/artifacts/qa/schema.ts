@@ -1,7 +1,7 @@
 export const qaSchema = {
     type: "object",
     required: ["ok", "test_strategy", "test_cases", "security_plan", "manual_verification_steps", "risk_analysis", "summary", "description", "coverage", "performance_metrics", "accessibility_plan"],
-    propertyOrdering: ["ok", "summary", "description", "test_strategy", "test_cases", "coverage", "risk_analysis", "security_plan", "manual_verification_steps", "performance_metrics", "accessibility_plan", "manual_uat_plan"],
+    propertyOrdering: ["ok", "summary", "description", "test_strategy", "test_cases", "coverage", "risk_analysis", "security_plan", "manual_verification_steps", "performance_metrics", "accessibility_plan"],
     properties: {
         ok: {
             type: "boolean",
