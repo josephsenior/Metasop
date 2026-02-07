@@ -55,6 +55,7 @@ export const ProductManagerArtifactSchema = z.object({
         estimatable: z.boolean(),
         small: z.boolean(),
         testable: z.boolean(),
+        score: z.number().optional(),
         comments: z.string().optional(),
     }).strict()),
     summary: z.string(),
