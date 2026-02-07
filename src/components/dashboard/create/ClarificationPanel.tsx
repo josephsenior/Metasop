@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, ArrowLeft, SkipForward } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -32,9 +32,9 @@ export function ClarificationPanel({
 
     const CUSTOM_OPTION_VALUE = "__custom__"
 
-    const isComplete = questions.every(q => !!answers[q.id])
+    const isComplete = questions.length > 0 && questions.every(q => !!answers[q.id])
     const answeredCount = questions.filter(q => !!answers[q.id]).length
-    const completionPercent = Math.round((answeredCount / questions.length) * 100)
+    const completionPercent = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0
     const isHalfComplete = answeredCount >= Math.ceil(questions.length * 0.5)
 
     const currentQuestion = questions[currentStep]
@@ -42,6 +42,7 @@ export function ClarificationPanel({
     const isFirstStep = currentStep === 0
 
     const selectedValue = (() => {
+        if (!currentQuestion) return ""
         const currentAnswer = answers[currentQuestion.id]
         if (!currentAnswer) return ""
         if (currentQuestion.options.includes(currentAnswer)) return currentAnswer
@@ -63,6 +64,7 @@ export function ClarificationPanel({
     }
 
     const handleAnswerChange = (val: string) => {
+        if (!currentQuestion) return
         if (val === CUSTOM_OPTION_VALUE) {
             const existing = customByQuestionId[currentQuestion.id] ?? ""
             if (existing.trim().length > 0) onAnswerChange(currentQuestion.id, existing)
@@ -70,52 +72,43 @@ export function ClarificationPanel({
         }
 
         onAnswerChange(currentQuestion.id, val)
-        // Optional: auto-advance with a slight delay
-        /*
-        setTimeout(() => {
-            if (!isLastStep) nextStep()
-        }, 400)
-        */
+    }
+
+    const handleCustomChange = (questionId: string, e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value
+        setCustomByQuestionId(prev => ({ ...prev, [questionId]: value }))
+        onAnswerChange(questionId, value)
     }
 
     const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 50 : -50,
-            opacity: 0
-        }),
-        center: {
-            zIndex: 1,
-            x: 0,
-            opacity: 1
-        },
-        exit: (direction: number) => ({
-            zIndex: 0,
-            x: direction < 0 ? 50 : -50,
-            opacity: 0
-        })
+        enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0 }),
+        center: { zIndex: 1, x: 0, opacity: 1 },
+        exit: (dir: number) => ({ zIndex: 0, x: dir < 0 ? 50 : -50, opacity: 0 })
     }
 
+    if (!currentQuestion) return null
+
     return (
-        <div className="fixed left-0 right-0 bottom-8 z-50 flex items-end justify-center p-2 pointer-events-none">
+        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[92px] z-50 pointer-events-none">
             <motion.div
                 initial={{ opacity: 0, translateY: 8 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                className="w-full max-w-xs pointer-events-auto"
+                className="w-full max-w-[300px] pointer-events-auto"
             >
-                <div className="border border-border/20 bg-background/95 backdrop-blur-sm rounded-lg overflow-hidden shadow-md">
-                    <div className="px-2 pt-2 pb-1">
+                <div className="border border-border/10 bg-background/95 backdrop-blur-sm rounded-lg overflow-hidden shadow-sm">
+                    <div className="px-3 pt-2 pb-1">
                         <div className="flex items-center justify-between gap-2">
                             <h2 className="text-sm font-medium text-foreground">Refine</h2>
                             <div className="text-xs text-muted-foreground">{currentStep + 1}/{questions.length}</div>
                         </div>
 
-                        <div className="mt-2 h-1 bg-muted/15 rounded-full overflow-hidden">
-                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.15 }} />
+                        <div className="mt-2 h-1 bg-muted/12 rounded-full overflow-hidden">
+                            <motion.div className="h-full bg-foreground/60" initial={{ width: 0 }} animate={{ width: `${completionPercent}%` }} transition={{ duration: 0.12 }} />
                         </div>
                     </div>
 
-                    <div className="px-2 pb-2">
-                        <div className="min-h-[72px] relative">
+                    <div className="px-3 pb-3">
+                        <div className="min-h-[56px] relative">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
                                 <motion.div
                                     key={currentStep}
@@ -124,75 +117,43 @@ export function ClarificationPanel({
                                     initial="enter"
                                     animate="center"
                                     exit="exit"
-                                    transition={{
-                                        x: { type: "spring", stiffness: 400, damping: 30 },
-                                        opacity: { duration: 0.2 }
-                                    }}
-                                    className="space-y-6"
+                                    transition={{ x: { type: "spring", stiffness: 400, damping: 30 }, opacity: { duration: 0.18 } }}
+                                    className="space-y-3"
                                 >
-                                    <div className="space-y-6">
-                                        <h3 className="text-sm font-medium text-foreground leading-snug">
-                                            {currentQuestion.label}
-                                        </h3>
+                                    <div>
+                                        <h3 className="text-sm font-medium text-foreground leading-snug">{currentQuestion.label}</h3>
+                                    </div>
 
-                                        <RadioGroup
-                                            className="grid grid-cols-1 gap-2"
-                                            value={selectedValue}
-                                            onValueChange={handleAnswerChange}
-                                        >
-                                            {currentQuestion.options.map((option) => (
-                                                <div key={option} className="relative">
-                                                    <RadioGroupItem
-                                                        value={option}
-                                                        id={`${currentQuestion.id}-${option}`}
-                                                        className="peer sr-only"
-                                                    />
-                                                    <Label
-                                                        htmlFor={`${currentQuestion.id}-${option}`}
-                                                        className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/40 bg-background/30 hover:bg-muted/20 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors"
-                                                    >
-                                                        <span className="truncate">{option}</span>
-                                                        <span className="text-xs text-muted-foreground">Select</span>
-                                                    </Label>
-                                                </div>
-                                            ))}
-
-                                            <div className="relative">
-                                                <RadioGroupItem
-                                                    value={CUSTOM_OPTION_VALUE}
-                                                    id={`${currentQuestion.id}-${CUSTOM_OPTION_VALUE}`}
-                                                    className="peer sr-only"
-                                                />
-                                                <Label
-                                                    htmlFor={`${currentQuestion.id}-${CUSTOM_OPTION_VALUE}`}
-                                                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/40 bg-background/30 hover:bg-muted/20 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors"
-                                                >
-                                                    <span className="truncate">Other (type your own)</span>
-                                                    <span className="text-xs text-muted-foreground">Type</span>
+                                    <RadioGroup className="grid grid-cols-1 gap-2" value={selectedValue} onValueChange={handleAnswerChange}>
+                                        {currentQuestion.options.map(option => (
+                                            <div key={option} className="relative">
+                                                <RadioGroupItem value={option} id={`${currentQuestion.id}-${option}`} className="peer sr-only" />
+                                                <Label htmlFor={`${currentQuestion.id}-${option}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/30 bg-background/20 hover:bg-muted/10 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors">
+                                                    <span className="truncate">{option}</span>
                                                 </Label>
                                             </div>
-                                        </RadioGroup>
+                                        ))}
 
-                                        {selectedValue === CUSTOM_OPTION_VALUE && (
-                                            <div className="mt-2">
+                                        <div className="relative">
+                                            <RadioGroupItem value={CUSTOM_OPTION_VALUE} id={`${currentQuestion.id}-${CUSTOM_OPTION_VALUE}`} className="peer sr-only" />
+                                            <Label htmlFor={`${currentQuestion.id}-${CUSTOM_OPTION_VALUE}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm rounded-lg border border-border/30 bg-background/20 hover:bg-muted/10 peer-data-[state=checked]:border-foreground/60 peer-data-[state=checked]:bg-muted/10 cursor-pointer transition-colors">
+                                                <span className="truncate">Other (type)</span>
+                                            </Label>
+
+                                            {selectedValue === CUSTOM_OPTION_VALUE && (
                                                 <Textarea
                                                     value={customByQuestionId[currentQuestion.id] ?? (answers[currentQuestion.id] || "")}
-                                                    onChange={(e) => {
-                                                        const value = e.target.value
-                                                        setCustomByQuestionId((prev) => ({ ...prev, [currentQuestion.id]: value }))
-                                                        onAnswerChange(currentQuestion.id, value)
-                                                    }}
+                                                    onChange={(e) => handleCustomChange(currentQuestion.id, e)}
                                                     placeholder="Type a short answer…"
-                                                    className="min-h-[70px] resize-none bg-background/30 text-sm"
+                                                    className="mt-2 min-h-[48px] resize-none bg-background/30 text-sm"
                                                 />
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
+                                    </RadioGroup>
                                 </motion.div>
                             </AnimatePresence>
                         </div>
 
-                        {/* Navigation Buttons */}
                         <div className="flex items-center gap-3 mt-3">
                             <Button variant="outline" className="h-9 px-3 rounded-lg text-sm" onClick={prevStep} disabled={isFirstStep || isGenerating}><ArrowLeft className="h-3.5 w-3.5" /></Button>
                             <div className="flex-1" />
