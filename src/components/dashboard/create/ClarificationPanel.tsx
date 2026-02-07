@@ -75,7 +75,7 @@ export function ClarificationPanel({
     }
 
     const handleCustomChange = (questionId: string, e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const value = e.target.value
+        const { target: { value } } = e
         setCustomByQuestionId(prev => ({ ...prev, [questionId]: value }))
         onAnswerChange(questionId, value)
     }
@@ -108,7 +108,7 @@ export function ClarificationPanel({
                     </div>
 
                     <div className="px-3 pb-3">
-                        <div className="min-h-[56px] relative">
+                        <div className="min-h-14 relative">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
                                 <motion.div
                                     key={currentStep}
@@ -145,7 +145,7 @@ export function ClarificationPanel({
                                                     value={customByQuestionId[currentQuestion.id] ?? (answers[currentQuestion.id] || "")}
                                                     onChange={(e) => handleCustomChange(currentQuestion.id, e)}
                                                     placeholder="Type a short answer…"
-                                                    className="mt-2 min-h-[48px] resize-none bg-background/30 text-sm"
+                                                    className="mt-2 min-h-12 resize-none bg-background/30 text-sm"
                                                 />
                                             )}
                                         </div>
@@ -162,7 +162,7 @@ export function ClarificationPanel({
                             ) : (
                                 <Button className="h-9 px-3 rounded-lg text-sm" onClick={onConfirm} disabled={isGenerating || !isComplete}>Start</Button>
                             )}
-                            <Button variant="ghost" className="h-9 px-3 text-xs" onClick={onSkip} disabled={isGenerating || !isHalfComplete} title={!isHalfComplete ? `Answer at least ${Math.ceil(questions.length * 0.5)} questions to skip` : undefined}>Skip</Button>
+                            <Button variant="ghost" className="h-9 px-3 text-xs" onClick={onSkip} disabled={isGenerating || !isHalfComplete} title={isHalfComplete ? undefined : `Answer at least ${Math.ceil(questions.length * 0.5)} questions to skip`}>Skip</Button>
                         </div>
                     </div>
                 </div>
