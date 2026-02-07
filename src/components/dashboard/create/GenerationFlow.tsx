@@ -20,19 +20,19 @@ interface GenerationFlowProps {
     summaries: Record<string, string>
 }
 
-const W = 420
-const H = 460
-const GRID_X = [70, 210, 350]
-const GRID_Y = [70, 230, 390]
+const W = 360
+const H = 380
+const GRID_X = [50, 140, 230]
+const GRID_Y = [50, 170, 290]
 
 const AGENTS_CONFIG = [
-    { id: "pm_spec", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
-    { id: "arch_design", col: 1, row: 0, icon: Layers, color: "text-blue-400", bg: "bg-blue-500/10" },
-    { id: "devops_infrastructure", col: 2, row: 0, icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-    { id: "security_architecture", col: 2, row: 1, icon: Shield, color: "text-red-400", bg: "bg-red-500/10" },
-    { id: "engineer_impl", col: 1, row: 1, icon: Code, color: "text-orange-400", bg: "bg-orange-500/10" },
-    { id: "ui_design", col: 0, row: 1, icon: Palette, color: "text-pink-400", bg: "bg-pink-500/10" },
-    { id: "qa_verification", col: 0, row: 2, icon: CheckCircle2, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+    { id: "pm_spec", name: "Product Management", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
+    { id: "arch_design", name: "Architecture", col: 1, row: 0, icon: Layers, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { id: "devops_infrastructure", name: "DevOps", col: 2, row: 0, icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { id: "security_architecture", name: "Security", col: 2, row: 1, icon: Shield, color: "text-red-400", bg: "bg-red-500/10" },
+    { id: "engineer_impl", name: "Engineering", col: 1, row: 1, icon: Code, color: "text-orange-400", bg: "bg-orange-500/10" },
+    { id: "ui_design", name: "UI / UX", col: 0, row: 1, icon: Palette, color: "text-pink-400", bg: "bg-pink-500/10" },
+    { id: "qa_verification", name: "QA", col: 0, row: 2, icon: CheckCircle2, color: "text-cyan-400", bg: "bg-cyan-500/10" },
 ].map(a => ({
     ...a,
     x: GRID_X[a.col],
@@ -53,8 +53,8 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
     `
 
     return (
-        <div className="relative w-full max-w-md mx-auto py-8 select-none h-full flex items-center justify-center">
-            <div className="relative overflow-visible w-[420px] h-[460px]">
+        <div className="relative w-full max-w-sm mx-auto py-6 select-none h-full flex items-center justify-center">
+            <div className="relative overflow-visible w-[360px] h-[380px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">
@@ -101,13 +101,13 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 className="relative flex flex-col items-center"
                             >
                                 <div className={cn(
-                                    "relative w-16 h-16 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
+                                    "relative w-12 h-12 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
                                     stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/10 step-running-glow" :
                                         stepStatus === 'success' ? "bg-green-500/10 shadow-sm" :
                                             "bg-muted/30 border border-white/5"
                                 )}>
                                     <Icon className={cn(
-                                        "h-8 w-8 transition-colors duration-500",
+                                        "h-5 w-5 transition-colors duration-500",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/40"
@@ -128,14 +128,14 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 </div>
 
                                 {/* Label & Summary */}
-                                <div className="absolute -bottom-12 w-52 text-center pointer-events-none">
+                                <div className="absolute -bottom-12 w-40 text-center pointer-events-none">
                                     <span className={cn(
-                                        "text-[10px] font-black tracking-tighter uppercase block",
+                                        "text-[10px] font-semibold tracking-tight block",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/40"
                                     )}>
-                                        {node.id.split('_').join(' ')}
+                                        {node.name}
                                     </span>
                                     {summary && (
                                         <motion.span
