@@ -204,8 +204,8 @@ export default function CreateDiagramPage() {
                           </p>
                         </div>
 
-                        {/* Larger generation flow moved slightly up */}
-                        <div className="-mt-6 scale-[1.05]">
+                        {/* Larger generation flow moved slightly up (slightly reduced) */}
+                        <div className="-mt-4 scale-[0.95]">
                           <GenerationFlow
                             steps={generationSteps}
                             summaries={stepSummaries}
