@@ -20,10 +20,10 @@ interface GenerationFlowProps {
     summaries: Record<string, string>
 }
 
-const W = 360
-const H = 380
-const GRID_X = [60, 180, 300]
-const GRID_Y = [50, 170, 290]
+const W = 380
+const H = 420
+const GRID_X = [60, 170, 280]
+const GRID_Y = [60, 190, 320]
 
 const AGENTS_CONFIG = [
     { id: "pm_spec", name: "Product Management", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
@@ -54,7 +54,7 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
 
     return (
         <div className="relative w-full max-w-sm mx-auto py-6 select-none h-full flex items-center justify-center">
-            <div className="relative overflow-visible w-[360px] h-[380px]">
+            <div className="relative overflow-visible w-[380px] h-[420px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">
@@ -101,13 +101,13 @@ export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
                                 className="relative flex flex-col items-center"
                             >
                                 <div className={cn(
-                                    "relative w-12 h-12 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
-                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/12 step-running-glow" :
-                                        stepStatus === 'success' ? "bg-green-500/12 shadow-sm" :
+                                    "relative w-14 h-14 rounded-2xl backdrop-blur-xl flex items-center justify-center transition-all duration-500",
+                                    stepStatus === 'running' ? "ring-2 ring-blue-500 bg-blue-500/14 step-running-glow" :
+                                        stepStatus === 'success' ? "bg-green-500/14 shadow-sm" :
                                             "bg-muted/50 border border-white/7"
                                 )}>
                                     <Icon className={cn(
-                                        "h-5 w-5 transition-colors duration-500",
+                                        "h-6 w-6 transition-colors duration-500",
                                         stepStatus === 'running' ? "text-blue-500" :
                                             stepStatus === 'success' ? "text-green-500" :
                                                 "text-muted-foreground/70"
