@@ -45,6 +45,7 @@ export function ClarificationPanel({
         if (!currentQuestion) return ""
         const currentAnswer = answers[currentQuestion.id]
         if (!currentAnswer) return ""
+        if (currentAnswer === CUSTOM_OPTION_VALUE) return CUSTOM_OPTION_VALUE
         if (currentQuestion.options.includes(currentAnswer)) return currentAnswer
         return CUSTOM_OPTION_VALUE
     })()
@@ -67,7 +68,7 @@ export function ClarificationPanel({
         if (!currentQuestion) return
         if (val === CUSTOM_OPTION_VALUE) {
             const existing = customByQuestionId[currentQuestion.id] ?? ""
-            if (existing.trim().length > 0) onAnswerChange(currentQuestion.id, existing)
+            onAnswerChange(currentQuestion.id, existing || CUSTOM_OPTION_VALUE)
             return
         }
 
@@ -93,7 +94,7 @@ export function ClarificationPanel({
       <motion.div
         initial={{ opacity: 0, translateY: 8 }}
         animate={{ opacity: 1, translateY: 0 }}
-        className="w-full max-w-[380px] pointer-events-auto"
+        className="w-full max-w-[440px] pointer-events-auto"
       >
         <div className="border border-border/10 bg-card/80 backdrop-blur-sm rounded-lg overflow-hidden shadow-sm">
           <div className="px-3 pt-2 pb-0.5">
