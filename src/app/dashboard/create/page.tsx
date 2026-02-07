@@ -181,6 +181,21 @@ export default function CreateDiagramPage() {
                 {/* Persistent Progress Bar */}
                 <GenerationProgress steps={generationSteps} summaries={stepSummaries} />
 
+                {/* Top banner (minimal, non-distracting) shown when there's no diagram and no generation steps */}
+                {!currentDiagram && generationSteps.length === 0 && (
+                  <div className="px-6 pt-6">
+                    <div className="max-w-3xl mx-auto">
+                      <div className="flex items-start gap-4 bg-blue-500/6 border border-border/10 rounded-lg px-4 py-3">
+                        <Sparkles className="h-6 w-6 text-blue-500 mt-0.5" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground">Imagine Your Application</h3>
+                          <p className="text-sm text-muted-foreground mt-1">Describe your software vision in the prompt below. Seven specialized AI agents will collaborate in real-time to architect every layer of your project.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
                   <AnimatePresence mode="wait">
                     {!currentDiagram ? (
@@ -198,20 +213,6 @@ export default function CreateDiagramPage() {
                             summaries={stepSummaries}
                           />
                         </div>
-
-                        {/* Initial state message */}
-                        {generationSteps.length === 0 && (
-                          <div className="text-center max-w-lg">
-                            <h2 className="text-xl font-bold text-foreground mb-3 flex items-center justify-center gap-2">
-                              <Sparkles className="h-5 w-5 text-blue-500" />
-                              Imagine Your Application
-                            </h2>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              Describe your software vision in the prompt below. Seven specialized AI agents
-                              will collaborate in real-time to architect every layer of your project.
-                            </p>
-                          </div>
-                        )}
 
                       </motion.div>
                     ) : (
