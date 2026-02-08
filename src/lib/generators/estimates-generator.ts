@@ -1,6 +1,6 @@
 import type { Diagram } from "@/types/diagram"
 
-export interface DevelopmentEstimate {
+interface DevelopmentEstimate {
   totalHours: number
   totalDays: number
   timeline: number // weeks
@@ -15,7 +15,7 @@ export interface DevelopmentEstimate {
   }
 }
 
-export interface CostEstimate {
+interface CostEstimate {
   infrastructure: {
     monthly: number
     yearly: number

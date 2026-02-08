@@ -8,7 +8,7 @@ dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 import { MetaSOPOrchestrator } from "../../src/lib/metasop/orchestrator";
-import { applyEditOps, type ArtifactRecord } from "../../src/lib/artifacts/edit-tools";
+import { applyEditOps, type ArtifactRecord } from "../../src/lib/metasop/refinement/edit-tools";
 import { resetLLMProvider } from "../../src/lib/metasop/utils/llm-helper";
 import path from "path";
 import fs from "fs";

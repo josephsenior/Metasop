@@ -18,7 +18,7 @@ import {
   BarChart3
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { EstimatesGenerator } from "@/lib/artifacts/estimates-generator"
+import { EstimatesGenerator } from "@/lib/generators/estimates-generator"
 
 interface ProjectEstimatesProps {
   diagram?: any

@@ -2,34 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 import { createErrorResponse, addGuestCookie } from "@/lib/api/response"
 import { handleGuestAuth } from "@/lib/middleware/guest-auth"
 import { diagramDb } from "@/lib/diagrams/db"
-import { DocumentationGenerator } from "@/lib/artifacts/documentation-generator"
-import { PDFGenerator } from "@/lib/artifacts/pdf-generator"
-import { CodeGenerator } from "@/lib/artifacts/code-generator"
-import { OpenAPIGenerator } from "@/lib/artifacts/openapi-generator"
-import { SQLGenerator } from "@/lib/artifacts/sql-generator"
-import { EstimatesGenerator } from "@/lib/artifacts/estimates-generator"
-import { DeploymentGenerator } from "@/lib/artifacts/deployment-generator"
-import { IaCGenerator } from "@/lib/artifacts/iac-generator"
-import { ADRGenerator } from "@/lib/artifacts/adr-generator"
-import { ERDGenerator } from "@/lib/artifacts/erd-generator"
-import { TechComparisonGenerator } from "@/lib/artifacts/tech-comparison-generator"
-import { TestPlanGenerator } from "@/lib/artifacts/test-plan-generator"
-import { SecurityAuditGenerator } from "@/lib/artifacts/security-audit-generator"
-import { APIClientGenerator } from "@/lib/artifacts/api-client-generator"
-import { MermaidGenerator } from "@/lib/artifacts/mermaid-generator"
-import { PPTXGenerator } from "@/lib/artifacts/pptx-generator"
+import { DocumentationGenerator } from "@/lib/generators/documentation-generator"
+import { PDFGenerator } from "@/lib/generators/pdf-generator"
+import { CodeGenerator } from "@/lib/generators/code-generator"
+import { OpenAPIGenerator } from "@/lib/generators/openapi-generator"
+import { SQLGenerator } from "@/lib/generators/sql-generator"
+import { EstimatesGenerator } from "@/lib/generators/estimates-generator"
+import { DeploymentGenerator } from "@/lib/generators/deployment-generator"
+import { IaCGenerator } from "@/lib/generators/iac-generator"
+import { ADRGenerator } from "@/lib/generators/adr-generator"
+import { ERDGenerator } from "@/lib/generators/erd-generator"
+import { TechComparisonGenerator } from "@/lib/generators/tech-comparison-generator"
+import { TestPlanGenerator } from "@/lib/generators/test-plan-generator"
+import { SecurityAuditGenerator } from "@/lib/generators/security-audit-generator"
+import { APIClientGenerator } from "@/lib/generators/api-client-generator"
+import { MermaidGenerator } from "@/lib/generators/mermaid-generator"
+import { PPTXGenerator } from "@/lib/generators/pptx-generator"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const guestAuth = await handleGuestAuth(request);
-    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
-    if (!guestAuth.canProceed || !guestAuth.userId) {
-      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
+    const { canProceed, userId: authedUserId, reason, sessionId } = await handleGuestAuth(request);
+    const cookieOpt = sessionId ? { guestSessionId: sessionId } : undefined;
+    if (!canProceed || !authedUserId) {
+      return createErrorResponse(reason || "Unauthorized", 401, cookieOpt);
     }
-    const userId = guestAuth.userId;
+    const userId = authedUserId;
 
     const resolvedParams = await params
     const { searchParams } = new URL(request.url)
@@ -227,12 +227,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const guestAuth = await handleGuestAuth(request);
-    const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
-    if (!guestAuth.canProceed || !guestAuth.userId) {
-      return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
+    const { canProceed, userId: authedUserId, reason, sessionId } = await handleGuestAuth(request);
+    const cookieOpt = sessionId ? { guestSessionId: sessionId } : undefined;
+    if (!canProceed || !authedUserId) {
+      return createErrorResponse(reason || "Unauthorized", 401, cookieOpt);
     }
-    const userId = guestAuth.userId;
+    const userId = authedUserId;
 
     const resolvedParams = await params
     const body = await request.json()

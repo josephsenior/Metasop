@@ -49,6 +49,9 @@ function getProjectRoot(): string {
 /** Default SQLite path relative to project root (single source of truth). */
 const DEFAULT_DB_PATH = "prisma/local.db";
 
+// Prefer destructuring when repeatedly accessing env vars
+const { NODE_ENV, PRISMA_LOG_LEVEL } = process.env;
+
 /** Convert file URL to absolute filesystem path (Windows-safe). */
 function fileUrlToPath(fileUrl: string): string {
   try {
@@ -92,7 +95,7 @@ function resolveDatabaseUrl(): string {
     const dir = path.dirname(absolutePath);
     if (dir) fs.mkdirSync(dir, { recursive: true });
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
+    if (NODE_ENV === "development") {
       console.warn("[prisma] Could not create prisma dir:", (err as Error).message);
     }
   }
@@ -128,9 +131,9 @@ ensureDatabaseDir();
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === "development"
+    log: NODE_ENV === "development"
       ? ["query", "error", "warn"]
-      : process.env.PRISMA_LOG_LEVEL === "debug"
+      : PRISMA_LOG_LEVEL === "debug"
         ? ["error", "warn", "info"]
         : ["error"],
     datasources: {
@@ -140,7 +143,7 @@ export const prisma =
     },
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 if (typeof process !== "undefined") {
   const g = global as typeof globalThis & { prismaListenersAdded?: boolean };

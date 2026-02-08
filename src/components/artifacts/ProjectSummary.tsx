@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { artifactStyles as styles } from "./shared-styles"
-import { EstimatesGenerator } from "@/lib/artifacts/estimates-generator"
+import { EstimatesGenerator } from "@/lib/generators/estimates-generator"
 
 const agentIcons: Record<string, any> = {
   pm_spec: User,

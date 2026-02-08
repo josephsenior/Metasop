@@ -2,24 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { createErrorResponse } from "@/lib/api/response";
 import { handleGuestAuth } from "@/lib/middleware/guest-auth";
 import { diagramDb } from "@/lib/diagrams/db";
-import { PPTXGeneratorScreenshot } from "@/lib/artifacts/pptx-generator-screenshot";
+import { PPTXGeneratorScreenshot } from "@/lib/generators/pptx-generator-screenshot";
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const guestAuth = await handleGuestAuth(request);
-        const cookieOpt = guestAuth.sessionId ? { guestSessionId: guestAuth.sessionId } : undefined;
+        const { canProceed, userId: authedUserId, reason, sessionId } = await handleGuestAuth(request);
+        const cookieOpt = sessionId ? { guestSessionId: sessionId } : undefined;
 
         // We allow guests to export diagrams they own (or if authentication is disabled/optional in this context)
         // The handleGuestAuth logic already verifies ownership if the diagram belongs to a guest user
-        if (!guestAuth.canProceed || !guestAuth.userId) {
-            return createErrorResponse(guestAuth.reason || "Unauthorized", 401, cookieOpt);
+        if (!canProceed || !authedUserId) {
+            return createErrorResponse(reason || "Unauthorized", 401, cookieOpt);
         }
-        const userId = guestAuth.userId;
-        const resolvedParams = await params;
-        const diagramId = resolvedParams.id;
+        const userId = authedUserId;
+        const { id: diagramId } = await params;
 
         // Fetch the diagram
         const diagram = await diagramDb.findById(diagramId);
