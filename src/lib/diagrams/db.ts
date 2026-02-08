@@ -1,18 +1,18 @@
 import { prisma, ensureDatabaseDir } from "@/lib/database/prisma";
 import { CreateDiagramRequest, UpdateDiagramRequest, Diagram } from "@/types/diagram";
+import type { Diagram as PrismaDiagram, Prisma } from "@prisma/client";
 
-function mapToDiagram(p: any): Diagram {
-    if (!p) return p;
+function mapToDiagram(p: PrismaDiagram): Diagram {
     return {
         id: p.id,
         userId: p.userId,
         title: p.title,
-        description: p.description,
-        status: p.status,
-        metadata: p.metadata as any,
-        createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
-        updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
-    } as Diagram;
+        description: p.description || "",
+        status: p.status as Diagram["status"],
+        metadata: p.metadata as unknown as Diagram["metadata"],
+        createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : (p.createdAt as unknown as string),
+        updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : (p.updatedAt as unknown as string),
+    };
 }
 
 export const diagramDb = {
@@ -24,7 +24,7 @@ export const diagramDb = {
                     ...(userId ? { userId: userId } : {}),
                 },
             });
-            return mapToDiagram(p);
+            return p ? mapToDiagram(p) : null;
         } catch (error) {
             console.error("Database error in findById:", error);
             return null;
@@ -101,6 +101,9 @@ export const diagramDb = {
         const existing = await this.findById(id, userId);
         if (!existing) throw new Error("Diagram not found");
 
+        const existingMetadata = existing.metadata ?? {};
+        const mergedMetadata = data.metadata ? { ...existingMetadata, ...data.metadata } : undefined;
+
         const p = await prisma.diagram.update({
             where: { id },
             data: {
@@ -108,12 +111,7 @@ export const diagramDb = {
                 ...(data.description ? { description: data.description } : {}),
                 ...(data.status ? { status: data.status } : { status: "completed" }),
                 // Deep merge metadata to prevent data loss (e.g. wiping artifacts when saving chat history)
-                ...(data.metadata ? {
-                    metadata: {
-                        ...(existing.metadata as Record<string, any> || {}),
-                        ...(data.metadata as Record<string, any> || {})
-                    }
-                } : {}),
+                ...(mergedMetadata ? { metadata: mergedMetadata as Prisma.InputJsonValue } : {}),
             },
         });
         return mapToDiagram(p);
@@ -129,7 +127,7 @@ export const diagramDb = {
                 title: `${existing.title} (Copy)`,
                 description: existing.description,
                 status: "completed",
-                metadata: existing.metadata as any,
+                metadata: existing.metadata as Prisma.InputJsonValue,
             },
         });
         return mapToDiagram(p);
@@ -149,7 +147,7 @@ export const diagramDb = {
             where: { id },
             data: {
                 status,
-                metadata: error ? { update_error: error } : undefined,
+                metadata: (error ? { update_error: error } : undefined) as Prisma.InputJsonValue | undefined,
             },
         });
         return mapToDiagram(p);
@@ -162,7 +160,7 @@ export const diagramDb = {
                 metadata: {
                     current_progress: progress,
                     current_step: currentStep,
-                },
+                } as Prisma.InputJsonValue,
             },
         });
         return mapToDiagram(p);

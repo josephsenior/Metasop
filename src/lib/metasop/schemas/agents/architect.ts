@@ -1,12 +1,21 @@
 import { z } from "zod";
 
+const flexibleString = z.preprocess((value) => {
+    if (typeof value === "string") return value;
+    try {
+        return JSON.stringify(value);
+    } catch {
+        return String(value);
+    }
+}, z.string());
+
 const APISchema = z
     .object({
         path: z.string().regex(/^\/.*/, "API path must start with /"),
         method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
         description: z.string().min(10, "API description must be at least 10 characters"),
-        request_schema: z.record(z.string()).describe("A map of field names to their types"),
-        response_schema: z.record(z.string()).describe("A map of field names to their types"),
+        request_schema: z.record(flexibleString).describe("A map of field names to their types"),
+        response_schema: z.record(flexibleString).describe("A map of field names to their types"),
         auth_required: z.boolean(),
         rate_limit: z.string().optional(),
     })

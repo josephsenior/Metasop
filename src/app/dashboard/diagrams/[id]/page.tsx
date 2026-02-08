@@ -172,12 +172,13 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
     if (result && result.artifacts && diagram) {
       // Track modified artifacts for UI highlighting
       const newKeys = Object.keys(result.artifacts)
-      const oldArtifacts = (diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts) ?? {}
+      const oldArtifacts = diagram.metadata?.metasop_artifacts ?? {}
+      const oldArtifactsRecord = oldArtifacts as Record<string, unknown>
       
       const modified = newKeys.filter(key => {
         // Simple heuristic: if the length of JSON string changed, it's modified
         // This is efficient and works well for small delta updates
-        return JSON.stringify(result.artifacts[key]) !== JSON.stringify(oldArtifacts[key])
+        return JSON.stringify(result.artifacts[key]) !== JSON.stringify(oldArtifactsRecord[key])
       })
       
       if (modified.length > 0) {
@@ -570,8 +571,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                     <CardContent className="p-0 h-full min-h-[600px] max-h-[1000px]">
                       <div className="w-full h-full">
                         {(() => {
-                          // Handle both nested structures: metadata.metasop_artifacts.metasop_artifacts or metadata.metasop_artifacts
-                          const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+                          const artifacts = diagram.metadata?.metasop_artifacts
                           return artifacts ? (
                             <ArtifactsPanel
                               diagramId={diagram.id}
@@ -610,7 +610,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                           <p className="text-sm font-medium text-foreground mb-1">Artifacts</p>
                           <p className="text-sm text-muted-foreground">
                             {(() => {
-                              const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+                              const artifacts = diagram.metadata?.metasop_artifacts
                               return artifacts ? Object.keys(artifacts).length : 0
                             })()} agents
                           </p>
@@ -646,7 +646,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
             {/* Desktop Chat Panel */}
             {(() => {
-              const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+              const artifacts = diagram.metadata?.metasop_artifacts
               return artifacts && isChatOpen ? (
                 <div className="hidden lg:block w-96 shrink-0 h-full min-h-[648px] max-h-[1048px] sticky top-8">
                   <ProjectChatPanel
@@ -663,7 +663,7 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
 
           {/* Mobile Chat Sheet */}
           {(() => {
-            const artifacts = diagram.metadata?.metasop_artifacts?.metasop_artifacts || diagram.metadata?.metasop_artifacts
+            const artifacts = diagram.metadata?.metasop_artifacts
             return artifacts ? (
               <div className="lg:hidden fixed bottom-6 right-6 z-50">
                 <Sheet>

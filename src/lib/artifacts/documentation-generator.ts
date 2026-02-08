@@ -1,5 +1,14 @@
 import type { Diagram } from "@/types/diagram"
 import { EstimatesGenerator } from "./estimates-generator"
+import type {
+  ArchitectBackendArtifact,
+  DevOpsBackendArtifact,
+  EngineerBackendArtifact,
+  ProductManagerBackendArtifact,
+  QABackendArtifact,
+  SecurityBackendArtifact,
+  UIDesignerBackendArtifact,
+} from "@/lib/metasop/types"
 
 export interface DocumentationOptions {
   includeDiagrams?: boolean
@@ -29,238 +38,188 @@ export class DocumentationGenerator {
    * Generate Markdown documentation
    */
   generateMarkdown(): string {
-    const artifacts = this.diagram.metadata?.metasop_artifacts || {}
-    const pmSpec = artifacts.pm_spec?.content || {}
-    const archContent = artifacts.arch_design?.content || {}
-    const devOpsArtifact = artifacts.devops_infrastructure?.content || {}
-    const securityArtifact = artifacts.security_architecture?.content || {}
-    const engineerArtifact = artifacts.engineer_impl?.content || {}
-    const uiDesignerArtifact = artifacts.ui_design?.content || {}
-    const qaArtifact = artifacts.qa_verification?.content || {}
+    const { title, createdAt, description, metadata } = this.diagram
+    const artifacts = metadata?.metasop_artifacts
 
-    let markdown = `# ${this.diagram.title}\n\n`
-    markdown += `**Generated:** ${new Date(this.diagram.createdAt).toLocaleString()}\n\n`
-    markdown += `## Overview\n\n${this.diagram.description}\n\n`
+    const pmSpec = artifacts?.pm_spec?.content as ProductManagerBackendArtifact | undefined
+    const archContent = artifacts?.arch_design?.content as ArchitectBackendArtifact | undefined
+    const devOpsArtifact = artifacts?.devops_infrastructure?.content as DevOpsBackendArtifact | undefined
+    const securityArtifact = artifacts?.security_architecture?.content as SecurityBackendArtifact | undefined
+    const engineerArtifact = artifacts?.engineer_impl?.content as EngineerBackendArtifact | undefined
+    const uiDesignerArtifact = artifacts?.ui_design?.content as UIDesignerBackendArtifact | undefined
+    const qaArtifact = artifacts?.qa_verification?.content as QABackendArtifact | undefined
+
+    let markdown = `# ${title}\n\n`
+    markdown += `**Generated:** ${new Date(createdAt).toLocaleString()}\n\n`
+    markdown += `## Overview\n\n${description}\n\n`
     markdown += `---\n\n`
 
     // Product Manager Section
-    if (pmSpec.user_stories || pmSpec.acceptance_criteria) {
+    if (pmSpec) {
       markdown += `## Product Requirements\n\n`
-      
-      if (pmSpec.user_stories) {
-        markdown += `### User Stories\n\n`
-        const stories = Array.isArray(pmSpec.user_stories) ? pmSpec.user_stories : []
-        stories.forEach((story: any, idx: number) => {
-          const title = typeof story === "string" ? story : story.title || story.story || `Story ${idx + 1}`
-          const description = typeof story === "object" ? story.description : null
-          markdown += `${idx + 1}. **${title}**\n`
-          if (description) markdown += `   ${description}\n`
-          markdown += `\n`
-        })
-      }
 
-      if (pmSpec.acceptance_criteria) {
-        markdown += `### Acceptance Criteria\n\n`
-        const criteria = Array.isArray(pmSpec.acceptance_criteria) ? pmSpec.acceptance_criteria : []
-        criteria.forEach((criterion: any, idx: number) => {
-          const text = typeof criterion === "string" 
-            ? criterion 
-            : criterion.criteria || criterion.title || criterion.description || `Criterion ${idx + 1}`
-          markdown += `- ${text}\n`
-        })
+      markdown += `### User Stories\n\n`
+      pmSpec.user_stories.forEach((story, idx) => {
+        markdown += `${idx + 1}. **${story.title}**\n`
+        markdown += `   ${story.story}\n`
+        if (story.description) markdown += `   ${story.description}\n`
         markdown += `\n`
-      }
+      })
+
+      markdown += `### Acceptance Criteria\n\n`
+      pmSpec.acceptance_criteria.forEach((criterion) => {
+        markdown += `- ${criterion.criteria}\n`
+      })
+      markdown += `\n`
     }
 
     // Architect Section
-    if (archContent.design_doc || archContent.decisions || archContent.apis) {
+    if (archContent) {
       markdown += `## Architecture Design\n\n`
 
-      if (archContent.design_doc) {
-        markdown += `### Design Document\n\n${archContent.design_doc}\n\n`
-      }
+      markdown += `### Design Document\n\n${archContent.design_doc}\n\n`
 
-      if (archContent.decisions) {
-        markdown += `### Architectural Decisions\n\n`
-        const decisions = Array.isArray(archContent.decisions) ? archContent.decisions : []
-        decisions.forEach((decision: any, idx: number) => {
-          markdown += `#### Decision ${idx + 1}: ${decision.decision || `Decision ${idx + 1}`}\n\n`
-          if (decision.reason) markdown += `**Reason:** ${decision.reason}\n\n`
-          if (decision.tradeoffs) markdown += `**Tradeoffs:** ${decision.tradeoffs}\n\n`
-        })
-      }
+      markdown += `### Architectural Decisions\n\n`
+      archContent.decisions.forEach((decision, idx) => {
+        markdown += `#### Decision ${idx + 1}: ${decision.decision}\n\n`
+        markdown += `**Status:** ${decision.status}\n\n`
+        markdown += `**Reason:** ${decision.reason}\n\n`
+        markdown += `**Tradeoffs:** ${decision.tradeoffs}\n\n`
+        markdown += `**Consequences:** ${decision.consequences}\n\n`
+      })
 
-      if (this.options.includeAPIs && archContent.apis) {
+      if (this.options.includeAPIs) {
         markdown += `### API Endpoints\n\n`
-        const apis = Array.isArray(archContent.apis) ? archContent.apis : []
-        apis.forEach((api: any) => {
-          const method = api.method || "GET"
-          const path = api.path || api.endpoint || "/api"
-          markdown += `#### \`${method} ${path}\`\n\n`
-          if (api.description) markdown += `${api.description}\n\n`
+        archContent.apis.forEach((api) => {
+          markdown += `#### \`${api.method} ${api.path}\`\n\n`
+          markdown += `${api.description}\n\n`
           if (api.auth_required) markdown += `**Authentication Required:** Yes\n\n`
         })
       }
 
-      if (this.options.includeDatabase && archContent.database_schema) {
+      if (this.options.includeDatabase) {
         markdown += `### Database Schema\n\n`
-        const schema = archContent.database_schema
-        if (schema.tables) {
-          const tables = Array.isArray(schema.tables) ? schema.tables : []
-          tables.forEach((table: any) => {
-            const tableName = table.table_name || table.name || "Table"
-            markdown += `#### Table: \`${tableName}\`\n\n`
-            if (table.columns) {
-              markdown += `| Column | Type | Constraints |\n`
-              markdown += `|--------|------|-------------|\n`
-              const columns = Array.isArray(table.columns) ? table.columns : []
-              columns.forEach((col: any) => {
-                const colName = typeof col === "object" ? col.name : col
-                const colType = typeof col === "object" ? col.type || "varchar" : "varchar"
-                const constraints = typeof col === "object" && col.constraints
-                  ? (Array.isArray(col.constraints) ? col.constraints.join(", ") : col.constraints)
-                  : ""
-                markdown += `| ${colName} | ${colType} | ${constraints} |\n`
-              })
-              markdown += `\n`
-            }
+        const tables = archContent.database_schema.tables ?? []
+
+        if (tables.length === 0) {
+          markdown += `No database tables defined.\n\n`
+        } else {
+          tables.forEach((table) => {
+            markdown += `#### Table: \`${table.name}\`\n\n`
+            markdown += `| Column | Type | Constraints |\n`
+            markdown += `|--------|------|-------------|\n`
+            table.columns.forEach((col) => {
+              const constraints = col.constraints ? col.constraints.join(", ") : ""
+              markdown += `| ${col.name} | ${col.type} | ${constraints} |\n`
+            })
+            markdown += `\n`
           })
         }
       }
     }
 
     // DevOps Section
-    if (devOpsArtifact.infrastructure || devOpsArtifact.cicd) {
+    if (devOpsArtifact) {
       markdown += `## DevOps & Infrastructure\n\n`
-      
-      if (devOpsArtifact.infrastructure) {
-        markdown += `### Infrastructure Components\n\n`
-        const infra = devOpsArtifact.infrastructure
-        if (infra.cloud_provider) markdown += `- **Cloud Provider:** ${infra.cloud_provider}\n`
-        if (infra.region) markdown += `- **Region:** ${infra.region}\n`
-        if (Array.isArray(infra.services)) {
-          markdown += `\n**Services:**\n`
-          infra.services.forEach((s: any) => markdown += `- ${typeof s === 'string' ? s : s.name}\n`)
-        }
-        markdown += `\n`
-      }
 
-      if (devOpsArtifact.cicd) {
-        markdown += `### CI/CD Pipeline\n\n`
-        const cicd = devOpsArtifact.cicd
-        if (Array.isArray(cicd.pipeline_stages)) {
-          cicd.pipeline_stages.forEach((stage: any, idx: number) => {
-            markdown += `${idx + 1}. **${stage.name || stage}**\n`
-            if (stage.description) markdown += `   ${stage.description}\n`
-          })
-          markdown += `\n`
-        }
+      markdown += `### Infrastructure Components\n\n`
+      const { infrastructure: infra, cicd } = devOpsArtifact
+      const { cloud_provider, regions, services } = infra
+      markdown += `- **Cloud Provider:** ${cloud_provider}\n`
+      if (regions && regions.length > 0) {
+        markdown += `- **Regions:** ${regions.join(", ")}\n`
       }
+      markdown += `\n**Services:**\n`
+      services.forEach((service) => {
+        markdown += `- ${service.name} (${service.type})\n`
+      })
+      markdown += `\n`
+
+      markdown += `### CI/CD Pipeline\n\n`
+      cicd.pipeline_stages.forEach((stage, idx) => {
+        markdown += `${idx + 1}. **${stage.name}**\n`
+        stage.steps.forEach((step) => {
+          markdown += `   - ${step}\n`
+        })
+        if (stage.goal) markdown += `   Goal: ${stage.goal}\n`
+      })
+      markdown += `\n`
     }
 
     // Security Section
-    if (securityArtifact.threat_model || securityArtifact.security_controls) {
+    if (securityArtifact) {
       markdown += `## Security Architecture\n\n`
 
-      if (Array.isArray(securityArtifact.threat_model)) {
-        markdown += `### Threat Model\n\n`
-        securityArtifact.threat_model.forEach((threat: any) => {
-          markdown += `- **${threat.threat || threat}**: ${threat.mitigation || ""}\n`
-        })
-        markdown += `\n`
-      }
+      markdown += `### Threat Model\n\n`
+      securityArtifact.threat_model.forEach((threat) => {
+        markdown += `- **${threat.threat}** (${threat.severity}): ${threat.mitigation}\n`
+      })
+      markdown += `\n`
 
-      if (Array.isArray(securityArtifact.security_controls)) {
-        markdown += `### Security Controls\n\n`
-        securityArtifact.security_controls.forEach((control: any) => {
-          markdown += `- **${control.control || control}**: ${control.description || ""}\n`
-        })
-        markdown += `\n`
-      }
+      markdown += `### Security Controls\n\n`
+      securityArtifact.security_controls.forEach((control) => {
+        markdown += `- **${control.control}**: ${control.implementation}\n`
+      })
+      markdown += `\n`
     }
 
     // Engineer Section
-    if (engineerArtifact.implementation_plan_phases || engineerArtifact.file_structure || engineerArtifact.dependencies) {
+    if (engineerArtifact) {
       markdown += `## Implementation Roadmap\n\n`
 
-      if (engineerArtifact.implementation_plan_phases && engineerArtifact.implementation_plan_phases.length > 0) {
-        engineerArtifact.implementation_plan_phases.forEach((phase: any, index: number) => {
-          markdown += `### Phase ${index + 1}: ${phase.name}\n\n`
-          markdown += `${phase.description || ""}\n\n`
-          if (Array.isArray(phase.tasks) && phase.tasks.length > 0) {
-            phase.tasks.forEach((task: string) => {
-              markdown += `- ${task}\n`
-            })
-            markdown += `\n`
-          }
-        })
-      }
-
-      if (engineerArtifact.file_structure) {
-        markdown += `### File Structure\n\n`
-        markdown += this.formatFileStructure(engineerArtifact.file_structure, 0)
-        markdown += `\n`
-      }
-
-      if (engineerArtifact.dependencies) {
-        markdown += `### Dependencies\n\n`
-        const deps = Array.isArray(engineerArtifact.dependencies) ? engineerArtifact.dependencies : []
-        deps.forEach((dep: string) => {
-          markdown += `- \`${dep}\`\n`
+      engineerArtifact.implementation_plan_phases.forEach((phase, index) => {
+        markdown += `### Phase ${index + 1}: ${phase.name}\n\n`
+        markdown += `${phase.description}\n\n`
+        phase.tasks.forEach((task) => {
+          markdown += `- ${task}\n`
         })
         markdown += `\n`
-      }
+      })
+
+      markdown += `### File Structure\n\n`
+      markdown += this.formatFileStructure(engineerArtifact.file_structure, 0)
+      markdown += `\n`
+
+      markdown += `### Dependencies\n\n`
+      engineerArtifact.dependencies.forEach((dep) => {
+        markdown += `- \`${dep}\`\n`
+      })
+      markdown += `\n`
     }
 
     // UI Designer Section
-    if (uiDesignerArtifact.component_hierarchy || uiDesignerArtifact.design_tokens) {
+    if (uiDesignerArtifact) {
       markdown += `## UI Design\n\n`
 
-      if (uiDesignerArtifact.component_hierarchy) {
-        markdown += `### Component Hierarchy\n\n`
-        markdown += this.formatComponentHierarchy(uiDesignerArtifact.component_hierarchy, 0)
-        markdown += `\n`
-      }
+      markdown += `### Component Hierarchy\n\n`
+      markdown += this.formatComponentHierarchy(uiDesignerArtifact.component_hierarchy, 0)
+      markdown += `\n`
 
-      if (uiDesignerArtifact.design_tokens) {
-        markdown += `### Design Tokens\n\n`
-        const tokens = uiDesignerArtifact.design_tokens
-        if (tokens.colors) {
-          markdown += `#### Colors\n\n`
-          Object.entries(tokens.colors).forEach(([key, value]) => {
-            markdown += `- \`${key}\`: \`${value}\`\n`
-          })
-          markdown += `\n`
-        }
+      markdown += `### Design Tokens\n\n`
+      const tokens = uiDesignerArtifact.design_tokens
+      if (tokens.colors) {
+        markdown += `#### Colors\n\n`
+        Object.entries(tokens.colors).forEach(([key, value]) => {
+          markdown += `- \`${key}\`: \`${value}\`\n`
+        })
+        markdown += `\n`
       }
     }
 
     // QA Section
-    if (qaArtifact.test_results || qaArtifact.coverage || qaArtifact.security_findings) {
+    if (qaArtifact) {
       markdown += `## Quality Assurance\n\n`
 
-      if (qaArtifact.coverage) {
-        markdown += `### Test Coverage\n\n`
-        const coverage = qaArtifact.coverage
-        if (coverage.percentage !== undefined) {
-          markdown += `- **Overall Coverage:** ${coverage.percentage}%\n`
-        }
-        if (coverage.lines !== undefined) {
-          markdown += `- **Lines:** ${coverage.lines}%\n`
-        }
-        markdown += `\n`
-      }
+      markdown += `### Test Coverage\n\n`
+      const { coverage } = qaArtifact
+      markdown += `- **Overall Coverage:** ${coverage.percentage}% (threshold ${coverage.threshold}%)\n`
+      markdown += `- **Lines:** ${coverage.lines}%, **Statements:** ${coverage.statements}%, **Functions:** ${coverage.functions}%, **Branches:** ${coverage.branches}%\n\n`
 
-      if (qaArtifact.security_findings) {
-        markdown += `### Security Findings\n\n`
-        const findings = Array.isArray(qaArtifact.security_findings) ? qaArtifact.security_findings : []
-        findings.forEach((finding: any) => {
-          markdown += `#### ${finding.vulnerability || "Finding"}\n\n`
-          markdown += `**Severity:** ${finding.severity || "Unknown"}\n\n`
-          if (finding.description) markdown += `${finding.description}\n\n`
-          if (finding.remediation) markdown += `**Remediation:** ${finding.remediation}\n\n`
-        })
-      }
+      markdown += `### Risk Analysis\n\n`
+      qaArtifact.risk_analysis.forEach((risk) => {
+        markdown += `- **${risk.risk}** (${risk.impact}): ${risk.mitigation}\n`
+      })
+      markdown += `\n`
     }
 
     // Estimates

@@ -1,3 +1,5 @@
+import type { BackendArtifactData, MetaSOPArtifact } from "./types";
+
 /**
  * A2A (Agent to Agent) Protocol Types
  * Based on Google's A2A v1.0 Draft Specification
@@ -48,11 +50,11 @@ export interface A2ATask {
     /** Current status of the task */
     status: A2ATaskStatus;
     /** Input data for the task (can be an artifact or user request) */
-    input: Record<string, any>;
+    input: Record<string, MetaSOPArtifact> | { user_request: string };
     /** Output artifact produced by the task (populated on completion) */
-    output?: Record<string, any>;
+    output?: MetaSOPArtifact;
     /** Additional context for the task */
-    context?: Record<string, any>;
+    context?: Record<string, string | number | boolean | null>;
     /** Timestamp when the task was created */
     createdAt: string;
     /** Timestamp when the task was last updated */
@@ -66,7 +68,7 @@ export interface A2AMessagePart {
     /** Type of content: text, json, image, file */
     type: "text" | "json" | "artifact_ref";
     /** The actual content */
-    content: string | Record<string, any>;
+    content: string | BackendArtifactData | { artifact_id: string };
     /** Optional MIME type */
     mimeType?: string;
 }

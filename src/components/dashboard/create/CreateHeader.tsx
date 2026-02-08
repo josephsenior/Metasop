@@ -52,7 +52,6 @@ export function CreateHeader({
 }: CreateHeaderProps) {
     const router = useRouter()
     const { toast } = useToast()
-    const diagramId = currentDiagram?.id
 
     const handleDelete = async () => {
         if (!currentDiagram) return

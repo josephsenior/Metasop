@@ -20,18 +20,18 @@ interface GenerationFlowProps {
     summaries: Record<string, string>
 }
 
-const W = 320
+const W = 520
 const H = 340
-const GRID_X = [50, 160, 270]
+const GRID_X = [60, 260, 460]
 const GRID_Y = [50, 160, 270]
 
 const AGENTS_CONFIG = [
     { id: "pm_spec", name: "Product Management", col: 0, row: 0, icon: User, color: "text-purple-400", bg: "bg-purple-500/10" },
     { id: "arch_design", name: "Architecture", col: 1, row: 0, icon: Layers, color: "text-blue-400", bg: "bg-blue-500/10" },
-    { id: "devops_infrastructure", name: "DevOps", col: 2, row: 0, icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-    { id: "security_architecture", name: "Security", col: 2, row: 1, icon: Shield, color: "text-red-400", bg: "bg-red-500/10" },
-    { id: "engineer_impl", name: "Engineering", col: 1, row: 1, icon: Code, color: "text-orange-400", bg: "bg-orange-500/10" },
-    { id: "ui_design", name: "UI / UX", col: 0, row: 1, icon: Palette, color: "text-pink-400", bg: "bg-pink-500/10" },
+    { id: "security_architecture", name: "Security", col: 2, row: 0, icon: Shield, color: "text-red-400", bg: "bg-red-500/10" },
+    { id: "devops_infrastructure", name: "DevOps", col: 2, row: 1, icon: Server, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { id: "ui_design", name: "UI / UX", col: 1, row: 1, icon: Palette, color: "text-pink-400", bg: "bg-pink-500/10" },
+    { id: "engineer_impl", name: "Engineering", col: 0, row: 1, icon: Code, color: "text-orange-400", bg: "bg-orange-500/10" },
     { id: "qa_verification", name: "QA", col: 0, row: 2, icon: CheckCircle2, color: "text-cyan-400", bg: "bg-cyan-500/10" },
 ].map(a => ({
     ...a,
@@ -40,21 +40,21 @@ const AGENTS_CONFIG = [
 }))
 
 export function GenerationFlow({ steps, summaries }: GenerationFlowProps) {
-    const bend = 50
+    const bend = 60
     const p = AGENTS_CONFIG
     const path = `
         M ${p[0].x} ${p[0].y}
         L ${p[1].x} ${p[1].y}
         L ${p[2].x} ${p[2].y}
-        C ${p[2].x + bend} ${p[2].y}, ${p[3].x + bend} ${p[3].y}, ${p[3].x} ${p[3].y}
+        C ${p[2].x} ${p[2].y + bend}, ${p[3].x} ${p[3].y - bend}, ${p[3].x} ${p[3].y}
         L ${p[4].x} ${p[4].y}
         L ${p[5].x} ${p[5].y}
-        C ${p[5].x - bend} ${p[5].y}, ${p[6].x - bend} ${p[6].y}, ${p[6].x} ${p[6].y}
+        C ${p[5].x} ${p[5].y + bend}, ${p[6].x} ${p[6].y - bend}, ${p[6].x} ${p[6].y}
     `
 
     return (
-        <div className="relative w-full max-w-sm mx-auto select-none flex items-center justify-center">
-            <div className="relative overflow-visible w-[320px] h-[340px]">
+        <div className="relative w-full max-w-2xl mx-auto select-none flex items-center justify-center">
+            <div className="relative overflow-visible w-[520px] h-[340px]">
 
                 {/* Connection Layer */}
                 <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 pointer-events-none overflow-visible z-10">

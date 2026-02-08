@@ -3,13 +3,17 @@
  * Supports Gemini (Primary) and Mock (Fallback)
  */
 
+import type { MetaSOPEvent } from "../types";
+
+export type LLMProgressEvent = Partial<MetaSOPEvent>;
+
 export interface LLMProvider {
   generate(prompt: string, options?: LLMOptions): Promise<string>;
-  generateStructured<T>(prompt: string, schema: any, options?: LLMOptions): Promise<T>;
+  generateStructured<T>(prompt: string, schema: unknown, options?: LLMOptions): Promise<T>;
   generateStreamingStructured?<T>(
     prompt: string,
-    schema: any,
-    onProgress: (event: any) => void,
+    schema: unknown,
+    onProgress: (event: LLMProgressEvent) => void,
     options?: LLMOptions
   ): Promise<T>;
   /**
@@ -35,12 +39,11 @@ export interface LLMOptions {
   cacheId?: string; // Optional Gemini Context Cache ID
   role?: string; // Optional role for agents
   systemInstruction?: string; // System-level instruction for the LLM
-  onProgress?: (event: any) => void; // Optional callback for streaming events
+  onProgress?: (event: LLMProgressEvent) => void; // Optional callback for streaming events
 }
 
 export interface ReasoningDetails {
-  reasoning?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface LLMResponse {
@@ -57,15 +60,15 @@ export class MockLLMProvider implements LLMProvider {
     return `Mock LLM response for: ${prompt.substring(0, 50)}...`;
   }
 
-  async generateStructured<T>(_prompt: string, schema: any): Promise<T> {
+  async generateStructured<T>(_prompt: string, schema: unknown): Promise<T> {
     await new Promise(resolve => setTimeout(resolve, 500));
     return generateMockFromSchema(schema) as T;
   }
 
   async generateStreamingStructured<T>(
     prompt: string,
-    schema: any,
-    onProgress: (event: any) => void
+    schema: unknown,
+    onProgress: (event: LLMProgressEvent) => void
   ): Promise<T> {
     // Simulate thinking tokens for development/testing
     const mockThoughts = [
@@ -105,21 +108,61 @@ export class MockLLMProvider implements LLMProvider {
   }
 }
 
-function generateMockFromSchema(schema: any): any {
-  return generateMockValue(schema, [], 0);
+function generateMockFromSchema(schema: unknown): unknown {
+  return generateMockValue(schema as Record<string, unknown>, [], 0);
 }
 
-function generateMockValue(schema: any, path: string[], depth: number): any {
-  if (!schema || depth > 6) return {};
+type JsonSchema = {
+  type?: string;
+  const?: unknown;
+  enum?: unknown[];
+  default?: unknown;
+  oneOf?: unknown;
+  anyOf?: unknown;
+  items?: unknown;
+  minItems?: unknown;
+  minimum?: unknown;
+  properties?: unknown;
+  required?: unknown;
+  pattern?: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function toJsonSchema(value: unknown): JsonSchema {
+  return (isRecord(value) ? (value as JsonSchema) : {}) as JsonSchema;
+}
+
+function generateMockValue(schemaInput: unknown, path: string[], depth: number): unknown {
+  if (!schemaInput || depth > 6) return {};
+
+  const schema = toJsonSchema(schemaInput);
 
   const resolved = pickSchemaVariant(schema);
-  const type = resolved.type;
+  const {
+    type,
+    const: constValue,
+    enum: enumValues,
+    default: defaultValue,
+    oneOf,
+    anyOf,
+    items,
+    minItems,
+    minimum,
+    properties,
+    required,
+  } = resolved;
 
-  if (resolved.const !== undefined) return resolved.const;
-  if (Array.isArray(resolved.enum) && resolved.enum.length > 0) return resolved.enum[0];
-  if (resolved.default !== undefined) return resolved.default;
+  if (constValue !== undefined) return constValue;
+  if (Array.isArray(enumValues) && enumValues.length > 0) {
+    const firstEnumValue = enumValues[0];
+    if (firstEnumValue !== undefined) return firstEnumValue;
+  }
+  if (defaultValue !== undefined) return defaultValue;
 
-  if (resolved.oneOf || resolved.anyOf) {
+  if (oneOf || anyOf) {
     const chosen = pickSchemaVariant(resolved);
     return generateMockValue(chosen, path, depth + 1);
   }
@@ -128,27 +171,30 @@ function generateMockValue(schema: any, path: string[], depth: number): any {
     return mockStringValue(resolved, path);
   }
   if (type === "boolean") return true;
-  if (type === "number" || type === "integer") return Math.max(1, resolved.minimum ?? 1);
+  if (type === "number" || type === "integer") {
+    const min = typeof minimum === "number" ? minimum : 1;
+    return Math.max(1, min);
+  }
 
   if (type === "array") {
-    const itemsSchema = resolved.items ?? {};
-    const minItems = typeof resolved.minItems === "number" ? resolved.minItems : 1;
-    const count = Math.max(1, minItems);
+    const itemsSchema = items ?? {};
+    const min = typeof minItems === "number" ? minItems : 1;
+    const count = Math.max(1, min);
     return Array.from({ length: count }, () => generateMockValue(itemsSchema, path, depth + 1));
   }
 
-  if (type === "object" || resolved.properties) {
-    const properties: Record<string, any> = resolved.properties || {};
-    const required: string[] = Array.isArray(resolved.required) ? resolved.required : [];
+  if (type === "object" || properties) {
+    const propertiesSchema = isRecord(properties) ? properties : {};
+    const requiredKeys: string[] = Array.isArray(required) ? (required as string[]) : [];
 
-    const obj: Record<string, any> = {};
-    const keys = required.length > 0 ? required : Object.keys(properties);
+    const obj: Record<string, unknown> = {};
+    const keys = requiredKeys.length > 0 ? requiredKeys : Object.keys(propertiesSchema);
 
     for (const key of keys) {
-      obj[key] = generateMockValue(properties[key], [...path, key], depth + 1);
+      obj[key] = generateMockValue(propertiesSchema[key], [...path, key], depth + 1);
     }
 
-    if (properties.ui_patterns && obj.ui_patterns === undefined) {
+    if (Object.prototype.hasOwnProperty.call(propertiesSchema, "ui_patterns") && obj.ui_patterns === undefined) {
       obj.ui_patterns = ["Pagination", "Search", "Empty state"];
     }
 
@@ -156,11 +202,14 @@ function generateMockValue(schema: any, path: string[], depth: number): any {
       obj.root = "App";
     }
 
-    if (path[path.length - 1] === "design_tokens" && typeof obj.colors === "object") {
-      obj.colors.primary = obj.colors.primary || "#0ea5e9";
-      obj.colors.secondary = obj.colors.secondary || "#6366f1";
-      obj.colors.background = obj.colors.background || "#0b1220";
-      obj.colors.text = obj.colors.text || "#e5e7eb";
+    if (path[path.length - 1] === "design_tokens") {
+      const { colors } = obj;
+      if (isRecord(colors)) {
+        colors.primary = colors.primary || "#0ea5e9";
+        colors.secondary = colors.secondary || "#6366f1";
+        colors.background = colors.background || "#0b1220";
+        colors.text = colors.text || "#e5e7eb";
+      }
     }
 
     return obj;
@@ -169,26 +218,32 @@ function generateMockValue(schema: any, path: string[], depth: number): any {
   return {};
 }
 
-function pickSchemaVariant(schema: any): any {
-  const variants: any[] = schema.oneOf || schema.anyOf || [];
+function pickSchemaVariant(schemaInput: unknown): JsonSchema {
+  const schema = toJsonSchema(schemaInput);
+  const variantsUnknown = schema.oneOf || schema.anyOf;
+  const variants: unknown[] = Array.isArray(variantsUnknown) ? variantsUnknown : [];
   if (Array.isArray(variants) && variants.length > 0) {
-    const objectVariant = variants.find((v) => v && (v.type === "object" || v.properties));
-    return objectVariant || variants[0];
+    const objectVariant = variants
+      .map(toJsonSchema)
+      .find((v) => v && (v.type === "object" || v.properties));
+    return objectVariant || toJsonSchema(variants[0]);
   }
   return schema;
 }
 
-function mockStringValue(schema: any, path: string[]): string {
+function mockStringValue(schemaInput: unknown, path: string[]): string {
+  const schema = toJsonSchema(schemaInput);
   const key = path[path.length - 1];
   const joined = path.join(".");
 
-  if (schema.pattern && typeof schema.pattern === "string" && schema.pattern.includes("^#[0-9A-Fa-f]{6}$")) {
+  const { pattern } = schema;
+  if (typeof pattern === "string" && pattern.includes("^#[0-9A-Fa-f]{6}$")) {
     return "#111111";
   }
 
   if (key === "artifact_path") return "src";
-  if (key === "id" && schema.pattern === "^US-[0-9]+$") return "US-1";
-  if (key === "id" && schema.pattern === "^AC-[0-9]+$") return "AC-1";
+  if (key === "id" && pattern === "^US-[0-9]+$") return "US-1";
+  if (key === "id" && pattern === "^AC-[0-9]+$") return "AC-1";
   if (key === "gherkin") return "Given a user exists\nWhen they sign in\nThen they see their dashboard";
   if (joined.endsWith("component_hierarchy.root")) return "App";
   if (key === "model") return "google/gemini-flash-1.5:free";

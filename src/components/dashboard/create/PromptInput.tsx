@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { VoiceInputButton } from "@/components/ui/voice-input-button"
+import { UploadedDocument } from "@/types/diagram"
 
 interface PromptInputProps {
     prompt: string
@@ -40,7 +41,7 @@ interface PromptInputProps {
     onSelectModel: (val: string) => void
     isReasoningEnabled: boolean
     onToggleReasoning: (val: boolean) => void
-    uploadedDocuments: any[]
+    uploadedDocuments: UploadedDocument[]
     onRemoveDocument: (idx: number) => void
     onFileUpload: (file: File) => void
     isUploading?: boolean

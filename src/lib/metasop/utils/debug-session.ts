@@ -65,8 +65,8 @@ export function createDebugSession(userRequest: string): DebugSession {
             startTime: new Date(),
             userRequest,
         };
-    } catch (error: any) {
-        logger.error("Failed to create debug session", { error: error.message });
+    } catch (error) {
+        logger.error("Failed to create debug session", { error: error instanceof Error ? error.message : String(error) });
         // Fallback to root .debug_logs if session folder creation fails
         return {
             sessionId,
@@ -84,7 +84,7 @@ export function writeDebugArtifact(
     session: DebugSession,
     agentRole: string,
     artifactType: 'request' | 'response' | 'error' | 'artifact',
-    data: any
+    data: unknown
 ): string | null {
     try {
         const filename = `${agentRole.toLowerCase().replace(/\s+/g, '_')}_${artifactType}.json`;
@@ -99,7 +99,7 @@ export function writeDebugArtifact(
             sessionId: session.sessionId, 
             agentRole, 
             artifactType, 
-            error: error.message 
+            error: error instanceof Error ? error.message : String(error)
         });
         return null;
     }
@@ -138,8 +138,8 @@ export function writeSessionSummary(
         );
 
         logger.info("Debug session summary written", { sessionId: session.sessionId, success: result.success });
-    } catch (error: any) {
-        logger.error("Failed to write session summary", { error: error.message });
+    } catch (error) {
+        logger.error("Failed to write session summary", { error: error instanceof Error ? error.message : String(error) });
     }
 }
 

@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-const deriveTitle = (storyText: string) => {
-    const trimmed = storyText.trim();
-    if (!trimmed) return "User story";
-    const firstSentence = trimmed.split(/\.(\s|$)/)[0] ?? trimmed;
-    return firstSentence.length > 80 ? `${firstSentence.slice(0, 77)}...` : firstSentence;
-};
-
 const UserStorySchema = z
     .object({
         id: z.string().regex(/^US-[0-9]+$/, "User story ID must match pattern US-{number}"),

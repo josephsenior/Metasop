@@ -69,7 +69,7 @@ function fileUrlToPath(fileUrl: string): string {
  * - Otherwise use getProjectRoot() + DEFAULT_DB_PATH (ignores env for path).
  */
 function resolveDatabaseUrl(): string {
-  const envUrl = process.env.DATABASE_URL;
+  const { DATABASE_URL: envUrl } = process.env;
   if (envUrl && !envUrl.includes("undefined") && envUrl.trim() !== "") {
     if (!envUrl.startsWith("file:")) {
       return envUrl;
@@ -143,17 +143,21 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 if (typeof process !== "undefined") {
-  process.on("beforeExit", async () => {
-    await prisma.$disconnect();
-  });
-  process.on("SIGINT", async () => {
-    await prisma.$disconnect();
-    process.exit(0);
-  });
-  process.on("SIGTERM", async () => {
-    await prisma.$disconnect();
-    process.exit(0);
-  });
+  const g = global as typeof globalThis & { prismaListenersAdded?: boolean };
+  if (!g.prismaListenersAdded) {
+    process.on("beforeExit", async () => {
+      await prisma.$disconnect();
+    });
+    process.on("SIGINT", async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+    process.on("SIGTERM", async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+    g.prismaListenersAdded = true;
+  }
 }
 
 /**

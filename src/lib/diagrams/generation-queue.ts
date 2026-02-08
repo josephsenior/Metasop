@@ -22,6 +22,13 @@ export interface GenerationJob {
   error?: string;
   events: MetaSOPEvent[];
   emitter: EventEmitter;
+  /**
+   * True when this in-memory job is owned by the current worker/process.
+   * In Next.js dev, route handlers may run in multiple workers; a reconstructed
+   * job (loaded from disk) should tail the event log instead of relying on the
+   * in-memory EventEmitter.
+   */
+  local?: boolean;
 }
 
 export interface StartJobParams {
@@ -36,13 +43,26 @@ export interface StartJobParams {
     model?: string;
     reasoning?: boolean;
   };
-  documents?: any[];
+  documents?: Array<{ name: string; type: string; content: string }>;
   clarificationAnswers?: Record<string, string>;
   guestSessionId?: string;
 }
 
 const jobs = new Map<string, GenerationJob>();
 const JOB_TTL_MS = 1000 * 60 * 30;
+const DISK_CLEANUP_DELAY_MS = 1000 * 60 * 2;
+
+function getJobsDir(): string {
+  return path.join(process.cwd(), ".tmp", "generation_jobs");
+}
+
+function getJobFilePath(jobId: string): string {
+  return path.join(getJobsDir(), `${jobId}.json`);
+}
+
+function getJobEventsFilePath(jobId: string): string {
+  return path.join(getJobsDir(), `${jobId}.events.ndjson`);
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -52,6 +72,22 @@ function scheduleCleanup(jobId: string): void {
   setTimeout(() => {
     jobs.delete(jobId);
   }, JOB_TTL_MS);
+}
+
+function scheduleDiskCleanup(jobId: string): void {
+  // In Next.js dev multi-worker mode, the SSE route may tail the NDJSON file.
+  // Deleting immediately on completion can cause the tailer to miss the final
+  // step_complete/orchestration_complete events.
+  setTimeout(() => {
+    try {
+      const filePath = getJobFilePath(jobId);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const eventsPath = getJobEventsFilePath(jobId);
+      if (fs.existsSync(eventsPath)) fs.unlinkSync(eventsPath);
+    } catch {
+      // ignore
+    }
+  }, DISK_CLEANUP_DELAY_MS);
 }
 
 export function createGenerationJob(userId: string, diagramId: string): GenerationJob {
@@ -65,14 +101,16 @@ export function createGenerationJob(userId: string, diagramId: string): Generati
     updatedAt: nowIso(),
     events: [],
     emitter: new EventEmitter(),
+    local: true,
   };
   jobs.set(jobId, job);
   // Persist a lightweight job file so other dev worker instances can discover it
   try {
-    const dir = path.join(process.cwd(), ".tmp", "generation_jobs");
+    const dir = getJobsDir();
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const filePath = path.join(dir, `${jobId}.json`);
-    fs.writeFileSync(filePath, JSON.stringify({ id: jobId, userId, diagramId, status: job.status, createdAt: job.createdAt }));
+    fs.writeFileSync(getJobFilePath(jobId), JSON.stringify({ id: jobId, userId, diagramId, status: job.status, createdAt: job.createdAt }));
+    // Create/clear the event log for this job (NDJSON)
+    fs.writeFileSync(getJobEventsFilePath(jobId), "");
   } catch (_e) {
     // ignore persistence errors in dev
   }
@@ -86,7 +124,7 @@ export function getGenerationJob(jobId: string): GenerationJob | undefined {
 
   // Fallback: try to load job file persisted to disk (helps in dev with multiple workers)
   try {
-    const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${jobId}.json`);
+    const filePath = getJobFilePath(jobId);
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, "utf-8");
       const parsed = JSON.parse(raw);
@@ -99,6 +137,7 @@ export function getGenerationJob(jobId: string): GenerationJob | undefined {
         updatedAt: parsed.updatedAt || nowIso(),
         events: [],
         emitter: new EventEmitter(),
+        local: false,
       };
       // store in memory for future calls
       jobs.set(jobId, reconstructed);
@@ -112,16 +151,88 @@ export function getGenerationJob(jobId: string): GenerationJob | undefined {
   return undefined;
 }
 
+function tailJobEvents(
+  jobId: string,
+  onEvent: (event: MetaSOPEvent) => void
+): { stop: () => void } | null {
+  const eventsFilePath = getJobEventsFilePath(jobId);
+  if (!fs.existsSync(eventsFilePath)) return null;
+
+  let offset = 0;
+  let remainder = "";
+
+  const readNew = () => {
+    try {
+      const stat = fs.statSync(eventsFilePath);
+      if (stat.size <= offset) return;
+
+      const fd = fs.openSync(eventsFilePath, "r");
+      try {
+        const length = stat.size - offset;
+        const buf = Buffer.allocUnsafe(length);
+        fs.readSync(fd, buf, 0, length, offset);
+        offset = stat.size;
+
+        const text = remainder + buf.toString("utf-8");
+        const lines = text.split("\n");
+        remainder = lines.pop() || "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const ev = JSON.parse(trimmed) as MetaSOPEvent;
+            onEvent(ev);
+          } catch {
+            // ignore malformed line
+          }
+        }
+      } finally {
+        fs.closeSync(fd);
+      }
+    } catch {
+      // ignore file errors
+    }
+  };
+
+  // Replay existing events immediately
+  readNew();
+
+  const interval = setInterval(readNew, 250);
+  return {
+    stop: () => {
+      clearInterval(interval);
+    },
+  };
+}
+
 export function subscribeToJob(jobId: string, onEvent: (event: MetaSOPEvent) => void): (() => void) | null {
   const job = jobs.get(jobId);
   if (!job) return null;
 
-  job.events.forEach(onEvent);
-  const listener = (event: MetaSOPEvent) => onEvent(event);
-  job.emitter.on("event", listener);
+  // Local jobs can rely on the in-memory event emitter.
+  if (job.local) {
+    job.events.forEach(onEvent);
+    const listener = (event: MetaSOPEvent) => onEvent(event);
+    job.emitter.on("event", listener);
+    return () => {
+      job.emitter.off("event", listener);
+    };
+  }
+
+  // Reconstructed jobs (other dev worker) tail the persisted event log.
+  const tailer = tailJobEvents(jobId, onEvent);
+  if (!tailer) {
+    // Fallback to in-memory if no file exists
+    job.events.forEach(onEvent);
+    const listener = (event: MetaSOPEvent) => onEvent(event);
+    job.emitter.on("event", listener);
+    return () => {
+      job.emitter.off("event", listener);
+    };
+  }
 
   return () => {
-    job.emitter.off("event", listener);
+    tailer.stop();
   };
 }
 
@@ -129,6 +240,15 @@ function appendEvent(job: GenerationJob, event: MetaSOPEvent): void {
   job.events.push(event);
   job.updatedAt = nowIso();
   job.emitter.emit("event", event);
+
+  // Persist event for cross-worker SSE streaming in dev
+  try {
+    const dir = getJobsDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(getJobEventsFilePath(job.id), `${JSON.stringify(event)}\n`);
+  } catch {
+    // ignore persistence errors
+  }
 }
 
 export function startGenerationJob(params: StartJobParams): void {
@@ -175,9 +295,15 @@ export function startGenerationJob(params: StartJobParams): void {
         return;
       }
 
-      const pmArtifact = orchestrationResult.artifacts.pm_spec?.content as any;
-      const title = pmArtifact?.project_name || params.prompt.split("\n")[0].substring(0, 50) || "New Diagram";
-      const description = pmArtifact?.summary || params.prompt.substring(0, 200) || "";
+      const pmArtifact = orchestrationResult.artifacts.pm_spec?.content;
+      const title =
+        (pmArtifact && "project_name" in pmArtifact ? (pmArtifact as { project_name?: string }).project_name : undefined) ||
+        params.prompt.split("\n")[0].substring(0, 50) ||
+        "New Diagram";
+      const description =
+        (pmArtifact && "summary" in pmArtifact ? (pmArtifact as { summary?: string }).summary : undefined) ||
+        params.prompt.substring(0, 200) ||
+        "";
 
       const normalizedArtifacts = normalizeArtifacts(orchestrationResult.artifacts);
 
@@ -214,15 +340,10 @@ export function startGenerationJob(params: StartJobParams): void {
 
       job.status = "completed";
 
-      // Cleanup persisted job file
-      try {
-        const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${job.id}.json`);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (_e) {
-        // ignore
-      }
-    } catch (error: any) {
-      const message = error?.message || "Generation failed";
+      // Delay cleanup so SSE tailers in other dev workers can read final events.
+      scheduleDiskCleanup(job.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Generation failed";
       try {
         await diagramDb.updateStatus(params.diagramId, "failed", message);
       } catch {
@@ -234,13 +355,9 @@ export function startGenerationJob(params: StartJobParams): void {
         timestamp: nowIso(),
       });
       job.status = "failed";
-      // Cleanup persisted job file on failure as well
-      try {
-        const filePath = path.join(process.cwd(), ".tmp", "generation_jobs", `${job.id}.json`);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (_e) {
-        // ignore
-      }
+
+      // Delay cleanup so SSE tailers can still read the failure event.
+      scheduleDiskCleanup(job.id);
       job.error = message;
     }
   };

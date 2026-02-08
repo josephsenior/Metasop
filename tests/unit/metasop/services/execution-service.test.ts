@@ -1,7 +1,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ExecutionService, ExecutionOptions } from "@/lib/metasop/services/execution-service";
 import { RetryService } from "@/lib/metasop/services/retry-service";
-import type { AgentContext, MetaSOPArtifact } from "@/lib/metasop/types";
+import type { AgentContext, MetaSOPArtifact, ProductManagerBackendArtifact } from "@/lib/metasop/types";
+
+const minimalProductManagerContent: ProductManagerBackendArtifact = {
+  user_stories: [
+    {
+      id: "US-1",
+      title: "User can sign in",
+      story: "As a user, I want to sign in so that I can access my account.",
+      description: "Basic authentication flow.",
+      priority: "high",
+      acceptance_criteria: ["User can sign in with email and password."],
+    },
+  ],
+  acceptance_criteria: [
+    {
+      criteria: "User can successfully sign in with valid credentials.",
+      priority: "must",
+    },
+  ],
+  assumptions: [],
+  out_of_scope: [],
+  swot: {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: [],
+  },
+  stakeholders: [],
+  invest_analysis: [],
+  summary: "Authentication feature summary.",
+  description: "A minimal authentication system for testing.",
+};
 
 describe("ExecutionService", () => {
   let executionService: ExecutionService;
@@ -21,7 +52,7 @@ describe("ExecutionService", () => {
       const artifact: MetaSOPArtifact = {
         step_id: "test_step",
         role: "Test Role",
-        content: { test: "data" },
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
@@ -72,7 +103,7 @@ describe("ExecutionService", () => {
       const artifact: MetaSOPArtifact = {
         step_id: "test_step",
         role: "Test Role",
-        content: {},
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
@@ -110,7 +141,7 @@ describe("ExecutionService", () => {
       const artifact: MetaSOPArtifact = {
         step_id: "test_step",
         role: "Test Role",
-        content: {},
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
@@ -140,14 +171,14 @@ describe("ExecutionService", () => {
       const artifact1: MetaSOPArtifact = {
         step_id: "step1",
         role: "Role1",
-        content: { data: "1" },
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
       const artifact2: MetaSOPArtifact = {
         step_id: "step2",
         role: "Role2",
-        content: { data: "2" },
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
@@ -195,7 +226,7 @@ describe("ExecutionService", () => {
       const artifact: MetaSOPArtifact = {
         step_id: "step1",
         role: "Role1",
-        content: {},
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 
@@ -296,7 +327,7 @@ describe("ExecutionService", () => {
       const artifact: MetaSOPArtifact = {
         step_id: "test_step",
         role: "Test Role",
-        content: {},
+        content: minimalProductManagerContent,
         timestamp: new Date().toISOString(),
       };
 

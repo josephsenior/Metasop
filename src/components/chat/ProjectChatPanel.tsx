@@ -20,20 +20,15 @@ import { useToast } from "@/components/ui/use-toast"
 import { generateAgentContextMarkdown, getOptimizedSteps } from "@/lib/metasop/utils/export-context"
 import { v4 as uuidv4 } from "uuid"
 
-interface Message {
-    id: string
-    role: "user" | "assistant"
-    content: string
-    type?: "info" | "refinement" | "system"
-    detail?: string
-    timestamp: Date
-}
+import type { ChatHistoryMessage, ChatMessage } from "@/types/chat"
+import type { UploadedDocument } from "@/types/diagram"
+import type { MetaSOPResult } from "@/lib/metasop/types"
 
 interface ProjectChatPanelProps {
     diagramId?: string
-    artifacts: any
+    artifacts: MetaSOPResult["artifacts"]
     activeTab?: string
-    initialHistory?: Message[]
+    initialHistory?: ChatHistoryMessage[]
     onRefineComplete?: (result?: any) => void
     onClose?: () => void
 }
@@ -47,7 +42,7 @@ export function ProjectChatPanel({
     onClose: _onClose
 }: ProjectChatPanelProps) {
     const { toast } = useToast()
-    const [messages, setMessages] = useState<Message[]>(() => {
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
         if (initialHistory && initialHistory.length > 0) {
             return initialHistory.map(m => ({
                 ...m,
@@ -66,7 +61,7 @@ export function ProjectChatPanel({
     const [isLoading, setIsLoading] = useState(false)
     const [isRefining, setIsRefining] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
-    const [transientDocuments, setTransientDocuments] = useState<any[]>([])
+    const [transientDocuments, setTransientDocuments] = useState<UploadedDocument[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
     const [showSystemMessages, setShowSystemMessages] = useState(false)
     const [isInputHidden, _setIsInputHidden] = useState(false)
@@ -91,7 +86,7 @@ export function ProjectChatPanel({
         }
     }, [messages, isLoading])
 
-    const saveMessage = async (msg: Message) => {
+    const saveMessage = async (msg: ChatMessage) => {
         if (!diagramId) return
         try {
             await fetchDiagramApi(`/api/diagrams/${diagramId}/messages`, {
@@ -144,7 +139,7 @@ export function ProjectChatPanel({
         e?.preventDefault()
         if (!input.trim() || isLoading || isRefining) return
 
-        const userMessage: Message = {
+        const userMessage: ChatMessage = {
             id: uuidv4(),
             role: "user",
             content: input,
@@ -175,11 +170,12 @@ export function ProjectChatPanel({
             } else {
                 await handleQuestion(currentInput)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error"
             setMessages(prev => [...prev, {
                 id: uuidv4(),
                 role: "assistant",
-                content: `Sorry, I encountered an error: ${error.message}`,
+                content: `Sorry, I encountered an error: ${message}`,
                 type: "system",
                 timestamp: new Date()
             }])
@@ -210,7 +206,7 @@ export function ProjectChatPanel({
 
         // Create a placeholder message for streaming
         const streamingMessageId = uuidv4();
-        const streamingMessage: Message = {
+        const streamingMessage: ChatMessage = {
             id: streamingMessageId,
             role: "assistant",
             content: "",
@@ -329,17 +325,18 @@ export function ProjectChatPanel({
                 // Ensure reader is released
                 reader.releaseLock()
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error"
             // Update the streaming message with error
             setMessages(prev => prev.map(msg =>
                 msg.id === streamingMessageId
-                    ? { ...msg, content: `Sorry, I encountered an error: ${error.message}` }
+                    ? { ...msg, content: `Sorry, I encountered an error: ${message}` }
                     : msg
             ))
 
             toast({
                 title: "Chat Error",
-                description: error.message || "Failed to get answer",
+                description: message || "Failed to get answer",
                 variant: "destructive"
             })
         }
@@ -348,7 +345,7 @@ export function ProjectChatPanel({
     const handleRefinement = async (instruction: string) => {
         setIsRefining(true)
         const refinementMessageId = uuidv4()
-        const placeholderMessage: Message = {
+        const placeholderMessage: ChatMessage = {
             id: refinementMessageId,
             role: "assistant",
             content: "🔍 Analyzing your request...",

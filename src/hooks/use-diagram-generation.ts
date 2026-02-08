@@ -3,13 +3,27 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { fetchDiagramApi } from "@/lib/api/diagram-fetch"
 import { useToast } from "@/components/ui/use-toast"
+import type { 
+    MetaSOPArtifact, 
+    MetaSOPEvent,
+    BackendArtifactData,
+    ProductManagerBackendArtifact,
+    ArchitectBackendArtifact,
+    SecurityBackendArtifact,
+    DevOpsBackendArtifact,
+    UIDesignerBackendArtifact,
+    EngineerBackendArtifact,
+    QABackendArtifact
+} from "@/lib/metasop/types"
+
+import { UploadedDocument, DiagramMetadata } from "@/types/diagram"
 
 export interface GenerationStep {
     step_id: string
     role: string
     status: "pending" | "running" | "success" | "failed"
     error?: string
-    partial_response?: unknown
+    partial_response?: string | BackendArtifactData
 }
 
 export interface ClarificationQuestion {
@@ -23,16 +37,29 @@ export interface DiagramData {
     title?: string
     description?: string
     isGuest?: boolean
-    metadata?: any
+    metadata?: DiagramMetadata
 }
 
-function getStepCompletionSummary(stepId: string, artifact: any): string {
-    const content = artifact?.content ?? artifact
+function isMetaSopEventLike(value: unknown): value is { type: string } {
+    return (
+        !!value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        typeof (value as { type?: unknown }).type === "string"
+    )
+}
+
+function getStepCompletionSummary(stepId: string, artifact: MetaSOPArtifact | null): string {
+    if (!artifact) {
+        return "Done"
+    }
+    const { content } = artifact
     switch (stepId) {
         case "pm_spec": {
-            if (!content) return "Done"
-            const us = content.user_stories
-            const ac = content.acceptance_criteria
+            if (!content) {
+                return "Done"
+            }
+            const { user_stories: us, acceptance_criteria: ac } = content as ProductManagerBackendArtifact
             const n = Array.isArray(us) ? us.length : 0
             const m = Array.isArray(ac) ? ac.length : 0
             if (n || m) return `${n} user stories, ${m} acceptance criteria`
@@ -40,8 +67,8 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "arch_design": {
             if (!content) return "Done"
-            const apis = content.apis
-            const tables = content.database_schema?.tables
+            const { apis, database_schema } = content as ArchitectBackendArtifact
+            const tables = database_schema?.tables
             const a = Array.isArray(apis) ? apis.length : 0
             const t = Array.isArray(tables) ? tables.length : 0
             if (a || t) return `${a} APIs, ${t} tables`
@@ -49,8 +76,7 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "security_architecture": {
             if (!content) return "Threat model and controls defined"
-            const threats = content.threat_model
-            const controls = content.security_controls
+            const { threat_model: threats, security_controls: controls } = content as SecurityBackendArtifact
             const t = Array.isArray(threats) ? threats.length : 0
             const c = Array.isArray(controls) ? controls.length : 0
             if (t || c) return `${t} threats, ${c} controls`
@@ -58,8 +84,9 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "devops_infrastructure": {
             if (!content) return "CI/CD and infrastructure planned"
-            const stages = content.cicd?.pipeline_stages
-            const services = content.infrastructure?.services
+            const { cicd, infrastructure } = content as DevOpsBackendArtifact
+            const stages = cicd?.pipeline_stages
+            const services = infrastructure?.services
             const s = Array.isArray(stages) ? stages.length : 0
             const v = Array.isArray(services) ? services.length : 0
             if (s || v) return `${s} pipeline stages, ${v} services`
@@ -67,8 +94,8 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "ui_design": {
             if (!content) return "Design system defined"
-            const pages = content.website_layout?.pages
-            const specs = content.component_specs
+            const { website_layout, component_specs: specs } = content as UIDesignerBackendArtifact
+            const pages = website_layout?.pages
             const p = Array.isArray(pages) ? pages.length : 0
             const c = Array.isArray(specs) ? specs.length : 0
             if (p || c) return `${p} pages, ${c} component specs`
@@ -76,8 +103,7 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "engineer_impl": {
             if (!content) return "Implementation planned"
-            const deps = content.dependencies
-            const files = content.file_structure
+            const { dependencies: deps, file_structure: files } = content as EngineerBackendArtifact
             const d = Array.isArray(deps) ? deps.length : 0
             if (d) return `${d} dependencies, file structure`
             if (files) return "File structure and implementation planned"
@@ -85,7 +111,7 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
         }
         case "qa_verification": {
             if (!content) return "Test strategy defined"
-            const cases = content.test_cases
+            const { test_cases: cases } = content as QABackendArtifact
             const c = Array.isArray(cases) ? cases.length : 0
             if (c) return `${c} test cases`
             return "Test strategy and cases defined"
@@ -94,6 +120,16 @@ function getStepCompletionSummary(stepId: string, artifact: any): string {
             return "Done"
     }
 }
+
+const INITIAL_STEPS: GenerationStep[] = [
+    { step_id: "pm_spec", role: "Product Manager", status: "pending" },
+    { step_id: "arch_design", role: "Architect", status: "pending" },
+    { step_id: "security_architecture", role: "Security", status: "pending" },
+    { step_id: "devops_infrastructure", role: "DevOps", status: "pending" },
+    { step_id: "ui_design", role: "UI Designer", status: "pending" },
+    { step_id: "engineer_impl", role: "Engineer", status: "pending" },
+    { step_id: "qa_verification", role: "QA", status: "pending" },
+]
 
 export function useDiagramGeneration() {
     const { toast } = useToast()
@@ -110,7 +146,7 @@ export function useDiagramGeneration() {
     const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({})
     const [showClarificationPanel, setShowClarificationPanel] = useState(false)
 
-    const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
+    const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([])
     const [isUploading, setIsUploading] = useState(false)
 
     const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([])
@@ -194,11 +230,11 @@ export function useDiagramGeneration() {
         try {
             const reader = new FileReader()
             reader.onload = async (event) => {
-                const content = event.target?.result as string
+                const content = String(event.target?.result ?? "")
                 const newDoc = {
                     name: file.name,
                     type: file.name.split('.').pop() || 'txt',
-                    content: content,
+                    content,
                 }
 
                 setUploadedDocuments(prev => [...prev, newDoc])
@@ -224,6 +260,7 @@ export function useDiagramGeneration() {
     }
 
     const doStartGeneration = useCallback(async (answers?: Record<string, string>) => {
+        const trimmedPrompt = prompt.trim()
         setIsGenerating(true)
         setCurrentDiagram(null)
         setStepSummaries({})
@@ -236,20 +273,11 @@ export function useDiagramGeneration() {
         pendingTimeoutsRef.current.clear()
         stepStartTimesRef.current.clear()
 
-        const initialSteps: GenerationStep[] = [
-            { step_id: "pm_spec", role: "Product Manager", status: "pending" },
-            { step_id: "arch_design", role: "Architect", status: "pending" },
-            { step_id: "security_architecture", role: "Security", status: "pending" },
-            { step_id: "devops_infrastructure", role: "DevOps", status: "pending" },
-            { step_id: "ui_design", role: "UI Designer", status: "pending" },
-            { step_id: "engineer_impl", role: "Engineer", status: "pending" },
-            { step_id: "qa_verification", role: "QA", status: "pending" },
-        ]
-        setGenerationSteps(initialSteps)
+        setGenerationSteps(INITIAL_STEPS)
 
         try {
             const postBody = {
-                prompt: prompt.trim(),
+                prompt: trimmedPrompt,
                 options: {
                     model: selectedModel,
                     reasoning: isReasoningEnabled,
@@ -287,141 +315,138 @@ export function useDiagramGeneration() {
             const decoder = new TextDecoder()
             let buffer = ""
 
-            const handleEvent = (event: any) => {
-                if (event.type === "step_start") {
-                    stepStartTimesRef.current.set(event.step_id, Date.now())
-                    activeStepIdRef.current = event.step_id
-                    setGenerationSteps(prev =>
-                        prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
-                    )
-                } else if (event.type === "step_thought") {
-                    const thought = typeof event.thought === 'string' ? event.thought : ""
-                    setAgentThoughts(prev => ({
-                        ...prev,
-                        [event.step_id]: (prev[event.step_id as string] || "") + thought
-                    }))
-                } else if (event.type === "step_complete") {
-                    const summary = getStepCompletionSummary(event.step_id, event.artifact)
-                    setStepSummaries(prev => ({ ...prev, [event.step_id]: summary }))
-
-                    setGenerationSteps(prev => {
-                        const step = prev.find(s => s.step_id === event.step_id)
-                        if (!step) return prev
-
-                        if (step.status === "pending") {
-                            if (!stepStartTimesRef.current.has(event.step_id)) {
-                                stepStartTimesRef.current.set(event.step_id, Date.now())
-                            }
-
-                            const timeoutId = setTimeout(() => {
-                                setGenerationSteps(prevSteps => prevSteps.map(s =>
-                                    s.step_id === event.step_id && s.status === "running"
-                                        ? { ...s, status: "success" }
-                                        : s
-                                ))
-                                stepStartTimesRef.current.delete(event.step_id)
-                                pendingTimeoutsRef.current.delete(event.step_id)
-                            }, 800)
-
-                            pendingTimeoutsRef.current.set(event.step_id, timeoutId)
-                            return prev.map(s => s.step_id === event.step_id ? { ...s, status: "running" as const } : s)
-                        }
-
-                        if (step.status === "running") {
-                            const startTime = stepStartTimesRef.current.get(event.step_id) || Date.now()
-                            const elapsed = Date.now() - startTime
-                            const minDisplayTime = 800
-
-                            const existingTimeout = pendingTimeoutsRef.current.get(event.step_id)
-                            if (existingTimeout) {
-                                clearTimeout(existingTimeout)
-                                pendingTimeoutsRef.current.delete(event.step_id)
-                            }
-
-                            if (elapsed < minDisplayTime) {
-                                const timeoutId = setTimeout(() => {
-                                    setGenerationSteps(prevSteps => prevSteps.map(s =>
-                                        s.step_id === event.step_id && s.status === "running"
-                                            ? { ...s, status: "success" }
-                                            : s
-                                    ))
-                                    stepStartTimesRef.current.delete(event.step_id)
-                                    pendingTimeoutsRef.current.delete(event.step_id)
-                                }, minDisplayTime - elapsed)
-                                pendingTimeoutsRef.current.set(event.step_id, timeoutId)
-                                return prev
-                            } else {
-                                stepStartTimesRef.current.delete(event.step_id)
-                                return prev.map(s => s.step_id === event.step_id && s.status === "running" ? { ...s, status: "success" } : s)
-                            }
-                        }
-                        return prev
-                    })
-                } else if (event.type === "step_failed") {
-                    setGenerationSteps(prev => prev.map(s =>
-                        s.step_id === event.step_id
-                            ? { ...s, status: "failed", error: event.error, partial_response: event.partial_response }
-                            : s
-                    ))
-                } else if (event.type === "orchestration_complete") {
-                    const diagram = event.diagram
-                    if (diagram) {
-                        setCurrentDiagram({
-                            id: diagram.id,
-                            title: diagram.title,
-                            description: diagram.description,
-                            isGuest: diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false,
-                            metadata: diagram.metadata,
-                        })
-                    }
+            const handleEvent = (event: MetaSOPEvent) => {
+                const { type, step_id } = event;
+                
+                setGenerationSteps(prev => {
+                    const currentSteps = prev.length > 0 ? prev : INITIAL_STEPS;
                     
-                    // Clear the draft state on successful generation
-                    setPrompt("")
-                    setUploadedDocuments([])
-                    if (typeof window !== 'undefined') {
-                        localStorage.removeItem("metasop_prompt")
-                        localStorage.removeItem("metasop_uploaded_documents")
+                    if (type === "step_start" && step_id) {
+                        stepStartTimesRef.current.set(step_id, Date.now());
+                        activeStepIdRef.current = step_id;
+                        return currentSteps.map(s => s.step_id === step_id ? { ...s, status: "running" as const } : s);
+                    } else if (type === "step_complete" && step_id) {
+                        const step = currentSteps.find(s => s.step_id === step_id);
+                        if (!step) return currentSteps;
+
+                        // Force "running" first if it was still pending
+                        let baseSteps = currentSteps;
+                        if (step.status === "pending") {
+                            baseSteps = currentSteps.map(s => s.step_id === step_id ? { ...s, status: "running" as const } : s);
+                        }
+
+                        const startTime = stepStartTimesRef.current.get(step_id) || Date.now();
+                        const elapsed = Date.now() - startTime;
+                        const minDisplayTime = 800;
+
+                        if (elapsed < minDisplayTime) {
+                            const timeoutId = setTimeout(() => {
+                                setGenerationSteps(latest => latest.map(s => 
+                                    s.step_id === step_id ? { ...s, status: "success" as const } : s
+                                ));
+                                stepStartTimesRef.current.delete(step_id);
+                                pendingTimeoutsRef.current.delete(step_id);
+                            }, minDisplayTime - elapsed);
+                            pendingTimeoutsRef.current.set(step_id, timeoutId);
+                            return baseSteps;
+                        } else {
+                            stepStartTimesRef.current.delete(step_id);
+                            return baseSteps.map(s => s.step_id === step_id ? { ...s, status: "success" as const } : s);
+                        }
+                    } else if (type === "step_failed" && step_id) {
+                        const { error } = event
+                        return currentSteps.map(s => s.step_id === step_id ? { ...s, status: "failed" as const, error } : s);
+                    } else if (type === "orchestration_complete") {
+                        return currentSteps.map(s =>
+                            (s.status === "running" || s.status === "pending") ? { ...s, status: "success" as const } : s
+                        );
                     }
 
-                    setGenerationSteps(prev => prev.map(s => s.status === "running" ? { ...s, status: "success" as const } : s))
-                } else if (event.type === "orchestration_failed") {
-                    throw new Error(event.error || "Orchestration failed")
+                    return currentSteps;
+                });
+
+                // Final orchestration cleanup
+                if (type === "orchestration_complete" && event.diagram) {
+                    const { diagram } = event
+                    setCurrentDiagram({
+                        id: diagram.id,
+                        title: diagram.title,
+                        description: diagram.description,
+                        isGuest: !!(diagram.metadata?.is_guest || diagram.id?.startsWith("guest_") || false),
+                        metadata: diagram.metadata,
+                    });
+                    setPrompt("");
+                    setUploadedDocuments([]);
+                    if (typeof window !== 'undefined') {
+                        localStorage.removeItem("metasop_prompt");
+                        localStorage.removeItem("metasop_uploaded_documents");
+                    }
                 }
             }
 
+            // Stream reading loop
             while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
+                const { done, value } = await reader.read();
+                if (done) break;
 
-                buffer += decoder.decode(value, { stream: true })
-                let splitIndex = buffer.indexOf("\n\n")
-                while (splitIndex !== -1) {
-                    const chunk = buffer.slice(0, splitIndex)
-                    buffer = buffer.slice(splitIndex + 2)
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Handle potential \r\n and split by standard SSE double-newline
+                const normalizedBuffer = buffer.replace(/\r\n/g, "\n");
+                const parts = normalizedBuffer.split("\n\n");
+                buffer = parts.pop() || "";
 
-                    const lines = chunk.split("\n")
-                    const dataLines = lines.filter(line => line.startsWith("data:"))
-                    if (dataLines.length > 0) {
-                        const dataStr = dataLines.map(line => line.replace(/^data:\s?/, "")).join("\n")
-                        if (dataStr && dataStr !== "[DONE]") {
-                            try {
-                                const event = JSON.parse(dataStr)
-                                handleEvent(event)
-                            } catch (e) {
-                                console.error("Error parsing stream event:", e, dataStr)
+                for (const chunk of parts) {
+                    const lines = chunk.split("\n");
+                    const dataStr = lines
+                        .filter(l => l.startsWith("data:"))
+                        .map(l => l.replace(/^data:\s?/, ""))
+                        .join("\n");
+                    
+                    if (dataStr && dataStr !== "[DONE]") {
+                        try {
+                            const parsed: unknown = JSON.parse(dataStr)
+                            if (!isMetaSopEventLike(parsed)) continue
+
+                            const event = parsed as MetaSOPEvent
+                            const { type, step_id } = event
+                            
+                            // Capture summaries & thoughts outside the steps state updater to avoid double-rendering issues
+                            if (type === "step_thought" && step_id) {
+                                const thought = typeof event.thought === 'string' ? event.thought : "";
+                                if (thought) {
+                                    setAgentThoughts(prev => ({
+                                        ...prev,
+                                        [step_id]: (prev[step_id] || "") + thought
+                                    }));
+                                }
+                            } else if (type === "step_complete" && step_id) {
+                                const summary = getStepCompletionSummary(step_id, event.artifact ?? null);
+                                if (summary) {
+                                    setStepSummaries(prev => ({ ...prev, [step_id]: summary }));
+                                }
+                            } else if (type === "orchestration_failed") {
+                                throw new Error(event.error || "Orchestration failed");
+                            }
+
+                            handleEvent(event);
+                        } catch (e) {
+                            if (e instanceof SyntaxError) {
+                                console.error("[useGEN] JSON Parse Error:", e, dataStr);
+                            } else {
+                                throw e; // Re-throw to catch block for actual errors
                             }
                         }
                     }
-
-                    splitIndex = buffer.indexOf("\n\n")
                 }
             }
-        } catch (error: any) {
-            console.error("[useGEN] GENERATION ERROR:", error?.message || error)
+
+        } catch (error) {
+            console.error("[useGEN] GENERATION ERROR:", error instanceof Error ? error.message : error)
             setGenerationSteps((prev) => prev.map((step) => step.status === "running" ? { ...step, status: "failed" as const } : step))
             toast({
                 title: "Error",
-                description: error.message || "Failed to generate diagram",
+                description: error instanceof Error ? error.message : "Failed to generate diagram",
                 variant: "destructive",
             })
         } finally {
@@ -434,7 +459,8 @@ export function useDiagramGeneration() {
     }, [prompt, selectedModel, isReasoningEnabled, uploadedDocuments, toast])
 
     const handleGenerate = async () => {
-        if (!prompt.trim() || prompt.length < 20) {
+        const trimmedPrompt = prompt.trim()
+        if (!trimmedPrompt || trimmedPrompt.length < 20) {
             toast({
                 title: "Prompt too short",
                 description: "Please provide at least 20 characters for better results",
@@ -452,7 +478,7 @@ export function useDiagramGeneration() {
         try {
             const scopeRes = await fetchDiagramApi("/api/diagrams/scope", {
                 method: "POST",
-                body: JSON.stringify({ prompt: prompt.trim() }),
+                body: JSON.stringify({ prompt: trimmedPrompt }),
                 headers: { "Content-Type": "application/json" },
             })
             const scopeJson = await scopeRes.json().catch(() => ({}))
@@ -472,8 +498,12 @@ export function useDiagramGeneration() {
                 return
             }
             await doStartGeneration()
-        } catch (e: any) {
-            toast({ title: "Scoping failed", description: e?.message || "Could not check scope", variant: "destructive" })
+        } catch (e) {
+            toast({ 
+                title: "Scoping failed", 
+                description: e instanceof Error ? e.message : "Could not check scope", 
+                variant: "destructive" 
+            })
         } finally {
             setIsScoping(false)
         }

@@ -18,7 +18,7 @@ export const ScopeRequestSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
 });
 
-export function validateScopeRequest(data: any) {
+export function validateScopeRequest(data: unknown) {
     return ScopeRequestSchema.parse(data);
 }
 
@@ -28,11 +28,11 @@ export const UpdateDiagramSchema = z.object({
     metadata: z.any().optional(),
 });
 
-export function validateCreateDiagramRequest(data: any): CreateDiagramRequest {
+export function validateCreateDiagramRequest(data: unknown): CreateDiagramRequest {
     return CreateDiagramSchema.parse(data) as CreateDiagramRequest;
 }
 
-export function validateUpdateDiagramRequest(data: any): UpdateDiagramRequest {
+export function validateUpdateDiagramRequest(data: unknown): UpdateDiagramRequest {
     return UpdateDiagramSchema.parse(data) as UpdateDiagramRequest;
 }
 
@@ -49,7 +49,7 @@ export const EditArtifactsSchema = z.object({
     edits: z.array(EditOpSchema).min(1, "At least one edit is required"),
 });
 
-export function validateEditArtifactsRequest(data: any) {
+export function validateEditArtifactsRequest(data: unknown) {
     return EditArtifactsSchema.parse(data);
 }
 
@@ -62,7 +62,7 @@ export const AskQuestionSchema = z.object({
     conversationHistory: z.string().optional(),
 });
 
-export function validateAskQuestionRequest(data: any) {
+export function validateAskQuestionRequest(data: unknown) {
     return AskQuestionSchema.parse(data);
 }
 
@@ -74,6 +74,6 @@ export const RefineArtifactsSchema = z.object({
     activeTab: z.string().optional(),
 });
 
-export function validateRefineArtifactsRequest(data: any) {
+export function validateRefineArtifactsRequest(data: unknown) {
     return RefineArtifactsSchema.parse(data);
 }

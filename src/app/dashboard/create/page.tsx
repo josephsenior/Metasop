@@ -7,7 +7,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup
 } from "@/components/ui/resizable"
-import { Sparkles, MessageSquare } from "lucide-react"
+import { MessageSquare } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/components/ui/use-toast"
 import { AuthGuard } from "@/components/auth/auth-guard"
@@ -191,10 +191,10 @@ export default function CreateDiagramPage() {
                         initial={{ opacity: 0.4 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="h-full flex flex-col items-center justify-start pt-[12vh] px-6"
+                        className="h-full flex flex-col items-center justify-start pt-[8vh] px-6"
                       >
                         {/* Intro positioned lower */}
-                          <div className="text-center mb-8 px-6">
+                          <div className="text-center mb-5 px-6">
                           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
                             Imagine your <span className="text-blue-600">application</span>
                           </h1>
@@ -210,7 +210,7 @@ export default function CreateDiagramPage() {
                           </div>
 
                           { !showClarificationPanel && (
-                            <div className="flex items-center justify-center -mt-4">
+                            <div className="flex items-center justify-center -mt-6">
                               <GenerationFlow
                                 steps={generationSteps}
                                 summaries={stepSummaries}
@@ -242,7 +242,7 @@ export default function CreateDiagramPage() {
 
                 {/* Bottom Prompt Area */}
                 <div className="shrink-0">
-                  {!isGenerating && !currentDiagram && !showClarificationPanel && (
+                  {!currentDiagram && !showClarificationPanel && (
                     <PromptInput
                       prompt={prompt}
                       onPromptChange={setPrompt}
@@ -306,7 +306,7 @@ export default function CreateDiagramPage() {
                   <SheetContent side="right" className="p-0 w-[90%] sm:w-[400px]">
                     <ProjectChatPanel
                       diagramId={currentDiagram.id}
-                      artifacts={currentDiagram.metadata?.artifacts}
+                      artifacts={currentDiagram.metadata?.metasop_artifacts || {}}
                       activeTab={activeTab}
                       onRefineComplete={handleRefineComplete}
                       onClose={() => { }}

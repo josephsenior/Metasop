@@ -2,7 +2,7 @@
  * LLM Helper - Provides easy access to LLM provider
  */
 
-import { createLLMProvider, LLMProvider } from "../adapters/llm-adapter";
+import { createLLMProvider, LLMProvider, LLMProgressEvent } from "../adapters/llm-adapter";
 import { getConfig } from "../config";
 import { logger } from "./logger";
 
@@ -63,7 +63,7 @@ export async function generateWithLLM(
  */
 export async function generateStructuredWithLLM<T>(
   prompt: string,
-  schema: any,
+  schema: unknown,
   options?: {
     temperature?: number;
     maxTokens?: number;
@@ -93,8 +93,8 @@ export async function generateStructuredWithLLM<T>(
  */
 export async function generateStreamingStructuredWithLLM<T>(
   prompt: string,
-  schema: any,
-  onProgress: (event: any) => void,
+  schema: unknown,
+  onProgress: (event: LLMProgressEvent) => void,
   options?: {
     temperature?: number;
     maxTokens?: number;

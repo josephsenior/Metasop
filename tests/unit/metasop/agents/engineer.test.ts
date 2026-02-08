@@ -1,6 +1,73 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { engineerAgent } from "@/lib/metasop/agents/engineer";
-import type { AgentContext, MetaSOPArtifact, EngineerBackendArtifact } from "@/lib/metasop/types";
+import type {
+  AgentContext,
+  ArchitectBackendArtifact,
+  EngineerBackendArtifact,
+  MetaSOPArtifact,
+  ProductManagerBackendArtifact,
+} from "@/lib/metasop/types";
+
+const minimalPmContent: ProductManagerBackendArtifact = {
+  user_stories: [
+    {
+      id: "US-1",
+      title: "User can sign in",
+      story: "As a user, I want to sign in so that I can access my account.",
+      description: "Basic authentication flow.",
+      priority: "high",
+      acceptance_criteria: ["User can sign in with email and password."],
+    },
+  ],
+  acceptance_criteria: [
+    {
+      criteria: "User can successfully sign in with valid credentials.",
+      priority: "must",
+    },
+  ],
+  assumptions: [],
+  out_of_scope: [],
+  swot: {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: [],
+  },
+  stakeholders: [],
+  invest_analysis: [],
+  summary: "Authentication feature summary.",
+  description: "A minimal authentication system for testing.",
+};
+
+const minimalArchitectContent: ArchitectBackendArtifact = {
+  design_doc: "Architecture design document. ".repeat(10),
+  apis: [
+    {
+      path: "/api/auth/login",
+      method: "POST",
+      description: "Authenticate a user with email and password.",
+      request_schema: { email: "string", password: "string" },
+      response_schema: { token: "string" },
+      auth_required: false,
+    },
+  ],
+  decisions: [
+    {
+      decision: "Use JWT authentication",
+      status: "accepted",
+      reason: "JWT enables stateless auth across services.",
+      tradeoffs: "Revocation is harder without a denylist.",
+      consequences: "Requires secure token storage and rotation strategy.",
+    },
+  ],
+  database_schema: {},
+  technology_stack: {},
+  integration_points: [],
+  security_considerations: ["Use TLS everywhere and store secrets securely."],
+  scalability_approach: {},
+  summary: "High-level architecture for authentication.",
+  description: "Provides endpoints, decisions, and schema placeholders.",
+};
 
 describe("EngineerAgent", () => {
   let context: AgentContext;
@@ -12,16 +79,13 @@ describe("EngineerAgent", () => {
         pm_spec: {
           step_id: "pm_spec",
           role: "Product Manager",
-          content: {},
+          content: minimalPmContent,
           timestamp: new Date().toISOString(),
         } as MetaSOPArtifact,
         arch_design: {
           step_id: "arch_design",
           role: "Architect",
-          content: {
-            design_doc: "Architecture design",
-            apis: [],
-          },
+          content: minimalArchitectContent,
           timestamp: new Date().toISOString(),
         } as MetaSOPArtifact,
       },

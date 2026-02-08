@@ -1,4 +1,4 @@
-import { MetaSOPResult, MetaSOPStep, AgentContext, MetaSOPEvent } from "./types";
+import { MetaSOPResult, MetaSOPStep, AgentContext, MetaSOPEvent, MetaSOPArtifact, BackendArtifactData } from "./types";
 import { productManagerAgent } from "./agents/product-manager";
 import { architectAgent } from "./agents/architect";
 import { devopsAgent } from "./agents/devops";
@@ -36,7 +36,7 @@ import type { A2ATask, A2AMessage } from "./a2a-types";
  */
 export class MetaSOPOrchestrator {
   private steps: MetaSOPStep[] = [];
-  private artifacts: Record<string, any> = {};
+  private artifacts: Record<string, MetaSOPArtifact> = {};
   private report: MetaSOPResult["report"] = {
     events: [],
   };
@@ -60,7 +60,7 @@ export class MetaSOPOrchestrator {
   /**
    * Create an A2A Task for inter-agent delegation
    */
-  private createA2ATask(senderId: string, recipientId: string, type: string, input: Record<string, any>): A2ATask {
+  private createA2ATask(senderId: string, recipientId: string, type: string, input: A2ATask["input"]): A2ATask {
     const task: A2ATask = {
       id: `task-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       senderId,
@@ -78,7 +78,7 @@ export class MetaSOPOrchestrator {
   /**
    * Send an A2A Message between agents
    */
-  private sendA2AMessage(taskId: string, senderId: string, recipientId: string, content: string, parts?: any[]): A2AMessage {
+  private sendA2AMessage(taskId: string, senderId: string, recipientId: string, content: string, parts?: A2AMessage["parts"]): A2AMessage {
     const message: A2AMessage = {
       taskId,
       senderId,
@@ -94,7 +94,7 @@ export class MetaSOPOrchestrator {
   /**
    * Update an A2A Task status
    */
-  private updateA2ATask(taskId: string, status: A2ATask["status"], output?: Record<string, any>): void {
+  private updateA2ATask(taskId: string, status: A2ATask["status"], output?: A2ATask["output"]): void {
     const task = this.a2aTasks.find(t => t.id === taskId);
     if (task) {
       task.status = status;
@@ -126,7 +126,7 @@ export class MetaSOPOrchestrator {
       reasoning?: boolean;
     },
     onProgress?: (event: MetaSOPEvent) => void,
-    documents?: any[],
+    documents?: Array<{ name: string; type: string; content: string }>,
     clarificationAnswers?: Record<string, string>
   ): Promise<MetaSOPResult> {
     const startTime = Date.now();
@@ -167,7 +167,7 @@ export class MetaSOPOrchestrator {
         try {
           // Format documents for context if they exist
           const documentsSection = documents && documents.length > 0
-            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
+            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: { name: string; content: string }, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
             : '';
 
           const cacheContent = `
@@ -185,8 +185,8 @@ ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
             this.config.llm.model
           );
           logger.info("Orchestrator created base context cache", { cacheId: this.cacheId });
-        } catch (cacheError: any) {
-          logger.warn("Failed to create context cache, proceeding without it", { error: cacheError.message });
+        } catch (cacheError) {
+          logger.warn("Failed to create context cache, proceeding without it", { error: cacheError instanceof Error ? cacheError.message : String(cacheError) });
         }
       }
 
@@ -204,7 +204,7 @@ ${JSON.stringify(this.artifacts.pm_spec?.content, null, 2)}
         try {
           // Format documents for context if they exist
           const documentsSection = documents && documents.length > 0
-            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: any, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
+            ? `\n\n=== SHARED CONTEXT: SUPPLEMENTAL DOCUMENTS ===\n${documents.map((doc: { name: string; content: string }, i: number) => `Document ${i + 1}: ${doc.name || 'Untitled'}\nContent: ${doc.content || 'No content'}`).join('\n\n')}`
             : '';
 
           const deepCacheContent = `
@@ -227,8 +227,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
           this.cacheId = newCacheId;
           context.cacheId = this.cacheId;
           logger.info("Orchestrator updated to deep context cache", { cacheId: this.cacheId });
-        } catch (e: any) {
-          logger.warn("Failed to update deep context cache", { error: e.message });
+        } catch (e) {
+          logger.warn("Failed to update deep context cache", { error: e instanceof Error ? e.message : String(e) });
         }
       }
 
@@ -271,14 +271,15 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
 
       return {
         success,
-        artifacts: { ...this.artifacts } as any,
+        artifacts: { ...this.artifacts } as MetaSOPResult["artifacts"],
         report: this.report,
         steps: this.steps,
         a2a: this.getA2AState(),
       };
-    } catch (error: any) {
+    } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error("Orchestration error", { error: error.message, duration: `${duration}ms` });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error("Orchestration error", { error: errorMessage, duration: `${duration}ms` });
 
       // Write debug session summary for failed run
       if (this.debugSession) {
@@ -289,14 +290,14 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
           duration,
           agentsCompleted: completedAgents,
           agentsFailed: failedAgents,
-          error: error.message,
+          error: errorMessage,
         });
         setCurrentSession(null);
       }
 
       return {
         success: false,
-        artifacts: this.artifacts,
+        artifacts: this.artifacts as MetaSOPResult["artifacts"],
         report: this.report,
         steps: this.steps,
         a2a: this.getA2AState(),
@@ -310,7 +311,7 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
   private async executeStep(
     stepId: string,
     role: string,
-    agentFn: (context: AgentContext, onProgress?: (event: Partial<MetaSOPEvent>) => void) => Promise<any>,
+    agentFn: (context: AgentContext, onProgress?: (event: Partial<MetaSOPEvent>) => void) => Promise<MetaSOPArtifact>,
     context?: AgentContext,
     onProgress?: (event: MetaSOPEvent) => void
   ): Promise<void> {
@@ -330,7 +331,10 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       ? `Delegating ${stepId} to ${agentName}. Received artifacts: ${inputArtifactNames.join(", ")}.`
       : `Delegating ${stepId} to ${agentName}. Initial request.`;
     this.sendA2AMessage(a2aTask.id, "Orchestrator", agentName, handoffMessage, [
-      { type: "artifact_ref", content: inputArtifactNames }
+      ...inputArtifactNames.map((name) => ({
+        type: "artifact_ref" as const,
+        content: { artifact_id: name }
+      }))
     ]);
 
     const step: MetaSOPStep = {
@@ -355,11 +359,15 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     const options = this.getExecutionOptions(stepId, role);
 
     // Capture last partial/artifact so we can send it on timeout for UI display
-    let lastPartialForStep: any = null;
+    let lastPartialForStep: string | BackendArtifactData | null = null;
     const wrappedOnProgress = onProgress
       ? (ev: MetaSOPEvent) => {
           if (ev.partial_content !== undefined || ev.artifact !== undefined) {
-            lastPartialForStep = ev.partial_content ?? ev.artifact;
+            lastPartialForStep =
+              (typeof ev.partial_content === "string" || (ev.partial_content && typeof ev.partial_content === "object")
+                ? (ev.partial_content as string | BackendArtifactData)
+                : null) ??
+              (ev.artifact?.content ?? null);
           }
           onProgress(ev);
         }
@@ -448,9 +456,9 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
       }
 
       // --- A2A: Mark task completed and send completion message ---
-      this.updateA2ATask(a2aTask.id, "completed", result.artifact?.content || result.artifact);
+      this.updateA2ATask(a2aTask.id, "completed", result.artifact);
       this.sendA2AMessage(a2aTask.id, agentName, "Orchestrator", `${agentName} completed ${stepId}. Produced artifact: ${stepId}.`, [
-        { type: "artifact_ref", content: { [stepId]: true } }
+        { type: "artifact_ref", content: { artifact_id: stepId } }
       ]);
       logger.info(`[A2A] ${agentName} completed ${stepId}`, { taskId: a2aTask.id });
 
@@ -533,9 +541,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
    * Get execution options for a specific agent
    */
   private getExecutionOptions(stepId: string, role: string) {
-    const agentConfig = this.config.agents.agentConfigs[stepId];
-    const defaultTimeout = this.config.agents.defaultTimeout;
-    const defaultRetries = this.config.agents.defaultRetries;
+    const { agentConfigs, defaultTimeout, defaultRetries } = this.config.agents;
+    const agentConfig = agentConfigs[stepId];
 
     const timeout = agentConfig?.timeout || defaultTimeout;
     const retries = agentConfig?.retries || defaultRetries;
@@ -571,7 +578,7 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
     stepId: string,
     role: string,
     status: "running" | "success" | "failed",
-    artifact?: any,
+    artifact?: MetaSOPArtifact,
     error?: string
   ): void {
     this.report.events.push({
@@ -594,11 +601,11 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
   /**
    * Validate artifact content based on step type
    */
-  private validateArtifact(stepId: string, artifact: any): { valid: boolean; errors: string[] } {
+  private validateArtifact(stepId: string, artifact: MetaSOPArtifact | Record<string, unknown>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     // Extract content from artifact (artifacts are wrapped in MetaSOPArtifact structure)
-    const content = artifact?.content || artifact;
+    const content = (artifact as MetaSOPArtifact)?.content || artifact;
 
     try {
       switch (stepId) {
@@ -654,8 +661,8 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
         default:
           logger.warn(`Unknown step ID for validation: ${stepId}`);
       }
-    } catch (error: any) {
-      errors.push(`Validation error: ${error.message}`);
+    } catch (error) {
+      errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return {
@@ -669,7 +676,7 @@ ${JSON.stringify(this.artifacts.arch_design?.content, null, 2)}
    */
   getState(): {
     steps: MetaSOPStep[];
-    artifacts: Record<string, any>;
+    artifacts: Record<string, MetaSOPArtifact>;
     report: MetaSOPResult["report"];
   } {
     return {
@@ -689,9 +696,11 @@ export async function runMetaSOPOrchestration(
     includeStateManagement?: boolean;
     includeAPIs?: boolean;
     includeDatabase?: boolean;
+    model?: string;
+    reasoning?: boolean;
   },
   onProgress?: (event: MetaSOPEvent) => void,
-  documents?: any[],
+  documents?: Array<{ name: string; type: string; content: string }>,
   clarificationAnswers?: Record<string, string>
 ): Promise<MetaSOPResult> {
   const orchestrator = new MetaSOPOrchestrator();

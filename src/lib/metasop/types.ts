@@ -35,7 +35,7 @@ export type BackendArtifactData =
 export interface MetaSOPArtifact {
   step_id: string;
   role: string;
-  content: BackendArtifactData | Record<string, any>; // Use backend schema types when possible
+  content: BackendArtifactData; // Strictly typed to backend schemas
   timestamp: string;
 }
 
@@ -54,9 +54,9 @@ export interface MetaSOPEvent {
   role?: string;
   artifact?: MetaSOPArtifact;
   thought?: string;
-  partial_content?: any;
+  partial_content?: string | BackendArtifactData; // Can be a string (thought) or partial artifact
   /** When step_failed due to timeout, last partial/streamed response from the agent for UI display */
-  partial_response?: any;
+  partial_response?: string | BackendArtifactData;
   error?: string;
   status?: string;
   message?: string;
@@ -64,7 +64,7 @@ export interface MetaSOPEvent {
     id: string;
     title?: string;
     description?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   };
   timestamp: string;
 }
@@ -104,7 +104,7 @@ export interface AgentContext {
   user_request: string;
   previous_artifacts: Record<string, MetaSOPArtifact>;
   cacheId?: string; // Optional Gemini Context Cache ID
-  documents?: any[]; // Additional context documents
+  documents?: Array<{ name: string; type: string; content: string }>; // Additional context documents
   options?: {
     includeStateManagement?: boolean;
     includeAPIs?: boolean;

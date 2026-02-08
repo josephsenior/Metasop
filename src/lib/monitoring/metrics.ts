@@ -112,7 +112,7 @@ class MetricsCollector {
       counters[key] = counter.value;
     }
 
-    const histograms: Record<string, any> = {};
+    const histograms: Record<string, unknown> = {};
     for (const [key, histogram] of this.histograms.entries()) {
       histograms[key] = this.getHistogramStats(histogram.name, histogram.tags);
     }
@@ -145,12 +145,12 @@ export const metrics = new MetricsCollector();
 /**
  * Performance monitoring decorator
  */
-export function trackPerformance<T extends (...args: any[]) => Promise<any>>(
+export function trackPerformance<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   metricName: string,
   tags?: Record<string, string>
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const startTime = Date.now();
     try {
       const result = await fn(...args);
