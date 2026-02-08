@@ -220,7 +220,7 @@ export function ProjectChatPanel({
             const response = await fetchDiagramApi(`/api/diagrams/ask?stream=true`, {
                 method: "POST",
                 body: JSON.stringify({
-                    diagramId: diagramId || "",
+                    diagramId: diagramId ?? "",
                     question,
                     contextMarkdown,
                     activeTab,
@@ -565,9 +565,38 @@ export function ProjectChatPanel({
                     </div>
                 </div>
                 <div className="flex flex-col gap-4 min-h-full relative z-10">
-                    {messages
-                        .filter((msg) => showSystemMessages || msg.type !== "system")
-                        .map((msg) => (
+                    {(() => {
+                        const visibleMessages = messages.filter((msg) => showSystemMessages || msg.type !== "system")
+
+                        if (visibleMessages.length === 0 && !isLoading && !isRefining) {
+                            return (
+                                <div className="mx-auto mt-6 w-full max-w-[520px]">
+                                    <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm">
+                                        <div className="flex items-start gap-3">
+                                            <div className="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center shrink-0">
+                                                <Bot className="h-4 w-4 text-blue-500" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-foreground/80 font-mono">
+                                                    Console ready
+                                                </div>
+                                                <div className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+                                                    Ask for changes, request a refinement, or paste requirements. You can also attach a file for extra context.
+                                                </div>
+                                                <div className="mt-3 text-[11px] text-muted-foreground/80 space-y-1">
+                                                    <div className="font-mono">Try:</div>
+                                                    <div className="font-mono">• “Refine the architecture for scalability.”</div>
+                                                    <div className="font-mono">• “List risks and mitigations.”</div>
+                                                    <div className="font-mono">• “Generate a test plan for the core flows.”</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+
+                        return visibleMessages.map((msg) => (
                         <div
                             key={msg.id}
                             className={cn(
@@ -622,7 +651,8 @@ export function ProjectChatPanel({
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
-                    ))}
+                        ))
+                    })()}
                     {isLoading && !isRefining && (
                         <div className="flex items-center gap-2 text-muted-foreground animate-pulse ml-2">
                             <Bot className="h-4 w-4" />
@@ -634,58 +664,62 @@ export function ProjectChatPanel({
 
             {/* Input Area (hidden after successful generation/refinement) */}
             {!isInputHidden && (
-                <div className="p-4 border-t border-border/60 bg-background/80 backdrop-blur">
-                    <form onSubmit={handleSendMessage} className="flex items-end gap-2">
-                        <div className="flex-1">
+                <div className="p-3 border-t border-border/60 bg-background/80 backdrop-blur">
+                    <form onSubmit={handleSendMessage} className="flex items-end">
+                        <div className="relative flex-1">
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder="Ask a question..."
-                                className="h-11 bg-background border-border/60 focus-visible:ring-blue-500/30 text-[12px] rounded-xl shadow-inner"
+                                placeholder="Ask a question or request a refinement…"
+                                className="h-10 bg-background border-border/60 focus-visible:ring-blue-500/30 text-[12px] rounded-xl shadow-inner pr-31"
                                 disabled={isLoading || isRefining}
                             />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-10 w-10 text-muted-foreground hover:text-blue-500 shrink-0"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isLoading || isRefining || isUploading}
-                            >
-                                {isUploading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Paperclip className="h-4 w-4" />
-                                )}
-                            </Button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".txt,.md,.json,.csv,.pdf"
-                                onChange={handleFileChange}
-                                aria-label="Upload context documents"
-                                title="Upload context documents"
-                            />
-                            <VoiceInputButton
-                                onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
-                                disabled={isLoading || isRefining || isUploading}
-                                className="h-10 w-10 shrink-0"
-                            />
-                            <Button
-                                type="submit"
-                                size="icon"
-                                disabled={!input.trim() || isLoading || isRefining || isUploading}
-                                className="h-10 w-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md shrink-0"
-                            >
-                                {isLoading || isRefining ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Send className="h-4 w-4" />
-                                )}
-                            </Button>
+                            <div className="absolute inset-y-0 right-1 flex items-center gap-1">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-muted-foreground hover:text-blue-500"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading || isRefining || isUploading}
+                                    aria-label="Attach file"
+                                    title="Attach file"
+                                >
+                                    {isUploading ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Paperclip className="h-4 w-4" />
+                                    )}
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept=".txt,.md,.json,.csv,.pdf"
+                                    onChange={handleFileChange}
+                                    aria-label="Upload context documents"
+                                    title="Upload context documents"
+                                />
+                                <VoiceInputButton
+                                    onTranscription={(text) => setInput(prev => prev + (prev ? " " : "") + text)}
+                                    disabled={isLoading || isRefining || isUploading}
+                                    className="h-8 w-8 shrink-0"
+                                />
+                                <Button
+                                    type="submit"
+                                    size="icon"
+                                    disabled={!input.trim() || isLoading || isRefining || isUploading}
+                                    className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm"
+                                    aria-label="Send message"
+                                    title="Send"
+                                >
+                                    {isLoading || isRefining ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Send className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </div>
                         </div>
                     </form>
                     <div className="mt-3 flex items-center justify-between">
