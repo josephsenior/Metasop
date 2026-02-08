@@ -570,26 +570,14 @@ export function ProjectChatPanel({
 
                         if (visibleMessages.length === 0 && !isLoading && !isRefining) {
                             return (
-                                <div className="mx-auto mt-6 w-full max-w-[520px]">
-                                    <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm">
-                                        <div className="flex items-start gap-3">
-                                            <div className="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center shrink-0">
-                                                <Bot className="h-4 w-4 text-blue-500" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-foreground/80 font-mono">
-                                                    Console ready
-                                                </div>
-                                                <div className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
-                                                    Ask for changes, request a refinement, or paste requirements. You can also attach a file for extra context.
-                                                </div>
-                                                <div className="mt-3 text-[11px] text-muted-foreground/80 space-y-1">
-                                                    <div className="font-mono">Try:</div>
-                                                    <div className="font-mono">• “Refine the architecture for scalability.”</div>
-                                                    <div className="font-mono">• “List risks and mitigations.”</div>
-                                                    <div className="font-mono">• “Generate a test plan for the core flows.”</div>
-                                                </div>
-                                            </div>
+                                <div className="mx-auto mt-10 w-full max-w-[520px] px-2">
+                                    <div className="flex flex-col items-center text-center">
+                                        <Bot className="h-12 w-12 text-muted-foreground/35" aria-hidden="true" />
+                                        <div className="mt-4 text-[12px] font-semibold tracking-wide text-foreground/80">
+                                            Your chat is empty
+                                        </div>
+                                        <div className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+                                            Ask a question, request a refinement, or attach a file to add context.
                                         </div>
                                     </div>
                                 </div>
