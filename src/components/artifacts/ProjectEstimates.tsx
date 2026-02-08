@@ -48,7 +48,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
   return (
     <div className={cn("space-y-6", className)}>
       {/* Summary Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-primary/5 rounded-xl p-6 border border-primary/10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-primary/5 dark:bg-background rounded-xl p-6 border border-primary/10 dark:border-border">
         <div>
           <h2 className="text-xl font-bold text-primary flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -59,10 +59,10 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
         <div className="flex items-center gap-3">
           <Badge variant="outline" className={cn(
             "px-3 py-1 text-xs font-bold uppercase",
-            complexity.level === "simple" ? "text-green-600 border-green-200 bg-green-50" :
-            complexity.level === "moderate" ? "text-blue-600 border-blue-200 bg-blue-50" :
-            complexity.level === "complex" ? "text-orange-600 border-orange-200 bg-orange-50" :
-            "text-red-600 border-red-200 bg-red-50"
+            complexity.level === "simple" ? "text-green-600 border-green-200 bg-green-50 dark:bg-background" :
+            complexity.level === "moderate" ? "text-blue-600 border-blue-200 bg-blue-50 dark:bg-background" :
+            complexity.level === "complex" ? "text-orange-600 border-orange-200 bg-orange-50 dark:bg-background" :
+            "text-red-600 border-red-200 bg-red-50 dark:bg-background"
           )}>
             Complexity: {complexity.level}
           </Badge>
@@ -95,7 +95,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
                   <span className="text-muted-foreground">Days:</span>
                   <span className="font-semibold">{devEstimate.totalDays}</span>
                 </div>
-                <div className="w-full bg-blue-100 dark:bg-blue-900/20 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-blue-100 dark:bg-background h-1.5 rounded-full overflow-hidden">
                   <div className="bg-blue-600 h-full rounded-full w-3/4" />
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
               <p className="text-[10px] text-muted-foreground mt-1">Recommended for parallelization</p>
               <div className="mt-4 flex -space-x-2">
                 {[...Array(devEstimate.recommendedTeamSize)].map((_, i) => (
-                  <div key={i} className="h-8 w-8 rounded-full bg-purple-100 border-2 border-background flex items-center justify-center">
+                  <div key={i} className="h-8 w-8 rounded-full bg-purple-100 dark:bg-background border-2 border-background flex items-center justify-center">
                     <Users className="h-4 w-4 text-purple-600" />
                   </div>
                 ))}
@@ -138,7 +138,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
             <CardContent>
               <div className="text-2xl font-bold">{devEstimate.timeline} Weeks</div>
               <p className="text-[10px] text-muted-foreground mt-1">Estimated time-to-market</p>
-              <div className="mt-4 bg-green-50 dark:bg-green-900/10 p-2 rounded text-[10px] font-medium text-green-700 dark:text-green-400">
+              <div className="mt-4 bg-green-50 dark:bg-background p-2 rounded text-[10px] font-medium text-green-700 dark:text-green-400">
                  Fastest delivery with {devEstimate.recommendedTeamSize} devs
               </div>
             </CardContent>
@@ -147,7 +147,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
 
         {/* Cost Summary Card */}
         <motion.div variants={item}>
-          <Card className="h-full border-orange-100 dark:border-orange-900/30 bg-orange-50/10">
+          <Card className="h-full border-orange-100 dark:border-orange-900/30 bg-orange-50/10 dark:bg-background">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-orange-600">
                 <DollarSign className="h-4 w-4" />
@@ -157,7 +157,7 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
             <CardContent>
               <div className="text-2xl font-bold text-orange-700">${costEstimate.totalFirstYear.toLocaleString()}</div>
               <p className="text-[10px] text-muted-foreground mt-1">Dev + Ops + 3rd Party</p>
-              <div className="mt-3 inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold bg-orange-100 px-1.5 py-0.5 rounded">
+              <div className="mt-3 inline-flex items-center gap-1 text-[10px] text-orange-600 font-bold bg-orange-100 dark:bg-background px-1.5 py-0.5 rounded">
                 <TrendingUp className="h-3 w-3" />
                 ESTIMATED
               </div>
@@ -246,15 +246,15 @@ export default function ProjectEstimates({ diagram, artifacts, className }: Proj
             <div className="pt-4 border-t border-border">
               <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-3">Provider Estimates (Yearly)</div>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-blue-50 dark:bg-blue-900/10 p-2 rounded text-center border border-blue-100 dark:border-blue-900/30">
+                <div className="bg-blue-50 dark:bg-background p-2 rounded text-center border border-blue-100 dark:border-border">
                   <div className="text-[8px] font-bold text-blue-600 uppercase">AWS</div>
                   <div className="text-[10px] font-bold mt-1">${costEstimate.breakdown.aws}</div>
                 </div>
-                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-2 rounded text-center border border-indigo-100 dark:border-indigo-900/30">
+                <div className="bg-indigo-50 dark:bg-background p-2 rounded text-center border border-indigo-100 dark:border-border">
                   <div className="text-[8px] font-bold text-indigo-600 uppercase">Azure</div>
                   <div className="text-[10px] font-bold mt-1">${costEstimate.breakdown.azure}</div>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/10 p-2 rounded text-center border border-red-100 dark:border-red-900/30">
+                <div className="bg-red-50 dark:bg-background p-2 rounded text-center border border-red-100 dark:border-border">
                   <div className="text-[8px] font-bold text-red-600 uppercase">GCP</div>
                   <div className="text-[10px] font-bold mt-1">${costEstimate.breakdown.gcp}</div>
                 </div>

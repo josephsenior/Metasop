@@ -96,6 +96,8 @@ interface SidebarTabsProps {
 
 export function SidebarTabs({ activeTab, artifacts, modifiedArtifacts = [] }: SidebarTabsProps) {
 
+    const hasAnyArtifacts = Object.keys(artifacts || {}).some((k) => artifacts?.[k])
+
     return (
         <div className="w-48 shrink-0 border-r border-border bg-muted/10 hidden lg:flex flex-col">
             <div className="p-4 border-b border-border">
@@ -107,7 +109,7 @@ export function SidebarTabs({ activeTab, artifacts, modifiedArtifacts = [] }: Si
                 {agentTabs.map((tab) => {
                     const TabIcon = tab.icon
                     const artifact = artifacts?.[tab.id as keyof typeof artifacts]
-                    const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
+                    const hasData = tab.id === "summary" || (tab.id === "estimates" ? hasAnyArtifacts : (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0))))
                     const isModified = modifiedArtifacts.includes(tab.id)
                     const meta = getArtifactMeta(tab.id, artifact)
                     const tags = meta?.tags ?? []
@@ -156,12 +158,13 @@ interface TopTabsProps {
 }
 
 export function TopTabs({ activeTab, artifacts, modifiedArtifacts = [] }: TopTabsProps) {
+    const hasAnyArtifacts = Object.keys(artifacts || {}).some((k) => artifacts?.[k])
     return (
         <TabsList className="flex items-center w-full h-auto gap-1 bg-muted/20 p-1 rounded-lg overflow-x-auto no-scrollbar scroll-smooth">
             {agentTabs.map((tab) => {
                 const TabIcon = tab.icon
                 const artifact = artifacts?.[tab.id as keyof typeof artifacts]
-                const hasData = tab.id === "summary" || (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0)))
+                const hasData = tab.id === "summary" || (tab.id === "estimates" ? hasAnyArtifacts : (!!artifact && (artifact?.content !== undefined || (typeof artifact === 'object' && artifact !== null && Object.keys(artifact).length > 0))))
                 const meta = getArtifactMeta(tab.id, artifact)
                 const isModified = modifiedArtifacts.includes(tab.id)
                 return (
