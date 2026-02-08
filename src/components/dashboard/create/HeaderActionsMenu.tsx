@@ -5,7 +5,6 @@ import {
     MoreHorizontal,
     Save,
     FileText,
-    Monitor,
     Download
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -33,12 +32,6 @@ export function HeaderActionsMenu({
     onExportContext
 }: HeaderActionsMenuProps) {
     const router = useRouter()
-
-    const handleExportPptx = () => {
-        const base = `/api/diagrams/${currentDiagram?.id}/export/pptx`
-        const url = appendGuestSession(base)
-        window.location.href = url
-    }
 
     const handleExportPdf = () => {
         const base = `/api/diagrams/${currentDiagram?.id}/export?artifact=documentation&format=pdf`
@@ -96,17 +89,6 @@ export function HeaderActionsMenu({
                 >
                     <Download className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     <span>Export PDF Specs</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="bg-border/50 my-1.5" />
-
-                <DropdownMenuItem
-                    onClick={handleExportPptx}
-                    disabled={!currentDiagram?.id}
-                    className="group flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-muted focus:bg-muted focus:outline-hidden transition-colors"
-                >
-                    <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
-                    <span>PowerPoint (.pptx)</span>
                 </DropdownMenuItem>
 
             </DropdownMenuContent>

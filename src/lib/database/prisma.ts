@@ -29,7 +29,7 @@ function getProjectRoot(): string {
   } else {
     dir = path.resolve(cwd, "lib", "database");
   }
-  const root = path.parse(dir).root;
+  const { root } = path.parse(dir);
   while (dir !== root) {
     if (
       fs.existsSync(path.join(dir, "package.json")) ||

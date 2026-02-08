@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/use-toast"
 import type { Diagram } from "@/types/diagram"
 import { useAuth } from "@/contexts/auth-context"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2, AlertCircle, Presentation } from "lucide-react"
+import { Plus, Search, FileText, Calendar, MoreVertical, Download, Share2, Trash2, Filter, SortAsc, SortDesc, Loader2, AlertCircle } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMedia } from "@/components/ui/empty"
 import {
@@ -361,10 +361,6 @@ export default function MyDiagramsPage() {
                               <DropdownMenuItem onClick={() => window.open(appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pdf&artifact=documentation`), "_blank")}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`), "_blank")}>
-                                <Presentation className="mr-2 h-4 w-4" />
-                                PowerPoint (.pptx)
                               </DropdownMenuItem>
                             </DropdownMenuSubContent>
                           </DropdownMenuSub>

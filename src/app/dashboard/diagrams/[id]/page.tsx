@@ -32,7 +32,6 @@ import {
   PanelRight,
   Download,
   FileText,
-  Presentation
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useFullscreen } from "@/hooks/use-fullscreen"
@@ -510,13 +509,6 @@ export default function DiagramViewPage({ params }: { params: Promise<{ id: stri
                       }}>
                         <FileText className="mr-2 h-4 w-4" />
                         PDF
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        const url = appendGuestSession(`/api/diagrams/${diagram.id}/export?format=pptx&artifact=documentation`)
-                        window.open(url, "_blank")
-                      }}>
-                        <Presentation className="mr-2 h-4 w-4" />
-                        PowerPoint (.pptx)
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
