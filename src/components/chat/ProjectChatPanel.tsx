@@ -10,7 +10,6 @@ import {
     Send,
     Sparkles,
     Loader2,
-    MessageSquare,
     Paperclip,
     // X removed (unused)
 } from "lucide-react"
@@ -63,9 +62,7 @@ export function ProjectChatPanel({
     const [isUploading, setIsUploading] = useState(false)
     const [transientDocuments, setTransientDocuments] = useState<UploadedDocument[]>([])
     const [cacheId, setCacheId] = useState<string | undefined>(undefined)
-    const [showSystemMessages, setShowSystemMessages] = useState(false)
     const [isInputHidden, _setIsInputHidden] = useState(false)
-    const hasSystemMessages = messages.some((msg) => msg.type === "system")
     const statusLabel = isLoading || isRefining ? "Working" : "Ready"
     
     const scrollRef = useRef<HTMLDivElement>(null)
@@ -566,17 +563,19 @@ export function ProjectChatPanel({
                 </div>
                 <div className="flex flex-col gap-4 min-h-full relative z-10">
                     {(() => {
-                        const visibleMessages = messages.filter((msg) => showSystemMessages || msg.type !== "system")
+                        const visibleMessages = messages.filter((msg) => msg.type !== "system")
 
                         if (visibleMessages.length === 0 && !isLoading && !isRefining) {
                             return (
                                 <div className="mx-auto mt-10 w-full max-w-[520px] px-2">
                                     <div className="flex flex-col items-center text-center">
-                                        <Bot className="h-12 w-12 text-muted-foreground/35" aria-hidden="true" />
-                                        <div className="mt-4 text-[12px] font-semibold tracking-wide text-foreground/80">
-                                            Your chat is empty
-                                        </div>
-                                        <div className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+                                        <img
+                                            src="/icon.svg"
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="h-12 w-12 opacity-60"
+                                        />
+                                        <div className="mt-4 text-[12px] text-muted-foreground leading-relaxed">
                                             Ask a question, request a refinement, or attach a file to add context.
                                         </div>
                                     </div>
@@ -710,30 +709,6 @@ export function ProjectChatPanel({
                             </div>
                         </div>
                     </form>
-                    <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
-                                <Sparkles className="h-3 w-3 text-blue-500" />
-                                AI Refine
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
-                                <MessageSquare className="h-3 w-3 text-emerald-500" />
-                                RAG Context
-                            </div>
-                            {hasSystemMessages && (
-                                <button
-                                    type="button"
-                                    className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70 hover:text-foreground"
-                                    onClick={() => setShowSystemMessages(prev => !prev)}
-                                >
-                                    {showSystemMessages ? "Hide system" : "Show system"}
-                                </button>
-                            )}
-                        </div>
-                        <div className="text-[9px] text-muted-foreground/60 font-mono">
-                            Target: <span className="text-blue-500 font-semibold">{activeTab === 'all' ? 'Full Project' : activeTab}</span>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
