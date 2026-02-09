@@ -8,7 +8,6 @@ import {
     Bot,
     User,
     Send,
-    Sparkles,
     Loader2,
     Paperclip,
     // X removed (unused)
@@ -520,30 +519,6 @@ export function ProjectChatPanel({
 
     return (
         <div className="flex flex-col h-full bg-card/90 border border-border/60 rounded-2xl overflow-hidden shadow-lg shadow-black/10 relative z-40 w-full min-h-0">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-background/70 backdrop-blur">
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
-                        <Bot className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-semibold tracking-[0.15em] uppercase text-foreground">Blueprinta Console</span>
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
-                            <span className={cn(
-                                "inline-flex items-center gap-1",
-                                isLoading || isRefining ? "text-amber-500" : "text-emerald-500"
-                            )}>
-                                <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                                {statusLabel}
-                            </span>
-                            <span className="text-muted-foreground/50">•</span>
-                            <span>{transientDocuments.length} context file{transientDocuments.length === 1 ? "" : "s"}</span>
-                        </div>
-                    </div>
-                </div>
-                {/* Close button intentionally removed per design request */}
-            </div>
-
             {/* Chat Area */}
             <div
                 className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar relative bg-background/70"
@@ -552,30 +527,24 @@ export function ProjectChatPanel({
                 <div aria-hidden="true" className="absolute inset-0 pointer-events-none blueprint-grid" />
                 {/* Subtle vignette to add depth without heavy color overlays */}
                 <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-linear-to-b from-black/4 to-transparent" />
-                <div
-                    aria-hidden="true"
-                    className="absolute inset-0 pointer-events-none flex items-center justify-center"
-                >
-                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.4em] text-foreground/10 font-mono">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>Blueprint Channel</span>
-                    </div>
-                </div>
-                <div className="flex flex-col gap-4 min-h-full relative z-10">
+                <div className="flex flex-col min-h-full relative z-10">
                     {(() => {
                         const visibleMessages = messages.filter((msg) => msg.type !== "system")
 
                         if (visibleMessages.length === 0 && !isLoading && !isRefining) {
                             return (
-                                <div className="mx-auto mt-10 w-full max-w-[520px] px-2">
-                                    <div className="flex flex-col items-center text-center">
+                                <div className="flex flex-1 items-center justify-center px-4">
+                                    <div className="flex flex-col items-center justify-center text-center max-w-[520px]">
                                         <img
                                             src="/icon.svg"
                                             alt=""
                                             aria-hidden="true"
-                                            className="h-12 w-12 opacity-60"
+                                            className="h-24 w-24 opacity-60"
                                         />
-                                        <div className="mt-4 text-[12px] text-muted-foreground leading-relaxed">
+                                        <div className="mt-4 text-[14px] font-semibold tracking-[0.35em] uppercase text-foreground/80 font-mono">
+                                            Blueprinta Console
+                                        </div>
+                                        <div className="mt-2 text-[12px] text-muted-foreground leading-relaxed">
                                             Ask a question, request a refinement, or attach a file to add context.
                                         </div>
                                     </div>
@@ -709,6 +678,15 @@ export function ProjectChatPanel({
                             </div>
                         </div>
                     </form>
+                    <div className="mt-3 flex items-center justify-start text-[10px] font-mono">
+                        <span className={cn(
+                            "inline-flex items-center gap-2",
+                            isLoading || isRefining ? "text-amber-500" : "text-emerald-500"
+                        )}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                            {statusLabel}
+                        </span>
+                    </div>
                 </div>
             )}
         </div>
