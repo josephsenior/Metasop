@@ -522,6 +522,7 @@ netstat -tulpn
 #### Uptime Monitoring
 
 Use services like:
+
 - [UptimeRobot](https://uptimerobot.com)
 - [Pingdom](https://www.pingdom.com)
 - [StatusCake](https://www.statuscake.com)
@@ -619,6 +620,7 @@ sudo systemctl restart postgresql
 **Problem**: Application fails to start
 
 **Solution**:
+
 ```bash
 # Check logs
 pm2 logs Blueprinta
@@ -635,6 +637,7 @@ pm2 env 0
 **Problem**: Cannot connect to database
 
 **Solution**:
+
 ```bash
 # Test connection
 psql -U user -h host -d Blueprinta
@@ -651,6 +654,7 @@ sudo systemctl status postgresql
 **Problem**: Application crashes due to memory
 
 **Solution**:
+
 ```bash
 # Increase Node.js memory
 NODE_OPTIONS="--max-old-space-size=4096" pm2 restart Blueprinta
@@ -667,6 +671,7 @@ pm2 monit
 **Problem**: Application is slow
 
 **Solution**:
+
 ```bash
 # Enable caching
 METASOP_CACHE_ENABLED=true
@@ -766,4 +771,110 @@ cp .env.production .env.production.backup
 
 ---
 
-**Last Updated**: January 2025
+---
+
+## Production Best Practices
+
+### Database Hardening
+
+#### Database Features
+
+- ✅ Connection pooling (handled by Prisma/PostgreSQL)
+- ✅ Health check endpoint
+- ✅ Graceful shutdown handling
+- ✅ Production-only mode (no in-memory fallback)
+- ✅ Connection retry logic
+
+#### Database Hardening Configuration
+
+The database configuration is in `lib/database/prisma.ts`. Key features:
+
+```typescript
+// Health check
+import { checkDatabaseHealth } from "@/lib/database/prisma";
+const health = await checkDatabaseHealth();
+// Returns: { healthy: boolean, latency?: number, error?: string }
+```
+
+### Rate Limiting
+
+#### Rate Limiting Features
+
+- ✅ Per-endpoint rate limiting
+- ✅ Redis support (production) and in-memory (development)
+- ✅ Different limits for authenticated vs guest users
+- ✅ Rate limit headers in responses
+- ✅ Configurable rate limiters
+
+#### Usage
+
+```typescript
+import { rateLimit, rateLimiters } from "@/lib/middleware/rate-limit";
+
+// In API route
+const result = await rateLimit(request, rateLimiters.standard());
+if (result instanceof NextResponse) {
+  return result; // Rate limit exceeded
+}
+```
+
+#### Redis Configuration (Optional)
+
+For production with multiple instances, use Redis. If `REDIS_URL` is not set or `ioredis` is not installed, the system automatically falls back to in-memory storage (works perfectly for single-instance deployments).
+
+1. **Install Redis client** (optional dependency):
+
+```bash
+pnpm add ioredis
+```
+
+1. **Configure Redis URL**:
+
+```env
+REDIS_URL="redis://localhost:6379"
+# or
+REDIS_URL="rediss://user:password@host:6379"  # SSL
+```
+
+### Monitoring
+
+#### Structured Logging
+
+The logging system provides structured, production-ready logs with support for Sentry integration.
+
+```typescript
+import { logger, createRequestLogger } from "@/lib/monitoring/logger";
+
+// Basic logging
+logger.info("User logged in", { userId: "123" });
+logger.error("Database query failed", error, { query: "SELECT *" });
+```
+
+#### Metrics Collection
+
+Track performance and business metrics:
+
+```typescript
+import { metrics, MetricNames, trackPerformance } from "@/lib/monitoring/metrics";
+
+// Record timing
+metrics.timing(MetricNames.API_RESPONSE_TIME, duration, { endpoint: "diagrams.generate" });
+```
+
+### Health Check Endpoint
+
+`GET /api/health` returns system health status:
+
+```json
+{
+  "status": "healthy",
+  "services": {
+    "database": { "status": "healthy", "latency": 5 },
+    "memory": { "status": "healthy", "used": 256, "total": 512 }
+  }
+}
+```
+
+---
+
+**Last Updated**: February 2026

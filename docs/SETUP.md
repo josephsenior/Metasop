@@ -1,63 +1,121 @@
 # Setup Guide
 
-This guide covers setup for **local open-source usage** — no remote database or auth required.
+This guide covers local setup for **open-source usage** — no remote database, auth, or paid APIs required.
 
-## Quick Start (3 Steps)
+---
 
-### Step 1: Clone and install
+## Prerequisites
+
+- **Node.js** 18+ — [Download](https://nodejs.org/)
+- **pnpm** — Install with `npm install -g pnpm`
+- **Git** — [Download](https://git-scm.com/)
+- **Gemini API Key** — Free at [Google AI Studio](https://aistudio.google.com/apikey)
+
+---
+
+## Quick Start
+
+### 1. Clone and install
 
 ```bash
-git clone <repo-url>
-cd MultiAGentPLatform
+git clone https://github.com/josephsenior/Metasop.git
+cd Metasop
 pnpm install
 ```
 
-### Step 2: Environment
+### 2. Configure environment
 
-Create a `.env` file in the project root (or copy from `.env.example`):
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your API key:
 
 ```env
-# Required: Gemini/LLM (for diagram generation)
+# Required
 GOOGLE_AI_API_KEY="your-google-ai-api-key"
-
-# Database (local SQLite — no remote server)
 DATABASE_URL="file:./prisma/local.db"
 
-# App URLs (defaults for local)
+# Optional
 NEXT_PUBLIC_API_URL="http://localhost:3000/api"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### Step 3: Database and run
+### 3. Set up database and run
 
 ```bash
-pnpm db:generate
-pnpm db:push
-pnpm dev
+pnpm db:generate    # Generate Prisma client
+pnpm db:push        # Create local SQLite database
+pnpm dev            # Start dev server
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Diagrams are stored locally in `prisma/local.db`; no login or remote DB needed.
+Open **[http://localhost:3000](http://localhost:3000)**. Diagrams are stored locally in `prisma/local.db` — no login or remote DB needed.
+
+---
+
+## Database
+
+Blueprinta uses **SQLite** with **Prisma ORM** for local storage. No remote database server is required.
+
+### How it works
+
+- The database is a single file: `prisma/local.db`
+- It's created automatically on first `pnpm db:push`
+- The **Diagram** model stores metadata + agent artifacts as JSON — no separate graph database
+
+### Commands
+
+```bash
+pnpm db:generate    # Regenerate Prisma client (after schema changes)
+pnpm db:push        # Create/update tables in local SQLite
+pnpm db:studio      # Open Prisma Studio GUI (browser-based DB viewer)
+```
+
+### Reset
+
+To start fresh, delete the database file and recreate:
+
+```bash
+rm prisma/local.db          # or delete manually on Windows
+pnpm db:push
+```
+
+---
 
 ## Environment Variables
 
 ### Required
 
-- **`GOOGLE_AI_API_KEY`** – For Gemini (diagram generation). Get one at [Google AI Studio](https://aistudio.google.com/apikey).
-- **`DATABASE_URL`** – For local SQLite use `file:./prisma/local.db`.
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_AI_API_KEY` | Gemini API key for diagram generation |
+| `DATABASE_URL` | Database path — use `file:./prisma/local.db` for local SQLite |
 
 ### Optional
 
-- **`NEXT_PUBLIC_API_URL`** – API base URL (default: `http://localhost:3000/api`).
-- **`NEXT_PUBLIC_APP_URL`** – App URL (default: `http://localhost:3000`).
-- **`METASOP_LLM_MODEL`** – Override LLM model (e.g. `gemini-3-flash-preview`).
-- **`METASOP_LLM_API_KEY`** – Alternative to `GOOGLE_AI_API_KEY`/`GEMINI_API_KEY` for Gemini.
-- **`METASOP_LLM_PROVIDER`** – Set to `mock` for offline or deterministic runs.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:3000/api` | API base URL |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | App URL |
+| `METASOP_LLM_PROVIDER` | `gemini` | LLM provider (`gemini` or `mock`) |
+| `METASOP_LLM_MODEL` | `gemini-3-flash-preview` | Override LLM model |
+| `METASOP_AGENT_TIMEOUT` | `180000` | Agent timeout in ms |
+| `METASOP_AGENT_RETRIES` | `0` | Number of retries on failure |
 
-## Database (Local SQLite)
+→ Full provider configuration: **[LLM Providers Guide](LLM-PROVIDERS.md)**
 
-- No account or remote server. A file `prisma/local.db` is created on first `pnpm db:push`.
-- To reset: delete `prisma/local.db` and run `pnpm db:push` again.
+---
 
-## Troubleshooting
+## Security Notes
 
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues.
+- **Never commit `.env`** if it contains API keys. The file is listed in `.gitignore` by default.
+- The SQLite file (`prisma/local.db`) is local to your machine with no network exposure.
+
+---
+
+## Next Steps
+
+- **[LLM Providers](LLM-PROVIDERS.md)** — Configure alternative LLM providers
+- **[Architecture](ARCHITECTURE.md)** — Understand how the agent pipeline works
+- **[API Reference](API.md)** — Explore the REST API
+- **[Troubleshooting](TROUBLESHOOTING.md)** — Fix common issues

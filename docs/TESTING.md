@@ -1,62 +1,148 @@
-# Testing Documentation
+# Testing Guide
 
-This document covers unit tests, integration tests, and reliability checks for Blueprinta.
+This document covers how to run and write tests for Blueprinta.
+
+---
 
 ## Quick Commands
 
 ```bash
-# Run all unit tests
-pnpm test
-
-# Run tests with UI
-pnpm test:ui
-
-# Run with coverage
-pnpm test:coverage
-
-# Watch mode
-pnpm test:watch
+pnpm test              # Run all unit tests
+pnpm test:watch        # Watch mode (re-runs on file changes)
+pnpm test:coverage     # Generate coverage report
+pnpm test:ui           # Open Vitest visual UI
 ```
 
-## Test Types and Locations
+---
 
-- **Unit tests**: `tests/unit/` and `lib/metasop/**/__tests__/`
-- **Integration tests**: `tests/integration/` (manual, not part of `pnpm test`)
+## Test Structure
 
-Coverage thresholds are defined in `vitest.config.ts`.
+```
+tests/
+├── unit/                          # Unit tests (run by default)
+│   ├── orchestrator.test.ts
+│   ├── execution-service.test.ts
+│   └── ...
+└── integration/                   # Integration tests (manual)
+    ├── verify_full_pipeline.ts
+    └── test_cascading_refinement.ts
 
-## Integration Tests (Manual)
+lib/metasop/**/__tests__/          # Co-located unit tests
+```
 
-Integration tests use the running API server and real orchestration flow.
+- **Unit tests** run automatically with `pnpm test`
+- **Integration tests** are excluded from the default run and require a running dev server
+
+---
+
+## Unit Tests
+
+Unit tests use [Vitest](https://vitest.dev/) and cover the Blueprinta pipeline: orchestrator, agents, services, adapters, and utilities.
+
+### Running
 
 ```bash
-# Start the dev server in one terminal
-pnpm dev
+# All unit tests
+pnpm test
 
-# Run integration scripts in another
-npx tsx tests/integration/verify_full_pipeline.ts
-npx tsx tests/integration/test_cascading_refinement.ts
+# Specific file
+pnpm test orchestrator.test.ts
+
+# With coverage report (HTML + LCOV + text → ./coverage/)
+pnpm test:coverage
 ```
 
-## Deterministic Runs (Recommended for CI)
+### Writing Tests
 
-Use the mock provider for fast, deterministic results:
+Follow the **Arrange → Act → Assert** pattern:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('ExecutionService', () => {
+  describe('executeStep', () => {
+    it('should return success when agent completes', async () => {
+      // Arrange
+      const agent = createMockAgent();
+      const context = createMockContext();
+
+      // Act
+      const result = await service.executeStep(agent, context);
+
+      // Assert
+      expect(result.success).toBe(true);
+      expect(result.artifact).toBeDefined();
+    });
+  });
+});
+```
+
+### Deterministic Runs (CI)
+
+Use the mock LLM provider for fast, deterministic results without API calls:
 
 ```bash
 METASOP_LLM_PROVIDER=mock pnpm test
 ```
 
-## Reliability Checks
+---
 
-- **SSE progress stream**: Verify `GET /api/diagrams/generate/stream?jobId=...` emits `step_*` events and ends with `orchestration_complete` or `orchestration_failed`.
-- **Artifact validation**: Confirm `metasop_artifacts` are present in the final diagram metadata.
-- **Queue behavior**: Generation jobs are in-process; a server restart cancels in-flight jobs.
+## Integration Tests
 
-## Notes
+Integration tests exercise the full orchestration flow against a running server. They are **not** part of `pnpm test` and must be run manually.
 
-- Integration tests require a valid LLM API key unless using `METASOP_LLM_PROVIDER=mock`.
-- Coverage is focused on `lib/metasop/**` and core orchestration logic.
+### Prerequisites
 
-## Related Documentation
+- A running dev server (`pnpm dev`)
+- A valid LLM API key (unless using `METASOP_LLM_PROVIDER=mock`)
 
-- [PRODUCTION-QUALITY-GUIDE.md](./PRODUCTION-QUALITY-GUIDE.md)
+### Running
+
+```bash
+# Terminal 1: Start the server
+pnpm dev
+
+# Terminal 2: Run integration tests
+npx tsx tests/integration/verify_full_pipeline.ts
+npx tsx tests/integration/test_cascading_refinement.ts
+
+# With a specific model
+METASOP_LLM_MODEL=gemini-3-pro-preview npx tsx tests/integration/verify_full_pipeline.ts
+```
+
+### What They Verify
+
+- **Full pipeline**: All 7 agents execute in sequence and produce valid artifacts
+- **SSE streaming**: `GET /api/diagrams/generate/stream?jobId=...` emits `step_*` events and ends with `orchestration_complete` or `orchestration_failed`
+- **Artifact validation**: `metasop_artifacts` are present in final diagram metadata
+- **Cascading refinement**: Edit ops propagate correctly through the artifact tree
+
+---
+
+## Code Quality
+
+```bash
+pnpm type-check        # TypeScript strict type checking
+pnpm lint              # ESLint
+pnpm lint:fix          # Auto-fix lint issues
+```
+
+---
+
+## Coverage
+
+Coverage thresholds are defined in `vitest.config.ts`. Reports are generated in `./coverage/` as HTML, LCOV, and text.
+
+Coverage focuses on:
+
+- `lib/metasop/**` — Core orchestration logic
+- `components/**` — React components
+- `app/api/**` — API routes
+
+---
+
+## Troubleshooting
+
+### `spawn EPERM` in Cursor terminal (Windows)
+
+Cursor's sandbox blocks child processes that Vitest uses. See [Troubleshooting → Tests: spawn EPERM](TROUBLESHOOTING.md#tests-spawn-eperm-in-cursor-terminal) for fixes.

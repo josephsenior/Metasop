@@ -1,98 +1,121 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues when setting up and running the application (local/open-source with SQLite).
+Common issues and solutions for running Blueprinta locally.
 
-## Database (SQLite) Issues
+---
 
-### Error: "Can't reach database server" / "SQLITE_CANTOPEN" (Error code 14)
+## Database (SQLite)
 
-**For local SQLite (default):**
+### "Can't reach database server" / SQLITE_CANTOPEN (Error 14)
 
 1. **Ensure `DATABASE_URL` is set** in `.env`:
+
    ```env
    DATABASE_URL="file:./prisma/local.db"
    ```
+
 2. **Create the database and tables:**
+
    ```bash
    pnpm db:generate
    pnpm db:push
    ```
-3. The app creates the `prisma` directory automatically when using a relative path (`file:./prisma/local.db`). If the error persists, ensure the project root is writable and no other process has the DB file locked.
 
-### Error: "Invalid connection string"
+3. If the error persists, ensure the project root is writable and no other process has the `.db` file locked.
 
-**Fix:**
+### "Invalid connection string"
+
 ```env
-# Correct (SQLite)
+# ✅ Correct
 DATABASE_URL="file:./prisma/local.db"
 
-# Wrong
-DATABASE_URL = "file:./prisma/local.db"  # Space before =
-DATABASE_URL=file:./prisma/local.db     # Missing quotes (if path has spaces)
+# ❌ Wrong — space before =
+DATABASE_URL = "file:./prisma/local.db"
+
+# ❌ Wrong — missing quotes if path has spaces
+DATABASE_URL=file:./prisma/local.db
 ```
 
-### Reset local database
+### Reset the local database
 
-To start fresh:
 ```bash
-# Delete the SQLite file (e.g. prisma/local.db)
-# Then:
+# Delete the SQLite file, then re-create
+rm prisma/local.db        # or delete manually on Windows
 pnpm db:push
 ```
 
-## Environment File Issues
+---
 
-### `.env` not being read
+## Prisma
 
-**Check:**
-1. File is named `.env` and is in the project root (or `.env.local` for local overrides)
-2. No syntax errors (missing quotes, extra spaces)
-3. Restart the dev server after changes: `pnpm dev`
-
-## Prisma Issues
-
-### Error: "Prisma Client not generated"
+### "Prisma Client not generated"
 
 ```bash
 pnpm db:generate
 ```
 
-### Error: "Schema validation failed"
+### "Schema validation failed"
 
-Check `prisma/schema.prisma` for syntax errors. Common issues:
-- Missing commas
-- Incorrect field types
-- Invalid relation syntax
+Check `prisma/schema.prisma` for syntax errors — missing commas, incorrect field types, or invalid relations.
 
-### Error: "Migration failed"
+---
 
-1. Use **Direct connection** (port 5432), not pooler (port 6543)
-2. For SQLite, ensure `pnpm db:push` has been run
-3. Check database password is correct
+## Environment Variables
 
-## Supabase-Specific Issues
+### `.env` not being read
 
-### Project Reference Mismatch
+1. Ensure the file is named `.env` (or `.env.local`) and is in the **project root**
+2. Check for syntax errors (no spaces around `=`, values in quotes)
+3. **Restart the dev server** after any changes:
 
-Verify the project reference ID in Supabase:
-1. Go to **Settings** → **General**
-2. Check **Reference ID**
-3. Ensure it matches the ID in your connection string
+   ```bash
+   pnpm dev
+   ```
 
-### Connection Pooler vs Direct
+---
 
-- **Pooler** (port 6543): For application connections, not migrations
-- **Direct** (port 5432): Required for Prisma migrations
+## Build Issues (Windows)
 
-Always use Direct connection for `DATABASE_URL` in `.env.local`.
+### `pnpm build` fails with EPERM symlink
 
-### Project Paused
+Next.js standalone output uses symlinks, which Windows restricts without Developer Mode.
 
-Free tier projects pause after inactivity:
-1. Go to Supabase dashboard
-2. Click "Resume" or "Restore"
-3. Wait 1-2 minutes for restart
-4. Retry connection
+**Fixes (in order of preference):**
+
+1. **Enable Developer Mode** — Windows Settings → Privacy & security → For developers → Developer Mode → restart terminal
+2. **Run terminal as Administrator**
+3. **Disable standalone output** (workaround):
+
+   ```powershell
+   $env:NEXT_DISABLE_STANDALONE = "1"; pnpm build
+   ```
+
+---
+
+## Tests: spawn EPERM in Cursor terminal
+
+Cursor's integrated terminal sandbox blocks child processes that Vitest/esbuild use.
+
+**Fixes (in order of preference):**
+
+1. **Use legacy terminal mode** — The project includes `.vscode/settings.json` with `"experimental.legacyTerminalMode": true`. Reload the window (`Ctrl+Shift+P` → "Developer: Reload Window"), then retry.
+2. **Run tests from an external terminal** — Open PowerShell, `cd` to the project root, and run `pnpm test`.
+3. **Antivirus exclusion** — Add the project folder to your antivirus exclusions if EPERM persists.
+
+---
+
+## LLM / API Key Issues
+
+### "Invalid API key" or generation fails
+
+1. Verify your API key is correct in `.env`
+2. Ensure the key matches your provider (`GOOGLE_AI_API_KEY` for Gemini, etc.)
+3. Restart the dev server after changes
+4. Check rate limits on your API key (free tiers have limits)
+
+→ See **[LLM Providers Guide](LLM-PROVIDERS.md)** for full provider configuration.
+
+---
 
 ## Network Issues
 
@@ -100,102 +123,22 @@ Free tier projects pause after inactivity:
 
 - Check Windows Firewall settings
 - Temporarily disable antivirus to test
-- Ensure port 5432 (PostgreSQL) is allowed
+- Ensure the required port (default: 3000) is not occupied
 
-### DNS resolution issues
-
-If hostname can't be resolved:
-1. Verify project is Active in Supabase
-2. Check connection string hostname matches Supabase dashboard
-3. Try using IP address (if available in Supabase)
-
-## Alternative Solutions
-
-### Use Supabase CLI
-
-If direct connection doesn't work:
+### Port already in use
 
 ```bash
-# Install Supabase CLI
-npm install -g supabase
+# Find what's using port 3000
+netstat -ano | findstr :3000
 
-# Login
-supabase login
-
-# Link project
-supabase link --project-ref YOUR_PROJECT_REF
-
-# Push schema
-supabase db push
+# Kill the process (replace PID)
+taskkill /PID <PID> /F
 ```
 
-### Use Pooler with SSL
+---
 
-For application connections (not migrations), you can try:
+## Still Stuck?
 
-```env
-DATABASE_URL="postgresql://postgres.xxxxx:password@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require"
-```
-
-**Note:** This won't work for migrations. Use Direct connection for `db:push`.
-
-## Build: `pnpm build` fails with EPERM symlink (Windows)
-
-If `pnpm build` fails on Windows with an error like:
-
-- `EPERM: operation not permitted, symlink ... -> .next/standalone/...`
-
-This typically happens because Next.js standalone output (`output: 'standalone'` in `next.config.mjs`) uses symlinks when assembling `.next/standalone`, and Windows requires elevated permissions unless **Developer Mode** is enabled.
-
-**Fix options (try in order):**
-
-1. **Enable Windows Developer Mode (recommended)**
-   - Windows Settings → Privacy & security → For developers → **Developer Mode**
-   - Restart your terminal/editor and re-run `pnpm build`
-
-2. **Run your terminal as Administrator**
-   - Open PowerShell/Terminal “Run as administrator”
-   - Re-run `pnpm build`
-
-3. **Disable standalone output for local Windows builds (workaround)**
-   - Run the build with standalone disabled:
-     - PowerShell: ` $env:NEXT_DISABLE_STANDALONE = "1"; pnpm build `
-     - cmd.exe: ` set NEXT_DISABLE_STANDALONE=1 && pnpm build `
-   - Or, if you prefer, you can remove/conditionally disable `output: 'standalone'` in `next.config.mjs` for your local environment.
-
-If you’re contributing on Windows and CI/build is part of your workflow, enabling Developer Mode is usually the smoothest path.
-
-## Tests: spawn EPERM in Cursor terminal
-
-If `pnpm test` fails with **Error: spawn EPERM** (common in Cursor's integrated terminal on Windows), the terminal sandbox is blocking child processes that Vitest/esbuild use.
-
-**Options (try in order):**
-
-1. **Use legacy terminal mode (recommended for this workspace)**  
-   The project includes `.vscode/settings.json` with `"experimental.legacyTerminalMode": true` so the integrated terminal may run without the sandbox. Reload the window (Ctrl+Shift+P → "Developer: Reload Window") after opening the project, then run `pnpm test` again.
-
-2. **Run tests from an external terminal**  
-   Open PowerShell or Command Prompt, `cd` to the project root, and run:
-   ```bash
-   pnpm test
-   ```
-   This avoids Cursor's sandbox entirely.
-
-3. **Windows Defender / antivirus**  
-   If EPERM persists, add the project folder to your antivirus exclusions; some tools block Node from spawning subprocesses.
-
-## Getting Help
-
-If issues persist:
-
-1. Check Supabase dashboard for project status
-2. Review Supabase logs (Settings → Logs)
-3. Verify connection string format matches Supabase exactly
-4. Test with a simple connection tool (psql, DBeaver, etc.)
-
-## Related Documentation
-
-- [SETUP.md](./SETUP.md) - Initial setup guide
-- [DATABASE.md](./DATABASE.md) - Database configuration details
-- [API.md](./API.md) - API documentation
-
+- 📖 Check the [Setup Guide](SETUP.md) for correct configuration
+- 🐛 [Report a bug](https://github.com/josephsenior/Metasop/issues/new?template=bug_report.md)
+- 💬 Ask in [GitHub Discussions](https://github.com/josephsenior/Metasop/discussions)

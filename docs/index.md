@@ -1,295 +1,107 @@
 # Blueprinta Documentation
 
-Complete documentation index for Blueprinta - Multi-Agent Orchestration Platform.
+> **Blueprinta** is a multi-agent orchestration platform that automates the end-to-end software development lifecycle — from requirements to deployment plans — using coordinated AI agents.
 
 ---
 
-## Table of Contents
+## 📖 Documentation Map
 
-- [Getting Started](#getting-started)
-- [Architecture](#architecture)
-- [API Reference](#api-reference)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## ✨ Platform Highlights
-
-- **Documentation exports**: Markdown, PDF, HTML, and PPTX exports from `/api/diagrams/[id]/export`.
-- **Project estimates**: Time, cost, and complexity estimates shown in the UI and included in exports.
-- **Draft persistence**: Create prompts, settings, and uploads persist across reloads on the create page.
+| Document | What You'll Learn |
+|----------|-------------------|
+| **[Setup Guide](SETUP.md)** | Install, configure, and run Blueprinta locally |
+| **[Architecture](ARCHITECTURE.md)** | System design, agent pipeline, data flow |
+| **[API Reference](API.md)** | REST endpoints, request/response formats, auth |
+| **[LLM Configuration](LLM-PROVIDERS.md)** | Gemini setup, model selection, mock provider |
+| **[Testing](TESTING.md)** | Unit tests, integration tests, CI setup |
+| **[Deployment](DEPLOYMENT.md)** | Deploy to Vercel, Docker, VPS + production hardening |
+| **[Troubleshooting](TROUBLESHOOTING.md)** | Fix common setup and runtime issues |
+| **[Contributing](../CONTRIBUTING.md)** | How to contribute code, docs, or ideas |
 
 ---
 
-## 🚀 Getting Started
-
-### Installation & Setup
-
-- **[Quick Start Guide](../README.md#-quick-start)** - Get up and running in 5 minutes
-- **[Setup Guide](SETUP.md)** - Complete setup with database configuration
-- **[Environment Variables](SETUP.md#environment-variables)** - All configuration options
-
-### First Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/josephsenior/Metasop.git
-   cd Metasop
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with GOOGLE_AI_API_KEY and DATABASE_URL (see SETUP.md)
-   ```
-
-4. **Initialize database**
-   ```bash
-   pnpm db:generate
-   pnpm db:push
-   ```
-
-5. **Start development**
-   ```bash
-   pnpm dev
-   ```
-
----
-
-## 🏗️ Architecture
-
-### System Overview
-
-- **[Architecture Overview](ARCHITECTURE.md)** - Complete system architecture and design
-- **[Agent System](ARCHITECTURE.md#agents)** - Multi-agent orchestration
-
-### Core Components
-
-| Component | Description | Location |
-|-----------|-------------|----------|
-| **Orchestrator** | Coordinates agent execution | [`lib/metasop/orchestrator.ts`](../lib/metasop/orchestrator.ts) |
-| **Execution Service** | Handles timeouts and retries | [`lib/metasop/services/execution-service.ts`](../lib/metasop/services/execution-service.ts) |
-| **Agents** | Specialized AI agents | [`lib/metasop/agents/`](../lib/metasop/agents/) |
-| **LLM Adapter** | Abstracts LLM providers | [`lib/metasop/adapters/`](../lib/metasop/adapters/) |
-
-### Data Flow
-
-```
-User Request → Orchestrator → Agents → LLM → Artifacts
-```
-
----
-
-## 📚 API Reference
-
-### REST API
-
-- **[API Documentation](API.md)** - Complete API reference with examples
-
-### Key Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/diagrams` | POST | Create new diagram |
-| `/api/diagrams/:id` | GET | Get diagram details |
-| `/api/diagrams/:id/orchestration` | POST | Start orchestration |
-| `/api/diagrams/artifacts/edit` | POST | Edit artifacts (tool-based) |
-| `/api/health` | GET | Health check |
-
-### Authentication
-
-Most endpoints require authentication. See [API Authentication](API.md#authentication) for details.
-
----
-
-## 💻 Development
-
-### Testing
-
-- **[Testing Guide](TESTING.md)** - Comprehensive testing documentation
-- **[Test Commands](TESTING.md#commands)** - Run tests with coverage
+## ⚡ Quick Start
 
 ```bash
-# Run all tests
-pnpm test
+# 1. Clone and install
+git clone https://github.com/josephsenior/Metasop.git
+cd Metasop && pnpm install
 
-# Run with coverage
-pnpm test:coverage
+# 2. Configure
+cp .env.example .env
+# Edit .env → add your GOOGLE_AI_API_KEY
 
-# Watch mode
-pnpm test:watch
-```
+# 3. Set up local database (SQLite)
+pnpm db:generate && pnpm db:push
 
-### Code Quality
-
-```bash
-# Type checking
-pnpm type-check
-
-# Linting
-pnpm lint
-pnpm lint:fix
-```
-
-### Contributing
-
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute
-- **[Code of Conduct](../CODE_OF_CONDUCT.md)** - Community guidelines
-
----
-
-## 🚀 Deployment
-
-### Deployment Options
-
-- **[Deployment Guide](DEPLOYMENT.md)** - Complete deployment instructions
-
-### Quick Deploy
-
-#### Vercel (Recommended)
-
-```bash
-npm i -g vercel
-vercel login
-vercel --prod
-```
-
-#### Docker
-
-```bash
-docker build -t metasop:latest .
-docker run -d -p 3000:3000 --env-file .env.production metasop:latest
-```
-
-#### VPS
-
-See [Deployment Guide](DEPLOYMENT.md#option-4-vps-digitalocean-aws-etc) for detailed VPS setup.
-
-### Environment Variables
-
-Required for production (local/open-source):
-
-```env
-NODE_ENV=production
-DATABASE_URL=file:./prisma/local.db
-GOOGLE_AI_API_KEY=your-api-key
-```
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common problems and solutions
-
-### Quick Fixes
-
-#### Database (SQLite)
-
-```bash
-# Ensure DATABASE_URL=file:./prisma/local.db in .env
-pnpm db:push
-# If issues, delete prisma/local.db and run db:push again
-```
-
-#### Test Failures
-
-```bash
-# If tests fail with "spawn EPERM" (Windows/Cursor)
-# Use external terminal or enable legacy terminal mode
-```
-
-#### Environment Variables
-
-```bash
-# Verify .env.local is in project root
-# Restart dev server after changes
+# 4. Run
 pnpm dev
+# Open http://localhost:3000
 ```
 
-### Getting Help
-
-- 📖 Check [Documentation](../README.md)
-- 💬 Join [Discord](https://discord.gg/Blueprinta)
-
-## 📖 Additional Resources
-
-### Guides
-
-- **[Migration Guide](MIGRATION-GUIDE.md)** - Migrating from previous versions
-- **[Production Quick Start](PRODUCTION-QUICK-START.md)** - Production deployment checklist
-- **[Production Quality Guide](PRODUCTION-QUALITY-GUIDE.md)** - Quality improvement strategies
-
-### Reference
-
-- **[Database Schema](DATABASE.md)** - Database structure and relationships
-- **[TypeScript vs Python](TYPESCRIPT-VS-PYTHON.md)** - Language comparison
-- **[Token Factory](TOKEN-FACTORY.md)** - LLM token management
-
-### Open Source
-
-- **[Open Source Strategy](OPEN-SOURCE-STRATEGY.md)** - Open source approach
-- **[Open Source FAQs](OPEN-SOURCE-FAQs.md)** - Common questions
-- **[Open Source Launch Checklist](OPEN-SOURCE-LAUNCH-CHECKLIST.md)** - Launch preparation
+> **Need help?** See [Setup Guide](SETUP.md) for detailed instructions or [Troubleshooting](TROUBLESHOOTING.md) if something goes wrong.
 
 ---
+
+## 🏗️ How It Works
+
+Blueprinta runs 7 specialized AI agents **sequentially**, each building on the previous agent's output:
+
+```
+User Prompt → PM → Architect → DevOps → Security → UI → Engineer → QA → Artifacts
+```
+
+| Agent | Produces |
+|-------|----------|
+| **Product Manager** | User stories, acceptance criteria |
+| **Architect** | API contracts, database schemas, ADRs |
+| **DevOps** | CI/CD pipelines, infrastructure-as-code |
+| **Security** | Threat model, security controls |
+| **UI Designer** | Design tokens, component hierarchy |
+| **Engineer** | File structure, implementation plan |
+| **QA** | Test strategy, test cases |
+
+All artifacts are stored as structured JSON and can be refined via the [Edit Artifacts API](API.md#edit-artifacts-tool-based).
+
+→ Deep dive: **[Architecture](ARCHITECTURE.md)**
+
+---
+
+## 🔑 Key Features
+
+- **Tool-based refinement** — Edit artifact JSON via ops (`set_at_path`, `add_array_item`) without re-running agents
+- **SSE progress streaming** — Real-time generation progress via Server-Sent Events
+- **Gemini-powered** — Uses Google Gemini for high-quality structured output with context caching
+- **Documentation exports** — Export as Markdown, PDF, HTML, or PPTX
+- **Project estimates** — Time, cost, and complexity estimates derived from artifacts
+- **Guest support** — Limited generation for non-authenticated users
+
+---
+
 ## 🎓 Learning Path
 
-### Beginner
+### New to Blueprinta?
 
-1. Read [Quick Start](../README.md#-quick-start)
-2. Follow [Setup Guide](SETUP.md)
-3. Explore [Architecture Overview](ARCHITECTURE.md)
-4. Try the [API](API.md)
+1. Follow the **[Setup Guide](SETUP.md)** to get running locally
+2. Read the **[Architecture](ARCHITECTURE.md)** to understand how agents work
+3. Try the **[API Reference](API.md)** to generate your first diagram
 
-### Intermediate
+### Ready to contribute?
 
-1. Learn [Agent System](ARCHITECTURE.md#agents)
-2. Review [Testing Guide](TESTING.md)
-3. Build [Custom Agents](../CONTRIBUTING.md#building-custom-agents)
+1. Read the **[Contributing Guide](../CONTRIBUTING.md)**
+2. Review the **[Testing Guide](TESTING.md)** to run and write tests
+3. Check open [GitHub Issues](https://github.com/josephsenior/Metasop/issues) labeled `good first issue`
 
-### Advanced
+### Going to production?
 
-1. Study [Deployment Guide](DEPLOYMENT.md)
-2. Explore [Production Hardening](PRODUCTION-HARDENING.md)
-3. Contribute to [Core Code](../CONTRIBUTING.md)
-4. Review [Security Best Practices](../SECURITY.md)
+1. Review your **[Gemini configuration](LLM-PROVIDERS.md)**
+2. Follow the **[Deployment Guide](DEPLOYMENT.md)** (includes production hardening)
 
 ---
 
-## 🆘 Support
+## 🆘 Getting Help
 
-### Documentation
-
-- 📖 [README](../README.md) - Main project documentation
-- 📚 [Support](../SUPPORT.md) - Support resources and community
-- 🗺️ [Roadmap](../ROADMAP.md) - Planned features
-
-### Community
-
-- 💬 [Discord](https://discord.gg/Blueprinta) - Real-time chat
-- 🐦 [Twitter](https://twitter.com/MetaSOP_AI) - Latest updates
-- 💡 [GitHub Discussions](https://github.com/josephsenior/Metasop/discussions) - Q&A
-
-### Issues
-
-- 🐛 [Report a Bug](https://github.com/josephsenior/Metasop/issues/new?template=bug_report.md)
-- 💡 [Request a Feature](https://github.com/josephsenior/Metasop/issues/new?template=feature_request.md)
-
----
-
-## 📝 Changelog
-
-See [CHANGELOG.md](../CHANGELOG.md) for version history and release notes.
-
----
-
-**Last Updated**: February 2026
+- 📖 **[Troubleshooting Guide](TROUBLESHOOTING.md)** — Common issues and fixes
+- 🐛 **[Report a Bug](https://github.com/josephsenior/Metasop/issues/new?template=bug_report.md)**
+- 💡 **[Request a Feature](https://github.com/josephsenior/Metasop/issues/new?template=feature_request.md)**
+- 💬 **[GitHub Discussions](https://github.com/josephsenior/Metasop/discussions)** — Questions and ideas
+- 🗺️ **[Roadmap](../ROADMAP.md)** — What's planned next

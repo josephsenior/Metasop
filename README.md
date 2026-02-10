@@ -43,7 +43,7 @@ Building software today requires coordinating multiple specialized roles, each w
 - **Agent-to-Agent (A2A) Communication**: Specialized protocol for inter-agent delegation and task management.
 - **Generation Jobs + SSE**: Long-running generation is queued, with progress streamed via Server-Sent Events.
 - **Guest Support**: Limited diagram generation for non-authenticated users with session tracking.
-- **Multi-Provider Support**: Built-in adapters for Google Gemini, Vercel AI SDK, and Token Factory (Llama 3.1).
+- **Gemini-Powered**: Built on Google Gemini with context caching for fast, high-quality structured output.
 
 ## 🏗️ Architecture
 
@@ -167,12 +167,17 @@ If `pnpm test` fails with **spawn EPERM** in Cursor's terminal (common on Window
 
 ## 📚 Documentation
 
-- **[Documentation Hub](docs/index.md)** - Complete documentation index and navigation
-- [Architecture Overview](docs/ARCHITECTURE.md) - Deep dive into the system architecture
-- [API Reference](docs/API.md) - Complete API documentation with examples
-- [Deployment Guide](docs/DEPLOYMENT.md) - Deploy to production (Vercel, Docker, VPS)
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute to Blueprinta
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+| Guide | Description |
+|-------|-------------|
+| **[Documentation Hub](docs/index.md)** | Start here — full index and learning path |
+| [Setup Guide](docs/SETUP.md) | Install, configure, and run locally |
+| [Architecture](docs/ARCHITECTURE.md) | System design and agent pipeline |
+| [API Reference](docs/API.md) | REST endpoints and examples |
+| [LLM Configuration](docs/LLM-PROVIDERS.md) | Gemini setup, model selection, optimization |
+| [Deployment](docs/DEPLOYMENT.md) | Deploy to Vercel, Docker, VPS |
+| [Testing](docs/TESTING.md) | Unit and integration testing |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and fixes |
+| [Contributing](CONTRIBUTING.md) | How to contribute |
 
 ---
 
