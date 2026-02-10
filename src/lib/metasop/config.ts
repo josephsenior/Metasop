@@ -74,7 +74,7 @@ export const defaultConfig: MetaSOPConfig = {
       },
       devops_infrastructure: {
         stepId: "devops_infrastructure",
-        timeout: 180000, // 600 seconds (10 minutes) - longer timeout for complex infrastructure setup
+        timeout: 600000, // 600 seconds (10 minutes) - longer timeout for complex infrastructure setup
         retries: 0,
         temperature: 0.3, // Balanced
       },
