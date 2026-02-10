@@ -31,7 +31,7 @@ export const qaSchema = {
                     title: { type: "string", maxLength: 60, description: "Test case title." },
                     description: { type: "string", maxLength: 200, description: "Detailed test scenario." },
                     type: { type: "string", enum: ["unit", "integration", "e2e", "manual"], description: "Test category." },
-                    priority: { type: "string", enum: ["high", "medium", "low"] },
+                    priority: { type: "string", enum: ["high", "medium", "low"], description: "Importance of this test case." },
                     expected_result: { type: "string", maxLength: 100, description: "Success criteria." }
                 }
             }
@@ -62,9 +62,9 @@ export const qaSchema = {
                 type: "object",
                 required: ["risk", "impact", "mitigation"],
                 properties: {
-                    risk: { type: "string", maxLength: 50, description: "Failure mode." },
-                    impact: { type: "string", enum: ["high", "medium", "low"] },
-                    mitigation: { type: "string", maxLength: 150, description: "Mitigation strategy." }
+                    risk: { type: "string", maxLength: 50, description: "Potential failure mode or quality risk." },
+                    impact: { type: "string", enum: ["high", "medium", "low"], description: "Severity of the risk." },
+                    mitigation: { type: "string", maxLength: 150, description: "Strategy to prevent or handle the risk." }
                 }
             },
             description: "Quality risks and mitigations."
@@ -75,25 +75,27 @@ export const qaSchema = {
             type: "object",
             required: ["percentage", "threshold", "lines", "statements", "functions", "branches"],
             properties: {
-                percentage: { type: "number" },
-                threshold: { type: "number", description: "Target code coverage percentage (e.g. 80)" },
-                lines: { type: "number" },
-                statements: { type: "number" },
-                functions: { type: "number" },
-                branches: { type: "number" }
-            }
+                percentage: { type: "number", description: "Estimated overall code coverage percentage." },
+                threshold: { type: "number", description: "Target code coverage percentage (e.g. 80)." },
+                lines: { type: "number", description: "Estimated number of lines covered." },
+                statements: { type: "number", description: "Estimated number of statements covered." },
+                functions: { type: "number", description: "Estimated number of functions covered." },
+                branches: { type: "number", description: "Estimated number of branches covered." }
+            },
+            description: "Code coverage targets and estimates."
         },
         performance_metrics: {
             required: ["api_response_time_p95", "page_load_time", "database_query_time", "first_contentful_paint", "time_to_interactive", "largest_contentful_paint"],
             type: "object",
             properties: {
-                api_response_time_p95: { type: "string", maxLength: 15 },
-                page_load_time: { type: "string", maxLength: 15 },
-                database_query_time: { type: "string", maxLength: 15 },
-                first_contentful_paint: { type: "string", maxLength: 15 },
-                time_to_interactive: { type: "string", maxLength: 15 },
-                largest_contentful_paint: { type: "string", maxLength: 15 }
-            }
+                api_response_time_p95: { type: "string", maxLength: 15, description: "Target P95 API latency (e.g. '200ms')." },
+                page_load_time: { type: "string", maxLength: 15, description: "Target full page load time (e.g. '2s')." },
+                database_query_time: { type: "string", maxLength: 15, description: "Target slow query threshold (e.g. '100ms')." },
+                first_contentful_paint: { type: "string", maxLength: 15, description: "Target FCP (e.g. '1.5s')." },
+                time_to_interactive: { type: "string", maxLength: 15, description: "Target TTI (e.g. '3.5s')." },
+                largest_contentful_paint: { type: "string", maxLength: 15, description: "Target LCP (e.g. '2.5s')." }
+            },
+            description: "Performance budgets and targets."
         },
         accessibility_plan: {
             type: "object",

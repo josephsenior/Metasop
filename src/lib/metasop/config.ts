@@ -99,7 +99,7 @@ export const defaultConfig: MetaSOPConfig = {
       },
       qa_verification: {
         stepId: "qa_verification",
-        timeout: 180000, // 180 seconds (3 minutes) - same as other agents
+        timeout: 600000, // 600 seconds (10 minutes) - increased for detailed test generation
         retries: 0,
         temperature: 0.2, // Lower for precise test specifications
       },
