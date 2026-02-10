@@ -742,127 +742,10 @@ ${prompt}`
       }
 
       // Parse final aggregated JSON
-      let result: any;
-      try {
-        result = JSON.parse(jsonText);
-      } catch (parseError: any) {
-        logger.warn("Gemini standard JSON parse failed, attempting reliability repair", { error: parseError.message });
+      // Parse final aggregated JSON
+      let result = this.parseWithRepair(jsonText, options);
 
-        // Reliability Repair Logic
-        let cleaned = jsonText.trim();
 
-        // 1. Extract JSON content boundaries
-        // We look for the first { or [ to start the JSON
-        const firstBrace = cleaned.indexOf('{');
-        const firstBracket = cleaned.indexOf('[');
-        let startIdx = -1;
-        if (firstBrace !== -1 && firstBracket !== -1) {
-          startIdx = Math.min(firstBrace, firstBracket);
-        } else {
-          startIdx = firstBrace !== -1 ? firstBrace : firstBracket;
-        }
-
-        if (startIdx !== -1) {
-          // Check if it ends with a closing character
-          const lastChar = cleaned.trim().slice(-1);
-          const isFinished = lastChar === '}' || lastChar === ']';
-
-          if (isFinished) {
-            // If it seems finished, we find the last closing character
-            const lastBrace = cleaned.lastIndexOf('}');
-            const lastBracket = cleaned.lastIndexOf(']');
-            const endIdx = Math.max(lastBrace, lastBracket);
-            cleaned = cleaned.substring(startIdx, endIdx + 1);
-          } else {
-            // If it seems truncated, we take everything from startIdx and try to repair it
-            cleaned = cleaned.substring(startIdx);
-          }
-        } else {
-          // No braces found, try cleaning markdown blocks
-          cleaned = cleaned.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
-        }
-
-        cleaned = cleaned.trim();
-
-        // 2. Fix single-quoted property names/values (Gemini sometimes returns these)
-        // Replace 'key': with "key": and ': 'value' with : "value"
-        // This handles the "Expected double-quoted property name" error
-        cleaned = cleaned.replace(/'/g, (match, offset) => {
-          // Check if this single quote is inside a double-quoted string
-          const before = cleaned.substring(0, offset);
-          const doubleQuotes = (before.match(/(?<!\\)"/g) || []).length;
-          if (doubleQuotes % 2 === 1) {
-            // Inside a double-quoted string, leave as-is
-            return match;
-          }
-          return '"';
-        });
-
-        // 3. Handle truncation at key/value level
-        // Remove trailing commas which are invalid in JSON
-        cleaned = cleaned.replace(/,\s*$/g, "");
-
-        // 4. Fix unterminated strings
-        // If it doesn't end with a closing brace or bracket, it might be a truncated string
-        if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
-          const lastQuote = cleaned.lastIndexOf('"');
-          const lastBrace = cleaned.lastIndexOf('{');
-          const lastBracket = cleaned.lastIndexOf('[');
-          const lastComma = cleaned.lastIndexOf(',');
-          const lastColon = cleaned.lastIndexOf(':');
-
-          // If the last quote is after all other structural characters, it's likely an open string
-          if (lastQuote !== -1 && lastQuote > Math.max(lastBrace, lastBracket, lastComma, lastColon)) {
-            const quoteCount = (cleaned.match(/"/g) || []).length;
-            if (quoteCount % 2 !== 0) {
-              cleaned += '"';
-            }
-          }
-        }
-
-        // 5. Remove trailing commas again after possible string repair
-        cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
-
-        // 6. Balance braces and brackets
-        let openBraces = (cleaned.match(/\{/g) || []).length;
-        let closeBraces = (cleaned.match(/\}/g) || []).length;
-        let openBrackets = (cleaned.match(/\[/g) || []).length;
-        let closeBrackets = (cleaned.match(/\]/g) || []).length;
-
-        while (openBrackets > closeBrackets) {
-          cleaned += ']';
-          closeBrackets++;
-        }
-        while (openBraces > closeBraces) {
-          cleaned += '}';
-          closeBraces++;
-        }
-
-        try {
-          result = JSON.parse(cleaned);
-        } catch (repairError: any) {
-          logger.error("Reliability repair failed", { error: repairError.message, text: cleaned.substring(0, 100) });
-
-          // Dump malformed response to session folder
-          if (options?.role) {
-            try {
-              const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
-              const debugDir = getSessionDebugDir();
-
-              if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
-
-              const debugFilePath = path.join(debugDir, `${agentRole}_malformed_response.json`);
-              fs.writeFileSync(debugFilePath, jsonText);
-              logger.error(`[DEBUG] MALFORMED RESPONSE DUMPED TO: ${debugFilePath}`);
-              logger.error(`[DEBUG] Size: ${jsonText.length} characters`);
-            } catch {
-              // Failed to dump error response - continue silently
-            }
-          }
-
-          throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
-        }
-      }
 
       // Post-process dynamic fields (JSON strings to objects)
       if (dynamicPaths.size > 0) {
@@ -1064,10 +947,12 @@ ${prompt}`
       cleaned = cleaned.trim();
 
       // 2. Fix single-quoted property names/values
-      cleaned = cleaned.replace(/'/g, (match, offset) => {
-        const before = cleaned.substring(0, offset);
-        const doubleQuotes = (before.match(/(?<!\\)"/g) || []).length;
-        return (doubleQuotes % 2 === 1) ? match : '"';
+      // 2. Fix single-quoted property names/values (smartly)
+      // Only replace quotes that are effectively boundaries (ignoring contractions like "it's")
+      cleaned = cleaned.replace(/([\{\[\s:,])'|'([\}\]\s:,])/g, (match, p1, p2) => {
+        if (p1) return p1 + '"';
+        if (p2) return '"' + p2;
+        return match;
       });
 
       // 3. Trailing commas
