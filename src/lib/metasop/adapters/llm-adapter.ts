@@ -40,6 +40,7 @@ export interface LLMOptions {
   role?: string; // Optional role for agents
   systemInstruction?: string; // System-level instruction for the LLM
   onProgress?: (event: LLMProgressEvent) => void; // Optional callback for streaming events
+  responseSchema?: any; // Optional JSON schema for structured output enforcement
 }
 
 export interface ReasoningDetails {
@@ -98,12 +99,12 @@ export class MockLLMProvider implements LLMProvider {
     // Simulate streaming by chunking the mock response
     const response = `Mock LLM response for: ${prompt.substring(0, 50)}...`;
     const chunkSize = 5;
-    
+
     for (let i = 0; i < response.length; i += chunkSize) {
       await new Promise(resolve => setTimeout(resolve, 50));
       onChunk(response.slice(i, i + chunkSize));
     }
-    
+
     return response;
   }
 }

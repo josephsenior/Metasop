@@ -188,6 +188,10 @@ ${prompt}`
           temperature: options?.temperature ?? 0.7,
           maxOutputTokens: options?.maxTokens ?? 65000,
           ...(options?.reasoning ? { thinkingConfig: { includeThoughts: true } } : {}),
+          ...(options?.responseSchema ? {
+            responseMimeType: "application/json",
+            responseSchema: options.responseSchema
+          } : {}),
         },
       };
 
@@ -886,19 +890,20 @@ ${prompt}`
    * Streaming version of structured generation.
    * Currently provides compatibility wrapper as true element-streaming requires specific API support.
    */
+  /**
+   * Streaming version of structured generation.
+   * Uses true streaming to capture partial responses for debugging.
+   */
   async generateStreamingStructured<T>(
     prompt: string,
     schema: any,
     onProgress: (event: Partial<MetaSOPEvent>) => void,
     options?: LLMOptions
   ): Promise<T> {
-    // For Gemini, we use a combined approach:
-    // 1. Start a heartbeat to keep the connection alive and show progress
-    // 2. Use the standard structured generation which is more reliable for JSON
+    const startTime = Date.now();
+    const model = options?.model || this.defaultModel;
 
-    let progressInterval: NodeJS.Timeout | undefined;
-    let progressCount = 0;
-
+    // Send initial progress
     if (onProgress) {
       try {
         onProgress({
@@ -910,45 +915,211 @@ ${prompt}`
       } catch (e: any) {
         logger.warn(`[Gemini] Failed to send initial progress: ${e.message}`);
       }
-
-      // Emit progress updates every 5 seconds to prevent "hanging" perception
-      progressInterval = setInterval(() => {
-        progressCount++;
-        const messages = [
-          "Analyzing requirements...",
-          "Structuring response...",
-          "Validating architectural consistency...",
-          "Generating detailed artifacts...",
-          "Finalizing structured output...",
-          "Applying technical constraints...",
-          "Reviewing generated plan..."
-        ];
-        const message = messages[Math.min(progressCount - 1, messages.length - 1)];
-
-        try {
-          onProgress({
-            type: "agent_progress",
-            status: "in_progress",
-            message: `${options?.role || "Agent"}: ${message}`,
-            timestamp: new Date().toISOString()
-          });
-        } catch (e: any) {
-          logger.warn(`[Gemini] Failed to send heartbeat progress: ${e.message}`);
-          // If the stream is closed, stop the interval
-          if (e.message === "STREAM_CLOSED" || e.message.includes("closed")) {
-            if (progressInterval) clearInterval(progressInterval);
-          }
-        }
-      }, 5000);
     }
 
-    try {
-      const result = await this.generateStructured<T>(prompt, schema, { ...options, onProgress });
-      return result;
-    } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval);
+    // Convert schema for Gemini
+    const dynamicPaths = new Set<string>();
+    // Logic similar to generateStructured prompt construction
+    const finalPrompt = options?.cacheId
+      ? `Based on the cached context, please perform your task as ${options.role || 'an agent'}.
+    
+${prompt}`
+      : prompt;
+
+    const structuredPrompt = `${finalPrompt}
+
+        === JSON SCHEMA ===
+        ${JSON.stringify(schema, null, 2)}
+
+        === CRITICAL REQUIREMENTS ===
+        1. You MUST respond with ONLY a valid JSON object matching the provided schema.
+        2. Ensure ALL fields are present according to the schema.
+        3. RESPOND WITH ONLY THE JSON OBJECT - NO PREAMBLE OR EXPLANATION.`;
+
+    let finalSchema = schema;
+    const isGemini3 = model.includes('gemini-3');
+
+    if (options?.reasoning && !isGemini3 && schema.type === 'object' && schema.properties) {
+      try {
+        finalSchema = JSON.parse(JSON.stringify(schema));
+        finalSchema.properties._reasoning = {
+          type: 'string',
+          description: 'INTERNAL: First, think step-by-step about the solution before generating the rest of the JSON. Write your reasoning here.'
+        };
+        if (!finalSchema.required) finalSchema.required = [];
+        if (!finalSchema.required.includes('_reasoning')) {
+          finalSchema.required.unshift('_reasoning');
+        }
+      } catch (err) {
+        // ignore
       }
     }
+
+    const geminiSchema = convertToGeminiSchema(finalSchema, dynamicPaths);
+
+    // Prepare options with schema
+    const streamOptions: LLMOptions = {
+      ...options,
+      responseSchema: geminiSchema,
+      systemInstruction: !options?.cacheId ? (
+        "You are a specialized JSON generator. You MUST ONLY output valid JSON. No conversational text, no preamble, no markdown, no explanations. Just the raw JSON object." +
+        (options?.role === "UI Designer" ? " Every string value in the JSON must contain only the intended value (e.g. 0.25rem or 400). Do not append any explanations or extra words to any field." : "") +
+        (options?.systemInstruction ? `\n\n${options.systemInstruction}` : "")
+      ) : undefined
+    };
+
+    let accumulatedText = "";
+
+    try {
+      await this.generateStream(
+        structuredPrompt,
+        (chunk) => {
+          accumulatedText += chunk;
+
+          // Emit heartbeat activity 
+          // (We don't parse partial JSON here because it's too expensive/brittle, 
+          // just let the user know bytes are flowing)
+          if (onProgress && accumulatedText.length % 50 === 0) { // Throttle
+            onProgress({
+              type: "agent_progress",
+              status: "in_progress",
+              message: `Agent ${options?.role || "Agent"} generating... (${accumulatedText.length} chars)`,
+              timestamp: new Date().toISOString()
+            });
+          }
+        },
+        streamOptions
+      );
+
+      // Parse final result
+      let result = this.parseWithRepair(accumulatedText, options);
+
+      // Post-process
+      if (dynamicPaths.size > 0) {
+        processDynamicFields(result, dynamicPaths);
+      }
+      if ((result as any)._reasoning) {
+        delete (result as any)._reasoning;
+      }
+
+      return result as T;
+
+    } catch (error: any) {
+      // DUMP PARTIAL ON ERROR (Timeout, Network, Parsing)
+      if (options?.role && accumulatedText.length > 0) {
+        try {
+          const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+          const debugDir = getSessionDebugDir();
+          if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+          const debugFilePath = path.join(debugDir, `${agentRole}_partial_error.json`);
+          fs.writeFileSync(debugFilePath, accumulatedText);
+          logger.error(`[DEBUG] PARTIAL ERROR RESPONSE DUMPED TO: ${debugFilePath}`);
+        } catch (e) {
+          // ignore
+        }
+      }
+      throw error;
+    }
   }
+
+  /**
+   * Helper to parse JSON with reliability repair
+   */
+  private parseWithRepair(jsonText: string, options?: LLMOptions): any {
+    let result: any;
+    try {
+      result = JSON.parse(jsonText);
+    } catch (parseError: any) {
+      logger.warn("Gemini standard JSON parse failed, attempting reliability repair", { error: parseError.message });
+
+      let cleaned = jsonText.trim();
+      // 1. Extract JSON content boundaries
+      const firstBrace = cleaned.indexOf('{');
+      const firstBracket = cleaned.indexOf('[');
+      let startIdx = -1;
+      if (firstBrace !== -1 && firstBracket !== -1) {
+        startIdx = Math.min(firstBrace, firstBracket);
+      } else {
+        startIdx = firstBrace !== -1 ? firstBrace : firstBracket;
+      }
+
+      if (startIdx !== -1) {
+        // Check if it ends with a closing character
+        const lastChar = cleaned.trim().slice(-1);
+        const isFinished = lastChar === '}' || lastChar === ']';
+
+        if (isFinished) {
+          const lastBrace = cleaned.lastIndexOf('}');
+          const lastBracket = cleaned.lastIndexOf(']');
+          const endIdx = Math.max(lastBrace, lastBracket);
+          cleaned = cleaned.substring(startIdx, endIdx + 1);
+        } else {
+          cleaned = cleaned.substring(startIdx);
+        }
+      } else {
+        cleaned = cleaned.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
+      }
+
+      cleaned = cleaned.trim();
+
+      // 2. Fix single-quoted property names/values
+      cleaned = cleaned.replace(/'/g, (match, offset) => {
+        const before = cleaned.substring(0, offset);
+        const doubleQuotes = (before.match(/(?<!\\)"/g) || []).length;
+        return (doubleQuotes % 2 === 1) ? match : '"';
+      });
+
+      // 3. Trailing commas
+      cleaned = cleaned.replace(/,\s*$/g, "");
+
+      // 4. Unterminated strings
+      if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
+        const lastQuote = cleaned.lastIndexOf('"');
+        const lastBrace = cleaned.lastIndexOf('{');
+        const lastBracket = cleaned.lastIndexOf('[');
+        const lastComma = cleaned.lastIndexOf(',');
+        const lastColon = cleaned.lastIndexOf(':');
+
+        if (lastQuote !== -1 && lastQuote > Math.max(lastBrace, lastBracket, lastComma, lastColon)) {
+          const quoteCount = (cleaned.match(/"/g) || []).length;
+          if (quoteCount % 2 !== 0) {
+            cleaned += '"';
+          }
+        }
+      }
+
+      // 5. Remove trailing commas again
+      cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
+
+      // 6. Balance braces
+      let openBraces = (cleaned.match(/\{/g) || []).length;
+      let closeBraces = (cleaned.match(/\}/g) || []).length;
+      let openBrackets = (cleaned.match(/\[/g) || []).length;
+      let closeBrackets = (cleaned.match(/\]/g) || []).length;
+
+      while (openBrackets > closeBrackets) { cleaned += ']'; closeBrackets++; }
+      while (openBraces > closeBraces) { cleaned += '}'; closeBraces++; }
+
+      try {
+        result = JSON.parse(cleaned);
+      } catch (repairError: any) {
+        logger.error("Reliability repair failed", { error: repairError.message });
+
+        // Dump malformed
+        if (options?.role) {
+          try {
+            const agentRole = options.role.toLowerCase().replace(/\s+/g, '_');
+            const debugDir = getSessionDebugDir();
+            if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+            const debugFilePath = path.join(debugDir, `${agentRole}_malformed_response.json`);
+            fs.writeFileSync(debugFilePath, jsonText);
+          } catch { }
+        }
+        throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
+      }
+    }
+    return result;
+  }
+
 }
