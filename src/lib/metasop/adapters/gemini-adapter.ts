@@ -780,11 +780,25 @@ ${prompt}`
 
         cleaned = cleaned.trim();
 
-        // 2. Handle truncation at key/value level
+        // 2. Fix single-quoted property names/values (Gemini sometimes returns these)
+        // Replace 'key': with "key": and ': 'value' with : "value"
+        // This handles the "Expected double-quoted property name" error
+        cleaned = cleaned.replace(/'/g, (match, offset) => {
+          // Check if this single quote is inside a double-quoted string
+          const before = cleaned.substring(0, offset);
+          const doubleQuotes = (before.match(/(?<!\\)"/g) || []).length;
+          if (doubleQuotes % 2 === 1) {
+            // Inside a double-quoted string, leave as-is
+            return match;
+          }
+          return '"';
+        });
+
+        // 3. Handle truncation at key/value level
         // Remove trailing commas which are invalid in JSON
         cleaned = cleaned.replace(/,\s*$/g, "");
 
-        // 3. Fix unterminated strings
+        // 4. Fix unterminated strings
         // If it doesn't end with a closing brace or bracket, it might be a truncated string
         if (!cleaned.endsWith('}') && !cleaned.endsWith(']')) {
           const lastQuote = cleaned.lastIndexOf('"');
@@ -802,10 +816,10 @@ ${prompt}`
           }
         }
 
-        // 4. Remove trailing commas again after possible string repair
+        // 5. Remove trailing commas again after possible string repair
         cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
-        // 5. Balance braces and brackets
+        // 6. Balance braces and brackets
         let openBraces = (cleaned.match(/\{/g) || []).length;
         let closeBraces = (cleaned.match(/\}/g) || []).length;
         let openBrackets = (cleaned.match(/\[/g) || []).length;
