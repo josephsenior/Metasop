@@ -3,8 +3,9 @@
 [![CI](https://github.com/josephsenior/Metasop/actions/workflows/ci.yml/badge.svg)](https://github.com/josephsenior/Metasop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
-[![AI Orchestration](https://img.shields.io/badge/AI-Orchestration-orange.svg)](#)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0-38B2AC.svg)](https://tailwindcss.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.0-2D3748.svg)](https://www.prisma.io/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![GitHub Stars](https://img.shields.io/github/stars/josephsenior/Metasop?style=social)](https://github.com/josephsenior/Metasop/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/josephsenior/Metasop?style=social)](https://github.com/josephsenior/Metasop/network/members)
@@ -30,7 +31,7 @@ Building software today requires coordinating multiple specialized roles, each w
 
 ---
 
-##  Key Features
+## Key Features
 
 - **Tool-based Refinement**: Edit artifact JSON via predefined ops (`set_at_path`, `add_array_item`, etc.) without re-running agents. Use `POST /api/diagrams/artifacts/edit` with an `edits` array for deterministic, performant updates.
 - **Context-Aware Agents**: Each agent operates with deep awareness of upstream dependencies, ensuring architectural decisions are consistent across the stack.
@@ -48,13 +49,13 @@ Building software today requires coordinating multiple specialized roles, each w
 
 Blueprinta utilizes a sequential pipeline:
 
-1.  **Product Manager**: Defines user stories and acceptance criteria.
-2.  **Architect**: Generates API contracts, database schemas, and ADRs.
-3.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
-4.  **Security Architecture**: Performs threat modeling and defines security controls.
-5.  **UI Designer**: Generates design tokens and component hierarchies.
-6.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
-7.  **QA Verification**: Creates comprehensive test strategies and test cases.
+1. **Product Manager**: Defines user stories and acceptance criteria.
+2. **Architect**: Generates API contracts, database schemas, and ADRs.
+3. **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
+4. **Security Architecture**: Performs threat modeling and defines security controls.
+5. **UI Designer**: Generates design tokens and component hierarchies.
+6. **Engineer Implementation**: Drafts file structures and technical implementation plans.
+7. **QA Verification**: Creates comprehensive test strategies and test cases.
 
 ## 🛠️ Getting Started
 
@@ -192,13 +193,13 @@ graph LR
 
 ### Agent pipeline (sequential)
 
-1.  **Product Manager**: Defines user stories and acceptance criteria.
-2.  **Architect**: Generates API contracts, database schemas, and ADRs.
-3.  **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
-4.  **Security Architecture**: Performs threat modeling and defines security controls.
-5.  **UI Designer**: Generates design tokens and component hierarchies.
-6.  **Engineer Implementation**: Drafts file structures and technical implementation plans.
-7.  **QA Verification**: Creates comprehensive test strategies and test cases.
+1. **Product Manager**: Defines user stories and acceptance criteria.
+2. **Architect**: Generates API contracts, database schemas, and ADRs.
+3. **DevOps Infrastructure**: Designs CI/CD pipelines and cloud infrastructure (Terraform/K8s).
+4. **Security Architecture**: Performs threat modeling and defines security controls.
+5. **UI Designer**: Generates design tokens and component hierarchies.
+6. **Engineer Implementation**: Drafts file structures and technical implementation plans.
+7. **QA Verification**: Creates comprehensive test strategies and test cases.
 
 ### Key components
 

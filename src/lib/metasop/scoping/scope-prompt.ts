@@ -17,7 +17,7 @@ const ScopeResponseSchema = z.discriminatedUnion("proceed", [
   z.object({ proceed: z.literal(true) }),
   z.object({
     proceed: z.literal(false),
-    questions: z.array(ScopeQuestionSchema).min(1).max(5),
+    questions: z.array(ScopeQuestionSchema),
   }),
 ]);
 
@@ -30,7 +30,6 @@ const scopeResponseJsonSchema = {
     questions: {
       type: "array",
       description: "List of clarification questions (id, label, options). Only when proceed is false",
-      maxItems: 5,
       items: {
         type: "object",
         required: ["id", "label", "options"],
@@ -41,7 +40,6 @@ const scopeResponseJsonSchema = {
             type: "array",
             description: "List of selectable options (strings)",
             items: { type: "string" },
-            minItems: 2,
           },
         },
       },
@@ -86,7 +84,6 @@ RULES:
 2. If the request is vague or missing key choices (e.g. "build an app", "help me with a project"), respond with { "proceed": false, "questions": [...] }.
 3. Ask SHORT questions. Each question has: id (snake_case), label (user-facing text), options (array of strings).
 4. Keep labels direct (no long phrasing like "Who is the primary target audience for this system?"). Prefer: "Primary audience?", "Platform?", "Scale?".
-5. Do NOT ask overlapping questions (avoid "scale" AND "team_size"). Do NOT ask for full specs; only pick-the-lane choices.
 6. Provide options per question. Options must be short , distinct, and non-overlapping.
 7. Use consistent style (Title Case options, no punctuation).
 
