@@ -100,7 +100,11 @@ export const qaSchema = {
         accessibility_plan: {
             type: "object",
             properties: {
-                standard: { type: "string", maxLength: 30, description: "WCAG level target (e.g., 'WCAG 2.1 AA')." },
+                standard: {
+                    type: "string",
+                    enum: ["WCAG 2.0 A", "WCAG 2.0 AA", "WCAG 2.0 AAA", "WCAG 2.1 A", "WCAG 2.1 AA", "WCAG 2.1 AAA", "WCAG 2.2 A", "WCAG 2.2 AA", "WCAG 2.2 AAA"],
+                    description: "Target WCAG compliance level."
+                },
                 automated_tools: { type: "array", items: { type: "string", maxLength: 30 }, description: "Automated testing tools (axe-core, Lighthouse)." },
                 manual_checks: { type: "array", items: { type: "string", maxLength: 100 }, description: "Manual verification checklist items." },
                 screen_readers: { type: "array", items: { type: "string", maxLength: 20 }, description: "Screen readers to test (NVDA, VoiceOver)." }
