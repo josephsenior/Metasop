@@ -62,7 +62,7 @@ export const QAArtifactSchema = z.object({
     coverage: CoverageSchema, // REQUIRED
     performance_metrics: PerformanceMetricsSchema, // REQUIRED
     accessibility_plan: z.object({
-        standard: z.string().max(30).optional(),
+        standard: z.enum(["WCAG 2.0 A", "WCAG 2.0 AA", "WCAG 2.0 AAA", "WCAG 2.1 A", "WCAG 2.1 AA", "WCAG 2.1 AAA", "WCAG 2.2 A", "WCAG 2.2 AA", "WCAG 2.2 AAA"]).optional(),
         automated_tools: z.array(z.string().max(30)).optional(),
         manual_checks: z.array(z.string().max(100)).optional(),
         screen_readers: z.array(z.string().max(20)).optional(),
